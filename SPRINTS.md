@@ -14,10 +14,11 @@ aquela fase).
 
 ## Estado atual
 
-**FASE ATUAL: F1 — Oráculo do balanço ← ATUAL (aguardando aprovação)**
+**FASE ATUAL: F2 — Motor do balanço modularizado ← ATUAL (aguardando aprovação)**
 
-F0 entregue: repositório, ambiente uv, acervo `references/`, documentação de retomada.
-Nenhuma física implementada ainda.
+F0 e F1 entregues. O oráculo do balanço existe, é determinístico e coincide exatamente com
+o snapshot Julia (ver `docs/validacao/00-oraculo-balanco.md`). Nenhuma física nova foi
+implementada ainda.
 
 ---
 
@@ -113,7 +114,7 @@ fumaça, `references/`, este arquivo, `CLAUDE.md`/`AGENTS.md` e o ADR 0001. O
 de `references/` e gera `main.tex`.
 Entregue: ver `git log` (commit inicial).
 
-### F1 — Oráculo do balanço ← ATUAL
+### F1 — Oráculo do balanço ✅
 `tools/gerar_oraculo_balanco.py` importa o script original **sem editá-lo** (cwd =
 `references/`) e serializa os 16 casos: correntes O/W/D/G, T, P, Q, W, laço de reciclo
 (iterações/resíduo), `block_balance`/`global_balance`, `auditoria_independente()`,
@@ -121,8 +122,14 @@ envelopes e sensibilidades, mais o SHA-256 do JSON de entrada e o do `main.tex`.
 comparar com `references/bot/balanco_python.json`.
 **Aceite:** a fixture `tests/fixtures/python_ref/` é determinística (mesmo byte em duas
 execuções); `docs/validacao/00-oraculo-balanco.md` registra origem, hashes e divergências.
+Entregue: fixture `tests/fixtures/python_ref/{oraculo_balanco.json, main_ref.tex}` e 8 testes
+(3 dependem do acervo). Igualdade exata com o snapshot Julia (3.168 valores nos 16 casos e
+todos os demais campos). Os 16 casos convergem em 4 a 35 iterações. Commit: ver `git log`
+("F1: …").
+**Notas para a F2:** o resíduo de componente no M-01 (≈1e-10 kg/s) é o resíduo do reciclo e
+deve ser reproduzido. O original escreve `main.tex` sem `encoding`; o novo usa utf-8.
 
-### F2 — Motor do balanço modularizado
+### F2 — Motor do balanço modularizado ← ATUAL
 `balanco/propriedades.py`, `modelo.py`, `balancos.py`; topologia (BLOCKS/STREAMS/GLOBAL_*)
 e constantes/premissas (PREM, MW, CP0, API_WELL, MU_WELL) em TOML com a fonte citada;
 CalcTrace por equação.
