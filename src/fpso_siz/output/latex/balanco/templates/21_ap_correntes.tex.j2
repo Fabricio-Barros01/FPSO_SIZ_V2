@@ -1,0 +1,17 @@
+\appendix
+\clearpage
+\section{Resultados por caso: correntes}\label{app:correntes}
+Vazões em volume padrão (15,6~\si{\celsius}; 101,3~\si{\kilo\pascal}). $Q_O$: óleo morto; $Q_A$: água produzida; $Q_D$: água de diluição; $Q_G$: gás (livre ou dissolvido, Sm³/d); $w_G$: fração mássica de gás.
+
+<% for r in R %>
+{\footnotesize\setlength{\tabcolsep}{3pt}\begin{longtable}{lrrrrrrrrL{2.5cm}}
+\caption{Caso << r.num >> --- << r.caso['name'] >> ($T_{C01}=<< r.caso['T_C']|br >>$~°C; modos << r.caso['operation_modes']|join(',') >>; poço << r.well >>).}\\\toprule
+Corrente & $Q_O$ & $Q_A$ & $Q_D$ & $Q_G$ & $\dot m$ & $w_G$ & $T$ & $P$ & Fase\\ & m³/d & m³/d & m³/d & Sm³/d & kg/s & -- & °C & kPa & \\\midrule\endfirsthead
+\toprule Corrente & $Q_O$ & $Q_A$ & $Q_D$ & $Q_G$ & $\dot m$ & $w_G$ & $T$ & $P$ & Fase\\\midrule\endhead
+<% for c in topo['correntes'] %>
+<% set m_ = ind.m(r, c['id']) %>
+<< c['id'] >> & << ind.q(r, c['id'], 'O')|br(1) >> & << ind.q(r, c['id'], 'W')|br(1) >> & << ind.q(r, c['id'], 'D')|br(1) >> & << ind.q(r, c['id'], 'G')|br >> & << m_|br(3) >> & << (r.streams[c['id']]['G'] / m_ if m_ > 0 else 0)|br(4) >> & << r.T[c['id']]|br(2) >> & << r.P[c['id']]|br >> & {\scriptsize << c['fase'] >>}\\
+<% endfor %>
+\bottomrule\end{longtable}}
+<% endfor %>
+\clearpage

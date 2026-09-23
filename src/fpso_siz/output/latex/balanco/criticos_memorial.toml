@@ -1,0 +1,92 @@
+# Casos governantes candidatos por equipamento e critério (seção 16 do memorial).
+# O valor e os casos vêm de fpso_siz.balanco.indicadores.criticos (mesmo `id`, mesma ordem).
+
+[[linhas]]
+id = 'SG-001/gas_real'
+equipamento = 'SG-001 FWKO'
+criterio = 'Carga de gás real'
+
+[[linhas]]
+id = 'SG-001/liquido_C03'
+equipamento = 'SG-001 FWKO'
+criterio = 'Líquido total em C-03'
+
+[[linhas]]
+id = 'SG-001/viscosidade'
+equipamento = 'SG-001 FWKO'
+criterio = 'Viscosidade (menor $T$)'
+
+[[linhas]]
+id = 'P-001/Q'
+equipamento = 'P-001 Pré-aquecedor'
+criterio = '$\dot Q_{\mbox{P-001}}$'
+
+[[linhas]]
+id = 'P-002/Q'
+equipamento = 'P-002 Aquecedor'
+criterio = '$\dot Q_{\mbox{P-002}}$'
+
+[[linhas]]
+id = 'V-001/gas_real'
+equipamento = 'V-001 Desgaseificador 1'
+criterio = 'Gás real'
+
+[[linhas]]
+id = 'V-001/liquido_C10'
+equipamento = 'V-001 Desgaseificador 1'
+criterio = 'Líquido C-10'
+
+[[linhas]]
+id = 'TO-001/agua_C12'
+equipamento = 'TO-001 Desidratador'
+criterio = 'Água removida C-12'
+
+[[linhas]]
+id = 'TO-001/oleo_C10'
+equipamento = 'TO-001 Desidratador'
+criterio = 'Óleo C-10'
+
+[[linhas]]
+id = 'B-002/vazao_C12'
+equipamento = 'B-002 Bomba'
+criterio = 'Vazão C-12'
+
+[[linhas]]
+id = 'DWH-001/Q_D'
+equipamento = 'DWH-001 Aquecedor diluição'
+criterio = '$Q_D$'
+
+[[linhas]]
+id = 'V-002/gas_real'
+equipamento = 'V-002 Desgaseificador 2'
+criterio = 'Gás real'
+
+[[linhas]]
+id = 'TO-002/liquido_C18'
+equipamento = 'TO-002 Dessalinizador'
+criterio = 'Líquido C-18'
+
+[[linhas]]
+id = 'B-003/vazao_C19'
+equipamento = 'B-003 Bomba'
+criterio = 'Vazão C-19'
+
+[[linhas]]
+id = 'B-001/vazao_C21'
+equipamento = 'B-001 Bomba óleo'
+criterio = 'Vazão C-21'
+
+[[linhas]]
+id = 'P-003/Q'
+equipamento = 'P-003 Resfriador'
+criterio = '$\dot Q_{\mbox{P-003}}$'
+
+[[linhas]]
+id = 'materiais/CO2_molar'
+equipamento = 'Materiais (todos)'
+criterio = 'CO$_2$ molar no gás'
+
+[[linhas]]
+id = 'materiais/H2S_ppmv'
+equipamento = 'Materiais (todos)'
+criterio = 'H$_2$S (ppmv)'

@@ -1,0 +1,10 @@
+\subsection{MED-001 --- Medidor de BSW e desvio off-spec}
+\paragraph{Função:} medir o BSW do óleo tratado; em especificação o óleo segue à estação de medição (C-25), fora de especificação é desviado ao tanque off-spec (C-26) --- Nota~1 do DB; BOT 2.7.1.10 (tanque off-spec $\ge$10.000~m³).
+\paragraph{Entradas:} C-24: << ind.q(RD, 'C-24', 'O')|br >> m³/d de óleo, BSW << ind.bsw_pct(RD, 'C-24')|br(2) if ind.q_agua(RD, 'C-21') > 0 else '0' >>~\%, 40~\si{\celsius} (Caso << DEMO >>).
+\paragraph{Premissas:} P-35 (C-26 nulo em regime de projeto).
+\paragraph{Modelo de cálculo:} $\dot m_{C25}=\dot m_{C24}$ se $\mathrm{BSW}_{C24}\le<< (P['BSW_t'] * 100)|mbn(1) >>$~\%; caso contrário $\dot m_{C26}=\dot m_{C24}$ (divisor lógico, não separador).
+\paragraph{Saídas:} <% set b = bb(RD, blocos['MED-001']) %>C-25 = C-24; C-26 = 0; << RD.P['C-25']|br >>~\si{\kilo\pascal}.
+\paragraph{Balanço de massa:} $\varepsilon_m=$<< b['em']|sci >>.
+\paragraph{Balanço de energia:} $\varepsilon_E=$<< b['eE']|sci >>.
+\paragraph{Resultado preliminar:} em todos os casos o BSW de saída resultou igual ao limite adotado (ou nulo), portanto sem desvio ao tanque off-spec. Como a P-29 posiciona o BSW exatamente no limite de especificação, a folga operacional resultou nula; a definição dessa folga foi recomendada para a etapa de especificação do tratador.
+\paragraph{Validação recomendada em etapa posterior:} critério de desvio e incerteza do medidor; vazão de reprocessamento do tanque off-spec (não representada).

@@ -1,0 +1,480 @@
+# Tabela de premissas do memorial (seção 6) e origem das linhas P-xx da rastreabilidade.
+# Conteúdo de documento (LaTeX). `valor` é uma expressão de template avaliada no contexto do
+# memorial: números vêm das premissas em uso, nunca digitados aqui.
+
+[[linhas]]
+id = 'F-01'
+parametro = '''Condição padrão'''
+valor = '''15,6 / 101,3'''
+unidade = '''°C / kPa'''
+justificativa = '''JSON \texttt{standard\_conditions}'''
+impacto = '''Base de todas as vazões'''
+tipo = 'DADO DE FONTE'
+
+[[linhas]]
+id = 'F-02'
+parametro = '''Pressão do FWKO'''
+valor = '''<< P['P_FWKO']|br >>'''
+unidade = '''kPa'''
+justificativa = '''JSON \texttt{fwko\_pressure\_kPa}; BOT 2.7.1.2'''
+impacto = '''Pressão do SG-001; liberação de gás'''
+tipo = 'DADO DE FONTE'
+
+[[linhas]]
+id = 'F-03'
+parametro = '''Grau API Well A / Well B'''
+valor = '''27,5 / 28,2'''
+unidade = '''°API'''
+justificativa = '''BOT Tab. 2.2.1.2 (fora do JSON)'''
+impacto = '''$\rho_O$, massa de óleo, Standing'''
+tipo = 'DADO DE FONTE'
+
+[[linhas]]
+id = 'F-04'
+parametro = '''Viscosidade do óleo morto 30--70 °C'''
+valor = '''Tab. BOT'''
+unidade = '''cP'''
+justificativa = '''BOT Tab. 2.2.1.2'''
+impacto = '''Índice de severidade O/A'''
+tipo = 'DADO DE FONTE'
+
+[[linhas]]
+id = 'F-05'
+parametro = '''T mínima na entrada dos tratadores; T máx. do meio'''
+valor = '''90 / 120'''
+unidade = '''°C'''
+justificativa = '''BOT 2.7.1.4'''
+impacto = '''Carga do aquecedor'''
+tipo = 'DADO DE FONTE'
+
+[[linhas]]
+id = 'F-06'
+parametro = '''Água no óleo de saída do FWKO (máx.)'''
+valor = '''40'''
+unidade = '''\% vol'''
+justificativa = '''BOT 2.7.1.2 (``up to 40\%'')'''
+impacto = '''Laço de reciclo; cargas térmicas'''
+tipo = 'DADO DE FONTE'
+
+[[linhas]]
+id = 'F-07'
+parametro = '''T de entrada do FWKO mantida por reciclo'''
+valor = '''40'''
+unidade = '''°C'''
+justificativa = '''BOT 2.7.1.6; DB Nota 3'''
+impacto = '''Verificação por caso'''
+tipo = 'DADO DE FONTE'
+
+[[linhas]]
+id = 'F-08'
+parametro = '''T de armazenamento; T máx. de separação'''
+valor = '''40 / 99'''
+unidade = '''°C'''
+justificativa = '''BOT 2.7.1.10'''
+impacto = '''Carga do resfriador'''
+tipo = 'DADO DE FONTE'
+
+[[linhas]]
+id = 'F-09'
+parametro = '''Especificação do óleo: BSW; salinidade'''
+valor = '''< 0,5 / < 285'''
+unidade = '''\% vol / mg/L'''
+justificativa = '''BOT 2.3.1.1'''
+impacto = '''Tratador; água de diluição'''
+tipo = 'DADO DE FONTE'
+
+[[linhas]]
+id = 'F-10'
+parametro = '''Salinidade da água produzida'''
+valor = '''até 240.000'''
+unidade = '''mg/L NaCl'''
+justificativa = '''BOT 2.2.5.1'''
+impacto = '''Água de diluição'''
+tipo = 'DADO DE FONTE'
+
+[[linhas]]
+id = 'F-11'
+parametro = '''Destino do gás transferido'''
+valor = '''K.O. próprio'''
+unidade = '''--'''
+justificativa = '''BOT 2.3.5.3'''
+impacto = '''Exclusão do módulo'''
+tipo = 'DADO DE FONTE'
+
+[[linhas]]
+id = 'F-12'
+parametro = '''Óleo em água em separador trifásico; água no óleo'''
+valor = '''200--2.000 mg/L; 5--10\%'''
+unidade = '''--'''
+justificativa = '''Stewart \& Arnold (2008), §4.7'''
+impacto = '''Base de P-25 e sensibilidade de P-24'''
+tipo = 'DADO DE FONTE'
+
+[[linhas]]
+id = 'P-01'
+parametro = '''Gás ideal na condição padrão ($Z=1$)'''
+valor = '''<< VM|mb(3) >>'''
+unidade = '''m³/kmol'''
+justificativa = '''$Z_{std}\approx 0{,}997$--$0{,}999$ para gás natural'''
+impacto = '''$<0{,}3$\% em $\dot m_G$'''
+tipo = 'PREMISSA'
+
+[[linhas]]
+id = 'P-02'
+parametro = '''Base das composições'''
+valor = '''molar'''
+unidade = '''--'''
+justificativa = '''Soma com ppmv de H$_2$S no JSON (Seção 5.1)'''
+impacto = '''$\bar M_G$, $\rho_G$'''
+tipo = 'A VALIDAR'
+
+[[linhas]]
+id = 'P-03'
+parametro = '''Composição do gás = corte N$_2$--nC$_4$'''
+valor = '''eq. (5.4)'''
+unidade = '''--'''
+justificativa = '''Flash não calculado nesta etapa'''
+impacto = '''$\bar M_G$, $c_{p,G}$, CO$_2$ no gás'''
+tipo = 'CORRELAÇÃO'
+
+[[linhas]]
+id = 'P-04'
+parametro = '''Gás de lift com composição do gás produzido'''
+valor = '''--'''
+unidade = '''--'''
+justificativa = '''Tratamento depende do modo (BOT 2.7.3.3)'''
+impacto = '''Massa de gás'''
+tipo = 'A VALIDAR'
+
+[[linhas]]
+id = 'P-05'
+parametro = '''Gás transferido fora dos limites de bateria'''
+valor = '''0 no módulo'''
+unidade = '''Sm³/d'''
+justificativa = '''F-11'''
+impacto = '''Vazão de gás no FWKO'''
+tipo = 'PREMISSA'
+
+[[linhas]]
+id = 'P-06'
+parametro = '''Gás produzido + lift chegam em C-01'''
+valor = '''eq. (3.2)'''
+unidade = '''Sm³/d'''
+justificativa = '''Lift injetado na coluna retorna com o fluido'''
+impacto = '''Carga de gás do FWKO'''
+tipo = 'PREMISSA'
+
+[[linhas]]
+id = 'P-07'
+parametro = '''Associação fluido--poço pelo pseudo C$_{20}$'''
+valor = '''Tab. 5.2'''
+unidade = '''--'''
+justificativa = '''Campo \texttt{c20\_pseudo.well}'''
+impacto = '''°API por caso'''
+tipo = 'DADO DERIVADO'
+
+[[linhas]]
+id = 'P-08'
+parametro = '''Massa específica da água produzida'''
+valor = '''<< P['rho_W']|mb >>'''
+unidade = '''kg/m³'''
+justificativa = '''Salmoura NaCl $\approx$20,8 \% m/m (240 g/L)'''
+impacto = '''Massa de água'''
+tipo = 'A VALIDAR'
+
+[[linhas]]
+id = 'P-09'
+parametro = '''Massa específica da água de diluição'''
+valor = '''<< P['rho_D']|mb >>'''
+unidade = '''kg/m³'''
+justificativa = '''Água doce a 15,6 °C'''
+impacto = '''Massa de diluição'''
+tipo = 'PREMISSA'
+
+[[linhas]]
+id = 'P-10'
+parametro = '''$c_p$ do óleo'''
+valor = '''<< P['cp_O']|mb(2) >>'''
+unidade = '''kJ/(kg K)'''
+justificativa = '''Ordem de grandeza de óleo 28 °API a 40--90 °C'''
+impacto = '''Cargas térmicas $\propto c_p$'''
+tipo = 'A VALIDAR'
+
+[[linhas]]
+id = 'P-11'
+parametro = '''$c_p$ da água produzida'''
+valor = '''<< P['cp_W']|mb(2) >>'''
+unidade = '''kJ/(kg K)'''
+justificativa = '''Salmoura NaCl $\approx$20 \% m/m'''
+impacto = '''Cargas térmicas'''
+tipo = 'A VALIDAR'
+
+[[linhas]]
+id = 'P-12'
+parametro = '''$c_p$ da água de diluição'''
+valor = '''<< P['cp_D']|mb(2) >>'''
+unidade = '''kJ/(kg K)'''
+justificativa = '''Água doce'''
+impacto = '''Carga do DWH-001'''
+tipo = 'PREMISSA'
+
+[[linhas]]
+id = 'P-13'
+parametro = '''$c_p$ do gás (ideal, 25 °C)'''
+valor = '''Tab. 5.2'''
+unidade = '''kJ/(kg K)'''
+justificativa = '''Mistura de $\bar c^{0}_{p,i}$ (Poling et al.)'''
+impacto = '''Temperatura de mistura'''
+tipo = 'CORRELAÇÃO'
+
+[[linhas]]
+id = 'P-14'
+parametro = '''Entalpia sensível, sem calor latente nem $v\Delta P$; $E_c$, $E_p$ desprezadas'''
+valor = '''$h=c_p(T-T_{ref})$'''
+unidade = '''--'''
+justificativa = '''Nível de informação sem EOS'''
+impacto = '''Carga do aquecedor subestimada (vaporização)'''
+tipo = 'PREMISSA'
+
+[[linhas]]
+id = 'P-15'
+parametro = '''Equipamentos adiabáticos; vasos e válvulas isotérmicos'''
+valor = '''--'''
+unidade = '''--'''
+justificativa = '''Consequência de P-14 ($h_{in}=h_{out}$)'''
+impacto = '''Resfriamento por flash não capturado'''
+tipo = 'A VALIDAR'
+
+[[linhas]]
+id = 'P-16'
+parametro = '''$\Delta P$ entre chegada e FWKO'''
+valor = '''0'''
+unidade = '''kPa'''
+justificativa = '''C-01 referida à pressão do FWKO'''
+impacto = '''Pressão de C-01'''
+tipo = 'PREMISSA'
+
+[[linhas]]
+id = 'P-17'
+parametro = '''$\Delta P$ por lado de trocador'''
+valor = '''100'''
+unidade = '''kPa'''
+justificativa = '''Valor preliminar; Bell--Delaware posterior'''
+impacto = '''Pressões a jusante'''
+tipo = 'PREMISSA'
+
+[[linhas]]
+id = 'P-18'
+parametro = '''Pressão do desgaseificador 1 e do desidratador'''
+valor = '''<< P['P_D1']|mb >>'''
+unidade = '''kPa'''
+justificativa = '''Vaso desgaseificador/pré-tratador conjugado (BOT 2.7.1.7)'''
+impacto = '''Liberação de gás; VRU'''
+tipo = 'A VALIDAR'
+
+[[linhas]]
+id = 'P-19'
+parametro = '''Pressão do desgaseificador 2 e do dessalinizador'''
+valor = '''<< P['P_D2']|mb >>'''
+unidade = '''kPa'''
+justificativa = '''Último estágio próximo da atmosfera (TVP/RVP)'''
+impacto = '''Liberação de gás; bomba'''
+tipo = 'A VALIDAR'
+
+[[linhas]]
+id = 'P-20'
+parametro = '''Descarga da bomba de transferência'''
+valor = '''<< P['P_pump_oil']|mb >>'''
+unidade = '''kPa'''
+justificativa = '''Vencer pré-aquecedor, resfriador, medição e elevação'''
+impacto = '''Potência'''
+tipo = 'A VALIDAR'
+
+[[linhas]]
+id = 'P-21'
+parametro = '''Descarga das bombas de água de reciclo'''
+valor = '''<< P['P_rec']|mb >>'''
+unidade = '''kPa'''
+justificativa = '''$P_{FWKO}$ + 100 kPa de válvula/linha'''
+impacto = '''Potência'''
+tipo = 'PREMISSA'
+
+[[linhas]]
+id = 'P-22'
+parametro = '''Eficiência global das bombas'''
+valor = '''<< P['eta_pump']|mb(2) >>'''
+unidade = '''--'''
+justificativa = '''Valor preliminar de bomba centrífuga'''
+impacto = '''Potência $\propto 1/\eta$'''
+tipo = 'A VALIDAR'
+
+[[linhas]]
+id = 'P-23'
+parametro = '''Liberação de gás por Standing ($\Delta R_s$); gás residual liberado no desgaseificador 2'''
+valor = '''eq. (10.4)'''
+unidade = '''Sm³/Sm³'''
+justificativa = '''Óleo morto na saída (BOT Nota 2)'''
+impacto = '''Gás C-09, C-17'''
+tipo = 'CORRELAÇÃO'
+
+[[linhas]]
+id = 'P-24'
+parametro = '''BSW na saída de óleo do FWKO'''
+valor = '''$\min(40\%,\mathrm{BSW}_{C\text{-}01})$'''
+unidade = '''\% vol'''
+justificativa = '''F-06; unicidade do laço de reciclo'''
+impacto = '''Reciclo e cargas térmicas (dominante)'''
+tipo = 'A VALIDAR'
+
+[[linhas]]
+id = 'P-25'
+parametro = '''Óleo disperso na água (todos os separadores O/A)'''
+valor = '''<< (P['C_OiW'] * 1000)|mb >>'''
+unidade = '''mg/L'''
+justificativa = '''Limite superior de F-12 (conservador)'''
+impacto = '''Perda de óleo'''
+tipo = 'PREMISSA'
+
+[[linhas]]
+id = 'P-26'
+parametro = '''Arraste de líquido no gás'''
+valor = '''0,1'''
+unidade = '''gal/MMscf'''
+justificativa = '''Especificação usual de eliminador de névoa'''
+impacto = '''Desprezível no balanço'''
+tipo = 'A VALIDAR'
+
+[[linhas]]
+id = 'P-27'
+parametro = '''Arraste de gás no líquido (blow-by)'''
+valor = '''0'''
+unidade = '''--'''
+justificativa = '''Operação normal com controle de nível'''
+impacto = '''--'''
+tipo = 'PREMISSA'
+
+[[linhas]]
+id = 'P-28'
+parametro = '''BSW na saída do desidratador'''
+valor = '''<< (P['BSW_pre'] * 100)|mbn(1) >>'''
+unidade = '''\% vol'''
+justificativa = '''Necessário para diluição realista (Tab. 16.3)'''
+impacto = '''Água de diluição (forte)'''
+tipo = 'A VALIDAR'
+
+[[linhas]]
+id = 'P-29'
+parametro = '''BSW na saída do dessalinizador'''
+valor = '''<< (P['BSW_t'] * 100)|mbn(1) >>'''
+unidade = '''\% vol'''
+justificativa = '''Limite de F-09 (conservador em água exportada)'''
+impacto = '''Água no óleo'''
+tipo = 'PREMISSA'
+
+[[linhas]]
+id = 'P-30'
+parametro = '''Diluição por balanço de sal; $\eta_{mix}=1$; $S_D=0$; água em C-11 a 240.000 mg/L'''
+valor = '''eq. (10.7)'''
+unidade = '''--'''
+justificativa = '''Mínimo termodinâmico; conservador em salinidade'''
+impacto = '''Vazão C-14'''
+tipo = 'A VALIDAR'
+
+[[linhas]]
+id = 'P-31'
+parametro = '''T da água de diluição: entrada / saída do aquecedor'''
+valor = '''<< P['T_dil_in']|mb >> / << P['T_dil_out']|mb >>'''
+unidade = '''°C'''
+justificativa = '''Permeado de OI; injeção à T de tratamento'''
+impacto = '''Carga do DWH-001'''
+tipo = 'A VALIDAR'
+
+[[linhas]]
+id = 'P-32'
+parametro = '''Aproximação mínima no pré-aquecedor (contracorrente)'''
+valor = '''<< P['dT_app']|mb >>'''
+unidade = '''°C'''
+justificativa = '''Valor preliminar usual'''
+impacto = '''Recuperação térmica'''
+tipo = 'A VALIDAR'
+
+[[linhas]]
+id = 'P-33'
+parametro = '''T de tratamento $=\max(90\,^\circ\mathrm{C},T_{in})$'''
+valor = '''--'''
+unidade = '''°C'''
+justificativa = '''F-05; sem resfriamento a montante'''
+impacto = '''Carga do aquecedor'''
+tipo = 'PREMISSA'
+
+[[linhas]]
+id = 'P-34'
+parametro = '''Fases aquosas perfeitamente misturadas'''
+valor = '''--'''
+unidade = '''--'''
+justificativa = '''Split de A e D proporcional'''
+impacto = '''Composição da água'''
+tipo = 'PREMISSA'
+
+[[linhas]]
+id = 'P-35'
+parametro = '''Vazão off-spec em regime de projeto'''
+valor = '''0'''
+unidade = '''m³/d'''
+justificativa = '''Nota 1 do DB: desvio eventual'''
+impacto = '''C-26'''
+tipo = 'PREMISSA'
+
+[[linhas]]
+id = 'P-36'
+parametro = '''Toda a água dos tratadores recircula ao FWKO'''
+valor = '''--'''
+unidade = '''--'''
+justificativa = '''Única saída desenhada (DB)'''
+impacto = '''Laço de reciclo'''
+tipo = 'A VALIDAR'
+
+[[linhas]]
+id = 'P-37'
+parametro = '''Vazão volumétrica de bomba com $\rho_{std}$; trabalho vira aquecimento'''
+valor = '''--'''
+unidade = '''--'''
+justificativa = '''P-14'''
+impacto = '''$<1$ °C'''
+tipo = 'PREMISSA'
+
+[[linhas]]
+id = 'P-38'
+parametro = '''BSW em volume padrão, sem gás dissolvido'''
+valor = '''eq. (5.9)'''
+unidade = '''--'''
+justificativa = '''Definição de trabalho'''
+impacto = '''--'''
+tipo = 'PREMISSA'
+
+[[linhas]]
+id = 'P-39'
+parametro = '''$Z=1$ nas vazões reais de gás dos índices de severidade'''
+valor = '''--'''
+unidade = '''--'''
+justificativa = '''Sem EOS'''
+impacto = '''Índices de severidade'''
+tipo = 'A VALIDAR'
+
+[[linhas]]
+id = 'P-40'
+parametro = '''Viscosidade: interpolação log-linear; acima de 70 °C usa o valor a 70 °C'''
+valor = '''--'''
+unidade = '''cP'''
+justificativa = '''Sem dado acima de 70 °C'''
+impacto = '''Índice O/A'''
+tipo = 'PREMISSA'
+
+[[linhas]]
+id = 'P-41'
+parametro = '''Sem reciclo de óleo nos casos com BSW nulo'''
+valor = '''--'''
+unidade = '''--'''
+justificativa = '''Não representado no DB (BOT Nota 11 o prevê)'''
+impacto = '''Casos com $T<40$ °C'''
+tipo = 'A VALIDAR'

@@ -1,0 +1,67 @@
+\section{Critérios de conversão de vazão e composição}\label{sec:conversao}
+\subsection{Base das composições}
+O JSON não declara a base de \texttt{fluid\_compositions}. A inspeção automática mostrou que, para cada fluido, $\sum_i x_i = 1$ e que os valores são os percentuais da BOT Tab.~2.2.2.4 divididos por 100, acrescidos de $x_{\mathrm{H_2S}} = \mathrm{ppmv}\times10^{-6}$ e renormalizados. Verificação (\tipo{DADO DERIVADO}):
+\begin{equation}
+k_f = \frac{x_{\mathrm{CO_2},\mathrm{JSON}}}{x_{\mathrm{CO_2},\mathrm{BOT}}/100} = \frac{x_{\mathrm{C_1},\mathrm{JSON}}}{x_{\mathrm{C_1},\mathrm{BOT}}/100}.
+\end{equation}
+
+\begin{table}[htbp]\centering\small
+\caption{Verificação da origem e da normalização das composições. Valores BOT transcritos da Tab.~2.2.2.4 apenas para esta verificação.}\label{tab:norm}
+\begin{tabular}{lrrrrrrl}\toprule
+Fluido & $\sum x_i$ (JSON) & CO$_2$ BOT \% & $k_f$(CO$_2$) & C$_1$ BOT \% & $k_f$(C$_1$) & $x_{\mathrm{H_2S}}\cdot10^6$ & Poço (C$_{20}$)\\\midrule
+
+<% for f in ind.normalizacao_composicoes(dados) %>
+<< f['fluido'] >> & << f['soma']|mb(6) >> & << f['co2_bot']|mb(2) >> & << f['k_co2']|mb(5) >> & << f['c1_bot']|mb(2) >> & << f['k_c1']|mb(5) >> & << f['h2s_ppm']|mb(2) >> & << f['poco'] >>\\
+<% endfor %>
+\bottomrule\end{tabular}\end{table}
+A coincidência de $k_f$ entre componentes confirma a renormalização. A soma com uma concentração em ppmv (base volumétrica de gás, equivalente a molar para gás ideal) só é dimensionalmente coerente se os percentuais forem molares. Foi adotada, portanto, \textbf{base molar} (PREMISSA P-02, \AV): a tabela do BOT não declara explicitamente ``mol\%'', de modo que a hipótese permaneceu classificada como premissa --- não foi convertida em dado de fonte --- e sua confirmação documental foi recomendada para a etapa posterior. As composições utilizadas foram mantidas distintas entre si: a do fluido de poço (JSON), a do corte de leves empregado para caracterizar o gás (eq.~\eqref{eq:ygas}), a atribuída ao gás produzido e a atribuída ao gás de lift (P-04). Nenhuma composição adicional foi introduzida. Duas observações adicionais: (i) o JSON divide igualmente o grupo ``Meta and Para Xylene'' do BOT entre \texttt{m-Xylene} e \texttt{p-Xylene} --- trata-se de hipótese embutida no arquivo; (ii) o pseudo-componente ``Well A C20+'' do BOT corresponde a \texttt{C20+} e ``Well B C20+'' a \texttt{C20++} (campo \texttt{c20\_pseudo.well}), o que permite associar cada fluido a um poço e, por consequência, a um grau API (Tabela~\ref{tab:fluidprops}).
+
+\subsection{Conversão de vazão de gás}
+Com gás ideal na condição padrão (P-01):
+\begin{equation}\label{eq:vm}
+\bar V_m = \frac{R\,T_{\mathrm{std}}}{P_{\mathrm{std}}} = \frac{8{,}314462\times << T_std_K|mb(2) >>}{<< dados.P_std_kPa|mb(1) >>} = << VM|mb(4) >>\ \si{\cubic\metre\per\kilo\mole},
+\end{equation}
+\begin{equation}\label{eq:ngas}
+\dot n_G = \frac{Q_{G,\mathrm{std}}}{\bar V_m},\qquad \dot m_G = \dot n_G\,\bar M_G,\qquad \rho_{G,\mathrm{std}}=\frac{\bar M_G}{\bar V_m}.
+\end{equation}
+
+\subsection{Composição e massa molar do gás}
+Como não há flash, a composição do gás é aproximada pelo corte de leves do fluido de poço, renormalizado (P-03, \tipo{CORRELAÇÃO}, \AV):
+\begin{equation}\label{eq:ygas}
+y_i = \frac{x_i}{\sum_{j\in\mathcal L} x_j},\quad \mathcal L=\{\mathrm{N_2,CO_2,H_2S,C_1,C_2,C_3,iC_4,nC_4}\},\qquad \bar M_G=\sum_{i\in\mathcal L} y_i M_i,\qquad c_{p,G}=\frac{\sum_i y_i \bar c^{\,0}_{p,i}}{\bar M_G}.
+\end{equation}
+Os C$_{5+}$ são atribuídos ao óleo. O corte atribui integralmente ao gás os C$_3$--C$_4$ que estariam parcialmente dissolvidos e não considera C$_5$--C$_6$ no gás; a quantificação desse erro em $\bar M_G$ foi recomendada para a etapa de simulação com flash. Massas molares: IUPAC; $\bar c^{\,0}_{p,i}$ de gás ideal a 25~\si{\celsius} (Poling et al., valores aproximados $\pm$2~\%). Exemplo para o fluido << RD.fluid >> (Caso << DEMO >>):
+\begin{equation}
+\sum_{j\in\mathcal L}x_j = << RD.gp['frac_lights']|mb(4) >>,\quad \bar M_G = << RD.gp['MW']|mb(2) >>\ \si{\kilogram\per\kilo\mole},\quad \rho_{G,\mathrm{std}}=\frac{<< RD.gp['MW']|mb(2) >>}{<< VM|mb(3) >>}=<< RD.gp['rho_std']|mb(4) >>\ \si{\kilogram\per\cubic\metre},\quad c_{p,G}=<< RD.gp['cp']|mb(3) >>\ \si{\kilo\joule\per\kilogram\per\kelvin}.
+\end{equation}
+
+\begin{table}[htbp]\centering\small
+\caption{Propriedades derivadas por fluido. $\rho_O$ de \eqref{eq:api}; gás de \eqref{eq:ygas}. H$_2$S no gás: $y_{\mathrm{H_2S}}$ supondo todo H$_2$S no gás (\AV; o BOT informa ppmv sem declarar a fase).}\label{tab:fluidprops}
+\begin{tabular}{lcrrrrrrrr}\toprule
+Fluido & Poço & °API & $\rho_{O,\mathrm{std}}$ & $\sum x_{\mathcal L}$ & $\bar M_G$ & $c_{p,G}$ & $y_{\mathrm{CO_2}}$ & H$_2$S JSON & $y_{\mathrm{H_2S}}$\\
+ & & & \si{\kilogram\per\cubic\metre} & -- & \si{\kilogram\per\kilo\mole} & \si{\kilo\joule\per\kilogram\per\kelvin} & -- & ppmv & ppmv\\\midrule
+
+<% for f in ind.propriedades_fluidos(dados, VM) %>
+<< f['fluido'] >> & << f['poco'][-1] >> & << f['api']|mb(1) >> & << f['rho_O']|mb(1) >> & << f['gp']['frac_lights']|mb(4) >> & << f['gp']['MW']|mb(2) >> & << f['gp']['cp']|mb(3) >> & << f['gp']['y']['CO2']|mb(4) >> & << f['h2s_ppmv'] >> & << (f['gp']['y']['H2S'] * 1e6)|mb(0) >>\\
+<% endfor %>
+\bottomrule\end{tabular}\end{table}
+
+\subsection{Conversão de vazão de líquidos}
+Óleo: grau API do BOT Tab.~2.2.1.2 (Well A: 27,5; Well B: 28,2 --- \tipo{DADO DE FONTE}, não contido no JSON), com
+\begin{equation}\label{eq:api}
+SG_O=\frac{141{,}5}{131{,}5+\mathrm{API}},\qquad \rho_{O,\mathrm{std}}=SG_O\,\rho_{w}(15{,}6\,^\circ\mathrm{C}),\quad \rho_w(15{,}6\,^\circ\mathrm{C})=999{,}0\ \si{\kilogram\per\cubic\metre}.
+\end{equation}
+Água produzida: $\rho_{A}=<< P['rho_W']|mb >>$~\si{\kilogram\per\cubic\metre} (P-08); água de diluição: $\rho_{D}=<< P['rho_D']|mb >>$~\si{\kilogram\per\cubic\metre} (P-09). Vazão mássica:
+\begin{equation}\label{eq:mliq}
+\dot m_k = \frac{Q_{k,\mathrm{std}}\,\rho_{k,\mathrm{std}}}{86\,400},\qquad k\in\{O,A,D\}.
+\end{equation}
+Exemplo (Caso << DEMO >>): $\dot m_O = << RD.caso['oil_sm3d']|mb >>\times<< RD.rho['O']|mb(2) >>/86\,400 = << RD.streams['C-01']['O']|mb(3) >>$~\si{\kilogram\per\second}; $Q_A=<< RD.caso['liquid_sm3d']|mb >>-<< RD.caso['oil_sm3d']|mb >>=<< RD.Wv|mb >>$~\si{\cubic\metre\per\day}, $\dot m_A=<< RD.streams['C-01']['W']|mb(3) >>$~\si{\kilogram\per\second}.
+
+O BSW é definido em volume padrão, excluindo gás dissolvido (P-38):
+\begin{equation}\label{eq:bsw}
+\mathrm{BSW}=\frac{Q_{A}+Q_{D}}{Q_{A}+Q_{D}+Q_{O}}.
+\end{equation}
+
+\subsection{Pseudo-componentes do balanço}
+Cada corrente é descrita por quatro pseudo-componentes mássicos: óleo morto ($O$), água produzida/salmoura ($A$), água de diluição ($D$) e gás produzido+lift ($G$, livre ou dissolvido). O balanço molar por componente químico do gás é consequência de \eqref{eq:ygas}: $\dot n_{i}=y_i\,\dot m_G/\bar M_G$ em qualquer corrente com gás, de modo que o fechamento em $G$ implica o fechamento em cada $i\in\mathcal L$ (verificado para CO$_2$ e H$_2$S na Tabela~\ref{tab:molar}).
+

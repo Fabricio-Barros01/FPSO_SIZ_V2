@@ -1,0 +1,15 @@
+\section{Premissas de Engenharia do Modelo Preliminar}\label{sec:premissas}
+A Tabela~\ref{tab:premissas} lista, separados dos dados de fonte, todos os parâmetros assumidos nesta etapa. A classificação de origem foi mantida em todo o documento: uma eficiência adotada para fechar o balanço preliminar permaneceu \tipo{PREMISSA} e não foi apresentada como desempenho garantido de equipamento; propriedades estimadas permaneceram \tipo{CORRELAÇÃO}; e os itens \AV\ foram relacionados na Seção~\ref{sec:info} como informações recomendadas para as etapas de simulação, especificação e dimensionamento.
+\begin{landscape}
+\small
+\begin{longtable}{lL{5.2cm}L{2.4cm}lL{5.4cm}L{4.0cm}l}
+\caption{Premissas de Engenharia do Modelo Preliminar e dados de fonte utilizados.}\label{tab:premissas}\\\toprule
+ID & Parâmetro & Valor assumido & Unidade & Justificativa & Impacto & Tipo\\\midrule\endfirsthead
+\toprule ID & Parâmetro & Valor & Unidade & Justificativa & Impacto & Tipo\\\midrule\endhead
+
+<% for p in premissas_memorial %>
+<< p['id'] >> & << p['parametro'] >> & << avaliar(p['valor']) >> & << p['unidade'] >> & << p['justificativa'] >> & << p['impacto'] >> & << tipo(p['tipo']) >>\\
+<% endfor %>
+\bottomrule\end{longtable}
+\end{landscape}
+

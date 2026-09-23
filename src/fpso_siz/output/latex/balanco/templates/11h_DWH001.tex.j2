@@ -1,0 +1,32 @@
+\subsection{DWH-001 --- Aquecedor de água de diluição}
+\paragraph{Função:} aquecer a água de diluição (permeado de osmose inversa, BOT 2.7.1.7; Nota~2 do DB) antes da injeção no óleo, com água quente do circuito de aquecimento (U-01/U-02).
+\paragraph{Entradas:} C-14: << RD.gas['Dv']|br >> m³/d a << P['T_dil_in']|br >>~\si{\celsius} (Caso << DEMO >>); vazão definida pelo critério de salinidade abaixo.
+\paragraph{Premissas:} F-09, F-10, P-29, P-30, P-31, P-09, P-12.
+\paragraph{Modelo de cálculo:} balanço de sal com diluição ideal ($\eta_{mix}=<< P['eta_mix']|mbn >>$) e água de C-11 à salinidade máxima:
+\begin{equation}\label{eq:dil}
+<% set Srs, w11 = P['S_spec'] / P['BSW_t'], ind.q_agua(RD, 'C-11') %>
+S_{\mathrm{res}}\le\frac{S_{\mathrm{spec}}}{\mathrm{BSW}_{\mbox{TO-002}}}=\frac{<< P['S_spec']|mb >>}{<< P['BSW_t']|mbn(3) >>}=<< Srs|mb >>\ \mathrm{mg/L},\qquad Q_{D}=Q_{A+D,C11}\left(\frac{S_A}{S_{\mathrm{res}}}-1\right)\frac{1}{\eta_{mix}},
+\end{equation}
+\begin{equation}
+Q_D=<< w11|mb(1) >>\times\left(\frac{<< P['S_W']|mb >>}{<< Srs|mb >>}-1\right)=<< RD.gas['Dv']|mb(1) >>\ \mathrm{m^3/d},
+\end{equation}
+\begin{equation}
+\dot Q_{\mbox{DWH-001}}=\dot m_D\,c_{p,D}(T_{C15}-T_{C14})=<< RD.streams['C-14']['D']|mb(3) >>\times<< P['cp_D']|mbn(2) >>\times(<< P['T_dil_out']|mb >>-<< P['T_dil_in']|mb >>)=<< RD.duties['Q_D']|mb(0) >>\ \mathrm{kW}.
+\end{equation}
+A relação $Q_D/Q_O=<< (100 * RD.gas['Dv'] / RD.caso['oil_sm3d'])|mb(2) >>$~\% (Caso << DEMO >>). O resultado é um mínimo teórico: com mistura imperfeita a vazão cresce rapidamente (sensibilidade na Tabela~\ref{tab:sens}).
+
+\paragraph{Saídas:} C-15: << RD.gas['Dv']|br >> m³/d a << P['T_dil_out']|br >>~\si{\celsius} e $\ge$<< P['P_D1']|br >>~\si{\kilo\pascal} (pressão de injeção assumida; a bomba de água de diluição não integra o DB desta etapa e sua especificação foi recomendada para etapa posterior).
+\paragraph{Balanço de massa:} <% set b = bb(RD, blocos['DWH-001']) %>$\varepsilon_m=$<< b['em']|sci >>.
+\paragraph{Balanço de energia:} $\varepsilon_E=$<< b['eE']|sci >>.
+\paragraph{Resultado preliminar:} <% set mx, idx = maximo("r.gas['Dv']") %>maior vazão de diluição: << mx|br >> m³/d (caso << idx|ids >>). Nos casos << ind.casos_sem_diluicao(R)|ids >> (BSW nulo) o critério de salinidade resulta em diluição nula; o BOT 2.7.1.6 recomenda diluição em baixo BSW para desempenho do pré-tratador, sem quantificá-la.
+\paragraph{Validação recomendada em etapa posterior:} vazão de projeto da osmose inversa; eficiência de mistura da válvula; salinidade do permeado; temperatura disponível do permeado; pressão de injeção.
+{\footnotesize\setlength{\tabcolsep}{3.5pt}\begin{longtable}{rrrrrrr}
+\caption{DWH-001 --- aquecedor de água de diluição (todos os casos).\label{tab:b08}}\\\toprule
+Caso & $Q_{A+D,C11}$ & $Q_D$ & $Q_D/Q_O$ & $\dot Q_{\mbox{DWH-001}}$ & $\varepsilon_m$ & $\varepsilon_E$\\
+ & m³/d & m³/d & \% & MW & -- & --\\\midrule\endfirsthead
+\toprule Caso & $Q_{A+D,C11}$ & $Q_D$ & $Q_D/Q_O$ & $\dot Q_{\mbox{DWH-001}}$ & $\varepsilon_m$ & $\varepsilon_E$\\\midrule\endhead
+<% for r in R %>
+<% set b = bb(r, blocos['DWH-001']) %>
+<< r.num >> & << ind.q_agua(r, 'C-11')|br(1) >> & << r.gas['Dv']|br >> & << (100 * r.gas['Dv'] / r.caso['oil_sm3d'])|br(2) >> & << (r.duties['Q_D'] / 1e3)|br(2) >> & << b['em']|sci >> & << b['eE']|sci >>\\
+<% endfor %>
+\bottomrule\end{longtable}}

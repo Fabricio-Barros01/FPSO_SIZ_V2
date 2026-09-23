@@ -63,3 +63,16 @@ reciclo_tol = 1e-10       # max_k |Δṁ_k| (kg/s) + |ΔT02| + |ΔT08| (°C)
 split_iter = 8            # iterações internas de split_water (BSW sobre o óleo que sai)
 denom_min_energia = 1e-30 # piso do denominador do erro relativo de energia por bloco
 fonte = "Balanço_Preliminar.py, solve_case / split_water / block_balance"
+
+[criterios]
+# Limiares de classificação usados nos relatórios (Balanço_Preliminar.py, seções 10–16).
+empate_rel = 1e-9          # dois casos empatam no máximo se |v − máx| ≤ 1e-9·max(1, |máx|)
+tol_temperatura = 1e-9     # °C — margem na comparação T_C03 < T_FWKO_min
+carga_nula_kW = 1e-6       # carga térmica considerada nula (pré-aquecedor sem força motriz)
+vazao_nula_m3_d = 1e-9     # vazão considerada nula (diluição)
+fechamento_max = 1e-6      # critério de aceitação de ε_m e ε_E (seção 15 do memorial)
+fonte = "Balanço_Preliminar.py (maxcase, M-01, P-001, DWH-001, seção 15)"
+
+[bot]
+T_separacao_max_C = 99.0   # temperatura máxima de separação (F-08)
+fonte = "BOT I-ET-3010.2K-1200-941-P4X-001 rev. C, item 2.7.1.10"

@@ -1,0 +1,41 @@
+\section{Balanço preliminar do processo global}\label{sec:global}
+Volume de controle: todos os equipamentos e nós, de M-01 a MED-001. Entradas: C-01, C-14, $\dot Q_{\mbox{P-002}}$, $\dot Q_{\mbox{DWH-001}}$ e $\sum\dot W$; saídas: C-04, C-05, C-09, C-17, C-25, C-26 e $\dot Q_{\mbox{P-003}}$. As correntes do laço (C-02, C-13, C-20) são internas. Em regime permanente:
+\begin{equation}\label{eq:mglobal}
+\sum_{\mathrm{in}}\dot m=\sum_{\mathrm{out}}\dot m,\qquad \varepsilon_m=\frac{\left|\sum\dot m_{\mathrm{in}}-\sum\dot m_{\mathrm{out}}\right|}{\sum\dot m_{\mathrm{in}}},
+\end{equation}
+\begin{equation}\label{eq:eglobal}
+\dot Q-\dot W+\sum_{\mathrm{in}}\dot m\left(h+\tfrac{v^2}{2}+gz\right)=\sum_{\mathrm{out}}\dot m\left(h+\tfrac{v^2}{2}+gz\right),
+\end{equation}
+que, com P-14, reduz-se a
+\begin{equation}\label{eq:eglobal2}
+\sum_{\mathrm{in}}\dot H+\dot Q_{\mbox{P-002}}+\dot Q_{\mbox{DWH-001}}+\sum|\dot W|=\sum_{\mathrm{out}}\dot H+\dot Q_{\mbox{P-003}},
+\end{equation}
+\begin{equation}\label{eq:hsens}
+\dot H=\sum_{k\in\{O,A,D,G\}}\dot m_k\,c_{p,k}\,(T-T_{\mathrm{ref}}),\qquad \varepsilon_E=\frac{\left|E_{\mathrm{in}}-E_{\mathrm{out}}\right|}{E_{\mathrm{in}}}.
+\end{equation}
+O sinal de $\dot W$ segue a convenção de trabalho realizado pelo sistema; como as bombas recebem trabalho, $-\dot W=|\dot W|$ entra do lado das entradas. O laço de reciclo foi resolvido por substituição sucessiva até variação $<10^{-10}$ nas vazões e temperaturas; os erros residuais refletem essa tolerância e o arredondamento em ponto flutuante, \textbf{não} a validade física do modelo (que depende das premissas).
+\begin{landscape}
+\small
+\begin{longtable}{rrrrrrrrrrrr}
+\caption{Balanço global por caso. Vazões em \si{\kilogram\per\second}; energias em \si{\mega\watt} (referência 15,6~\si{\celsius}).}\label{tab:global}\\\toprule
+Caso & $\dot m_{C01}$ & $\dot m_{C14}$ & $\dot m_{C04+C09+C17}$ & $\dot m_{C05}$ & $\dot m_{C25}$ & $\varepsilon_m$ & $E_{\mathrm{in}}$ & $E_{\mathrm{out}}$ & $\dot Q_{\mathrm{aq}}$ & $\dot Q_{\mathrm{resf}}$ & $\varepsilon_E$\\\midrule\endfirsthead
+\toprule Caso & $\dot m_{C01}$ & $\dot m_{C14}$ & gás & $\dot m_{C05}$ & $\dot m_{C25}$ & $\varepsilon_m$ & $E_{\mathrm{in}}$ & $E_{\mathrm{out}}$ & $\dot Q_{\mathrm{aq}}$ & $\dot Q_{\mathrm{resf}}$ & $\varepsilon_E$\\\midrule\endhead
+
+<% for r in R %>
+<% set g = gb(r) %>
+<< r.num >> & << ind.m(r, 'C-01')|br(2) >> & << ind.m(r, 'C-14')|br(2) >> & << (ind.m(r, 'C-04') + ind.m(r, 'C-09') + ind.m(r, 'C-17'))|br(2) >> & << ind.m(r, 'C-05')|br(2) >> & << ind.m(r, 'C-25')|br(2) >> & << g['em']|sci >> & << (g['Ein'] / 1e3)|br(2) >> & << (g['Eout'] / 1e3)|br(2) >> & << ((r.duties['Q_H'] + r.duties['Q_D']) / 1e3)|br(2) >> & << (r.duties['Q_C'] / 1e3)|br(2) >> & << g['eE']|sci >>\\
+<% endfor %>
+\bottomrule\end{longtable}
+\end{landscape}
+
+\begin{longtable}{rrrrrrr}
+\caption{Balanço molar global dos componentes ácidos do gás (\si{\kilo\mole\per\hour}), com $\dot n_i=y_i\dot m_G/\bar M_G$.}\label{tab:molar}\\\toprule
+Caso & CO$_2$ in (C-01) & CO$_2$ out (gás) & $\varepsilon$ & H$_2$S in & H$_2$S out & $\varepsilon$\\\midrule\endfirsthead
+\toprule Caso & CO$_2$ in & CO$_2$ out & $\varepsilon$ & H$_2$S in & H$_2$S out & $\varepsilon$\\\midrule\endhead
+
+<% for r in R %>
+<% set a = ind.molares_acidos(r) %>
+<< r.num >> & << a['CO2'][0]|br(1) >> & << a['CO2'][1]|br(1) >> & << a['CO2'][2]|sci >> & << a['H2S'][0]|br(3) >> & << a['H2S'][1]|br(3) >> & << a['H2S'][2]|sci >>\\
+<% endfor %>
+\bottomrule\end{longtable}
+

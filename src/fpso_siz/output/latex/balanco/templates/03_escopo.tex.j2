@@ -1,0 +1,13 @@
+\section{Escopo e limitações}
+\textbf{Dentro do escopo:} os 16 blocos do DB entre a chegada do fluido de poço (jusante do choke) e as saídas de gás (Safety K.O. Drum, 1º e 2º estágios da VRU), de água produzida, de óleo à estação de medição e ao tanque off-spec, incluindo o laço de reciclo de água produzida (Nota~3 do DB) e o sistema de água de diluição (Nota~2 do DB).
+
+\textbf{Fora do escopo (limites de bateria):} compressão e tratamento de gás, VRU, Safety K.O. Drum, gás transferido (que o BOT item 2.3.5.3 direciona a slug catcher/K.O. drum próprio), tratamento de água produzida, osmose inversa, separador de teste (previsto no BOT item 2.7.1.1 e não incluído no DB desta etapa) e os circuitos de água de aquecimento e de água de resfriamento, dos quais foram calculadas apenas as cargas térmicas do lado processo.
+
+\textbf{Limitações principais do nível preliminar:}
+\begin{enumerate}
+\item Não foi realizado cálculo de equilíbrio de fases. A termodinâmica rigorosa (Peng--Robinson/CPA via Clapeyron.jl) e o vaso flash pertencem à etapa posterior de simulação de processo; nesta etapa, a liberação de gás entre estágios foi estimada por correlação (Standing) e a composição do gás, por um corte de leves (Seção~\ref{sec:conversao}).
+\item O balanço de energia foi feito com entalpia sensível e capacidades caloríficas constantes; calor latente de vaporização do gás dissolvido, resfriamento por flash em válvulas, efeito Joule--Thomson e calor de solução não foram representados.
+\item As vazões do BOT são de condição padrão; nas conversões para vazão real foi adotado fator de compressibilidade unitário, conforme indicado no texto.
+\item Eficiências de separação, pressões dos desgaseificadores e tratadores, quedas de pressão e eficiência de bombas foram adotadas como premissas numeradas e mantiveram essa classificação; sua substituição por dados de fornecedor, norma ou resultado de otimização foi recomendada para as etapas posteriores (Seção~\ref{sec:info}).
+\end{enumerate}
+

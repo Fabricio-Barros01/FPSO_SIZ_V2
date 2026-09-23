@@ -26,7 +26,8 @@ build-backend = "uv_build"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra"
+addopts = "-ra -m 'not latex'"
+markers = ["latex: compila o memorial com latexmk (lento; rode com -m latex)"]
 
 [tool.coverage.run]
 source = ["fpso_siz"]

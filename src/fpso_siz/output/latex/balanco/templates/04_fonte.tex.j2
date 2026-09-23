@@ -1,0 +1,37 @@
+\section{Fonte de dados e casos operacionais}\label{sec:fonte}
+\subsection{Arquivo de dados}
+Os dados de processo foram lidos programaticamente do arquivo \texttt{design\_cases\_bot.json} (o enunciado o denomina \texttt{desin.cases\_bot.json}; o arquivo efetivamente disponível no acervo do projeto é \texttt{design\_cases\_bot.json}, cujo hash SHA-256 consta na capa). O campo \texttt{source} do arquivo declara: \emph{``<< D['source']|esc >>''}. As chaves de primeiro nível identificadas automaticamente são: <% for k in D %>\texttt{<< k|esc >>}<% if not loop.last %>, <% endif %><% endfor %>.
+
+Foram identificados << dados.casos|length >> casos, << D['fluid_compositions']|length >> fluidos com composição (<< D['fluid_compositions']|join(', ') >>), << D['h2s_ppmv']|length >> valores de H$_2$S e << D['c20_pseudo']|length >> pseudo-componentes pesados.
+
+\begin{landscape}
+\subsection{Casos de processo (DADO DE FONTE)}
+\begin{longtable}{rlrrrrrrrll}
+\caption{Casos de processo lidos do JSON (BOT Tab.~2.2.2.3). Vazões em condição padrão ($T=15{,}6$~\si{\celsius}, $P=101{,}3$~\si{\kilo\pascal}). $Q_A$ e o fechamento $\Delta_G$ são \tipo{DADO DERIVADO}.}\label{tab:casos}\\\toprule
+Caso & Fluido & $T$ & Óleo & Líquido & $Q_A=$Líq.$-$Óleo & Gás total & Produzido & Lift & Transferido & Fluido GT / Modos\\
+ & & \si{\celsius} & \si{\cubic\metre\per\day} & \si{\cubic\metre\per\day} & \si{\cubic\metre\per\day} & \si{\cubic\metre\per\day} & \si{\cubic\metre\per\day} & \si{\cubic\metre\per\day} & \si{\cubic\metre\per\day} & \\\midrule\endfirsthead
+\toprule Caso & Fluido & $T$ & Óleo & Líquido & $Q_A$ & Gás total & Produzido & Lift & Transferido & GT / Modos\\\midrule\endhead
+
+<% for c in dados.casos %>
+<< c['num'] >> & << c['name'] >> & << c['T_C']|br >> & << c['oil_sm3d']|br >> & << c['liquid_sm3d']|br >> & << (c['liquid_sm3d'] - c['oil_sm3d'])|br >> & << c['total_gas_sm3d']|br >> & << c['produced_gas_sm3d']|br >> & << c['lift_gas_sm3d']|br >> & << c['transferred_gas_sm3d']|br >> & << c['transferred_gas_fluid']|esc >> / << c['operation_modes']|join(',') >>\\
+<% endfor %>
+\bottomrule\end{longtable}
+\end{landscape}
+
+\subsection{Interpretação das grandezas de gás}\label{sec:gas_interp}
+Verificação aritmética (\tipo{DADO DERIVADO}) em todos os casos:
+\begin{equation}
+\Delta_G = Q_{G,\mathrm{total}} - \left(Q_{G,\mathrm{prod}} + Q_{G,\mathrm{lift}} + Q_{G,\mathrm{transf}}\right),\qquad \max_{\text{casos}}|\Delta_G| = << ind.max_delta_gas(dados)|mb >>\ \si{\cubic\metre\per\day}.
+\end{equation}
+Logo o gás total do BOT é a soma das três parcelas. Segundo a nota do BOT à Tab.~2.2.2.3, a vazão total é referida à sucção da compressão principal; a Tab.~2.5.2 (Nota~1) refere a capacidade de 12.000.000~\si{\cubic\metre\per\day} à saída do primeiro estágio (FWKO). Essa divergência de referência na própria fonte foi registrada, e seu esclarecimento junto à fonte foi recomendado para a etapa de simulação de processo (Tabela~\ref{tab:info}). As três parcelas têm destinos físicos distintos:
+\begin{itemize}
+\item \textbf{Gás produzido:} gás do reservatório, livre e dissolvido, que chega com o fluido de poço e é liberado ao longo dos estágios até a condição de óleo morto (BOT Nota~2: vazões de óleo em óleo morto). Entra no módulo pela corrente C-01.
+\item \textbf{Gás de lift:} injetado na coluna dos poços produtores e retorna pelo riser misturado ao fluido de poço (PREMISSA P-06). Entra no módulo pela corrente C-01.
+\item \textbf{Gás transferido:} recebido de outra unidade por riser próprio e encaminhado a slug catcher/Safety K.O. drum dedicado (BOT 2.3.5.3). \textbf{Não atravessa nenhum bloco do DB} (PREMISSA P-05) e aparece apenas nesta rastreabilidade.
+\end{itemize}
+Portanto o gás que entra no módulo é
+\begin{equation}\label{eq:gin}
+Q_{G,\mathrm{in}} = Q_{G,\mathrm{prod}} + Q_{G,\mathrm{lift}}.
+\end{equation}
+Observa-se que os casos 13 e 14 declaram fluido de gás transferido GT40 com vazão nula; o valor foi preservado conforme a fonte e não afeta o balanço.
+

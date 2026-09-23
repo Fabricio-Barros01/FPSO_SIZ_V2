@@ -1,0 +1,16 @@
+\section{Balanço de massa por caso operacional}\label{sec:massacaso}
+A Tabela~\ref{tab:massacaso} resume as vazões de entrada e saída do módulo em volume padrão e massa, por caso, e as perdas de óleo nas saídas de água e gás. O detalhamento corrente a corrente está no Apêndice~\ref{app:correntes} e o balanço por pseudo-componente no Apêndice~\ref{app:comp}.
+\begin{landscape}\small
+\begin{longtable}{rrrrrrrrrrr}
+\caption{Balanço de massa do módulo por caso.}\label{tab:massacaso}\\\toprule
+Caso & $Q_{O,in}$ & $Q_{A,in}$ & $Q_{G,in}$ & $Q_D$ & $Q_{G,out}$ (C-04+09+17) & $Q_{A+D}$ C-05 & $Q_O$ C-25 & Óleo perdido & $\dot m_{in}$ & $\dot m_{out}$\\
+ & m³/d & m³/d & Sm³/d & m³/d & Sm³/d & m³/d & m³/d & m³/d & kg/s & kg/s\\\midrule\endfirsthead
+\toprule Caso & $Q_{O,in}$ & $Q_{A,in}$ & $Q_{G,in}$ & $Q_D$ & $Q_{G,out}$ & C-05 & C-25 & Perda & $\dot m_{in}$ & $\dot m_{out}$\\\midrule\endhead
+
+<% for r in R %>
+<% set g = gb(r) %>
+<< r.num >> & << r.caso['oil_sm3d']|br >> & << r.Wv|br >> & << r.gas['G_in']|br >> & << r.gas['Dv']|br >> & << ind.soma_q(r, ['C-04', 'C-09', 'C-17'], 'G')|br >> & << ind.q_agua(r, 'C-05')|br >> & << ind.q(r, 'C-25', 'O')|br(1) >> & << ind.soma_q(r, ['C-04', 'C-05', 'C-09', 'C-17'], 'O')|br(2) >> & << g['mi']|br(2) >> & << g['mo']|br(2) >>\\
+<% endfor %>
+\bottomrule\end{longtable}
+\end{landscape}
+

@@ -10,6 +10,8 @@ from fpso_siz.balanco.dados import carregar_casos, descritores_premissas, premis
 from fpso_siz.balanco.exportacao import colunas_correntes, estrutura_balanco, tabela_correntes
 from fpso_siz.balanco.modelo import resolver_todos
 from fpso_siz.output.arquivos import escrever_csv, escrever_json
+from fpso_siz.output.latex import compilacao
+from fpso_siz.output.latex.balanco import memorial
 
 ARQ_JSON = "balanco.json"
 ARQ_CSV = "correntes.csv"
@@ -54,6 +56,21 @@ def cmd_balanco(a):
     return 1 if nao else 0
 
 
+def cmd_memorial(a):
+    dados = carregar_casos(a.casos)
+    prem = premissas(dados, **_alteracoes(a.premissa))
+    resultados = resolver_todos(dados, prem)
+    tex = memorial.gravar(dados, prem, resultados, a.saida, a.layout)
+    print(f"memorial ({a.layout}): {tex}")
+    if a.pdf:
+        try:
+            print(f"PDF: {compilacao.compilar(tex)}")
+        except compilacao.ErroCompilacao as e:
+            print(f"erro: {e}", file=sys.stderr)
+            return 3
+    return 0
+
+
 def cmd_premissas(a):
     dados = carregar_casos(a.casos) if a.casos else None
     for d in descritores_premissas(dados):
@@ -73,6 +90,15 @@ def main(argv=None):
     b.add_argument("--premissa", action="append", default=[], metavar="NOME=VALOR",
                    help="sobrescreve uma premissa (repetível); ver `fpso-siz premissas`")
     b.set_defaults(func=cmd_balanco)
+
+    m = sub.add_parser("memorial", help="memorial de cálculo do balanço em LaTeX (A4)")
+    m.add_argument("--casos", required=True, type=Path, help="arquivo de casos (JSON do BOT)")
+    m.add_argument("--saida", required=True, type=Path, help="pasta de saída (main.tex)")
+    m.add_argument("--layout", choices=sorted(memorial.LAYOUTS), default="original",
+                   help="original = idêntico ao script de referência; senai = template SENAI CETIQT")
+    m.add_argument("--premissa", action="append", default=[], metavar="NOME=VALOR")
+    m.add_argument("--pdf", action="store_true", help="compila com latexmk, se instalado")
+    m.set_defaults(func=cmd_memorial)
 
     p = sub.add_parser("premissas", help="lista as premissas do balanço (id, valor, unidade, fonte)")
     p.add_argument("--casos", type=Path, help="arquivo de casos, para os valores que vêm dele")

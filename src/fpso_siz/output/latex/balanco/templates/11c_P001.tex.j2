@@ -1,0 +1,26 @@
+\subsection{P-001 --- Pré-aquecedor óleo/óleo (casco e tubo)}
+\paragraph{Função:} recuperar calor do óleo tratado quente (C-22, lado quente) para pré-aquecer o óleo/emulsão do FWKO (C-06, lado frio). BOT 2.7.1.5/2.7.1.11: casco e tubo com feixe removível, reserva instalada.
+\paragraph{Entradas:} lado frio C-06: << ind.m(RD, 'C-06')|br(2) >>~\si{\kilogram\per\second}, << RD.T['C-06']|br(2) >>~\si{\celsius}, << RD.P['C-06']|br >>~\si{\kilo\pascal}; lado quente C-22: << ind.m(RD, 'C-22')|br(2) >>~\si{\kilogram\per\second}, << RD.T['C-22']|br(2) >>~\si{\celsius}, << P['P_pump_oil']|br >>~\si{\kilo\pascal} (Caso << DEMO >>).
+\paragraph{Premissas:} P-14, P-17, P-32 (contracorrente, $\Delta T_{app}=<< P['dT_app']|mb >>$~\si{\celsius}), P-10 a P-13. O lado quente depende de TO-002 e B-001, resolvidos no mesmo laço iterativo.
+\paragraph{Modelo de cálculo:}
+\begin{equation}\label{eq:preheat}
+\dot Q_{\mbox{P-001}}=\dot C_{\min}\,\max\!\left(0;\ T_{C22}-T_{C06}-\Delta T_{app}\right),\qquad T_{C07}=T_{C06}+\frac{\dot Q_{\mbox{P-001}}}{\dot C_{C06}},\qquad T_{C23}=T_{C22}-\frac{\dot Q_{\mbox{P-001}}}{\dot C_{C22}}.
+\end{equation}
+<% set Cc, Ch = RD.C(RD.streams['C-06']), RD.C(RD.streams['C-22']) %>
+Caso << DEMO >>: $\dot C_{C06}=<< Cc|mb(1) >>$, $\dot C_{C22}=<< Ch|mb(1) >>$~\si{\kilo\watt\per\kelvin}; $\dot Q_{\mbox{P-001}}=<< [Cc, Ch]|min|mb(1) >>\times(<< RD.T['C-22']|mb(2) >>-<< RD.T['C-06']|mb(2) >>-<< P['dT_app']|mb >>)=<< RD.duties['Q_pre']|mb(0) >>$~\si{\kilo\watt}; $T_{C07}=<< RD.T['C-07']|mb(2) >>$~\si{\celsius}; $T_{C23}=<< RD.T['C-23']|mb(2) >>$~\si{\celsius}. Com $\dot C_{C22}<\dot C_{C06}$, a aproximação ocorre na extremidade fria (saída quente/entrada fria).
+
+\paragraph{Saídas:} C-07 a << RD.T['C-07']|br(2) >>~\si{\celsius} e << RD.P['C-07']|br >>~\si{\kilo\pascal}; C-23 a << RD.T['C-23']|br(2) >>~\si{\celsius} e << RD.P['C-23']|br >>~\si{\kilo\pascal}. Sem mudança de composição.
+\paragraph{Balanço de massa:} <% set b = bb(RD, blocos['P-001']) %>cada lado conserva massa; $\varepsilon_m=$<< b['em']|sci >>.
+\paragraph{Balanço de energia:} $\dot C_{C06}(T_{C07}-T_{C06})=\dot C_{C22}(T_{C22}-T_{C23})$; $\varepsilon_E=$<< b['eE']|sci >>.
+\paragraph{Resultado preliminar:} <% set mx, idx = maximo("r.duties['Q_pre']") %>maior carga recuperada: << (mx / 1e3)|br(2) >>~\si{\mega\watt} (caso << idx|ids >>). Nos casos << ind.casos_sem_preaquecimento(R)|ids >> a alimentação chega a $\approx$90~\si{\celsius} e não há força motriz: o pré-aquecedor fica sem função térmica.
+\paragraph{Validação recomendada em etapa posterior:} $\Delta T_{app}$ e $\Delta P$ pelo dimensionamento Bell--Delaware; propriedades da emulsão (viscosidade, $c_p$) e fator de incrustação.
+{\footnotesize\setlength{\tabcolsep}{3.5pt}\begin{longtable}{rrrrrrrrrr}
+\caption{P-001 --- pré-aquecedor (todos os casos).\label{tab:b03}}\\\toprule
+Caso & $T_{C06}$ & $T_{C07}$ & $T_{C22}$ & $T_{C23}$ & $\dot C_{frio}$ & $\dot C_{quente}$ & $\dot Q_{\mbox{P-001}}$ & $\varepsilon_m$ & $\varepsilon_E$\\
+ & °C & °C & °C & °C & kW/K & kW/K & MW & -- & --\\\midrule\endfirsthead
+\toprule Caso & $T_{C06}$ & $T_{C07}$ & $T_{C22}$ & $T_{C23}$ & $\dot C_{frio}$ & $\dot C_{quente}$ & $\dot Q_{\mbox{P-001}}$ & $\varepsilon_m$ & $\varepsilon_E$\\\midrule\endhead
+<% for r in R %>
+<% set b = bb(r, blocos['P-001']) %>
+<< r.num >> & << r.T['C-06']|br(2) >> & << r.T['C-07']|br(2) >> & << r.T['C-22']|br(2) >> & << r.T['C-23']|br(2) >> & << r.C(r.streams['C-06'])|br(0) >> & << r.C(r.streams['C-22'])|br(0) >> & << (r.duties['Q_pre'] / 1e3)|br(2) >> & << b['em']|sci >> & << b['eE']|sci >>\\
+<% endfor %>
+\bottomrule\end{longtable}}

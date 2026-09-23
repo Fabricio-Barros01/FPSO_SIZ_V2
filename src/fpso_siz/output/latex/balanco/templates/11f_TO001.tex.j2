@@ -1,0 +1,26 @@
+\subsection{TO-001 --- Desidratador (pré-tratador eletrostático)}
+\paragraph{Função:} coalescência eletrostática e decantação da água emulsionada, reduzindo o BSW para especificar o óleo ao estágio final (BOT 2.7.1.7).
+\paragraph{Entradas:} C-10: óleo << ind.q(RD, 'C-10', 'O')|br >> m³/d, água << ind.q_agua(RD, 'C-10')|br >> m³/d (BSW << ind.bsw_pct(RD, 'C-10')|br(1) >>~\%), << RD.T['C-10']|br(2) >>~\si{\celsius}, << P['P_D1']|br >>~\si{\kilo\pascal} (Caso << DEMO >>).
+\paragraph{Premissas:} P-18, P-25, P-28, P-34, P-15.
+\paragraph{Modelo de cálculo:}
+\begin{equation}
+Q_{A+D,C11}=\min\!\left(\frac{\mathrm{BSW}_{\mbox{TO-001}}}{1-\mathrm{BSW}_{\mbox{TO-001}}}Q_{O,C10};\ Q_{A+D,C10}\right),\qquad \eta_{A,\mbox{TO-001}}=\frac{Q_{A+D,C12}}{Q_{A+D,C10}}.
+\end{equation}
+<% set w11, w12, w10 = ind.q_agua(RD, 'C-11'), ind.q_agua(RD, 'C-12'), ind.q_agua(RD, 'C-10') %>
+Caso << DEMO >>: $Q_{A+D,C11}=\frac{<< P['BSW_pre']|mbn(2) >>}{<< (1 - P['BSW_pre'])|mbn(2) >>}\times<< ind.q(RD, 'C-10', 'O')|mb >>=<< w11|mb(1) >>$~m³/d; $\eta_{A,\mbox{TO-001}}=<< w12|mb(0) >>/<< w10|mb(0) >>=<< (w12 / w10)|mb(4) >>$.
+
+\paragraph{Saídas:} C-11 óleo úmido com << w11|br(1) >> m³/d de água; C-12 água << w12|br >> m³/d com óleo disperso (<< (P['C_OiW'] * 1000)|br >> mg/L); ambas a << RD.T['C-11']|br(2) >>~\si{\celsius}, << P['P_D1']|br >>~\si{\kilo\pascal}.
+\paragraph{Balanço de massa:} <% set b = bb(RD, blocos['TO-001']) %>$\varepsilon_m=$<< b['em']|sci >>.
+\paragraph{Balanço de energia:} $\varepsilon_E=$<< b['eE']|sci >>.
+\paragraph{Resultado preliminar:} <% set mx, idx = maximo("ind.q_agua(r, 'C-12')") %>maior água removida: << mx|br >> m³/d (caso << idx|ids >>). Casos sem água produzida não têm água a remover.
+\paragraph{Validação recomendada em etapa posterior:} BSW garantido pelo fornecedor em função da carga de água, temperatura, tempo de residência e campo elétrico; teor de óleo na água.
+{\footnotesize\setlength{\tabcolsep}{3.5pt}\begin{longtable}{rrrrrrrr}
+\caption{TO-001 --- desidratador (todos os casos).\label{tab:b06}}\\\toprule
+Caso & $Q_{O,C10}$ & $Q_{A+D,C10}$ & $Q_{A+D,C11}$ & $Q_{A+D,C12}$ & $\eta_A$ & $\varepsilon_m$ & $\varepsilon_E$\\
+ & m³/d & m³/d & m³/d & m³/d & -- & -- & --\\\midrule\endfirsthead
+\toprule Caso & $Q_{O,C10}$ & $Q_{A+D,C10}$ & $Q_{A+D,C11}$ & $Q_{A+D,C12}$ & $\eta_A$ & $\varepsilon_m$ & $\varepsilon_E$\\\midrule\endhead
+<% for r in R %>
+<% set b = bb(r, blocos['TO-001']) %>
+<< r.num >> & << ind.q(r, 'C-10', 'O')|br >> & << ind.q_agua(r, 'C-10')|br >> & << ind.q_agua(r, 'C-11')|br(1) >> & << ind.q_agua(r, 'C-12')|br >> & << ind.eta_agua(r, 'C-12', 'C-10')|br(4) >> & << b['em']|sci >> & << b['eE']|sci >>\\
+<% endfor %>
+\bottomrule\end{longtable}}

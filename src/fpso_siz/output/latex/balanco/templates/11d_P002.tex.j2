@@ -1,0 +1,25 @@
+\subsection{P-002 --- Aquecedor de óleo}
+\paragraph{Função:} elevar a emulsão à temperatura de tratamento exigida na entrada dos tratadores eletrostáticos (mínimo 90~\si{\celsius}, BOT 2.7.1.4), com meio de aquecimento limitado a 120~\si{\celsius}.
+\paragraph{Entradas:} C-07: << ind.m(RD, 'C-07')|br(2) >>~\si{\kilogram\per\second}, << RD.T['C-07']|br(2) >>~\si{\celsius}, << RD.P['C-07']|br >>~\si{\kilo\pascal} (Caso << DEMO >>).
+\paragraph{Premissas:} F-05, P-14, P-17, P-33. O circuito de água de aquecimento (U-05/U-06) consta do DB; suas temperaturas e vazão não foram informadas e foram recomendadas para o balanço de utilidades posterior.
+\paragraph{Modelo de cálculo:}
+\begin{equation}\label{eq:heater}
+T_{C08}=\max(<< P['T_trat']|mb >>;\ T_{C07}),\qquad \dot Q_{\mbox{P-002}}=\sum_k\dot m_k\,h_{k,C08}-\sum_k\dot m_k\,h_{k,C07}=\dot C_{C07}\,(T_{C08}-T_{C07}).
+\end{equation}
+Caso << DEMO >>: $\dot Q_{\mbox{P-002}}=<< RD.C(RD.streams['C-06'])|mb(1) >>\times(<< RD.T['C-08']|mb(2) >>-<< RD.T['C-07']|mb(2) >>)=<< RD.duties['Q_H']|mb(0) >>$~\si{\kilo\watt}. A parcela de gás dissolvido é aquecida com $c_{p,G}$, sem calor de dessorção (P-14): a carga real tende a ser maior, pois parte do gás vaporiza a jusante.
+
+\paragraph{Saídas:} C-08 a << RD.T['C-08']|br(2) >>~\si{\celsius}, << RD.P['C-08']|br >>~\si{\kilo\pascal}.
+\paragraph{Balanço de massa:} <% set b = bb(RD, blocos['P-002']) %>$\varepsilon_m=$<< b['em']|sci >>.
+\paragraph{Balanço de energia:} $\varepsilon_E=$<< b['eE']|sci >>.
+\paragraph{Resultado preliminar:} <% set mx, idx = maximo("r.duties['Q_H']") %><% set t99 = ind.casos_acima_T_separacao(R) %>maior carga: << (mx / 1e3)|br(2) >>~\si{\mega\watt} (caso << idx|ids >>). Nenhum caso excede 99~\si{\celsius} (limite BOT 2.7.1.10): << 'OK' if not t99 else t99|ids >>. Nos casos com chegada a 90~\si{\celsius} a temperatura de tratamento fica levemente acima de 90~\si{\celsius} pelo calor das bombas do laço.
+\paragraph{Validação recomendada em etapa posterior:} vazão e temperaturas do circuito de aquecimento (balanço de utilidades); efeito do calor latente (flash) sobre a carga; margem de projeto do trocador.
+{\footnotesize\setlength{\tabcolsep}{3.5pt}\begin{longtable}{rrrrrrrr}
+\caption{P-002 --- aquecedor de óleo (todos os casos).\label{tab:b04}}\\\toprule
+Caso & $\dot m_{C07}$ & $T_{C07}$ & $T_{C08}$ & $P_{C08}$ & $\dot Q_{\mbox{P-002}}$ & $\varepsilon_m$ & $\varepsilon_E$\\
+ & kg/s & °C & °C & kPa & MW & -- & --\\\midrule\endfirsthead
+\toprule Caso & $\dot m_{C07}$ & $T_{C07}$ & $T_{C08}$ & $P_{C08}$ & $\dot Q_{\mbox{P-002}}$ & $\varepsilon_m$ & $\varepsilon_E$\\\midrule\endhead
+<% for r in R %>
+<% set b = bb(r, blocos['P-002']) %>
+<< r.num >> & << ind.m(r, 'C-07')|br(2) >> & << r.T['C-07']|br(2) >> & << r.T['C-08']|br(2) >> & << r.P['C-08']|br >> & << (r.duties['Q_H'] / 1e3)|br(2) >> & << b['em']|sci >> & << b['eE']|sci >>\\
+<% endfor %>
+\bottomrule\end{longtable}}

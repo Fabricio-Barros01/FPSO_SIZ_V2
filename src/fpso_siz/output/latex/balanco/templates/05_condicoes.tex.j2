@@ -1,0 +1,9 @@
+\section{Condições padrão e bases de cálculo}
+\begin{itemize}
+\item Condição padrão (\tipo{DADO DE FONTE}, JSON \texttt{standard\_conditions}): $T_{\mathrm{std}}=<< D['standard_conditions']['T_C']|mb(1) >>$~\si{\celsius} ($<< T_std_K|mb(2) >>$~\si{\kelvin}), $P_{\mathrm{std}}=<< dados.P_std_kPa|mb(1) >>$~\si{\kilo\pascal}. É referência exclusiva para as vazões em \si{\cubic\metre\per\day} (Sm³/d) e \textbf{não} representa condição de operação de nenhum equipamento. O BOT (item 1.2.2) também define Nm³ a 20~\si{\celsius} e 101,325~\si{\kilo\pascal}, não utilizado aqui.
+\item Pressões em kPa absoluto; temperaturas em \si{\celsius}; vazões mássicas em \si{\kilogram\per\second}; potências e cargas térmicas em \si{\kilo\watt} (sumários em \si{\mega\watt}).
+\item Regime permanente; volume de controle em cada equipamento ou nó; energias cinética e potencial desprezadas (P-14).
+\item Temperatura de referência de entalpia: $T_{\mathrm{ref}}=15{,}6$~\si{\celsius}.
+\item Pressão do FWKO (\tipo{DADO DE FONTE}, JSON \texttt{fwko\_pressure\_kPa}, BOT 2.7.1.2): $P_{\mathrm{FWKO}}=<< D['fwko_pressure_kPa']|mb >>$~\si{\kilo\pascal}. Aplicada somente ao bloco SG-001 e às correntes a ele ligadas; demais pressões são premissas próprias (Tabela~\ref{tab:premissas}).
+\end{itemize}
+

@@ -4,6 +4,8 @@ fora de {0, 1, 2, 10} (invariante 2); tudo que é aproximado vive em TOML."""
 SEGUNDOS_POR_DIA = 86400
 SEGUNDOS_POR_HORA = 3600
 HORAS_POR_DIA = 24
+POR_CENTO = 100
+PPM_POR_UNIDADE = 1e6
 ZERO_CELSIUS_K = 273.15
 
 

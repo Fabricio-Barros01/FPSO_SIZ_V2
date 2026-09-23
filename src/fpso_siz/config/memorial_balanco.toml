@@ -1,0 +1,21 @@
+# Metadados do memorial de cálculo do balanço preliminar (capa, cabeçalho, revisões).
+numero = "MC-SEN-SEP-COO-001-0"
+numero_nota = "numeração a confirmar na LI-SEN-SEP-COO-01"
+titulo = "Memorial preliminar do diagrama de blocos"
+desenho = "DE-SEN-SEP-COO-001-0"
+revisao = "0"
+descricao_revisao = "Emissão preliminar --- modelo quantitativo preliminar do DB"
+data = "17/09/2026"
+execucao = "Fabrício O."
+verificacao = "Fabio P."
+aprovacao = "--"
+caso_demo = 8   # caso das substituições numéricas da seção 10 (ativa todos os blocos)
+
+[senai]
+# Campos do template SENAI CETIQT (config/dados.tex do template)
+tipo = "MEMORIAL DE CÁLCULO -- DIAGRAMA DE BLOCOS"
+cliente = "SENAI CETIQT"
+programa = "-"
+area = "FPSO SENAI -- BACIA DE SANTOS"
+titulo = "SEPARAÇÃO TRIFÁSICA E TRATAMENTO DE ÓLEO -- BALANÇO PRELIMINAR"
+projeto = "SEP"

@@ -1,0 +1,36 @@
+# Sensibilidade preliminar às premissas dominantes (seção 16 do memorial).
+# Casos avaliados: o de maior carga do aquecedor, mais os casos fixos abaixo
+# (menor BSW não nulo com máxima vazão de óleo; maior BSW).
+casos_fixos = [2, 15]
+
+[[variacoes]]
+rotulo = 'Base'
+alteracoes = {}
+
+[[variacoes]]
+rotulo = 'BSW$_{C06}$ máx. = 10~\% (S\&A)'
+alteracoes = { BSW_F = 0.10 }
+
+[[variacoes]]
+rotulo = 'BSW$_{\mbox{TO-001}}$ = 2~\%'
+alteracoes = { BSW_pre = 0.02 }
+
+[[variacoes]]
+rotulo = 'BSW$_{\mbox{TO-001}}$ = 5~\%'
+alteracoes = { BSW_pre = 0.05 }
+
+[[variacoes]]
+rotulo = '$\Delta T_{app}$ = 20~\si{\celsius}'
+alteracoes = { dT_app = 20.0 }
+
+[[variacoes]]
+rotulo = '$P_{\mbox{V-001}}$=1.000; $P_{\mbox{V-002}}$=150 kPa'
+alteracoes = { P_D1 = 1000.0, P_D2 = 150.0 }
+
+[[variacoes]]
+rotulo = '$c_{p,O}$ = 2,2 kJ/(kg K)'
+alteracoes = { cp_O = 2.2 }
+
+[[variacoes]]
+rotulo = '$c_{p,A}$ = 3,8 kJ/(kg K)'
+alteracoes = { cp_W = 3.8 }

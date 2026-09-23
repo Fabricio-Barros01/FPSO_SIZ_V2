@@ -1,0 +1,23 @@
+\subsection{M-02 --- Ponto de injeção de água de diluição (M-02)}
+\paragraph{Função:} mistura da água de diluição aquecida (C-15) com o óleo úmido do desidratador (C-11) na válvula misturadora, antes do desgaseificador 2.
+\paragraph{Entradas:} C-11: << ind.m(RD, 'C-11')|br(2) >>~\si{\kilogram\per\second} a << RD.T['C-11']|br(2) >>~\si{\celsius}; C-15: << ind.m(RD, 'C-15')|br(3) >>~\si{\kilogram\per\second} a << RD.T['C-15']|br(2) >>~\si{\celsius} (Caso << DEMO >>).
+\paragraph{Premissas:} P-15, P-30, P-34. A queda de pressão da válvula misturadora e da válvula de nível (<< P['P_D1']|br >>$\to$<< P['P_D2']|br >>~\si{\kilo\pascal}) é atribuída à entrada de V-002.
+\paragraph{Modelo de cálculo:}
+\begin{equation}
+\dot m_{k,C16}=\dot m_{k,C11}+\dot m_{k,C15},\qquad T_{C16}=\frac{\dot C_{C11}T_{C11}+\dot C_{C15}T_{C15}}{\dot C_{C11}+\dot C_{C15}}=<< RD.T['C-16']|mb(3) >>\ ^\circ\mathrm{C}.
+\end{equation}
+\paragraph{Saídas:} C-16: << ind.m(RD, 'C-16')|br(2) >>~\si{\kilogram\per\second}, água total << ind.q_agua(RD, 'C-16')|br(1) >> m³/d, << RD.T['C-16']|br(2) >>~\si{\celsius}.
+\paragraph{Balanço de massa:} <% set b = bb(RD, blocos['M-02']) %>$\varepsilon_m=$<< b['em']|sci >>.
+\paragraph{Balanço de energia:} $\varepsilon_E=$<< b['eE']|sci >>.
+\paragraph{Resultado preliminar:} a injeção à temperatura de tratamento não altera significativamente a temperatura do óleo.
+\paragraph{Validação recomendada em etapa posterior:} ponto de injeção da água de diluição, sobre o qual DB e ET divergem (Seção~\ref{sec:etparams}), a verificar no PFD; posição em relação à válvula de nível; $\Delta P$ da válvula misturadora.
+{\footnotesize\setlength{\tabcolsep}{3.5pt}\begin{longtable}{rrrrrrr}
+\caption{M-02 --- injeção de água de diluição (todos os casos).\label{tab:b09}}\\\toprule
+Caso & $\dot m_{C11}$ & $\dot m_{C15}$ & $Q_{A+D,C16}$ & $T_{C16}$ & $\varepsilon_m$ & $\varepsilon_E$\\
+ & kg/s & kg/s & m³/d & °C & -- & --\\\midrule\endfirsthead
+\toprule Caso & $\dot m_{C11}$ & $\dot m_{C15}$ & $Q_{A+D,C16}$ & $T_{C16}$ & $\varepsilon_m$ & $\varepsilon_E$\\\midrule\endhead
+<% for r in R %>
+<% set b = bb(r, blocos['M-02']) %>
+<< r.num >> & << ind.m(r, 'C-11')|br(2) >> & << ind.m(r, 'C-15')|br(3) >> & << ind.q_agua(r, 'C-16')|br(1) >> & << r.T['C-16']|br(2) >> & << b['em']|sci >> & << b['eE']|sci >>\\
+<% endfor %>
+\bottomrule\end{longtable}}

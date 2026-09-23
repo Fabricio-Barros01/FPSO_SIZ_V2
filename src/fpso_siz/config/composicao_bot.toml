@@ -1,0 +1,21 @@
+# Percentuais molares de CO2 e C1 transcritos da Tab. 2.2.2.4 do BOT, usados SÓ para
+# verificar a origem e a normalização das composições do arquivo de casos (k_f).
+fonte = "BOT I-ET-3010.2K-1200-941-P4X-001 rev. C, Tab. 2.2.2.4"
+
+[CO2_pct]
+"Early Life" = 17.57
+"Low CO2" = 2.26
+"Early Life Blend" = 15.96
+"Mid Life" = 27.12
+"Late Life" = 36.62
+"High CO2" = 41.77
+"Highest CO2" = 56.12
+
+[C1_pct]
+"Early Life" = 44.42
+"Low CO2" = 48.47
+"Early Life Blend" = 49.00
+"Mid Life" = 48.12
+"Late Life" = 44.46
+"High CO2" = 39.87
+"Highest CO2" = 27.08

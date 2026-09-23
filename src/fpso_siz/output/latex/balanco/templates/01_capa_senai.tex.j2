@@ -1,0 +1,42 @@
+% =========================================================
+% ESTRUTURA CENTRAL DA FOLHA DE ROSTO
+% =========================================================
+
+\thispagestyle{folhaderosto}
+
+\vspace*{5mm}
+
+\setlength{\extrarowheight}{4.0pt}
+
+\hspace*{-15.2pt}%
+\hspace*{-5mm}%
+\begin{tabularx}{\dimexpr\FrameWidth-0pt\relax}{|M{18mm}|X|}
+    \hline
+    \multicolumn{2}{|c|}{\textbf{ÍNDICE DE REVISÕES}} \tabularnewline \hline
+    \textbf{REV.}
+    &
+    \centering \textbf{DESCRIÇÃO E/OU FOLHAS ATINGIDAS}
+    \arraybackslash
+    \tabularnewline \hline
+    \DocRevisao
+    &
+    \DocDescricaoRevisao
+    \vspace{21.35cm}
+    \tabularnewline \hline
+\end{tabularx}
+
+\clearpage
+\section*{Identificação do documento}
+\small\begin{tabular}{lL{11.5cm}}\toprule
+Documento & << meta['numero'] >> (<< meta['numero_nota'] >>)\\
+Desenho de referência & << meta['desenho'] >>, Rev.~0 (17/04/26)\\
+Documentos citados no desenho & TB-SEN-SEP-COO-001-0; RT-SEN-SEP-COO-001-0\\
+Fonte de dados de processo & BOT I-ET-3010.2K-1200-941-P4X-001\_C, Tabelas 2.2.2.3 / 2.2.2.4\\
+Arquivo de dados & \texttt{<< dados.origem|esc >>}\\
+SHA-256 do arquivo & \texttt{\scriptsize << dados.sha256 >>}\\
+Revisão & << meta['revisao'] >> --- emissão preliminar\\
+Data de geração & << meta['data'] >>\\ \bottomrule\end{tabular}\normalsize
+
+\medskip
+{\footnotesize Todos os valores numéricos deste memorial foram gerados pelo pacote \texttt{fpso-siz} a partir do arquivo de dados identificado acima e das premissas da Seção~\ref{sec:premissas}. Nenhum valor de caso foi digitado manualmente.\par}
+\tableofcontents\clearpage

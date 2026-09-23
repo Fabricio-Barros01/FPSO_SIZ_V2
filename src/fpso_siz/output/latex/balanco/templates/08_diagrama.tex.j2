@@ -1,0 +1,82 @@
+\section{Descrição do diagrama de blocos e sequência do processo}\label{sec:db}
+O desenho DE-SEN-SEP-COO-001-0 foi lido a partir do arquivo \texttt{.drawio} (conexões de origem/destino das arestas). A Figura~\ref{fig:db} é uma reprodução esquemática com a codificação de correntes deste memorial; o desenho oficial prevalece. A sequência física é:
+\begin{enumerate}
+\item O fluido de poço (C-01) recebe o reciclo de água produzida (C-02) --- Nota~3 do DB --- e alimenta o separador trifásico de água livre (FWKO, SG-001) a << P['P_FWKO']|br >>~\si{\kilo\pascal}.
+\item O FWKO separa gás (C-04, ao Safety K.O. Drum), água livre (C-05, saída de água produzida) e óleo/emulsão (C-06).
+\item O óleo é pré-aquecido pelo óleo tratado (P-001, lado frio), aquecido (P-002) e desgaseificado (V-001, gás C-09 ao 2º estágio da VRU).
+\item O desidratador (TO-001) remove água (C-12), bombeada (B-002) de volta à entrada do FWKO.
+\item Água de diluição de osmose inversa (C-14), aquecida (DWH-001), é injetada no óleo (M-02) --- Nota~2 do DB.
+\item O óleo passa pelo desgaseificador 2 (V-002, gás C-17 ao 1º estágio da VRU) e pelo dessalinizador (TO-002), cuja água (C-19) é bombeada (B-003) e une-se ao reciclo (M-03).
+\item O óleo tratado é bombeado (B-001), cede calor no pré-aquecedor (P-001, lado quente), é resfriado (P-003) e passa pelo medidor de BSW (MED-001): em especificação segue à estação de medição (C-25); fora, ao tanque off-spec (C-26) --- Nota~1 do DB.
+\end{enumerate}
+\textbf{Observações do DB relevantes ao balanço:} (a) o aquecedor de óleo é atendido por circuito de água de aquecimento (utilidades U-05/U-06), como também o aquecedor de água de diluição (U-01/U-02) e o resfriador de óleo (U-03/U-04); as temperaturas desses circuitos não constam do DB, de modo que foram calculadas as cargas térmicas do lado processo e o balanço de utilidades foi remetido à etapa posterior; (b) a única saída de água dos tratadores desenhada no DB é o reciclo à entrada do FWKO, o que define o laço fechado adotado na P-36; (c) o DB não inclui reciclo de óleo para os casos com BSW nulo, alternativa prevista no BOT (Nota~11), conforme registrado na P-41.
+\begin{landscape}
+\begin{figure}[p]\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[>=Stealth, font=\sffamily\small,
+ blk/.style={draw,thick,minimum width=2.3cm,minimum height=1.1cm,align=center,fill=white,font=\sffamily\scriptsize\bfseries},
+ ext/.style={draw,ellipse,minimum width=2.2cm,minimum height=1.0cm,align=center,font=\sffamily\scriptsize},
+ nd/.style={circle,draw,fill=black,inner sep=1.3pt},
+ lab/.style={font=\sffamily\scriptsize\bfseries,fill=white,inner sep=1pt},
+ oil/.style={->,thick}, gas/.style={->,thick,dashed}, wat/.style={->,thick,blue!70!black}, utl/.style={->,thin,densely dotted,gray}]
+\node[ext] (well) at (-1.2,4) {Fluido de\\Poço};
+\node[nd] (m1) at (1.0,4) {}; \node[font=\scriptsize,below right] at (m1) {M-01};
+\node[blk] (fwko) at (3.2,4) {SG-001\\Separador Trifásico\\de Água Livre};
+\node[blk] (pa) at (6.4,4) {P-001\\Pré-Aquecedor\\de Óleo};
+\node[blk] (aq) at (9.4,4) {P-002\\Aquecedor\\de Óleo};
+\node[blk] (d1) at (12.4,4) {V-001\\Vaso\\Desgaseificador 1};
+\node[blk] (des) at (12.4,1.2) {TO-001\\Desidratador};
+\node[nd] (m2) at (14.6,1.2) {}; \node[font=\scriptsize,below right] at (m2) {M-02};
+\node[blk] (d2) at (16.8,4) {V-002\\Vaso\\Desgaseificador 2};
+\node[blk] (dsl) at (16.8,1.2) {TO-002\\Dessalinizador};
+\node[blk] (bo) at (20.0,4) {B-001\\Bomba de Transf.\\de Óleo};
+\node[blk] (res) at (6.4,1.2) {P-003\\Resfriador\\de Óleo};
+\node[blk] (b1) at (12.4,-1.2) {B-002\\Bomba Água\\Desidratador};
+\node[blk] (b2) at (16.8,-1.2) {B-003\\Bomba Água\\Dessalinizador};
+\node[nd] (m3) at (12.4,-2.6) {}; \node[font=\scriptsize,below left] at (m3) {M-03};
+\node[blk] (hd) at (9.4,-4.4) {DWH-001\\Aquecedor Água\\de Diluição};
+\node[ext] (dil) at (5.6,-4.4) {Água de\\Diluição};
+\node[blk,minimum width=1.6cm] (bsw) at (20.0,-3.4) {MED-001\\BSW};
+\node[ext] (med) at (23.4,-3.4) {Óleo à Estação\\de Medição};
+\node[ext] (off) at (23.4,-5.2) {Tanque\\Off Spec};
+\node[ext] (agua) at (23.4,-6.8) {Saída de Água\\Produzida};
+\node[ext] (ko) at (3.2,8.0) {Safety\\K.O. Drum};
+\node[ext] (vru2) at (12.4,8.0) {VRU\\2º estágio};
+\node[ext] (vru1) at (16.8,8.0) {VRU\\1º estágio};
+\draw[oil] (well) -- node[lab,above]{C-01} (m1);
+\draw[oil] (m1) -- node[lab,above]{C-03} (fwko);
+\draw[gas] (fwko) -- node[lab,right]{C-04} (ko);
+\draw[oil] (fwko) -- node[lab,above]{C-06} (pa);
+\draw[oil] (pa) -- node[lab,above]{C-07} (aq);
+\draw[oil] (aq) -- node[lab,above]{C-08} (d1);
+\draw[gas] (d1) -- node[lab,right]{C-09} (vru2);
+\draw[oil] (d1) -- node[lab,right]{C-10} (des);
+\draw[oil] (des) -- node[lab,above]{C-11} (m2);
+\draw[oil] (m2) |- node[lab,pos=0.25,right]{C-16} (d2);
+\draw[gas] (d2) -- node[lab,right]{C-17} (vru1);
+\draw[oil] (d2) -- node[lab,right]{C-18} (dsl);
+\draw[oil] (dsl.east) -| node[lab,pos=0.75,right]{C-21} (bo.south);
+\draw[oil] (bo.north) -- ++(0,2.2) -| node[lab,pos=0.25,above]{C-22} (pa.north);
+\draw[oil] (pa.south) -- node[lab,right]{C-23} (res.north);
+\draw[oil] (res.south) |- node[lab,pos=0.75,above]{C-24} (bsw.west);
+\draw[oil] (bsw) -- node[lab,above]{C-25} (med);
+\draw[oil,densely dashed] (bsw.south) |- node[lab,pos=0.75,above]{C-26} (off);
+\draw[wat] (fwko.south) |- node[lab,above,pos=0.85]{C-05} (agua.west);
+\draw[wat] (des) -- node[lab,right]{C-12} (b1);
+\draw[wat] (dsl) -- node[lab,right]{C-19} (b2);
+\draw[wat] (b1) -- node[lab,right]{C-13} (m3);
+\draw[wat] (b2.south) |- node[lab,pos=0.75,above]{C-20} (m3);
+\draw[wat] (m3) -- (1.0,-2.6) -- node[lab,left]{C-02} (m1);
+\draw[wat] (dil) -- node[lab,above]{C-14} (hd);
+\draw[wat] (hd.east) -| node[lab,pos=0.8,right]{C-15} (m2.south);
+\draw[utl] (res.west) ++(-1.6,-0.3) node[left,font=\tiny]{U-03} -- ($(res.west)+(0,-0.3)$);
+\draw[utl] ($(res.west)+(0,0.3)$) -- ++(-1.6,0) node[left,font=\tiny]{U-04};
+\draw[utl] ($(hd.south)+(-0.4,-1.0)$) node[below,font=\tiny]{U-01} -- ($(hd.south)+(-0.4,0)$);
+\draw[utl] ($(hd.south)+(0.4,0)$) -- ++(0,-1.0) node[below,font=\tiny]{U-02};
+\draw[utl] ($(aq.south)+(-0.4,-1.0)$) node[below,font=\tiny]{U-05} -- ($(aq.south)+(-0.4,0)$);
+\draw[utl] ($(aq.south)+(0.4,0)$) -- ++(0,-1.0) node[below,font=\tiny]{U-06};
+\end{tikzpicture}}
+\caption{Reprodução esquemática do DE-SEN-SEP-COO-001-0 com a codificação de correntes deste memorial. Linhas cheias: óleo; tracejadas: gás; azuis: água; pontilhadas: utilidades.}\label{fig:db}
+\end{figure}
+\end{landscape}
+

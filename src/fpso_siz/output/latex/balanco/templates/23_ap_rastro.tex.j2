@@ -1,0 +1,33 @@
+\section{Rastreabilidade das variáveis}\label{app:rastro}
+{\footnotesize\setlength{\tabcolsep}{3pt}\begin{longtable}{L{3.6cm}L{2.2cm}lL{1.0cm}L{4.2cm}l}
+\caption{Tabela de rastreabilidade: variáveis globais e por caso.}\label{tab:rastro}\\\toprule
+Variável & Valor & Unidade & Caso & Origem & Tipo\\\midrule\endfirsthead
+\toprule Variável & Valor & Unidade & Caso & Origem & Tipo\\\midrule\endhead
+
+$T_{std}$ & << D['standard_conditions']['T_C']|mb(1) >> & °C & Todos & JSON \texttt{standard\_conditions.T\_C} & \tipo{DADO DE FONTE}\\
+$P_{std}$ & << D['standard_conditions']['P_kPa']|mb(1) >> & kPa & Todos & JSON \texttt{standard\_conditions.P\_kPa} & \tipo{DADO DE FONTE}\\
+$P_{FWKO}$ & << D['fwko_pressure_kPa']|br >> & kPa & Todos & JSON \texttt{fwko\_pressure\_kPa} & \tipo{DADO DE FONTE}\\
+$\bar V_m$ & << VM|mb(4) >> & m³/kmol & Todos & Calculado, eq.~\eqref{eq:vm} & \tipo{DADO DERIVADO}\\
+$\rho_{O}$ Well A & << ind.rho_oleo_poco('Well A')|mb(1) >> & kg/m³ & Poço A & Calculado de F-03, eq.~\eqref{eq:api} & \tipo{DADO DERIVADO}\\
+$\rho_{O}$ Well B & << ind.rho_oleo_poco('Well B')|mb(1) >> & kg/m³ & Poço B & Calculado de F-03, eq.~\eqref{eq:api} & \tipo{DADO DERIVADO}\\
+$\rho_{C20+}$ / $\rho_{C20++}$ & << D['c20_pseudo']['C20+']['rho_kg_m3']|mb(1) >> / << D['c20_pseudo']['C20++']['rho_kg_m3']|mb(1) >> & kg/m³ & Todos & JSON \texttt{c20\_pseudo} (caracterização; não usado em conta) & \tipo{DADO DE FONTE}\\
+$M_{C20+}$ / $M_{C20++}$ & << D['c20_pseudo']['C20+']['mw']|mb >> / << D['c20_pseudo']['C20++']['mw']|mb >> & kg/kmol & Todos & JSON \texttt{c20\_pseudo} (caracterização; não usado em conta) & \tipo{DADO DE FONTE}\\
+<% for p in premissas_memorial if p['id'].startswith('P-') %>
+<< p['parametro'] >> & << avaliar(p['valor']) >> & << p['unidade'] >> & Todos & Assumido, << p['id'] >> & << tipo(p['tipo']) >>\\
+<% endfor %>
+<% for r in R %>
+$T_{C01}$ & << r.caso['T_C']|br >> & °C & << r.num >> & JSON \texttt{cases[].T\_C} & \tipo{DADO DE FONTE}\\
+$Q_{O}$ & << r.caso['oil_sm3d']|br >> & m³/d & << r.num >> & JSON \texttt{oil\_sm3d} & \tipo{DADO DE FONTE}\\
+$Q_{L}$ & << r.caso['liquid_sm3d']|br >> & m³/d & << r.num >> & JSON \texttt{liquid\_sm3d} & \tipo{DADO DE FONTE}\\
+$Q_{A}$ & << r.Wv|br >> & m³/d & << r.num >> & Calculado $Q_L-Q_O$ & \tipo{DADO DERIVADO}\\
+$Q_{G,in}$ & << r.gas['G_in']|br >> & Sm³/d & << r.num >> & JSON produzido + lift, eq.~\eqref{eq:gin} & \tipo{DADO DERIVADO}\\
+$Q_{G,transf}$ & << r.caso['transferred_gas_sm3d']|br >> & Sm³/d & << r.num >> & JSON \texttt{transferred\_gas\_sm3d} (fora do módulo) & \tipo{DADO DE FONTE}\\
+$x_{CO_2}$ & << D['fluid_compositions'][r.fluid]['CO2']|mb(4) >> & mol/mol & << r.num >> & JSON \texttt{fluid\_compositions} & \tipo{DADO DE FONTE}\\
+H$_2$S & << D['h2s_ppmv'][r.fluid]|br >> & ppmv & << r.num >> & JSON \texttt{h2s\_ppmv} & \tipo{DADO DE FONTE}\\
+$Q_{G,C04}$ & << r.gas['G_F']|br >> & Sm³/d & << r.num >> & Calculado, eq.~\eqref{eq:gasstages} & \tipo{CORRELAÇÃO}\\
+$Q_{D}$ & << r.gas['Dv']|br >> & m³/d & << r.num >> & Calculado, eq.~\eqref{eq:dil} & \tipo{DADO DERIVADO}\\
+$T_{C03}$ & << r.T['C-03']|br(2) >> & °C & << r.num >> & Calculado, M-01 & \tipo{DADO DERIVADO}\\
+$\dot Q_{\mbox{P-002}}$ & << (r.duties['Q_H'] / 1e3)|br(2) >> & MW & << r.num >> & Calculado, eq.~\eqref{eq:heater} & \tipo{DADO DERIVADO}\\
+$\dot Q_{\mbox{P-003}}$ & << (r.duties['Q_C'] / 1e3)|br(2) >> & MW & << r.num >> & Calculado, P-003 & \tipo{DADO DERIVADO}\\
+<% endfor %>
+\bottomrule\end{longtable}}

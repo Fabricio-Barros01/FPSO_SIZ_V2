@@ -37,7 +37,7 @@ o wheel num venv isolado.
 - `ResultadoCaso.residuo_reciclo` e `convergiu`. O original não expunha o resíduo e
   seguia em silêncio se esgotasse as 500 iterações. Resíduo final máximo nos 16 casos:
   9,9e-11 (tol 1e-10). O caminho de não convergência é testado com o limite reduzido.
-- `CalcTrace`: 27 equações catalogadas, 52 pares (equação, escopo) por caso. A bijeção
+- `CalcTrace`: 26 equações catalogadas, 52 pares (equação, escopo) por caso. A bijeção
   catálogo↔rastro é testada nos 16 casos, e os valores do rastro são iguais aos do
   resultado.
 - Validação da entrada: chaves obrigatórias, fluido sem composição, poço ambíguo

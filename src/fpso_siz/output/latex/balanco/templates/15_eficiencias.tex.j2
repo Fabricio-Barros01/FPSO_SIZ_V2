@@ -1,0 +1,31 @@
+\section{Eficiências preliminares de separação}\label{sec:efic}
+Todas as eficiências adotadas seguiram a definição
+\begin{equation}
+\eta_{\mathrm{sep}}=\frac{\text{quantidade recuperada na fase desejada}}{\text{quantidade presente na alimentação}}.
+\end{equation}
+\begin{longtable}{lL{2.8cm}L{4.4cm}L{3.0cm}L{2.2cm}}
+\caption{Definição e origem das eficiências por equipamento.}\label{tab:efic}\\\toprule
+Equipamento & Separação & Definição & Valor / critério & Origem\\\midrule\endfirsthead
+\toprule Equipamento & Separação & Definição & Valor & Origem\\\midrule\endhead
+SG-001 & Gás/líquido (gás) & $Q_{G,C04}/Q_{G,in}$ & resultado de Standing & P-23 \AV\\
+SG-001 & Líquido no gás & $1-Q_{L,arr}/Q_{L,in}$ & 0,1 gal/MMscf & P-26 \AV\\
+SG-001 & Água livre & $Q_{A+D,C05}/Q_{A+D,C03}$ & via BSW$_{C06}$ (eq.~\ref{eq:bswF}) & F-06, P-24 \AV\\
+SG-001 & Óleo na água & $1-\dot m_{O,C05}/\dot m_{O,C03}$ & 2.000 mg/L & F-12, P-25\\
+V-001 & Gás dissolvido & $Q_{G,C09}/Q_{G,diss,C08}$ & resultado de Standing & P-23 \AV\\
+TO-001 & Água emulsionada & $Q_{A+D,C12}/Q_{A+D,C10}$ & BSW$_{out}$ = 1~\% & P-28 \AV\\
+V-002 & Gás dissolvido & $Q_{G,C17}/Q_{G,diss,C16}$ & 1 (óleo morto) & P-23 \AV\\
+TO-002 & Água emulsionada & $Q_{A+D,C19}/Q_{A+D,C18}$ & BSW$_{out}$ = 0,5~\% & F-09, P-29\\
+TO-001, TO-002 & Óleo na água & $1-\dot m_{O,\text{água}}/\dot m_{O,in}$ & 2.000 mg/L & P-25 \AV\\
+\bottomrule\end{longtable}
+\begin{landscape}\small
+\begin{longtable}{rrrrrrrrr}
+\caption{Eficiências resultantes por caso (``--'': sem fase a separar).}\label{tab:eficcaso}\\\toprule
+Caso & $\eta_{G,\mbox{SG-001}}$ & $\eta_{A,\mbox{SG-001}}$ & $\eta_{O,\mbox{SG-001}}$ (óleo retido) & $\eta_{G,\mbox{V-001}}$ & $\eta_{A,\mbox{TO-001}}$ & $\eta_{A,\mbox{TO-002}}$ & BSW C-06 [\%] & BSW C-11 [\%]\\\midrule\endfirsthead
+\toprule Caso & $\eta_{G,\mbox{SG-001}}$ & $\eta_{A,\mbox{SG-001}}$ & $\eta_{O,\mbox{SG-001}}$ & $\eta_{G,\mbox{V-001}}$ & $\eta_{A,\mbox{TO-001}}$ & $\eta_{A,\mbox{TO-002}}$ & C-06 & C-11\\\midrule\endhead
+
+<% for r in R %>
+<< r.num >> & << ind.eta_gas_fwko(r)|br(4) >> & << ind.eta_agua(r, 'C-05', 'C-03')|br(4) >> & << ind.eta_oleo_fwko(r)|br(6) >> & << ind.eta_gas_v001(r)|br(4) >> & << ind.eta_agua(r, 'C-12', 'C-10')|br(4) >> & << ind.eta_agua(r, 'C-19', 'C-18')|br(4) >> & << ind.bsw_pct(r, 'C-06')|br(2) >> & << ind.bsw_pct(r, 'C-11')|br(2) >>\\
+<% endfor %>
+\bottomrule\end{longtable}
+\end{landscape}
+

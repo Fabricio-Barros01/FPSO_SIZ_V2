@@ -1,0 +1,26 @@
+\subsection{TO-002 --- Dessalinizador (tratador eletrostático)}
+\paragraph{Função:} remover a água remanescente e a água de diluição, levando o óleo à especificação de BSW e salinidade (BOT 2.3.1.1).
+\paragraph{Entradas:} C-18: óleo << ind.q(RD, 'C-18', 'O')|br >> m³/d, água << ind.q_agua(RD, 'C-18')|br(1) >> m³/d, << RD.T['C-18']|br(2) >>~\si{\celsius}, << P['P_D2']|br >>~\si{\kilo\pascal} (Caso << DEMO >>).
+\paragraph{Premissas:} F-09, P-19, P-25, P-29, P-34, P-15.
+\paragraph{Modelo de cálculo:}
+\begin{equation}
+<% set w21, w19 = ind.q_agua(RD, 'C-21'), ind.q_agua(RD, 'C-19') %>
+Q_{A+D,C21}=\min\!\left(\frac{<< P['BSW_t']|mbn(3) >>}{<< (1 - P['BSW_t'])|mbn(3) >>}Q_{O,C18};\ Q_{A+D,C18}\right)=<< w21|mb(1) >>\ \mathrm{m^3/d},\qquad \eta_{A,\mbox{TO-002}}=\frac{Q_{A+D,C19}}{Q_{A+D,C18}}=<< (w19 / ind.q_agua(RD, 'C-18'))|mb(4) >>.
+\end{equation}
+Salinidade resultante (verificação): $S_{\text{óleo}}=S_{\mathrm{res}}\,\mathrm{BSW}_{C21}\le << P['S_spec']|mb >>$~mg/L por construção de \eqref{eq:dil}.
+
+\paragraph{Saídas:} C-21 óleo tratado << ind.q(RD, 'C-21', 'O')|br >> m³/d com BSW << ind.bsw_pct(RD, 'C-21')|br(2) if w21 > 0 else '0' >>~\%; C-19 água << w19|br(1) >> m³/d; << RD.T['C-21']|br(2) >>~\si{\celsius}, << P['P_D2']|br >>~\si{\kilo\pascal}.
+\paragraph{Balanço de massa:} <% set b = bb(RD, blocos['TO-002']) %>$\varepsilon_m=$<< b['em']|sci >>.
+\paragraph{Balanço de energia:} $\varepsilon_E=$<< b['eE']|sci >>.
+\paragraph{Resultado preliminar:} <% set mx, idx = maximo("ind.q(r, 'C-21', 'O')") %>maior óleo tratado: << mx|br >> m³/d (casos << idx|ids >>).
+\paragraph{Validação recomendada em etapa posterior:} desempenho de fornecedor (BSW e salinidade); eficiência de mistura; H$_2$S no óleo $<1$~mg/kg exige flash.
+{\footnotesize\setlength{\tabcolsep}{3.5pt}\begin{longtable}{rrrrrrrr}
+\caption{TO-002 --- dessalinizador (todos os casos).\label{tab:b11}}\\\toprule
+Caso & $Q_{O,C18}$ & $Q_{A+D,C18}$ & $Q_{A+D,C19}$ & $Q_{A+D,C21}$ & BSW$_{C21}$ & $\varepsilon_m$ & $\varepsilon_E$\\
+ & m³/d & m³/d & m³/d & m³/d & \% & -- & --\\\midrule\endfirsthead
+\toprule Caso & $Q_{O,C18}$ & $Q_{A+D,C18}$ & $Q_{A+D,C19}$ & $Q_{A+D,C21}$ & BSW$_{C21}$ & $\varepsilon_m$ & $\varepsilon_E$\\\midrule\endhead
+<% for r in R %>
+<% set b = bb(r, blocos['TO-002']) %>
+<< r.num >> & << ind.q(r, 'C-18', 'O')|br >> & << ind.q_agua(r, 'C-18')|br(1) >> & << ind.q_agua(r, 'C-19')|br(1) >> & << ind.q_agua(r, 'C-21')|br(1) >> & << ind.bsw_pct(r, 'C-21')|br(2) >> & << b['em']|sci >> & << b['eE']|sci >>\\
+<% endfor %>
+\bottomrule\end{longtable}}

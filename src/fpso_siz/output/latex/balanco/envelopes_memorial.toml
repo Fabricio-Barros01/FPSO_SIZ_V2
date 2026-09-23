@@ -1,0 +1,179 @@
+# Envelopes preliminares por variável (seção 16 do memorial): texto e formato de cada linha.
+# O valor e os casos vêm de fpso_siz.balanco.indicadores.envelopes (mesmo `id`).
+# formato: 'mil' divide por 1000 (kW → MW), 'neg' troca o sinal, 'pct' multiplica por 100.
+
+[[linhas]]
+id = 'oleo_C01'
+nome = 'Maior vazão de óleo (C-01)'
+unidade = 'm³/d'
+origem = 'JSON'
+formato = ''
+casas = 0
+
+[[linhas]]
+id = 'liquido_C01'
+nome = 'Maior vazão líquida (C-01)'
+unidade = 'm³/d'
+origem = 'JSON'
+formato = ''
+casas = 0
+
+[[linhas]]
+id = 'agua_C01'
+nome = 'Maior água produzida (C-01)'
+unidade = 'm³/d'
+origem = 'derivado'
+formato = ''
+casas = 0
+
+[[linhas]]
+id = 'liquido_C03'
+nome = 'Maior líquido na entrada do FWKO (C-03, com reciclo)'
+unidade = 'm³/d'
+origem = 'calculado'
+formato = ''
+casas = 0
+
+[[linhas]]
+id = 'gas_modulo'
+nome = 'Maior gás que entra no módulo (produzido + lift)'
+unidade = 'Sm³/d'
+origem = 'eq. (3.2)'
+formato = ''
+casas = 0
+
+[[linhas]]
+id = 'gas_total_bot'
+nome = 'Maior gás total BOT (inclui transferido)'
+unidade = 'Sm³/d'
+origem = 'JSON'
+formato = ''
+casas = 0
+
+[[linhas]]
+id = 'gas_real_fwko'
+nome = 'Maior gás real no FWKO ($Z=1$)'
+unidade = 'm³/h'
+origem = 'calculado'
+formato = ''
+casas = 0
+
+[[linhas]]
+id = 'Q_pre'
+nome = 'Maior carga do pré-aquecedor'
+unidade = 'MW'
+origem = 'calculado'
+formato = 'mil'
+casas = 2
+
+[[linhas]]
+id = 'Q_H'
+nome = 'Maior carga do aquecedor de óleo'
+unidade = 'MW'
+origem = 'calculado'
+formato = 'mil'
+casas = 2
+
+[[linhas]]
+id = 'Q_aquecimento'
+nome = 'Maior carga de aquecimento total (P-002 + DWH-001)'
+unidade = 'MW'
+origem = 'calculado'
+formato = 'mil'
+casas = 2
+
+[[linhas]]
+id = 'Q_C'
+nome = 'Maior carga do resfriador'
+unidade = 'MW'
+origem = 'calculado'
+formato = 'mil'
+casas = 2
+
+[[linhas]]
+id = 'W_bombas'
+nome = 'Maior potência total de bombas'
+unidade = 'kW'
+origem = 'calculado'
+formato = ''
+casas = 1
+
+[[linhas]]
+id = 'T_chegada_max'
+nome = 'Maior temperatura de chegada'
+unidade = '°C'
+origem = 'JSON'
+formato = ''
+casas = 0
+
+[[linhas]]
+id = 'T_chegada_min'
+nome = 'Menor temperatura de chegada (sinal invertido)'
+unidade = '°C'
+origem = 'JSON'
+formato = 'neg'
+casas = 0
+
+[[linhas]]
+id = 'mu_fwko'
+nome = 'Maior viscosidade do óleo no FWKO'
+unidade = 'cP'
+origem = 'BOT + P-40'
+formato = ''
+casas = 1
+
+[[linhas]]
+id = 'BSW_chegada'
+nome = 'Maior BSW de chegada'
+unidade = '\%'
+origem = 'derivado'
+formato = ''
+casas = 1
+
+[[linhas]]
+id = 'reciclo_C02'
+nome = 'Maior reciclo de água (C-02)'
+unidade = 'm³/d'
+origem = 'calculado'
+formato = ''
+casas = 0
+
+[[linhas]]
+id = 'diluicao'
+nome = 'Maior água de diluição'
+unidade = 'm³/d'
+origem = 'calculado'
+formato = ''
+casas = 0
+
+[[linhas]]
+id = 'CO2_fluido'
+nome = 'Maior CO$_2$ no fluido de poço'
+unidade = '\% mol'
+origem = 'JSON'
+formato = 'pct'
+casas = 2
+
+[[linhas]]
+id = 'CO2_molar'
+nome = 'Maior vazão molar de CO$_2$ no gás do módulo'
+unidade = 'kmol/h'
+origem = 'calculado'
+formato = ''
+casas = 0
+
+[[linhas]]
+id = 'H2S_ppmv'
+nome = 'Maior H$_2$S'
+unidade = 'ppmv'
+origem = 'JSON'
+formato = ''
+casas = 0
+
+[[linhas]]
+id = 'H2S_molar'
+nome = 'Maior vazão molar de H$_2$S no gás do módulo'
+unidade = 'kmol/h'
+origem = 'calculado'
+formato = ''
+casas = 2

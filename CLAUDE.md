@@ -35,4 +35,12 @@ numpy/scipy só via `fpso_siz/_num.py`, para manter o port a C/Java mapeável; j
 uv sync
 uv run pytest
 uv run pytest --cov=fpso_siz --cov-fail-under=90
+uv run pytest -m latex                      # compila os memoriais (lento)
+uv run python tools/comparar_memorial.py    # paridade do memorial, template a template
 ```
+
+## Memoriais (LaTeX)
+Os templates ficam em `src/fpso_siz/output/latex/*/templates/` (Jinja2 com `<< >>`, `<% %>`,
+`<# #>`). O template só formata. Toda grandeza vem do núcleo (resultado, rastro,
+`balanco/indicadores.py`). Premissa escrita no texto vem de `P[...]` com `mbn`, nunca
+digitada.

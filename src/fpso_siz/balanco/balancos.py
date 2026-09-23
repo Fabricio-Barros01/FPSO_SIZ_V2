@@ -42,3 +42,15 @@ def balanco_global(r):
 
 def balancos_por_bloco(r):
     return {b["id"]: balanco_bloco(r, b) for b in topologia()["blocos"]}
+
+
+def origem_destino():
+    """({corrente: bloco de origem}, {corrente: bloco de destino}) pela topologia;
+    correntes de fronteira ficam sem origem (entradas) ou sem destino (saídas)."""
+    origem, destino = {}, {}
+    for b in topologia()["blocos"]:
+        for s in b["entradas"]:
+            destino[s] = b["id"]
+        for s in b["saidas"]:
+            origem[s] = b["id"]
+    return origem, destino

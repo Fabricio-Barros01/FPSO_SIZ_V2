@@ -14,12 +14,13 @@ aquela fase).
 
 ## Estado atual
 
-**FASE ATUAL: F4 — Memorial LaTeX do balanço ← ATUAL (aguardando aprovação)**
+**FASE ATUAL: F5 — Contrato do núcleo + fixtures Julia ← ATUAL (aguardando aprovação)**
 
-F0–F3 entregues. O motor do balanço reproduz o script original **bit a bit**, e a auditoria
-independente é idêntica à original. `fpso-siz balanco` grava `balanco.json` (com esquema) e
-`correntes.csv`. São 152 testes e cobertura de 100 %. Uso:
-`uv run fpso-siz balanco --casos tests/fixtures/python_ref/design_cases_bot.json --saida saida/`.
+F0–F4 entregues: **o balanço preliminar está completo em Python**. O motor é bit a bit, a
+auditoria é independente, há JSON/CSV com esquema, e o memorial LaTeX A4 sai em dois
+layouts: `original`, idêntico ao script de referência, e `senai`, com o template SENAI
+CETIQT. São 186 testes (+2 de compilação com `-m latex`) e cobertura de 99,8 %. Uso:
+`uv run fpso-siz balanco|memorial --casos tests/fixtures/python_ref/design_cases_bot.json --saida saida/`.
 
 ---
 
@@ -85,7 +86,10 @@ e `cp ../FPSO_Siz/config/bot/*.json references/bot/`.
   `texlive` **não** entrou no flake: ele sobreporia o MiKTeX no shell do projeto. Esse
   desvio do plano está registrado. Reavaliar na F4 ou na F12, se for preciso distribuir a
   compilação do memorial.
-- Comandos: `uv run pytest`, `uv run pytest --cov=fpso_siz --cov-fail-under=90`.
+- Comandos: `uv run pytest`, `uv run pytest --cov=fpso_siz --cov-fail-under=90`,
+  `uv run pytest -m latex` (compila os memoriais; lento).
+- Com o `.envrc` bloqueado no direnv, bibliotecas com binário (ex.: pymupdf) precisam do
+  `LD_LIBRARY_PATH` do flake; ele está em `.direnv/flake-profile-*.rc`.
 
 ## Arquitetura-alvo
 
@@ -140,7 +144,7 @@ CalcTrace por equação.
 cobertura ≥ 90 %; invariantes 1–2 testadas.
 Entregue: paridade **exata** (tolerância travada em 0) em todos os campos, incluindo
 sensibilidades, balanços, iterações e μ. Fechamentos relativos < 5e-14. Resíduo do reciclo
-agora exposto (`residuo_reciclo`, `convergiu`). CalcTrace com 27 equações e 52 pares por
+agora exposto (`residuo_reciclo`, `convergiu`). CalcTrace com 26 equações e 52 pares por
 caso, com bijeção testada. Invariantes 1–2 testadas por AST. 113 testes, cobertura de 100 %.
 O wheel inclui os TOML. **Desvio:** os TOML do modelo ficam em `src/fpso_siz/config/`, não
 em `config/` na raiz, por causa da distribuição.
@@ -162,13 +166,25 @@ no núcleo; eles entram na F4, com os valores numéricos de `oraculo["criticos"]
 de `main_ref.tex` como referência. O memorial deve ler o catálogo `auditoria.toml`, o
 `equacoes_balanco.toml` e os descritores de premissas.
 
-### F4 — Memorial LaTeX do balanço ← ATUAL
+### F4 — Memorial LaTeX do balanço ✅
 Seções 1–18 e apêndices em templates jinja2 com o template SENAI; os dados vêm só de
 ResultField/CalcTrace.
 **Aceite:** `diff` do `main.tex` contra o original vazio ou com lista branca documentada;
 `latexmk` compila; bijeção equação↔rastro testada (invariante 3).
+Entregue: 41 templates Jinja2 fatiados do `main.tex` de referência, mais o parcial das
+bombas. O layout `original` é idêntico byte a byte; o `senai` usa o template SENAI. As
+contas do memorial foram para o núcleo (`balanco/indicadores.py`). Teste de robustez:
+original × novo com dados perturbados e com 15 premissas alteradas, só com as diferenças
+previstas (literais fixos do original que agora acompanham o dado). Bijeção: 26
+equações↔`\label`, mais 4 definições de fechamento. Os dois layouts compilam (MiKTeX, 17 s,
+71/68 páginas). CLI `fpso-siz memorial [--layout] [--pdf]`. Detalhes em
+`docs/validacao/03-memorial-balanco.md`.
+**Notas para a F5:** o balanço está fechado. Seguem para o contrato de dimensionamento: o
+`CalcTrace`/catálogo (26 equações com âncora), o padrão "fatiar a referência → template"
+para os memoriais de equipamento (F11) e o `indicadores.maximo` (regra de empate), que o
+envelope multi-caso vai reusar.
 
-### F5 — Contrato do núcleo + fixtures Julia
+### F5 — Contrato do núcleo + fixtures Julia ← ATUAL
 `core/` espelhando `interfaces.jl`, `engine/{contract,envelope,single}.jl` e `types/` do
 Julia. `tools/exportar_fixtures_julia.jl` roda sobre um `git archive ab58fc6` extraído em
 pasta temporária (o repo Julia não é tocado) e grava em `tests/fixtures/julia/`, com o hash

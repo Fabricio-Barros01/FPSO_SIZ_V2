@@ -1,0 +1,59 @@
+\section{Identificação e codificação das correntes}
+As correntes de processo receberam o código C-NN, numeradas na ordem de primeira aparição ao percorrer o DB a partir da alimentação, e as utilidades receberam U-NN. Os equipamentos foram identificados pelos TAGs preliminares da Tabela~\ref{tab:tags}, empregados em todo o memorial e no fluxograma da Figura~\ref{fig:db}; os pontos de mistura e de junção, que não são equipamentos, receberam os códigos de nó M-01, M-02 e M-03. A numeração definitiva dos TAGs não foi estabelecida nesta etapa e foi mantida fora do escopo desta identificação preliminar: sua definição deverá ser realizada posteriormente, em conjunto com a lista de equipamentos e a documentação de engenharia correspondente.
+\begin{longtable}{lL{5.6cm}L{2.8cm}L{1.9cm}L{2.5cm}}
+\caption{Lista de correntes, origem e destino.}\label{tab:correntes}\\\toprule
+Código & Descrição & Fase predominante & Origem & Destino\\\midrule\endfirsthead
+\toprule Código & Descrição & Fase & Origem & Destino\\\midrule\endhead
+
+<% set origem, destino = origem_destino() %>
+<% set rotulo_in = {'C-01': 'Poços', 'C-14': 'OI'} %>
+<% for c in topo['correntes'] %>
+<< c['id'] >> & << c['nome'] >> & << c['fase'] >> & << rotulo_in.get(c['id'], origem.get(c['id'], '--')) >> & << 'Limite de bateria' if c['id'] in topo['global_out'] else destino.get(c['id'], '--') >>\\
+<% endfor %>
+\midrule
+U-01/U-02 & Água quente / água fria do circuito de aquecimento (DWH-001) & Utilidade & -- & --\\
+U-03/U-04 & Água fria / água quente do circuito de resfriamento (P-003) & Utilidade & -- & --\\
+U-05/U-06 & Água quente / água fria do circuito de aquecimento (P-002) & Utilidade & -- & --\\
+\bottomrule\end{longtable}
+Na Tabela~\ref{tab:blocos} resume-se a topologia usada no balanço.
+\begin{longtable}{lL{7cm}L{3cm}L{3.2cm}}
+\caption{Equipamentos, nós e correntes de entrada/saída.}\label{tab:blocos}\\\toprule
+TAG / nó & Nome & Entradas & Saídas\\\midrule\endfirsthead
+\toprule TAG / nó & Nome & Entradas & Saídas\\\midrule\endhead
+
+<% set tr = {'Q_H': '$\\dot Q_{\\mbox{P-002}}$', 'Q_D': '$\\dot Q_{\\mbox{DWH-001}}$', 'Q_C': '$\\dot Q_{\\mbox{P-003}}$', 'W_B1': '$\\dot W_{\\mbox{B-002}}$', 'W_B2': '$\\dot W_{\\mbox{B-003}}$', 'W_Bo': '$\\dot W_{\\mbox{B-001}}$'} %>
+<% for b in topo['blocos'] %>
+<< b['id'] >> & << b['nome'] >> & << (b['entradas'] + (b['Q_in'] + b['W'])|mapa(tr))|join(', ') >> & << (b['saidas'] + b['Q_out']|mapa(tr))|join(', ') >>\\
+<% endfor %>
+\bottomrule\end{longtable}
+\subsection{Identificação preliminar de equipamentos}
+Nem o DB (DE-SEN-SEP-COO-001-0) nem a ET (I-ET-3010.2K-1200-941-P4X-001\_C) atribuem TAG aos equipamentos ou aos pontos de mistura do módulo: o DB identifica os blocos pela função e a ET, pelo item de texto. Os TAGs da Tabela~\ref{tab:tags} são, portanto, designações preliminares adotadas neste memorial e no fluxograma da Figura~\ref{fig:db} apenas para permitir a referência unívoca a cada equipamento; não reproduzem a nomenclatura de numeração da operadora e não constituem TAG de projeto.
+\small\begin{longtable}{rllL{6.8cm}}
+\caption{TAGs preliminares adotados neste memorial.}\label{tab:tags}\\\toprule
+Ordem & TAG preliminar & Tipo & Equipamento\\\midrule\endfirsthead
+\toprule Ordem & TAG preliminar & Tipo & Equipamento\\\midrule\endhead
+1 & SG-001 & Separador & Separador trifásico de água livre --- FWKO\\
+2 & P-001 & Permutador & Pré-aquecedor de óleo (óleo/óleo)\\
+3 & P-002 & Permutador & Aquecedor de óleo\\
+4 & V-001 & Vaso & Desgaseificador --- 1º estágio\\
+5 & TO-001 & Tratador & Desidratador eletrostático --- 1º estágio\\
+6 & B-002 & Bomba & Bomba de água produzida --- desidratador\\
+7 & DWH-001 & Permutador & Aquecedor de água de diluição\\
+8 & V-002 & Vaso & Desgaseificador --- 2º estágio\\
+9 & TO-002 & Tratador & Desidratador eletrostático --- 2º estágio (dessalinizador)\\
+10 & B-003 & Bomba & Bomba de água produzida --- dessalinizador\\
+11 & B-001 & Bomba & Bomba de transferência de óleo\\
+12 & P-003 & Permutador & Resfriador de óleo\\
+\midrule
+-- & M-01 & Nó & Ponto de mistura do reciclo de água com o fluido de poço\\
+-- & M-02 & Nó & Ponto de injeção da água de diluição\\
+-- & M-03 & Nó & Junção das descargas das bombas de água produzida\\
+-- & MED-001 & Instrumento & Medidor de BSW e desvio off-spec (designação provisória: sem identificação própria no DB nem na ET)\\
+\bottomrule\end{longtable}\normalsize
+\subsection{Parâmetros de operação estabelecidos e não estabelecidos pela ET}\label{sec:etparams}
+A ET fixa os seguintes parâmetros do trecho de tratamento de óleo, adotados neste memorial como dado de fonte: temperatura de tratamento na entrada dos tratadores eletrostáticos de no mínimo 90~\si{\celsius} (item 2.7.1.4), temperatura máxima do meio de aquecimento de 120~\si{\celsius} (item 2.7.1.4), temperatura de armazenamento de 40~\si{\celsius} e temperatura de separação máxima de 99~\si{\celsius} (item 2.7.1.10), manutenção da entrada do FWKO em 40~\si{\celsius} por recirculação de água ou de óleo (item 2.7.1.6), pressão do FWKO (arquivo de casos) e as especificações do óleo tratado (item 2.3.1.1).
+
+A ET \textbf{não} estabelece, para este trecho: as pressões de operação dos desgaseificadores e dos tratadores eletrostáticos; a pressão de descarga da bomba de transferência de óleo; as vazões (ou frações) de recirculação de água produzida e de óleo; a vazão, a temperatura e a salinidade da água de diluição; as quedas de pressão dos trocadores; e as temperaturas dos circuitos de água de aquecimento e de resfriamento. Nenhum desses valores foi extraído de outra fonte nem assumido como dado de projeto: onde o fechamento do modelo exigiu um valor, ele foi declarado como premissa numerada na Tabela~\ref{tab:premissas} (P-17 a P-22, P-30, P-31, P-36) e mantido nessa classificação. Recomenda-se que esses parâmetros sejam obtidos do Fluxograma de Processo (PFD) do módulo quando este estiver disponível, conforme os itens 3, 6, 7, 10, 13 e 14 da Tabela~\ref{tab:info}.
+
+Registra-se ainda uma diferença entre as duas fontes quanto ao ponto de injeção da água de diluição: a ET, no item 2.7.1.6, indica a injeção a montante do aquecedor de óleo (e, no item 2.7.1.7, a adição de água de diluição no estágio final de tratamento), enquanto o DB (Nota~2) a posiciona entre o desidratador e o desgaseificador do 2º estágio. Este memorial seguiu o DB, por ser o documento que define a sequência aqui quantificada; a definição do ponto de injeção foi recomendada para verificação no PFD (item 29 da Tabela~\ref{tab:info}).
+

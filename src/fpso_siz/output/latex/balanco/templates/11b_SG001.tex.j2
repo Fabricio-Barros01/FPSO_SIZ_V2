@@ -1,0 +1,48 @@
+\subsection{SG-001 --- Separador trifásico de água livre (FWKO)}
+\paragraph{Função:} primeiro estágio de separação: separa o gás livre (ao Safety K.O. Drum), a água livre (à saída de água produzida) e o óleo/emulsão com gás dissolvido (ao pré-aquecedor). Possui dispositivo ciclônico ou de palhetas para névoa (BOT 2.7.1.3).
+\paragraph{Entradas:} C-03 (Caso << DEMO >>): óleo << ind.q(RD, 'C-03', 'O')|br >> m³/d, água << ind.q_agua(RD, 'C-03')|br >> m³/d, gás << RD.gas['G_in']|br >> Sm³/d, $T=<< RD.T['C-03']|br(2) >>$~\si{\celsius}, $P=<< RD.P['C-03']|br >>$~\si{\kilo\pascal}; composição do gás na Tabela~\ref{tab:fluidprops}.
+\paragraph{Premissas:} F-02, F-06, F-12, P-23, P-24, P-25, P-26, P-27, P-34, P-15 (isotérmico).
+\paragraph{Modelo de cálculo:} foram utilizadas três eficiências distintas.
+\emph{(i) Separação gás/líquido.} A liberação de gás foi estimada pela razão de solubilidade de Standing (\tipo{CORRELAÇÃO}, P-23), com $P$ em psia, $T$ em °F, $R_s$ em scf/STB e $1$~scf/STB$=0{,}178108$~Sm³/Sm³:
+\begin{equation}\label{eq:standing}
+R_s=\gamma_g\left[\left(\frac{P}{18{,}2}+1{,}4\right)10^{\,0{,}0125\,\mathrm{API}-0{,}00091\,T}\right]^{1{,}2048},\qquad \Delta R_s(P,T)=R_s(P,T)-R_s(P_{\mathrm{std}},T_{\mathrm{std}}).
+\end{equation}
+\begin{align}
+Q_{G,C17}&=\Delta R_s(P_{\mbox{V-001}},T_{\mbox{V-001}})\,Q_O,\label{eq:gasstages}\\
+Q_{G,C09}&=\left[\Delta R_s(P_{\mbox{SG-001}},T_{\mbox{SG-001}})-\Delta R_s(P_{\mbox{V-001}},T_{\mbox{V-001}})\right]Q_O,\nonumber\\
+Q_{G,C04}&=Q_{G,\mathrm{in}}-Q_{G,C09}-Q_{G,C17}.\nonumber
+\end{align}
+<% set rsF, rs0, rsD1 = ind.standing_exemplo(RD, P, dados) %>
+Caso << DEMO >> ($\gamma_g=<< RD.gp['gamma']|mb(3) >>$, API $=<< RD.api|mb(1) >>$): $\Delta R_s(<< P['P_FWKO']|mb >>\,\mathrm{kPa};<< RD.T['C-03']|mb(1) >>\,^\circ\mathrm{C})=<< rsF|mb(2) >>-<< rs0|mb(2) >>=<< (rsF - rs0)|mb(2) >>$~Sm³/Sm³ e $\Delta R_s(<< P['P_D1']|mb >>\,\mathrm{kPa};<< RD.T['C-08']|mb(1) >>\,^\circ\mathrm{C})=<< (rsD1 - rs0)|mb(3) >>$~Sm³/Sm³, logo
+\begin{equation}
+Q_{G,C04}=<< RD.gas['G_in']|mb >>-<< RD.gas['G_D1']|mb >>-<< RD.gas['G_D2']|mb >>=<< RD.gas['G_F']|mb >>\ \mathrm{Sm^3/d}.
+\end{equation}
+A eficiência de separação gás/líquido do FWKO, no sentido de gás liberado recuperado na fase gás, é $\eta_{G}=Q_{G,C04}/Q_{G,\mathrm{in}}=<< ind.eta_gas_fwko(RD)|mb(4) >>$; o restante não é ineficiência mecânica, e sim gás em solução nas condições do vaso. A eficiência de remoção de líquido do gás é definida pelo arraste (P-26):
+\begin{equation}
+Q_{L,\mathrm{arraste}}=c_{\mathrm{arr}}\,Q_{G,C04},\qquad c_{\mathrm{arr}}=\frac{0{,}1\times3{,}785\times10^{-3}}{28\,316{,}8}=<< (P['carry'] * 1e8)|mb(4) >>\times10^{-8}\ \mathrm{m^3/Sm^3}.
+\end{equation}
+\emph{(ii) Separação óleo/água.} Com $\mathrm{BSW}_{C01}$ da alimentação sem reciclo (P-24):
+\begin{equation}\label{eq:bswF}
+\mathrm{BSW}_{C06}=\min\left(0{,}40;\ \frac{Q_{A,C01}}{Q_{A,C01}+Q_{O,C01}}\right),\qquad Q_{A+D,C06}=\frac{\mathrm{BSW}_{C06}}{1-\mathrm{BSW}_{C06}}\,Q_{O,C03}.
+\end{equation}
+Justificativa da forma mínima: com toda a água dos tratadores retornando ao FWKO (P-36), um BSW de saída fixo em 40~\% sempre seria sustentado pelo próprio laço, qualquer que fosse a água produzida, e o estado estacionário deixaria de ser único. A eficiência de remoção de água livre resulta
+\begin{equation}
+\eta_{A,\mbox{SG-001}}=\frac{Q_{A+D,C05}}{Q_{A+D,C03}}=\frac{<< ind.q_agua(RD, 'C-05')|mb >>}{<< ind.q_agua(RD, 'C-03')|mb >>}=<< ind.eta_agua(RD, 'C-05', 'C-03')|mb(4) >>.
+\end{equation}
+\emph{(iii) Óleo na água} (P-25): $\dot m_{O,C05}=C_{OiW}\,Q_{A+D,C05}=<< P['C_OiW']|mbn(1) >>\ \mathrm{kg/m^3}\times<< ind.q_agua(RD, 'C-05')|mb >>/86\,400=<< RD.streams['C-05']['O']|mb(4) >>$~\si{\kilogram\per\second}.
+
+\paragraph{Saídas:} C-04 gás << RD.gas['G_F']|br >> Sm³/d (<< ind.m(RD, 'C-04')|br(3) >>~\si{\kilogram\per\second}); C-05 água << ind.q_agua(RD, 'C-05')|br >> m³/d; C-06 óleo << ind.q(RD, 'C-06', 'O')|br >> m³/d com BSW << (100 * RD.BSW_F)|br(1) >>~\% e << (RD.gas['G_D1'] + RD.gas['G_D2'])|br >> Sm³/d de gás dissolvido. Todas a << RD.T['C-03']|br(2) >>~\si{\celsius} e << RD.P['C-03']|br >>~\si{\kilo\pascal}.
+\paragraph{Balanço de massa:} <% set b = bb(RD, blocos['SG-001']) %>$\dot m_{C03}=<< b['mi']|br(3) >>$; $\sum\dot m_{out}=<< b['mo']|br(3) >>$~\si{\kilogram\per\second}; $\varepsilon_m=$<< b['em']|sci >>.
+\paragraph{Balanço de energia:} vaso isotérmico e adiabático (P-15), $\varepsilon_E=$<< b['eE']|sci >>. O resfriamento por liberação adicional de gás não é capturado.
+\paragraph{Resultado preliminar:} <% set mxg, idg = maximo("r.gas['G_F']") %><% set mxw, idw = maximo("ind.q_agua(r, 'C-03')") %>maior gás separado no FWKO: << mxg|br >> Sm³/d (caso << idg|ids >>); maior carga aquosa na entrada (incluindo reciclo): << mxw|br >> m³/d (caso << idw|ids >>).
+\paragraph{Validação recomendada em etapa posterior:} flash PR/CPA a << P['P_FWKO']|br >>~\si{\kilo\pascal} para substituir Standing (fora da faixa de validade para gás rico em CO$_2$); BSW de saída e teor de óleo na água por dados de fornecedor/simulação CFD; arraste do eliminador de névoa.
+{\footnotesize\setlength{\tabcolsep}{3.5pt}\begin{longtable}{rrrrrrrrrrr}
+\caption{SG-001 --- FWKO (todos os casos).\label{tab:b02}}\\\toprule
+Caso & $Q_{G,C04}$ & $\eta_G$ & $Q_{A+D,C03}$ & $Q_{A+D,C05}$ & $\eta_A$ & BSW$_{C06}$ & $Q_{O,C06}$ & $T$ & $\varepsilon_m$ & $\varepsilon_E$\\
+ & Sm³/d & -- & m³/d & m³/d & -- & \% & m³/d & °C & -- & --\\\midrule\endfirsthead
+\toprule Caso & $Q_{G,C04}$ & $\eta_G$ & $Q_{A+D,C03}$ & $Q_{A+D,C05}$ & $\eta_A$ & BSW$_{C06}$ & $Q_{O,C06}$ & $T$ & $\varepsilon_m$ & $\varepsilon_E$\\\midrule\endhead
+<% for r in R %>
+<% set b = bb(r, blocos['SG-001']) %>
+<< r.num >> & << r.gas['G_F']|br >> & << ind.eta_gas_fwko(r)|br(4) >> & << ind.q_agua(r, 'C-03')|br >> & << ind.q_agua(r, 'C-05')|br >> & << ind.eta_agua(r, 'C-05', 'C-03')|br(4) >> & << (100 * r.BSW_F)|br(1) >> & << ind.q(r, 'C-06', 'O')|br >> & << r.T['C-03']|br(2) >> & << b['em']|sci >> & << b['eE']|sci >>\\
+<% endfor %>
+\bottomrule\end{longtable}}

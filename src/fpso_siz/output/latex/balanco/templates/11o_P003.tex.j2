@@ -1,0 +1,23 @@
+\subsection{P-003 --- Resfriador de óleo}
+\paragraph{Função:} resfriar o óleo tratado, após o pré-aquecedor, até a temperatura de armazenamento de 40~\si{\celsius} (BOT 2.7.1.10), com água do circuito de resfriamento (U-03/U-04).
+\paragraph{Entradas:} C-23: << ind.m(RD, 'C-23')|br(2) >>~\si{\kilogram\per\second}, << RD.T['C-23']|br(2) >>~\si{\celsius}, << RD.P['C-23']|br >>~\si{\kilo\pascal} (Caso << DEMO >>).
+\paragraph{Premissas:} F-08, P-10, P-14, P-17.
+\paragraph{Modelo de cálculo:}
+\begin{equation}
+\dot Q_{\mbox{P-003}}=\sum\dot m h_{C23}-\sum\dot m h_{C24}=\dot C_{C23}(T_{C23}-<< P['T_store']|mb >>)=<< RD.C(RD.streams['C-22'])|mb(1) >>\times(<< RD.T['C-23']|mb(2) >>-<< P['T_store']|mb >>)=<< RD.duties['Q_C']|mb(0) >>\ \mathrm{kW}.
+\end{equation}
+\paragraph{Saídas:} <% set b = bb(RD, blocos['P-003']) %>C-24 a << RD.T['C-24']|br(1) >>~\si{\celsius}, << RD.P['C-24']|br >>~\si{\kilo\pascal}.
+\paragraph{Balanço de massa:} $\varepsilon_m=$<< b['em']|sci >>.
+\paragraph{Balanço de energia:} $\varepsilon_E=$<< b['eE']|sci >>.
+\paragraph{Resultado preliminar:} <% set mx, idx = maximo("r.duties['Q_C']") %>maior carga de resfriamento: << (mx / 1e3)|br(2) >>~\si{\mega\watt} (caso << idx|ids >>).
+\paragraph{Validação recomendada em etapa posterior:} temperaturas de entrada/saída da água de resfriamento; temperatura mínima de offloading (BOT 16.3.3) que pode elevar a temperatura de armazenamento; TVP a 40~\si{\celsius}.
+{\footnotesize\setlength{\tabcolsep}{3.5pt}\begin{longtable}{rrrrrrr}
+\caption{P-003 --- resfriador (todos os casos).\label{tab:b15}}\\\toprule
+Caso & $\dot m_{C23}$ & $T_{C23}$ & $T_{C24}$ & $\dot Q_{\mbox{P-003}}$ & $\varepsilon_m$ & $\varepsilon_E$\\
+ & kg/s & °C & °C & MW & -- & --\\\midrule\endfirsthead
+\toprule Caso & $\dot m_{C23}$ & $T_{C23}$ & $T_{C24}$ & $\dot Q_{\mbox{P-003}}$ & $\varepsilon_m$ & $\varepsilon_E$\\\midrule\endhead
+<% for r in R %>
+<% set b = bb(r, blocos['P-003']) %>
+<< r.num >> & << ind.m(r, 'C-23')|br(2) >> & << r.T['C-23']|br(2) >> & << r.T['C-24']|br(1) >> & << (r.duties['Q_C'] / 1e3)|br(2) >> & << b['em']|sci >> & << b['eE']|sci >>\\
+<% endfor %>
+\bottomrule\end{longtable}}

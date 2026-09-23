@@ -1,0 +1,28 @@
+\subsection{<< bid >> --- << nome >>}
+\paragraph{Função:} << funcao >>
+<% set Vd = ind.v_liquido(RD, sin) %>
+\paragraph{Entradas:} << sin >>: << (Vd * 3600)|br(1) >> m³/h (massa específica padrão), << RD.T[sin]|br(2) >>~\si{\celsius}, << P[p_suc]|br >>~\si{\kilo\pascal} (Caso << DEMO >>).
+\paragraph{Premissas:} P-20/P-21, P-22, P-37. Perda de carga de sucção e NPSH não avaliados.
+\paragraph{Modelo de cálculo:}
+\begin{equation}
+\dot W=\frac{\dot V\,(P_{d}-P_{s})}{\eta},\qquad T_{out}=T_{in}+\frac{\dot W}{\dot C}.
+\end{equation}
+Caso << DEMO >>: $\dot W=\frac{<< Vd|mb(5) >>\times(<< P[p_desc]|mb >>-<< P[p_suc]|mb >>)}{<< P['eta_pump']|mb(2) >>}=<< RD.duties[wk]|mb(2) >>$~\si{\kilo\watt}; $\Delta T=<< (RD.T[sout] - RD.T[sin])|mb(3) >>$~\si{\kelvin}.
+
+\paragraph{Saídas:} << sout >>: << RD.T[sout]|br(2) >>~\si{\celsius}, << P[p_desc]|br >>~\si{\kilo\pascal}, mesma vazão.
+<% set b = bb(RD, blocos[bid]) %>
+\paragraph{Balanço de massa:} $\varepsilon_m=$<< b['em']|sci >>.
+\paragraph{Balanço de energia:} $\dot H_{out}=\dot H_{in}+\dot W$; $\varepsilon_E=$<< b['eE']|sci >>.
+<% set mx, idx = maximo('r.duties["' ~ wk ~ '"]') %>
+\paragraph{Resultado preliminar:} maior potência hidráulica/eixo preliminar: << mx|br(1) >>~\si{\kilo\watt} (caso << idx|ids >>).
+\paragraph{Validação recomendada em etapa posterior:} pressões de sucção/descarga a definir pela hidráulica do sistema; curva e eficiência de fornecedor; configuração N+1.
+{\footnotesize\setlength{\tabcolsep}{3.5pt}\begin{longtable}{rrrrrrrr}
+\caption{<< bid >> --- << nome >> (todos os casos).\label{tab:<< bid|lower|replace('-', '') >>}}\\\toprule
+Caso & $\dot V$ & $T_{in}$ & $T_{out}$ & $\Delta P$ & $\dot W$ & $\varepsilon_m$ & $\varepsilon_E$\\
+ & m³/h & °C & °C & kPa & kW & -- & --\\\midrule\endfirsthead
+\toprule Caso & $\dot V$ & $T_{in}$ & $T_{out}$ & $\Delta P$ & $\dot W$ & $\varepsilon_m$ & $\varepsilon_E$\\\midrule\endhead
+<% for r in R %>
+<% set b = bb(r, blocos[bid]) %>
+<< r.num >> & << (ind.v_liquido(r, sin) * 3600)|br(1) >> & << r.T[sin]|br(2) >> & << r.T[sout]|br(2) >> & << (P[p_desc] - P[p_suc])|br >> & << r.duties[wk]|br(1) >> & << b['em']|sci >> & << b['eE']|sci >>\\
+<% endfor %>
+\bottomrule\end{longtable}}

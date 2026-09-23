@@ -1,0 +1,26 @@
+\section{Tabela consolidada de vazões, temperaturas e pressões}\label{sec:consol}
+As pressões resultaram idênticas em todos os casos, por serem premissas fixas; as temperaturas variaram caso a caso. Vazões de todas as correntes por caso: Apêndice~\ref{app:correntes}.
+\begin{longtable}{lL{7.3cm}rL{3.6cm}}
+\caption{Pressões de operação por corrente (todos os casos).}\label{tab:press}\\\toprule
+Corrente & Descrição & $P$ [kPa] & Origem\\\midrule\endfirsthead
+\toprule Corrente & Descrição & $P$ [kPa] & Origem\\\midrule\endhead
+
+<% set porig = {'C-01': 'P-16', 'C-02': 'P-21', 'C-03': 'F-02', 'C-04': 'F-02', 'C-05': 'F-02', 'C-06': 'F-02', 'C-07': 'P-17', 'C-08': 'P-17', 'C-09': 'P-18', 'C-10': 'P-18', 'C-11': 'P-18', 'C-12': 'P-18', 'C-13': 'P-21', 'C-14': 'P-18 (injeção)', 'C-15': 'P-18 (injeção)', 'C-16': 'P-19', 'C-17': 'P-19', 'C-18': 'P-19', 'C-19': 'P-19', 'C-20': 'P-21', 'C-21': 'P-19', 'C-22': 'P-20', 'C-23': 'P-20, P-17', 'C-24': 'P-20, P-17', 'C-25': 'P-20, P-17', 'C-26': 'P-20, P-17'} %>
+<% for c in topo['correntes'] %>
+<< c['id'] >> & << c['nome'] >> & << RD.P[c['id']]|br >> & << porig[c['id']] >>\\
+<% endfor %>
+\bottomrule\end{longtable}
+\begin{landscape}\small
+\begin{longtable}{rrrrrrrrrrrrrr}
+\caption{Temperaturas das correntes por caso (\si{\celsius}). Correntes não listadas: C-04, C-05, C-06 = C-03; C-09 a C-12 = C-08; C-17 a C-19, C-21 = C-16; C-14 = 25; C-15 = 90; C-25 = C-26 = C-24.}\label{tab:temps}\\\toprule
+Caso & C-01 & C-02 & C-03 & C-07 & C-08 & C-13 & C-16 & C-20 & C-22 & C-23 & C-24 & $\mu_O(T_{C03})$ [cP] & poço\\\midrule\endfirsthead
+\toprule Caso & C-01 & C-02 & C-03 & C-07 & C-08 & C-13 & C-16 & C-20 & C-22 & C-23 & C-24 & $\mu_O$ & poço\\\midrule\endhead
+
+<% for r in R %>
+<< r.num >> & <% for s in ['C-01', 'C-02', 'C-03', 'C-07', 'C-08', 'C-13', 'C-16', 'C-20', 'C-22', 'C-23', 'C-24'] %><< r.T[s]|br(2) >><% if not loop.last %> & <% endif %><% endfor %> & << r.mu[0]|br(1) >><< '$^*$' if 'limitado' in r.mu[1] else '' >> & << r.well[-1] >>\\
+<% endfor %>
+\bottomrule
+\multicolumn{14}{l}{\footnotesize $^*$ Temperatura acima de 70~\si{\celsius}: valor a 70~\si{\celsius} da BOT Tab.~2.2.1.2 (P-40, conservador).}
+\end{longtable}
+\end{landscape}
+

@@ -1,0 +1,27 @@
+\subsection{M-01 --- Ponto de mistura de entrada (M-01)}
+\paragraph{Função:} nó do DB onde o reciclo de água produzida dos tratadores (C-02) encontra o fluido de poço (C-01) antes do FWKO, com o objetivo operacional de manter a entrada do FWKO a 40~\si{\celsius} (Nota~3 do DB; BOT 2.7.1.6). Não é equipamento; é volume de controle de mistura.
+\paragraph{Entradas:} C-01: óleo << RD.caso['oil_sm3d']|br >> m³/d, água << RD.Wv|br >> m³/d, gás << RD.gas['G_in']|br >> Sm³/d, $T=<< RD.T['C-01']|br(1) >>$~\si{\celsius}, $P=<< RD.P['C-01']|br >>$~\si{\kilo\pascal} (Caso << DEMO >>); C-02: água << ind.q_agua(RD, 'C-02')|br >> m³/d, $T=<< RD.T['C-02']|br(2) >>$~\si{\celsius}.
+\paragraph{Premissas:} P-06, P-14, P-15, P-16, P-21 (válvula de reciclo << P['P_rec']|br >>$\to$<< P['P_FWKO']|br >>~\si{\kilo\pascal}, isentálpica), P-36.
+\paragraph{Modelo de cálculo:} 
+\begin{equation}
+\dot m_{k,C03}=\dot m_{k,C01}+\dot m_{k,C02},\qquad T_{C03}=\frac{\dot C_{C01}T_{C01}+\dot C_{C02}T_{C02}}{\dot C_{C01}+\dot C_{C02}},\qquad \dot C=\sum_k\dot m_k c_{p,k}.
+\end{equation}
+\begin{equation}
+<% set cC1, cC2 = RD.C(RD.streams['C-01']), RD.C(RD.streams['C-02']) %>
+T_{C03}=\frac{<< cC1|mb(1) >>\times<< RD.T['C-01']|mb(1) >>+<< cC2|mb(1) >>\times<< RD.T['C-02']|mb(2) >>}{<< cC1|mb(1) >>+<< cC2|mb(1) >>}=<< RD.T['C-03']|mb(2) >>\ \si{\celsius}.
+\end{equation}
+\paragraph{Saídas:} C-03 multifásica a << RD.T['C-03']|br(2) >>~\si{\celsius} e << RD.P['C-03']|br >>~\si{\kilo\pascal}, $\dot m=<< ind.m(RD, 'C-03')|br(2) >>$~\si{\kilogram\per\second} (Caso << DEMO >>).
+\paragraph{Balanço de massa:} <% set b = bb(RD, blocos['M-01']) %>$\varepsilon_m=$<< b['em']|sci >> (Caso << DEMO >>); todos os casos na Tabela~\ref{tab:b01}.
+\paragraph{Balanço de energia:} mistura adiabática, $\varepsilon_E=$<< b['eE']|sci >>.
+\paragraph{Resultado preliminar:} a meta de 40~\si{\celsius} na entrada do FWKO \textbf{não} é atendida nos casos << ind.casos_abaixo_T_fwko(R, P)|ids or '--' >>, que têm BSW nulo e portanto nenhuma água disponível para reciclo; o BOT (Nota~11) prevê reciclo de óleo nessa situação, arranjo não incluído no DB desta etapa (P-41); sua avaliação foi recomendada na revisão posterior do diagrama.
+\paragraph{Validação recomendada em etapa posterior:} vazão de reciclo controlada (o modelo assume todo o volume dos tratadores recirculado); inclusão de reciclo de óleo no DB; pressão real do coletor de produção.
+{\footnotesize\setlength{\tabcolsep}{3.5pt}\begin{longtable}{rrrrrrrrrr}
+\caption{M-01 --- mistura de entrada (todos os casos).\label{tab:b01}}\\\toprule
+Caso & $\dot m_{C01}$ & $T_{C01}$ & $Q_{A+D,C02}$ & $T_{C02}$ & $\dot m_{C03}$ & $T_{C03}$ & $T\ge40$? & $\varepsilon_m$ & $\varepsilon_E$\\
+ & kg/s & °C & m³/d & °C & kg/s & °C &  & -- & --\\\midrule\endfirsthead
+\toprule Caso & $\dot m_{C01}$ & $T_{C01}$ & $Q_{A+D,C02}$ & $T_{C02}$ & $\dot m_{C03}$ & $T_{C03}$ & $T\ge40$? & $\varepsilon_m$ & $\varepsilon_E$\\\midrule\endhead
+<% for r in R %>
+<% set b = bb(r, blocos['M-01']) %>
+<< r.num >> & << ind.m(r, 'C-01')|br(2) >> & << r.T['C-01']|br(1) >> & << ind.q_agua(r, 'C-02')|br >> & << r.T['C-02']|br(2) if ind.q_agua(r, 'C-02') > 0 else '--' >> & << ind.m(r, 'C-03')|br(2) >> & << r.T['C-03']|br(2) >> & << 'sim' if r.T['C-03'] >= P['T_FWKO_min'] else '\\textbf{não}' >> & << b['em']|sci >> & << b['eE']|sci >>\\
+<% endfor %>
+\bottomrule\end{longtable}}

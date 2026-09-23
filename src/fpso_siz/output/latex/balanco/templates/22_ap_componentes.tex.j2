@@ -1,0 +1,12 @@
+\section{Balanço por pseudo-componente}\label{app:comp}
+Resíduo $\sum_{\mathrm{in}}\dot m_k-\sum_{\mathrm{out}}\dot m_k$ (\si{\kilogram\per\second}) do módulo completo e maior resíduo absoluto entre os volumes de controle, por caso.
+\small\begin{longtable}{rrrrrr}
+\caption{Resíduos de balanço por pseudo-componente.}\\\toprule
+Caso & $O$ (global) & $A$ (global) & $D$ (global) & $G$ (global) & máx. $|$resíduo$|$ por volume de controle\\\midrule\endfirsthead
+\toprule Caso & $O$ & $A$ & $D$ & $G$ & máx. v.c.\\\midrule\endhead
+
+<% for r in R %>
+<% set res, mxb = ind.residuos_componentes(r) %>
+<< r.num >> & << res['O']|sci >> & << res['W']|sci >> & << res['D']|sci >> & << res['G']|sci >> & << mxb|sci >>\\
+<% endfor %>
+\bottomrule\end{longtable}\normalsize

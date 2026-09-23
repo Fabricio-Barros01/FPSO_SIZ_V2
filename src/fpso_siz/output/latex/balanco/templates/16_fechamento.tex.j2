@@ -1,0 +1,32 @@
+\section{Verificação de fechamento dos balanços}\label{sec:fechamento}
+\begin{equation}
+\varepsilon_m=\frac{\left|\sum\dot m_{\mathrm{in}}-\sum\dot m_{\mathrm{out}}\right|}{\sum\dot m_{\mathrm{in}}},\qquad
+\varepsilon_E=\frac{\left|\sum\dot H_{\mathrm{in}}+\dot Q_{\mathrm{in}}+|\dot W|-\sum\dot H_{\mathrm{out}}-\dot Q_{\mathrm{out}}\right|}{\sum\dot H_{\mathrm{in}}+\dot Q_{\mathrm{in}}+|\dot W|}.
+\end{equation}
+Critério de aceitação adotado para o modelo preliminar: $\varepsilon_m\le10^{-6}$ e $\varepsilon_E\le10^{-6}$ (tolerância numérica; a incerteza física é dominada pelas premissas). A Tabela~\ref{tab:fech} apresenta o maior erro de cada bloco entre os 16 casos e o caso onde ocorre.
+\begin{longtable}{lL{6.8cm}rrrr}
+\caption{Máximo erro de fechamento por equipamento ou nó (todos os casos).}\label{tab:fech}\\\toprule
+TAG / nó & Nome & $\max\varepsilon_m$ & caso & $\max\varepsilon_E$ & caso\\\midrule\endfirsthead
+\toprule TAG / nó & Nome & $\max\varepsilon_m$ & caso & $\max\varepsilon_E$ & caso\\\midrule\endhead
+
+<% set fech, fglob, fok = ind.fechamento(R) %>
+<% for f in fech %>
+<< f['id'] >> & << f['nome'] >> & << f['em']|sci >> & << f['caso_m'] >> & << f['eE']|sci >> & << f['caso_E'] >>\\
+<% endfor %>
+\midrule Global & Módulo completo & << fglob['em']|sci >> & << fglob['caso_m'] >> & << fglob['eE']|sci >> & << fglob['caso_E'] >>\\
+\bottomrule\end{longtable}
+Resultado: << 'todos os equipamentos, nós e o balanço global atenderam ao critério em todos os casos.' if fok else '\\textbf{há volumes de controle fora do critério --- verificar.}' >> Adicionalmente foi verificado $\Delta_G=0$ (Seção~\ref{sec:gas_interp}), $\sum x_i=1$ para os 7 fluidos (Tabela~\ref{tab:norm}) e o fechamento molar de CO$_2$ e H$_2$S (Tabela~\ref{tab:molar}).
+
+\subsection{Auditoria numérica independente}
+Além do fechamento dos balanços, cada grandeza derivada foi recalculada por via algébrica independente da usada no modelo (por exemplo, a correlação de Standing na forma logarítmica, as cargas térmicas a partir das massas e $c_p$ de cada corrente e as identidades de vazão diretamente do JSON), para os 16 casos. A Tabela~\ref{tab:audit} apresenta o maior desvio absoluto encontrado em cada verificação. Os valores impressos nas tabelas do memorial foram, ainda, reconvertidos a partir do texto gerado e comparados aos valores do modelo, para checar as conversões de formato e arredondamento.
+\small\begin{longtable}{L{6.8cm}L{4.4cm}rl}
+\caption{Auditoria numérica: maior desvio absoluto entre o modelo e o recálculo independente (16 casos).}\label{tab:audit}\\\toprule
+Verificação & Base do recálculo & Máx. $|$desvio$|$ & Unidade\\\midrule\endfirsthead
+\toprule Verificação & Base do recálculo & Máx. $|$desvio$|$ & Unidade\\\midrule\endhead
+
+<% for a in aud %>
+<< a['verificacao'] >> & << a['base'] >> & << a['max_desvio_abs']|sci >> & << a['unidade'] >>\\
+<% endfor %>
+\bottomrule\end{longtable}\normalsize
+Nenhuma correção de valor foi necessária a partir dessa auditoria além do ajuste descrito a seguir, decorrente da definição de eficiência O/A. O BSW especificado nas saídas de óleo dos separadores O/A passou a ser imposto sobre o óleo que efetivamente sai na corrente de óleo --- descontados o óleo disperso na água e o arraste no gás ---, e não sobre o óleo da alimentação, o que exige uma iteração interna curta em cada bloco. Com isso, os BSW de saída resultaram exatamente iguais aos valores das premissas P-24, P-28 e P-29 (Tabela~\ref{tab:eficcaso}), em vez de excedê-los em alguns centésimos de ponto percentual.
+

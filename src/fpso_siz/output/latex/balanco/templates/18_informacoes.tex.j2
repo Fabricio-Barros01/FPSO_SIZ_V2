@@ -1,0 +1,43 @@
+\section{Informações recomendadas para o memorial de cálculo definitivo}\label{sec:info}
+As informações apresentadas nesta seção não constituíram pendências para a elaboração do presente memorial preliminar. O objetivo desta etapa foi estabelecer uma representação quantitativa preliminar do diagrama de blocos, utilizando os dados disponíveis e as premissas de engenharia explicitamente definidas na Seção~\ref{sec:premissas}. Os itens a seguir foram relacionados como informações recomendadas para as etapas posteriores de engenharia, especialmente para o desenvolvimento das simulações de processo, para a especificação e o dimensionamento dos equipamentos e para a elaboração do memorial de cálculo definitivo.
+
+A ausência desses dados não caracteriza deficiência do memorial preliminar: ela decorre do nível de detalhamento próprio desta etapa de engenharia, na qual as grandezas correspondentes foram tratadas por premissas classificadas e rastreáveis. Os itens estão agrupados, por natureza de aplicação, em: simulação de processo e definição termodinâmica (itens 1, 2, 12, 17, 18, 20, 22, 29); dimensionamento e especificação de equipamentos (3 a 6, 11, 13, 15, 16, 23); hidráulica e balanço de utilidades (9, 10, 14); definição de controle e operação (7, 21); revisão do diagrama (8, 26); e documentação e rastreabilidade (19, 24, 25, 27, 28).
+
+\begin{landscape}\small
+\begin{longtable}{lL{6.0cm}L{2.9cm}L{5.2cm}lL{4.2cm}}
+\caption{Informações recomendadas para o desenvolvimento posterior.}\label{tab:info}\\\toprule
+Item & Informação recomendada & Equipamento & Aplicação na etapa posterior & Prioridade & Fonte / etapa esperada\\\midrule\endfirsthead
+\toprule Item & Informação recomendada & Equipamento & Aplicação na etapa posterior & Prioridade & Fonte / etapa\\\midrule\endhead
+
+1 & Confirmação documental da base molar da Tab. 2.2.2.4 & Todos & Fixa a base de conversão mol/massa na simulação de processo e consolida a P-02 como dado de fonte & Alta & Petrobras/BOT (esclarecimento técnico)\\
+2 & Flash PR/CPA dos fluidos e ajuste de RGO por caso (Nota 4 da Tab. 2.2.2.3) & SG-001, V-001, V-002 & Substitui a correlação de Standing e o corte de leves (P-03, P-23) por equilíbrio de fases, fornecendo composição e propriedades por corrente & Alta & Simulação de processo (Clapeyron.jl)\\
+3 & Pressões de operação dos desgaseificadores e tratadores & V-001, TO-001, V-002, TO-002 & Define as pressões hoje assumidas (P-18, P-19) e serve de variável de decisão no estudo de estágios e na otimização & Alta & Fluxograma de Processo (PFD); estudo de estágios / otimização\\
+4 & BSW na saída de óleo do FWKO em função da carga de água e da temperatura & SG-001, M-03 & Ancora a eficiência O/A do 1º estágio (P-24), que governa a vazão de reciclo e as cargas térmicas no dimensionamento & Alta & Fornecedor; Stewart \& Arnold; simulação CFD\\
+5 & BSW garantido na saída do desidratador & TO-001, DWH-001 & Dimensiona a água de diluição (P-28) e a capacidade do 2º estágio de tratamento & Alta & Fornecedor de tratador eletrostático\\
+6 & Vazão, salinidade e temperatura da água de diluição; eficiência de mistura & DWH-001, M-02 & Especifica a unidade de osmose inversa, o aquecedor de diluição e a válvula misturadora (P-30, P-31) & Alta & Especificação da OI; fornecedor da válvula misturadora\\
+7 & Filosofia de controle do reciclo de água e destino da água dos tratadores & M-01, M-03 & Define a vazão de reciclo de projeto no lugar do laço fechado adotado (P-36) e dimensiona as bombas de água & Alta & Fluxograma de Processo (PFD); filosofia de operação\\
+8 & Arranjo de reciclo de óleo para os casos com BSW nulo & M-01, SG-001 & Permite atender à meta de 40 °C na entrada do FWKO nos casos sem água (BOT Nota 11) & Alta & Revisão do diagrama de processo\\
+9 & Temperaturas e vazão do circuito de água de aquecimento (U-05/U-06) do aquecedor de óleo & P-002 & Fecha o balanço de utilidades e permite o projeto térmico do aquecedor & Média & Balanço de utilidades; sistema de água quente\\
+10 & Temperaturas de entrada e saída das águas de aquecimento e de resfriamento (U-01 a U-04) & DWH-001, P-003 & Fecha o balanço de utilidades e define a MLDT para o projeto térmico & Média & Fluxograma de Processo (PFD); balanço de utilidades\\
+11 & $c_p$, $\rho$ e viscosidade do óleo, da salmoura e da emulsão em função de $T$ & P-001, P-002, P-003 & Substitui as propriedades assumidas (P-08, P-10, P-11, P-40) no projeto térmico e no cálculo de sedimentação & Média & Laboratório; EOS; correlações validadas\\
+12 & Calor latente e resfriamento por flash nas válvulas e desgaseificadores & P-002, V-001, V-002 & Corrige as cargas térmicas e as temperaturas a jusante dos flashes (P-14, P-15) na simulação & Média & Flash PT e PH\\
+13 & Quedas de pressão dos trocadores & P-001, P-002, P-003 & Substitui a P-17 no perfil de pressões e no dimensionamento hidráulico & Média & Dimensionamento térmico (Bell--Delaware)\\
+14 & Pressões de sucção e descarga, NPSH disponível e eficiência das bombas & B-002, B-003, B-001 & Define as potências de eixo e a seleção das bombas (P-20, P-21, P-22) & Média & Fluxograma de Processo (PFD); hidráulica do sistema; folha de dados de fornecedor\\
+15 & Teor de óleo na água nas saídas aquosas & SG-001, TO-001, TO-002 & Substitui a P-25 e dimensiona o tratamento de água produzida a jusante & Média & Fornecedor; especificação do tratamento de água\\
+16 & Arraste de líquido nos eliminadores de névoa & SG-001, V-001, V-002 & Substitui a P-26 na seleção de internos e no dimensionamento dos K.O. drums & Baixa & Fornecedor de internos\\
+17 & Composição do gás de lift por modo operacional (efeito da remoção de CO$_2$) & SG-001 & Refina a composição e a massa molar do gás que chega ao FWKO (P-04) & Média & I-ET-3010.00-1200-000-P61-002 (modos operacionais)\\
+18 & Referência da vazão de gás total (sucção da compressão ou saída do FWKO) & Global & Consolida a base de comparação entre o balanço do módulo e a capacidade da planta de gás & Média & BOT (esclarecimento)\\
+19 & Fase de referência do H$_2$S informado em ppmv & Materiais & Define a concentração de projeto para seleção de materiais e estudos de SMS & Média & BOT (esclarecimento)\\
+20 & Fator de compressibilidade do gás nas condições dos vasos & SG-001, V-001, V-002 & Corrige as vazões reais de gás (P-39) usadas no dimensionamento gás/líquido & Média & EOS na simulação de processo\\
+21 & Salinidade da água produzida por caso & DWH-001 & Refina o balanço de sal, hoje conduzido com o valor máximo de 240.000 mg/L (P-30) & Baixa & Análises de água; BOT\\
+22 & Verificação de TVP, RVP e H$_2$S no óleo exportado & V-002, TO-002 & Confirma o atendimento à especificação do BOT 2.3.1.1 e o número de estágios de estabilização & Alta & Flash e simulação de estabilização\\
+23 & Volume de slug (30 m³) e comportamento transiente & SG-001 & Entra no dimensionamento dos volumes de retenção e no estudo de controle de nível & Média & Modelagem dinâmica posterior\\
+24 & Perdas térmicas para o ambiente & Todos & Refina as cargas térmicas obtidas com equipamentos adiabáticos (P-15) & Baixa & Isolamento térmico; dados climáticos\\
+25 & Numeração definitiva dos TAGs de equipamentos e do próprio memorial & Todos & Consolida os TAGs preliminares da Tabela~\ref{tab:tags} com a lista de equipamentos e a documentação de engenharia & Baixa & Lista de equipamentos; LI-SEN-SEP-COO-01\\
+26 & Definição sobre a inclusão do separador de teste no escopo do diagrama & Escopo & Complementa o DB com o sistema de teste de poços exigido pelo BOT 2.7.1.1 & Baixa & Revisão do diagrama de processo\\
+27 & Padronização do nome do arquivo de dados & Rastreabilidade & Uniformiza a citação do arquivo de casos nas próximas revisões & Baixa & Autor\\
+28 & Fonte bibliográfica fixada para $c^0_p$ de gás ideal e massas molares & M-01 & Substitui os valores aproximados da P-13 por base de dados rastreável & Baixa & Poling et al.; DIPPR\\
+29 & Ponto de injeção da água de diluição e demais parâmetros de operação não fixados pela ET & P-002, M-02, TO-002, B-001 & Confirma a sequência do processo e substitui as premissas P-17 a P-22, P-30, P-31 e P-36 por dados de projeto & Média & Fluxograma de Processo (PFD); ET (esclarecimento)\\
+\bottomrule\end{longtable}
+\end{landscape}
+

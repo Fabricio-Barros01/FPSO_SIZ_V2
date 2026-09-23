@@ -1,0 +1,4 @@
+# Equações numeradas do memorial que NÃO são passos do motor (CalcTrace): definições dos
+# critérios de fechamento, verificados por fpso_siz.balanco.balancos. Todo \label{eq:*} do
+# memorial é âncora de uma equação do catálogo (config/equacoes_balanco.toml) OU está aqui.
+definicoes = ["eq:mglobal", "eq:eglobal", "eq:eglobal2", "eq:hsens"]

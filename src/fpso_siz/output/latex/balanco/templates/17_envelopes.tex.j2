@@ -1,0 +1,48 @@
+\section{Casos críticos e envelopes preliminares}\label{sec:envelopes}
+\subsection{Envelopes por variável}
+\begin{longtable}{L{6.4cm}rlL{2.2cm}L{3.2cm}}
+\caption{Envelopes preliminares (valor máximo e casos onde ocorre).}\label{tab:env}\\\toprule
+Variável & Valor & Unidade & Caso(s) & Origem\\\midrule\endfirsthead
+\toprule Variável & Valor & Unidade & Caso(s) & Origem\\\midrule\endhead
+
+<% for e in envelopes_memorial %>
+<% set mx, casos = envelopes[e['id']] %>
+<% set v = mx / 1e3 if e['formato'] == 'mil' else (-mx if e['formato'] == 'neg' else (100 * mx if e['formato'] == 'pct' else mx)) %>
+<< e['nome'] >> & << v|br(e['casas']) >> & << e['unidade'] >> & << casos|ids >> & << e['origem'] >>\\
+<% endfor %>
+\midrule
+Maior pressão (igual em todos os casos; não discrimina) & << P['P_FWKO']|br >> & kPa & todos & F-02\\
+\bottomrule\end{longtable}
+\textbf{Severidade de separação.} Não foi adotado um índice único. Foram adotados indicadores por mecanismo: (i) óleo/água no FWKO --- viscosidade do óleo (velocidade terminal de Stokes $\propto1/\mu$) e carga aquosa; (ii) gás/líquido --- vazão real de gás; (iii) tratamento --- água a remover e água de diluição; (iv) corrosividade --- CO$_2$ e H$_2$S.
+
+\subsection{Combinação mais crítica por equipamento}
+A tabela indica, para cada critério candidato de dimensionamento, o caso que o maximizou. O caso de projeto de cada equipamento deverá ser escolhido conforme o critério que governa seu dimensionamento (p.~ex., o FWKO pode ser governado pela carga de gás ou pelo tempo de residência de líquido, dependendo da geometria), e não por um caso único para toda a planta.
+\begin{longtable}{L{4.0cm}L{4.5cm}rL{3.0cm}}
+\caption{Casos governantes candidatos por equipamento e critério.}\label{tab:crit}\\\toprule
+Equipamento & Critério & Valor & Caso(s)\\\midrule\endfirsthead
+\toprule Equipamento & Critério & Valor & Caso(s)\\\midrule\endhead
+
+<% for (k, mx, casos), c in zip(criticos, criticos_memorial) %>
+<< c['equipamento'] >> & << c['criterio'] >> & << ((mx / 1e3)|br(2) ~ ' MW') if 'dot Q' in c['criterio'] else (mx|br(1) if mx < 1000 else mx|br) >> & << casos|ids >>\\
+<% endfor %>
+\bottomrule\end{longtable}
+
+\subsection{Sensibilidade preliminar às premissas dominantes}
+Casos avaliados: << sens_casos|ids >> (maior carga do aquecedor; menor BSW não nulo com máxima vazão de óleo; maior BSW).
+\begin{landscape}\small
+\begin{longtable}{rL{5.0cm}rrrrrrrr}
+\caption{Sensibilidade das principais saídas às premissas.}\label{tab:sens}\\\toprule
+Caso & Variação & $\dot Q_{\mbox{P-001}}$ & $\dot Q_{\mbox{P-002}}$ & $\dot Q_{\mbox{DWH-001}}$ & $\dot Q_{\mbox{P-003}}$ & $Q_D$ & $Q_{C02}$ & $T_{C03}$ & $Q_{G,C09}+Q_{G,C17}$\\
+ & & MW & MW & MW & MW & m³/d & m³/d & °C & Sm³/d\\\midrule\endfirsthead
+\toprule Caso & Variação & $\dot Q_{\mbox{P-001}}$ & $\dot Q_{\mbox{P-002}}$ & $\dot Q_{\mbox{DWH-001}}$ & $\dot Q_{\mbox{P-003}}$ & $Q_D$ & $Q_{C02}$ & $T_{C03}$ & gás VRU\\\midrule\endhead
+
+<% for n in sens_casos %>
+<% for m, rot, r in sens_corridas if m == n %>
+<< n >> & << rot >> & << (r.duties['Q_pre'] / 1e3)|br(2) >> & << (r.duties['Q_H'] / 1e3)|br(2) >> & << (r.duties['Q_D'] / 1e3)|br(2) >> & << (r.duties['Q_C'] / 1e3)|br(2) >> & << r.gas['Dv']|br >> & << ind.q_agua(r, 'C-02')|br >> & << r.T['C-03']|br(2) >> & << (r.gas['G_D1'] + r.gas['G_D2'])|br >>\\
+<% endfor %>
+\midrule
+<% endfor %>
+\bottomrule\end{longtable}
+\end{landscape}
+\textbf{Leitura:} a água no óleo de saída do FWKO (P-24) é a premissa que mais altera cargas térmicas e vazão de reciclo quando o BSW de chegada é superior a 10~\%; o BSW do desidratador (P-28) domina a água de diluição; as pressões dos desgaseificadores redistribuem o gás entre os estágios da VRU sem alterar o total. Essas três grandezas foram classificadas com prioridade alta entre as informações recomendadas da Seção~\ref{sec:info}.
+
