@@ -14,14 +14,16 @@ aquela fase).
 
 ## Estado atual
 
-**FASE ATUAL: F6 — Vasos (separador 3F, knockout, tratador) ← ATUAL (aguardando aprovação)**
+**FASE ATUAL: F7 — Bomba (Moran) + trocador (Saari/Bell-Delaware) ← ATUAL (aguardando aprovação)**
 
 F0–F4 entregues: **o balanço preliminar está completo em Python**. O motor é bit a bit, a
 auditoria é independente, há JSON/CSV com esquema, e o memorial LaTeX A4 sai em dois
 layouts: `original`, idêntico ao script de referência, e `senai`, com o template SENAI
 CETIQT. F5 entregue: o contrato de dimensionamento e o motor de envelope foram portados, e
-as fixtures do Julia (`ab58fc6`) foram exportadas e são reproduzíveis. São 267 testes (+2
-`-m latex`, +1 `-m julia`) e cobertura de 99 %. Uso:
+as fixtures do Julia (`ab58fc6`) foram exportadas e são reproduzíveis. F6 entregue: os três vasos
+(separador 3F, knockout, tratador) reproduzem o Julia (bit a bit em 2, e ≤ 1,25e-15 no
+separador) e os casos-ouro da literatura. São 364 testes (+2 `-m latex`, +1 `-m julia`) e
+cobertura de 98,5 %. Uso:
 `uv run fpso-siz balanco|memorial --casos tests/fixtures/python_ref/design_cases_bot.json --saida saida/`.
 
 ---
@@ -208,12 +210,23 @@ família de vasos (`VesselConstraints` e hooks) e o reetiquetamento de corrente 
 knockout/tratador. Oráculo: fixtures dos 3 vasos + `test/golden_{alves_komesu,knockout}.jl`
 e `test/treater.jl`.
 
-### F6 — Vasos (separador 3F, knockout, tratador) ← ATUAL
+### F6 — Vasos (separador 3F, knockout, tratador) ✅
 **Aceite:** `golden_alves_komesu` (d = 6300 mm, Leff = 18,59 m, Lss = 24,78 m, SR = 3,93;
 governa "Fim de vida"; teto de decantação 9124 mm), `golden_knockout` e `treater` com as
 tolerâncias Julia; cobertura ≥ 90 %.
+Entregue: `sizing/{vasos,capacidade_gas,arrasto,beta,separador,knockout,tratador}.py`,
+`core/grade.py` (grade = a do Julia) e `field_units`; os TOMLs dos métodos são cópia
+literal do snapshot, e os coeficientes do arrasto e os passos da bisseção foram para
+`equipment/comum`. Paridade estrutural com as fixtures: knockout e tratador bit a bit;
+separador com 11 números da cadeia de β a ≤ 1,25e-15 (libm do `acos`). Casos-ouro portados
+de 5 arquivos de teste do Julia. Detalhes em `docs/validacao/05-vasos.md`.
+**Notas para a F7:** a bomba (Moran) e o trocador (Saari/Bell-Delaware) não são vasos:
+estendem `MetodoDimensionamento` direto e escrevem os próprios hooks (DN/nº de tubos,
+`case_admissible` por caso, `envelope_params`). Oráculo: `bomba-centrifuga.json`,
+`trocador-calor.json` e `test/golden_{moran,saari}.jl`. Com dois vasos já comparados bit a
+bit, a meta é igualdade exata onde não houver `libm` transcendental.
 
-### F7 — Bomba (Moran) + trocador (Saari/Bell-Delaware)
+### F7 — Bomba (Moran) + trocador (Saari/Bell-Delaware) ← ATUAL
 **Aceite:** `golden_moran`, `golden_saari`; cobertura ≥ 90 %.
 
 ### F8 — Pinch (Kemp)

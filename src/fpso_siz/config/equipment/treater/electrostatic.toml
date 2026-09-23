@@ -1,0 +1,175 @@
+label = "Stewart & Arnold (2008) §4.9 — tratador cheio de líquido"
+equipment = "treater"
+reference = "Stewart & Arnold (2008), Gas-Liquid and Liquid-Liquid Separators, Gulf Equipment Guides, cap. 4, §4.7 a §4.9.6."
+
+# Tratador eletrostático horizontal, CHEIO DE LÍQUIDO.
+#
+# Entra emulsão óleo-água já desgaseificada; saem óleo tratado e água. Sem fase gasosa
+# não há bloco de capacidade de gás: sobram a decantação líquido-líquido (§4.9.6) e o
+# tempo de retenção (§4.9.4), nas formas generalizadas para vaso com fração de líquido
+# diferente de meio cheio, com a fração valendo 1.
+#
+# ---------------------------------------------------------------------------
+# LIMITAÇÃO DECLARADA — o campo elétrico não é dimensionado aqui.
+# ---------------------------------------------------------------------------
+# O campo faz UMA coisa nestas equações: coalesce as gotículas de água, e uma gotícula
+# maior decanta com o quadrado do diâmetro (Stokes, Eq. 4.2b). Ele entra pelo `dm_water`
+# abaixo, e por mais nada.
+#
+# O que o programa NÃO faz: calcular o gradiente de tensão, o espaçamento e a área de
+# eletrodo, a potência do transformador, ou prever o diâmetro coalescido a partir da
+# tensão aplicada. Não faz porque não há como: o volume da série que está em References/
+# (Gas-Liquid and Liquid-Liquid Separators) cita tratadores eletrostáticos quatro vezes,
+# todas de passagem, e remete o assunto ao volume "Emulsions and Oil Treating", que não
+# temos. Sem ele não existe correlação campo → diâmetro coalescido.
+#
+# A consequência prática, para quem for usar o resultado: `dm_water` é a premissa que
+# carrega o dimensionamento inteiro, e ela é do usuário, não da fonte. O rastro de
+# cálculo emite o ganho (dm/500)² que a hipótese vale, para que o número apareça no
+# memorial ao lado do resultado que produziu. Com dado de laboratório, use o dado.
+
+# --- entradas do método ------------------------------------------------------
+
+[[parameter]]
+key     = "dm_water"
+label   = "Gotícula de água após coalescência"
+unit    = "µm"
+default = 1000.0
+min     = 50.0
+max     = 5000.0
+note    = "A PREMISSA CENTRAL deste box, e ela é sua, não da fonte — ver a nota de limitação no topo do TOML. §4.7.2 manda dimensionar para 500 µm SEM tratamento; o campo elétrico coalesce acima disso, e a decantação ganha com o quadrado. 1000 µm equivale a 4× de ganho."
+
+[[parameter]]
+key     = "dm_oil"
+label   = "Gotícula de óleo na água"
+unit    = "µm"
+default = 200.0
+min     = 20.0
+max     = 2000.0
+note    = "§4.7.3: 200 µm quando não há dado melhor. Governa o teto de diâmetro pelo mecanismo óleo-em-água, que num tratador cheio pode ser o mais restritivo — a camada de água é fina e a gotícula tem pouco caminho, mas pouco tempo também."
+
+[[parameter]]
+key     = "tr_oil"
+label   = "Retenção do óleo"
+unit    = "min"
+default = 20.0
+min     = 1.0
+max     = 120.0
+note    = "Eq. 4.15b e Eq. 4.5b. Tabela 4.1: 5-7,5 min para óleo leve (30-40 °API), 7,5-10 para intermediário, 10+ para pesado — e a nota da tabela manda MULTIPLICAR POR 2 A 4 quando há emulsão na entrada, que é exatamente o caso de um tratador. Daí 20 min."
+
+[[parameter]]
+key     = "tr_water"
+label   = "Retenção da água"
+unit    = "min"
+default = 10.0
+min     = 1.0
+max     = 120.0
+note    = "§4.7.4: \"a water retention time of 10 min is recommended for design\" na ausência de dado de laboratório. Entra na Eq. 4.16 (repartição da seção) e na Eq. 4.9b."
+
+[[parameter]]
+key      = "d_min"
+label    = "Diâmetro mínimo"
+unit     = "mm"
+default  = 900.0
+min      = 300.0
+max      = 12000.0
+advanced = true
+note     = "Início da grade. Tratador é vaso de porte: abaixo de ~900 mm o volume de retenção que a Tabela 4.1 pede não cabe em comprimento razoável."
+
+[[parameter]]
+key      = "d_max"
+label    = "Diâmetro máximo"
+unit     = "mm"
+default  = 6000.0
+min      = 300.0
+max      = 12000.0
+advanced = true
+note     = "Fim da grade. O teto real costuma vir da decantação (Eq. 4.18), não daqui — mas a grade precisa de fim, e um fim generoso não custa nada além de linhas de varredura."
+
+[[parameter]]
+key      = "d_step"
+label    = "Passo da grade"
+unit     = "mm"
+default  = 150.0
+min      = 25.0
+max      = 500.0
+advanced = true
+note     = "§4.9.3 passo 11: acima de 600 mm os tampos vêm em múltiplos de 6 in (150 mm), então a série comercial anda de 150 em 150."
+
+[[parameter]]
+key      = "sr_min"
+label    = "Esbeltez mínima"
+unit     = "–"
+default  = 3.0
+min      = 1.0
+max      = 6.0
+advanced = true
+note     = "§4.9.2: a experiência põe Lss/d entre 3 e 5. Abaixo de 3 a velocidade interna sobe e a interface óleo-água se desfaz — o que num tratador destrói justamente o que ele existe para fazer."
+
+[[parameter]]
+key      = "sr_max"
+label    = "Esbeltez máxima"
+unit     = "–"
+default  = 5.0
+min      = 1.0
+max      = 8.0
+advanced = true
+note     = "§4.9.2. Valores fora de 3-5 são possíveis, mas o projeto tem de ser conferido contra rearraste."
+
+[[parameter]]
+key      = "sr_target"
+label    = "Esbeltez alvo"
+unit     = "–"
+default  = 4.0
+min      = 1.0
+max      = 8.0
+advanced = true
+note     = "Centro da banda 3-5 de §4.9.2. É preferência, não restrição: desempata entre os diâmetros já admissíveis."
+
+# ---------------------------------------------------------------------------
+# Constantes, com a equação de origem em cada linha.
+# ---------------------------------------------------------------------------
+[constants]
+
+# Eq. (4.5b) / §4.9.3 passo 3 — espessura máxima de camada, em mm, para tr em min,
+# ΔSG adimensional, dm em µm e µ em cP.
+#
+# O LIVRO SE CONTRADIZ AQUI, num fator de 10. A Eq. (4.5b) imprime 0,0033; o §4.9.3
+# passo 3, quatro páginas adiante, imprime 0,033 para a MESMA equação. 0,033 é o certo:
+#   • com dm = 500 µm dá 8250·tr·ΔSG/µ, que é exatamente a Eq. (4.6b) do próprio livro;
+#   • a conversão exata da forma de campo (320 in) dá 320 × 25,4 = 8128 mm — 1,5 % de
+#     8250, contra 10× de 825.
+# É o mesmo coeficiente que o separador trifásico deste programa usa desde o Sprint 1,
+# por Alves & Komesu; o livro confirma o valor e denuncia a própria errata.
+settling_coefficient = 0.033
+
+# Eq. (4.15b) — capacidade de líquido do vaso com fração de área líquida α:
+#   d²·Leff = 21000·((tr)o·Qo + (tr)w·Qw)/α
+#
+# Com α = 0,5 isto dá 42000, que é o 4,2×10⁴ da Eq. (4.4b) do vaso meio cheio: as duas
+# formas do livro são consistentes entre si. A conversão exata da forma de campo (1,42)
+# dá 42152, ou 21076 aqui — 0,36 % acima do impresso. Segue-se o publicado: não há
+# contradição interna a resolver, e 0,36 % não é contradição. (Contraste deliberado com
+# a Eq. 22 do trifásico, cujo valor impresso erra 1,9 % contra a tabela do próprio
+# artigo, e por isso lá é derivado.)
+retention_coefficient = 21000.0
+
+# α da Eq. (4.15b) e da Eq. (4.16): fração da seção transversal ocupada por líquido.
+#
+# É CONSTANTE, e não parâmetro, de propósito. Um tratador eletrostático opera cheio de
+# líquido — é vaso líquido-líquido, e os eletrodos ficam submersos. Expor α como campo
+# ajustável convidaria a pôr 0,7 e receber um número: mas com α < 1 existe fase gasosa,
+# e com fase gasosa existe o bloco A de capacidade de gás (Eq. 4.14b), que este método
+# NÃO avalia. O resultado seria um vaso dimensionado ignorando uma restrição que se
+# aplica — silenciosamente. Quem precisar de vaso parcialmente cheio usa o separador
+# trifásico, que tem o bloco A.
+liquid_area_fraction = 1.0
+
+# §4.7.2 — a gotícula que se dimensiona SEM tratamento eletrostático. Não entra em
+# nenhuma equação: serve de base para o ganho (dm/500)² que o rastro de cálculo emite,
+# que é a única forma de a premissa do usuário aparecer quantificada no memorial.
+untreated_droplet_um = 500.0
+
+# §4.9.1 (Eq. 4.11 e 4.13) — Lss é o MAIOR entre Leff + d/1000 e (4/3)·Leff. Mesmas
+# relações do vaso bifásico; ver `lss_from` em src/sizing/treater/electrostatic.jl.
+lss_liquid_factor = 1.3333333333333333

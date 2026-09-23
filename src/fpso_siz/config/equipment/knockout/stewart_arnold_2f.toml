@@ -1,0 +1,124 @@
+label = "Stewart & Arnold (2008) — bifásico, meio cheio"
+equipment = "knockout"
+# Citada no cabeçalho do memorial exportado. Ver `method_reference`.
+reference = "Stewart & Arnold (2008), Gas-Liquid and Liquid-Liquid Separators, Gulf Equipment Guides, cap. 3, §3.8."
+
+# Vaso de knockout gás-líquido horizontal, 50 % cheio de líquido.
+# Fonte: Stewart & Arnold (2008), "Gas-Liquid and Liquid-Liquid Separators",
+# Gulf Equipment Guides, cap. 3, §3.8.1–3.8.6. É o MESMO livro que Alves & Komesu
+# (2025) reproduzem para o trifásico — daí os blocos A e C serem idênticos.
+#
+# O que este vaso NÃO tem: o bloco B (decantação líquido-líquido). Sem duas fases
+# líquidas não há gotícula de água a decantar no óleo nem de óleo a subir na água,
+# então não há teto de diâmetro. Ver `VesselConstraints`: d_max = Inf.
+
+# --- entradas do método ------------------------------------------------------
+
+[[parameter]]
+key     = "dm_gas"
+label   = "Gotícula no gás"
+unit    = "µm"
+default = 140.0
+min     = 10.0
+max     = 500.0
+note    = "Gota de líquido a remover da corrente gasosa. §3.8.2 dimensiona para 100 µm; o Exemplo 3.2 usa 140 µm."
+
+[[parameter]]
+key     = "tr_liquid"
+label   = "Retenção do líquido"
+unit    = "min"
+default = 3.0
+min     = 0.5
+max     = 20.0
+note    = "Eq. 3.9b. Tabela 3.2: 0,5–1 min para 35+ °API, 2 min a 30, 3 a 25, 4+ a 20. Espuma: ×2–4. CO2 alto: mín. 5."
+
+[[parameter]]
+key      = "d_min"
+label    = "Diâmetro mínimo"
+unit     = "mm"
+default  = 600.0
+min      = 200.0
+max      = 12000.0
+advanced = true
+note     = "Início da grade. 600 mm é onde §3.8.6 passo 6 diz que o casco deixa de ser tubo nominal e passa a ser chapa enrolada em incrementos de 150 mm — 600:150 é a série comercial."
+
+[[parameter]]
+key      = "d_max"
+label    = "Diâmetro máximo"
+unit     = "mm"
+default  = 3000.0
+min      = 200.0
+max      = 12000.0
+advanced = true
+note     = "Fim da grade. Este vaso não tem teto de decantação calculado — ver a nota no topo."
+
+[[parameter]]
+key      = "d_step"
+label    = "Passo da grade"
+unit     = "mm"
+default  = 150.0
+min      = 10.0
+max      = 500.0
+advanced = true
+note     = "§3.8.6 passo 6: acima de 600 mm os cascos são enrolados de chapa em incrementos de 150 mm (6 in)."
+
+[[parameter]]
+key      = "sr_min"
+label    = "Esbeltez mínima"
+unit     = "–"
+default  = 3.0
+min      = 1.0
+max      = 6.0
+advanced = true
+note     = "§3.8.5: a maioria dos vasos bifásicos é projetada entre 3 e 4 — banda mais estreita que a do trifásico."
+
+[[parameter]]
+key      = "sr_max"
+label    = "Esbeltez máxima"
+unit     = "–"
+default  = 4.0
+min      = 1.0
+max      = 8.0
+advanced = true
+note     = "§3.8.5. Acima de 4 ou 5 com o gás governando, o reentranhamento de líquido na interface passa a ser risco."
+
+[[parameter]]
+key      = "sr_target"
+label    = "Esbeltez alvo"
+unit     = "–"
+default  = 3.5
+min      = 1.0
+max      = 8.0
+advanced = true
+note     = "Centro da banda 3–4 recomendada em §3.8.5."
+
+# ---------------------------------------------------------------------------
+# Constantes das correlações, com a equação de origem em cada linha.
+# ---------------------------------------------------------------------------
+[constants]
+
+# Eq. 3.8b — capacidade de gás, para d [mm], Leff [m], T [K], Qg [m³/h], P [kPa].
+# Idêntica à Eq. 14 de Alves & Komesu: o artigo reproduz este livro.
+gas_capacity_coefficient = 34.5
+
+# Eq. 3.9b — capacidade de líquido, para d [mm], Leff [m], tr [min], Ql [m³/h].
+#
+# Este é o valor IMPRESSO no livro, e aqui não há motivo para derivá-lo — ao contrário
+# da Eq. 22 do trifásico. A forma em unidades de campo é d[in]²·Leff[ft] = tr·Ql[bpd]/0,7,
+# e 1/0,7 convertido para SI dá 42406,6: apenas 0,08 % do valor publicado. Não há
+# inconsistência a resolver, então cita-se a fonte.
+#
+# (No trifásico o caso é outro: o 4,12×10⁴ impresso em Alves & Komesu erra 1,9 % e é
+# incompatível com a Tabela 3 do próprio artigo, então lá o valor é derivado. O critério
+# é o mesmo nos dois: seguir a fonte, salvo quando ela se contradiz.)
+liquid_capacity_coefficient = 42441.0
+
+# Eq. 3.11 — vaso preenchido a 50 %: Lss = (4/3)·Leff quando o líquido governa.
+# (Com o gás governando vale a Eq. 3.10b, Lss = Leff + d/1000, aplicada no código.)
+# Mesmas relações do trifásico — ver `lss_from` em src/sizing/constraints.jl.
+lss_liquid_factor = 1.3333333333333333
+
+# Eq. 3.6 e 3.7b — partida e relaxação da iteração do coeficiente de arrasto.
+# Ver src/sizing/separator/drag.jl.
+cd_initial    = 0.34
+cd_relaxation = 0.5

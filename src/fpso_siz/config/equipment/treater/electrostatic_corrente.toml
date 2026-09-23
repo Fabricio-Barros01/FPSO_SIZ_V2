@@ -1,0 +1,17 @@
+# Campos da corrente que o tratador reescreve (rótulo, default e nota) — o resto vem de
+# config/stream.toml. Port de _AJUSTES_TRATADOR (sizing/treater/electrostatic.jl).
+
+[q_oil]
+label = "Vazão de óleo"
+default = 215.8
+note = "Óleo tratado que atravessa o vaso. Eq. 4.15b e Eq. 4.16."
+
+[q_water]
+label = "Vazão de água emulsionada"
+default = 25.0
+note = "Água que chega EMULSIONADA no óleo, não uma corrente de água livre — esta fica a jusante de um separador, que já retirou a água livre. Eq. 4.15b e Eq. 4.16."
+
+[mu_oil]
+label = "Viscosidade do óleo"
+default = 10.0
+note = "Fase contínua da decantação da água (Eq. 4.5b). É a variável a que o tamanho do vaso é mais sensível depois do tempo de retenção."

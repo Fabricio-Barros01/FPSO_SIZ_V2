@@ -1,0 +1,21 @@
+# Coeficientes das correlações de gotícula de Stewart & Arnold (2008), comuns aos vasos
+# (separador trifásico, knockout, tratador). No Julia eles estavam no código
+# (src/sizing/separator/drag.jl, beta.jl); aqui são dados, pela invariante 2.
+
+[arrasto]
+# V_t = coef_vt·[((ρl−ρg)/ρg)·(dm/C_D)]^0,5   (Eq. 11 de Alves & Komesu; Eq. 3.7b do livro)
+coef_vt = 0.0036
+# Re = coef_re·ρg·dm·V_t/µg                     (Eq. 10; dm em µm, µg em cP)
+coef_re = 0.001
+# C_D = cd_a/Re + cd_b/√Re + cd_c               (Eq. 9; Eq. 3.6 do livro)
+cd_a = 24.0
+cd_b = 3.0
+cd_c = 0.34
+tolerancia = 1e-10        # convergência relativa da iteração de C_D
+max_iteracoes = 500
+relaxacao = 0.5          # ω padrão da sub-relaxação (os métodos passam o seu cd_relaxation)
+fonte = "Stewart & Arnold (2008), Eq. 3.6–3.7b; Alves & Komesu (2025), Eq. 9–11"
+
+[segmento]
+passos_bissecao = 80      # bisseção de h/R no segmento circular (~1e-24 em u)
+fonte = "Stewart & Arnold (2008), Fig. 3 e Eq. 4.17 (geometria do segmento circular)"

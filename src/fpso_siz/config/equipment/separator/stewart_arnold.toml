@@ -1,0 +1,151 @@
+label = "Stewart & Arnold (2008)"
+equipment = "separator"
+# Citada no cabeçalho do memorial exportado. Ver `method_reference`.
+reference = "Alves & Komesu (2025), Lajer v.12 n.1 p.16-29 — modelo semiempírico de Stewart & Arnold (2008)."
+
+# Parâmetros do método. A GUI monta o formulário iterando estes blocos — não há
+# nenhum nome de parâmetro escrito no código da interface.
+#
+# Fonte dos defaults: Alves & Komesu (2025), Tabela 1, que por sua vez adapta
+# Martins (2017, p. 66) — FPSO no pré-sal da Bacia de Santos.
+
+[[parameter]]
+key     = "dm_water"
+label   = "Gotícula de água"
+unit    = "µm"
+default = 500.0
+min     = 50.0
+max     = 2000.0
+note    = "Critério de Stewart & Arnold: gotas de água > 500 µm decantam na fase óleo. Eq. 17."
+
+[[parameter]]
+key     = "dm_oil"
+label   = "Gotícula de óleo"
+unit    = "µm"
+default = 200.0
+min     = 20.0
+max     = 1000.0
+note    = "Critério de Stewart & Arnold: gotas de óleo > 200 µm ascendem na fase água. Eq. 20."
+
+[[parameter]]
+key     = "dm_gas"
+label   = "Gotícula no gás"
+unit    = "µm"
+default = 100.0
+min     = 10.0
+max     = 500.0
+note    = "Critério de Stewart & Arnold: gotas > 100 µm devem decantar da corrente gasosa. Eq. 11/13."
+
+[[parameter]]
+key     = "tr_oil"
+label   = "Retenção do óleo"
+unit    = "min"
+default = 10.0
+min     = 1.0
+max     = 60.0
+note    = "Eq. 17 e 22. Tabela 1 de Alves & Komesu (2025)."
+
+[[parameter]]
+key     = "tr_water"
+label   = "Retenção da água"
+unit    = "min"
+default = 10.0
+min     = 1.0
+max     = 60.0
+note    = "Eq. 20 e 22. Tabela 1 de Alves & Komesu (2025)."
+
+[[parameter]]
+key      = "d_min"
+label    = "Diâmetro mínimo"
+unit     = "mm"
+default  = 3000.0
+min      = 500.0
+max      = 12000.0
+advanced = true
+note     = "Início da grade de diâmetros (Eq. 22–24)."
+
+[[parameter]]
+key      = "d_max"
+label    = "Diâmetro máximo"
+unit     = "mm"
+default  = 8000.0
+min      = 500.0
+max      = 12000.0
+advanced = true
+note     = "Fim da grade. Não confundir com o teto de decantação d_max das Eq. 19/21, que é calculado."
+
+[[parameter]]
+key      = "d_step"
+label    = "Passo da grade"
+unit     = "mm"
+default  = 150.0
+min      = 10.0
+max      = 500.0
+advanced = true
+note     = "150 mm reproduz a grade da Tabela 3 de Alves & Komesu (2025)."
+
+[[parameter]]
+key      = "sr_min"
+label    = "Esbeltez mínima"
+unit     = "–"
+default  = 3.0
+min      = 1.5
+max      = 6.0
+advanced = true
+note     = "Stewart & Arnold (2008) recomendam 3 < SR < 5 para evitar turbulência e quebra da interface."
+
+[[parameter]]
+key      = "sr_max"
+label    = "Esbeltez máxima"
+unit     = "–"
+default  = 5.0
+min      = 1.5
+max      = 8.0
+advanced = true
+note     = "Limite superior da banda recomendada."
+
+[[parameter]]
+key      = "sr_target"
+label    = "Esbeltez alvo"
+unit     = "–"
+default  = 4.0
+min      = 1.5
+max      = 8.0
+advanced = true
+note     = "Centro da banda. Alves & Komesu escolhem os valores centrais do intervalo (SR ≈ 4)."
+
+# ---------------------------------------------------------------------------
+# Constantes das correlações. Ficam aqui, e não no código, para que a premissa
+# esteja visível e auditável. Cada uma cita a equação de origem.
+# ---------------------------------------------------------------------------
+[constants]
+
+# Eq. 14 — capacidade de gás, para d [mm], Leff [m], T [K], Qg [m³/h], P [kPa].
+eq14_coefficient = 34.5
+
+# Eq. 17 e 20 — espessura máxima de fase por Stokes, resultado em mm,
+# com tr [min], dm [µm] e µ [cP]. Equivale a 1,28×10⁻³ in de Stewart & Arnold.
+eq17_coefficient = 0.033
+
+# Eq. 22 — capacidade de líquido, para d [mm], Leff [m], tr [min], Q [m³/h].
+#
+# ATENÇÃO: Alves & Komesu (2025) imprimem 4,12×10⁴, valor que é inconsistente com a
+# Tabela 3 do próprio artigo (as seis linhas publicadas implicam 4,2004×10⁴). O valor
+# abaixo é derivado da forma em unidades de campo de Stewart & Arnold,
+# d[in]²·Leff[ft] = 1,42·(tr·Q[BPD]), convertida para SI — ver
+# Units.liquid_capacity_coefficient(). Reproduz a Tabela 3 com 0,35 % de desvio,
+# enquanto 4,12×10⁴ erra 1,9 %. test/units.jl amarra este número à derivação.
+eq22_coefficient = 42152.133580705
+
+# Eq. 23 — vaso preenchido a 50 %: Lss = (4/3)·Leff.
+# (No bloco de gás vale a Eq. 15, Lss = Leff + d/1000, aplicada no código.)
+lss_liquid_factor = 1.3333333333333333
+
+# Eq. 9–11 — partida e relaxação da iteração do coeficiente de arrasto.
+# Stewart & Arnold mandam começar em 0,34. A substituição direta (relaxação = 1)
+# converge monotonicamente; usamos 0,5 por robustez, já que o motor de envelope
+# avalia muitas combinações de propriedades não inspecionadas uma a uma. Custa ~55
+# iterações em vez de ~22, e chega ao mesmo ponto fixo.
+# Ver src/sizing/separator/drag.jl e test/drag.jl.
+cd_initial    = 0.34
+cd_relaxation = 0.5

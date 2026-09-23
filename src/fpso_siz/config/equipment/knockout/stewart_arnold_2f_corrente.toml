@@ -1,0 +1,10 @@
+# Campos da corrente que o knockout reetiqueta: a fase líquida única ocupa a posição do
+# óleo. Port de _ROTULOS_LIQUIDO (sizing/knockout/two_phase.jl).
+
+[q_oil]
+label = "Vazão de líquido"
+note = "Fase líquida única (condensado, óleo). Eq. 3.9b."
+
+[rho_oil]
+label = "Densidade do líquido"
+note = "Fase líquida única. Entra na Eq. 3.7b como ρl."

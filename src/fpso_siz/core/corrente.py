@@ -5,7 +5,8 @@ from dataclasses import dataclass
 
 from fpso_siz.core.configuracao import carregar
 from fpso_siz.core.parametros import parameter_specs
-from fpso_siz.core.unidades import c_para_k, cp_para_pas, kpa_para_pa, m3h_para_m3s
+from fpso_siz.core.unidades import (c_para_k, cp_para_pas, densidade_relativa, kpa_para_pa, m3h_para_m3s,
+                                    m3s_para_m3h, pa_para_kpa, pas_para_cp)
 
 STREAM_KEYS = ("q_oil", "q_water", "q_gas", "rho_oil", "rho_water", "rho_gas",
                "mu_oil", "mu_water", "mu_gas", "pressure", "temperature", "z")
@@ -52,3 +53,32 @@ def stream_from_case(vals, required=STREAM_KEYS):
                              rho_oil=v["rho_oil"], rho_water=v["rho_water"], rho_gas=v["rho_gas"],
                              mu_oil_cp=v["mu_oil"], mu_water_cp=v["mu_water"], mu_gas_cp=v["mu_gas"],
                              p_kpa=v["pressure"], t_celsius=v["temperature"], z=v["z"])
+
+
+@dataclass(frozen=True)
+class FieldUnits:
+    """A corrente nas unidades das correlações de Stewart & Arnold: m³/h, kg/m³, cP, kPa,
+    K e densidades relativas."""
+    q_o: float
+    q_w: float
+    q_g: float
+    rho_o: float
+    rho_w: float
+    rho_g: float
+    mu_o: float
+    mu_w: float
+    mu_g: float
+    sg_o: float
+    sg_w: float
+    p_kpa: float
+    t_k: float
+    z: float
+
+
+def field_units(s):
+    """Único ponto de conversão SI → unidades de campo (field_units do Julia)."""
+    return FieldUnits(m3s_para_m3h(s.oil.volumetric_flow), m3s_para_m3h(s.water.volumetric_flow),
+                      m3s_para_m3h(s.gas.volumetric_flow), s.oil.density, s.water.density, s.gas.density,
+                      pas_para_cp(s.oil.viscosity), pas_para_cp(s.water.viscosity), pas_para_cp(s.gas.viscosity),
+                      densidade_relativa(s.oil.density), densidade_relativa(s.water.density),
+                      pa_para_kpa(s.pressure), s.temperature, s.z_factor)

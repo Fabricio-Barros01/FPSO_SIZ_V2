@@ -23,9 +23,12 @@ SAIDA = lambda p: ROTULO(p).startswith("output/") or ROTULO(p) in ("cli.py", "__
 REDE = {"socket", "urllib", "http", "requests", "httpx", "aiohttp", "ftplib", "smtplib", "websocket"}
 UI = {"tkinter", "PyQt5", "PyQt6", "PySide2", "PySide6", "flask", "fastapi", "streamlit", "dash"}
 SO_EM = {"numpy": {"_num.py"}, "scipy": {"_num.py"}, "jinja2": "output/"}
-LITERAIS_OK = {0, 1, 2, 10}
+# 0,5 (vaso meio cheio, média), 4 (área πd²/4; casas decimais) e 10 (base) são estruturais,
+# não coeficientes empíricos; estes vão para TOML.
+LITERAIS_OK = {0, 0.5, 1, 2, 4, 10}
 EXATOS = {"core/unidades.py",        # fatores de conversão exatos
-          "core/formato_julia.py"}   # regra de impressão de números do Julia (não é física)
+          "core/formato_julia.py",   # regra de impressão de números do Julia (não é física)
+          "core/grade.py"}           # algoritmo de faixa float do Julia (limites de maxintfloat)
 
 
 def arvore(p):
@@ -78,7 +81,7 @@ def test_sem_url_nem_caminho_absoluto(p):
 
 
 def test_toml_sem_url():
-    for p in (PACOTE / "config").glob("*.toml"):
+    for p in (PACOTE / "config").rglob("*.toml"):
         assert not re.search(r"https?://", p.read_text(encoding="utf-8")), p.name
 
 
