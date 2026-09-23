@@ -26,6 +26,12 @@ backlog: [`SPRINTS.md`](SPRINTS.md), que deve ser lido primeiro.
    JSON e o CSV saem desse mesmo rastro, com bijeção equação↔rastro.
 4. **A CLI não nomeia parâmetros.** Ela itera os `ParameterSpec` declarados por cada método.
 
+## Contrato de dimensionamento
+Todo método herda `core.contrato.MetodoDimensionamento` e implementa os hooks com os
+**mesmos nomes do Julia**. O motor (`core/motor.py`) nunca cita grandeza. Inviabilidade é
+estado (`feasible = False` + mensagem), nunca exceção. Oráculo dos equipamentos:
+`tests/fixtures/julia/` (commit no `manifesto.json`).
+
 ## Dependências
 numpy/scipy só via `fpso_siz/_num.py`, para manter o port a C/Java mapeável; jinja2 só em
 `fpso_siz/output/`.
@@ -36,6 +42,8 @@ uv sync
 uv run pytest
 uv run pytest --cov=fpso_siz --cov-fail-under=90
 uv run pytest -m latex                      # compila os memoriais (lento)
+uv run pytest -m julia                      # regenera as fixtures do Julia e compara
+tools/exportar_fixtures_julia.sh [commit]   # fixtures do Julia (git archive, só leitura)
 uv run python tools/comparar_memorial.py    # paridade do memorial, template a template
 ```
 

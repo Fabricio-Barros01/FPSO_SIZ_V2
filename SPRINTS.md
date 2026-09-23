@@ -14,12 +14,14 @@ aquela fase).
 
 ## Estado atual
 
-**FASE ATUAL: F5 — Contrato do núcleo + fixtures Julia ← ATUAL (aguardando aprovação)**
+**FASE ATUAL: F6 — Vasos (separador 3F, knockout, tratador) ← ATUAL (aguardando aprovação)**
 
 F0–F4 entregues: **o balanço preliminar está completo em Python**. O motor é bit a bit, a
 auditoria é independente, há JSON/CSV com esquema, e o memorial LaTeX A4 sai em dois
 layouts: `original`, idêntico ao script de referência, e `senai`, com o template SENAI
-CETIQT. São 186 testes (+2 de compilação com `-m latex`) e cobertura de 99,8 %. Uso:
+CETIQT. F5 entregue: o contrato de dimensionamento e o motor de envelope foram portados, e
+as fixtures do Julia (`ab58fc6`) foram exportadas e são reproduzíveis. São 267 testes (+2
+`-m latex`, +1 `-m julia`) e cobertura de 99 %. Uso:
 `uv run fpso-siz balanco|memorial --casos tests/fixtures/python_ref/design_cases_bot.json --saida saida/`.
 
 ---
@@ -87,7 +89,10 @@ e `cp ../FPSO_Siz/config/bot/*.json references/bot/`.
   desvio do plano está registrado. Reavaliar na F4 ou na F12, se for preciso distribuir a
   compilação do memorial.
 - Comandos: `uv run pytest`, `uv run pytest --cov=fpso_siz --cov-fail-under=90`,
-  `uv run pytest -m latex` (compila os memoriais; lento).
+  `uv run pytest -m latex` (compila os memoriais; lento), `uv run pytest -m julia`
+  (regenera as fixtures do Julia; precisa de `julia` e `../FPSO_Siz`).
+- Fixtures do Julia: `tools/exportar_fixtures_julia.sh [commit]` (git archive → pasta
+  temporária; o repositório Julia só é lido).
 - Com o `.envrc` bloqueado no direnv, bibliotecas com binário (ex.: pymupdf) precisam do
   `LD_LIBRARY_PATH` do flake; ele está em `.direnv/flake-profile-*.rc`.
 
@@ -184,15 +189,26 @@ equações↔`\label`, mais 4 definições de fechamento. Os dois layouts compil
 para os memoriais de equipamento (F11) e o `indicadores.maximo` (regra de empate), que o
 envelope multi-caso vai reusar.
 
-### F5 — Contrato do núcleo + fixtures Julia ← ATUAL
+### F5 — Contrato do núcleo + fixtures Julia ✅
 `core/` espelhando `interfaces.jl`, `engine/{contract,envelope,single}.jl` e `types/` do
 Julia. `tools/exportar_fixtures_julia.jl` roda sobre um `git archive ab58fc6` extraído em
 pasta temporária (o repo Julia não é tocado) e grava em `tests/fixtures/julia/`, com o hash
 do commit.
 **Aceite:** 4 invariantes testadas; envelope validado com um método-brinquedo; fixtures
 reproduzíveis.
+Entregue: `core/{parametros,casos,corrente,contrato,motor,registro,formato_julia}.py` e o
+`Rastro` sequencial. Hooks com os nomes do Julia; cantos na ordem do `Iterators.product`;
+mensagens com o texto e o formato numérico do Julia. Fixtures de 7 boxes: envelope completo
+com varredura e rastro por caso, descritores e constantes, mais os TOMLs de exemplo. Os 6
+exemplos dão expansão idêntica à do Julia. O motor foi provado com dois métodos-brinquedo
+(vaso com teto/piso por caso; equipamento que não é vaso) e 7 estados de inviabilidade.
+Detalhes em `docs/validacao/04-contrato-nucleo.md`.
+**Notas para a F6:** portar os TOMLs de `config/equipment/` do snapshot, `field_units`, a
+família de vasos (`VesselConstraints` e hooks) e o reetiquetamento de corrente do
+knockout/tratador. Oráculo: fixtures dos 3 vasos + `test/golden_{alves_komesu,knockout}.jl`
+e `test/treater.jl`.
 
-### F6 — Vasos (separador 3F, knockout, tratador)
+### F6 — Vasos (separador 3F, knockout, tratador) ← ATUAL
 **Aceite:** `golden_alves_komesu` (d = 6300 mm, Leff = 18,59 m, Lss = 24,78 m, SR = 3,93;
 governa "Fim de vida"; teto de decantação 9124 mm), `golden_knockout` e `treater` com as
 tolerâncias Julia; cobertura ≥ 90 %.

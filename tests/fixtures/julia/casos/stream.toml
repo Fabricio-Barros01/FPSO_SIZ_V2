@@ -1,0 +1,115 @@
+label = "Corrente de entrada"
+
+# Descritores das entradas da corrente. São comuns a todos os equipamentos — a GUI
+# monta esta parte do formulário uma vez e reaproveita para separador, bomba,
+# tratador, trocador e vaso flash.
+#
+# Defaults: Alves & Komesu (2025), Tabela 1 (adaptado de Martins, 2017, p. 66).
+
+[[parameter]]
+key     = "q_oil"
+label   = "Vazão de óleo"
+unit    = "m³/h"
+default = 215.8
+min     = 0.1
+max     = 20000.0
+note    = "Tabela 1 — Taxa de Óleo."
+
+[[parameter]]
+key     = "q_water"
+label   = "Vazão de água"
+unit    = "m³/h"
+default = 1025.8
+min     = 0.0
+max     = 20000.0
+note    = "Tabela 1 — Taxa de Água."
+
+[[parameter]]
+key     = "q_gas"
+label   = "Vazão de gás"
+unit    = "m³/h"
+default = 4587.3
+min     = 0.0
+max     = 500000.0
+note    = "Tabela 1 — Taxa de Gás, nas condições de operação (não padronizada)."
+
+[[parameter]]
+key     = "rho_oil"
+label   = "Densidade do óleo"
+unit    = "kg/m³"
+default = 863.0
+min     = 600.0
+max     = 1050.0
+note    = "Tabela 1. Equivale a 32 °API pela Eq. 12 (que daria 865,4)."
+
+[[parameter]]
+key     = "rho_water"
+label   = "Densidade da água"
+unit    = "kg/m³"
+default = 1000.0
+min     = 950.0
+max     = 1200.0
+note    = "Água de formação. A Tabela 1 lista 'peso específico da água = 1,1', mas essa coluna está trocada com a de viscosidade — ver a nota em src/sizing/separator/stewart_arnold.jl."
+
+[[parameter]]
+key     = "rho_gas"
+label   = "Densidade do gás"
+unit    = "kg/m³"
+default = 17.0
+min     = 0.5
+max     = 300.0
+note    = "Tabela 1 — Densidade do Gás, nas condições de operação."
+
+[[parameter]]
+key     = "mu_oil"
+label   = "Viscosidade do óleo"
+unit    = "cP"
+default = 10.0
+min     = 0.1
+max     = 10000.0
+note    = "Tabela 1. Entra nas Eq. 17 (espessura máxima da fase óleo)."
+
+[[parameter]]
+key     = "mu_water"
+label   = "Viscosidade da água"
+unit    = "cP"
+default = 1.1
+min     = 0.1
+max     = 100.0
+note    = "Tabela 1. Entra na Eq. 20."
+
+[[parameter]]
+key     = "mu_gas"
+label   = "Viscosidade do gás"
+unit    = "cP"
+default = 0.012
+min     = 0.001
+max     = 1.0
+note    = "Gás natural a 28 °C / 2300 kPa. A Tabela 1 lista 0,6 cP, que é viscosidade de líquido (coluna trocada com a densidade relativa); 0,012 cP é o que reproduz a Tabela 2 do artigo. Em ambos os valores o gás não governa o dimensionamento."
+
+[[parameter]]
+key     = "pressure"
+label   = "Pressão"
+unit    = "kPa"
+default = 2300.0
+min     = 100.0
+max     = 20000.0
+note    = "Tabela 1."
+
+[[parameter]]
+key     = "temperature"
+label   = "Temperatura"
+unit    = "°C"
+default = 28.0
+min     = -20.0
+max     = 200.0
+note    = "Tabela 1."
+
+[[parameter]]
+key     = "z"
+label   = "Compressibilidade Z"
+unit    = "–"
+default = 0.9
+min     = 0.2
+max     = 1.5
+note    = "Tabela 1. Entra na Eq. 14."

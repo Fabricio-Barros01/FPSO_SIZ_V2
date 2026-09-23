@@ -1,0 +1,38 @@
+label = "Kemp, Tabela 2.2 (p. 21) — quatro correntes"
+equipment = "pinch"
+
+# Conjunto de casos do FPSO_Siz.
+#
+# As quatro correntes do exemplo resolvido de Kemp, cap. 2 (Tabela 2.2, p. 21). Com o
+# ΔTmin de 10 °C que o livro adota, o programa tem de reproduzir os números publicados:
+#
+#   QHmin = 20 kW, QCmin = 60 kW
+#   pinch em 85 °C deslocada — 90 °C do lado quente, 80 °C do lado frio
+#
+# São os mesmos números que test/golden_kemp.jl fixa contra a Figura 2.9 (p. 23) e a
+# p. 24. Este arquivo existe para que eles possam ser conferidos NA TELA, e não só na
+# suíte.
+#
+# As chaves `corrente_N_*` são sintetizadas por `instance_key` (src/interfaces.jl): o
+# grupo, o índice da instância e o campo. Acrescentar uma quinta corrente é acrescentar
+# `corrente_5_t_in`, `corrente_5_t_out` e `corrente_5_mcp` — e as três, ou nenhuma:
+# uma instância pela metade é recusada em vez de completada com valores de fábrica.
+#
+# Valor fixo: um número. Faixa: um array [mín, máx] — que NÃO se aplica aos campos de
+# corrente, que têm uma caixa só. Uma rede de N correntes é um problema de pinch, não
+# 2^N deles; a incerteza de operação entra como um [[case]] por cenário.
+
+[[case]]
+name = "Tabela 2.2 — as quatro correntes do livro"
+corrente_1_t_in = 20.0
+corrente_1_t_out = 135.0
+corrente_1_mcp = 2.0
+corrente_2_t_in = 170.0
+corrente_2_t_out = 60.0
+corrente_2_mcp = 3.0
+corrente_3_t_in = 80.0
+corrente_3_t_out = 140.0
+corrente_3_mcp = 4.0
+corrente_4_t_in = 150.0
+corrente_4_t_out = 30.0
+corrente_4_mcp = 1.5

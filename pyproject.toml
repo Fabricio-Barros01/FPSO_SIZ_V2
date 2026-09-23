@@ -26,8 +26,9 @@ build-backend = "uv_build"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra -m 'not latex'"
-markers = ["latex: compila o memorial com latexmk (lento; rode com -m latex)"]
+addopts = "-ra -m 'not latex and not julia'"
+markers = ["latex: compila o memorial com latexmk (lento; rode com -m latex)",
+           "julia: regenera as fixtures do Julia a partir de um git archive (lento; rode com -m julia)"]
 
 [tool.coverage.run]
 source = ["fpso_siz"]

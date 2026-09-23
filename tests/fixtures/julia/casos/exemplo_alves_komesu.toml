@@ -1,0 +1,85 @@
+label = "Exemplo — Alves & Komesu (2025), FPSO no pré-sal da Bacia de Santos"
+# A qual equipamento este conjunto serve. Abrir um arquivo de outro equipamento
+# preencheria com defaults as chaves que faltam, em silêncio — ver `carregar_casos!`.
+equipment = "separator"
+
+# Demonstra as três formas de entrada que o software aceita:
+#   1. o caso publicado, com todos os valores fixos;
+#   2. um caso de fim de vida, com mais água (a produção de água cresce com o
+#      amadurecimento do campo — é a justificativa do próprio artigo para escolher o
+#      modelo trifásico);
+#   3. um caso com entradas dadas como FAIXA, que o motor expande em casos de canto.
+#
+# Dimensionando os três juntos, o software entrega um único vaso que atende a todos e
+# informa qual caso governa cada restrição.
+#
+# Valores fixos: número. Faixas: array [min, max].
+# Chaves omitidas assumem o default do descritor (config/stream.toml e
+# config/equipment/separator/stewart_arnold.toml).
+
+# --- 1. O caso publicado -----------------------------------------------------
+# Tabela 1 do artigo. Com a grade d = 5200…5950 mm reproduz a Tabela 3.
+[[case]]
+name        = "Projeto (Tabela 1)"
+q_oil       = 215.8
+q_water     = 1025.8
+q_gas       = 4587.3
+rho_oil     = 863.0
+rho_water   = 1000.0
+rho_gas     = 17.0
+mu_oil      = 10.0
+mu_water    = 1.1
+mu_gas      = 0.012
+pressure    = 2300.0
+temperature = 28.0
+z           = 0.9
+
+# --- 2. Fim de vida: mais água, menos óleo -----------------------------------
+[[case]]
+name        = "Fim de vida"
+q_oil       = 150.0
+q_water     = 1600.0
+q_gas       = 3800.0
+rho_oil     = 870.0
+rho_water   = 1010.0
+rho_gas     = 17.0
+mu_oil      = 14.0
+mu_water    = 1.1
+mu_gas      = 0.012
+pressure    = 2300.0
+temperature = 28.0
+z           = 0.9
+
+# --- 3. Faixa de operação ----------------------------------------------------
+# Três entradas em faixa ⇒ 2³ = 8 casos de canto, avaliados todos.
+[[case]]
+name        = "Faixa de operação"
+q_oil       = [180.0, 260.0]
+q_water     = [900.0, 1400.0]
+q_gas       = 4587.3
+rho_oil     = 863.0
+rho_water   = 1000.0
+rho_gas     = 17.0
+mu_oil      = [8.0, 14.0]
+mu_water    = 1.1
+mu_gas      = 0.012
+pressure    = 2300.0
+temperature = 28.0
+z           = 0.9
+
+# --- 4. Desativado: fica guardado, não entra na conta ------------------------
+[[case]]
+name        = "Partida (fora do envelope)"
+enabled     = false
+q_oil       = 60.0
+q_water     = 200.0
+q_gas       = 1200.0
+rho_oil     = 863.0
+rho_water   = 1000.0
+rho_gas     = 17.0
+mu_oil      = 10.0
+mu_water    = 1.1
+mu_gas      = 0.012
+pressure    = 2300.0
+temperature = 28.0
+z           = 0.9

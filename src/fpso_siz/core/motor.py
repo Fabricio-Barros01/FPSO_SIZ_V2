@@ -1,0 +1,153 @@
+"""Motor de dimensionamento: caso único e envelope multi-caso
+(port de src/engine/single.jl e src/engine/envelope.jl).
+
+O envelope entrega UM equipamento que atende a todos os casos, envelopando a curva de
+exigência e não os dados de entrada (correto sem hipótese de monotonicidade):
+
+    y_env(x) = max_c requirement(m, x, cons_c)        x_adm ≤ min_c ceiling_of(m, cons_c)
+
+O corpo não cita nenhuma grandeza — só os hooks de contrato.py (invariante 4). As
+mensagens reproduzem o texto do Julia, inclusive o formato dos números.
+"""
+import math
+
+from fpso_siz.core.contrato import (EnvelopeResult, EnvelopeRow, SizingResult, SweepRow, infeasible,
+                                    infeasible_envelope)
+from fpso_siz.core.formato_julia import jl_round
+from fpso_siz.core.parametros import with_defaults
+
+
+def _erro(e):
+    """`sprint(showerror, ArgumentError(msg))` do Julia."""
+    return f"ArgumentError: {e}"
+
+
+def sweep_row(m, x, cons, k, p):
+    y = m.requirement(x, cons)
+    gov = m.governing_of(x, cons)
+    d = m.derived(x, y, gov, cons, k, p)
+    ok = x <= m.ceiling_of(cons) and m.case_admissible(x, cons, p) and m.admissible(x, d, p)
+    return SweepRow(x, y, m.per_constraint(x, cons), d, gov, ok, m.presentation_data(x, cons, k, p))
+
+
+def size_single(eq, m, entrada, params):
+    """Varre a grade, descarta o que passa do teto ou sai da banda, e minimiza objective."""
+    p = with_defaults(m.parameters(), params)
+    k = m.constants()
+    ok, cons, tr = m.sizing_constraints(entrada, p, k)
+    if not ok:
+        return infeasible(m.method_id, cons, trace=tr)
+    eixo = m.sweep_axis(p)
+    teto = m.ceiling_of(cons)
+    mecan = m.ceiling_mechanism_of(cons)
+    if not eixo.values:
+        return infeasible(m.method_id, (f"Grade de {eixo.label} vazia. " + m.grid_hint(p)).strip(),
+                          trace=tr, ceiling=teto, ceiling_mechanism=mecan)
+    sweep = [sweep_row(m, x, cons, k, p) for x in eixo.values]
+    admissivel = [r for r in sweep if r.ok]
+    if not admissivel:
+        return infeasible(m.method_id, m.selection_message(sweep, teto, p, mechanism=mecan),
+                          sweep=sweep, trace=tr, ceiling=teto, ceiling_mechanism=mecan)
+    best = min(admissivel, key=lambda r: m.objective(r.x, r.derivados, p))
+    m.trace_selection(tr, best, p)
+    return SizingResult(True, "", best.x, best.y, best.derivados, best.governing, teto, mecan,
+                        m.method_id, sweep, tr)
+
+
+def _menor_teto(m, conss):
+    if not conss:
+        return math.inf, -1
+    tetos = [m.ceiling_of(c) for c in conss]
+    i = min(range(len(tetos)), key=tetos.__getitem__)
+    return tetos[i], i
+
+
+def _faixa_texto(s):
+    return jl_round(s[0], 2) if len(s) == 1 else f"{jl_round(min(s), 2)}–{jl_round(max(s), 2)}"
+
+
+def _sem_intersecao(m, eixo, conss, names, p):
+    """Cada caso, sozinho, tem solução, e as soluções não se cruzam — só o motor sabe."""
+    if len(conss) < 2:
+        return ""
+    aceitos = [[x for x in eixo.values if x <= m.ceiling_of(c) and m.case_admissible(x, c, p)] for c in conss]
+    if any(not a for a in aceitos):
+        return ""
+    if set(aceitos[0]).intersection(*aceitos[1:]):
+        return ""
+    faixas = [f"'{n}' aceita {_faixa_texto(s)} {eixo.unit}" for n, s in zip(names, aceitos)]
+    return (f" Isolado, cada caso tem {eixo.label} admissível, mas as faixas não se cruzam: " + "; ".join(faixas)
+            + ". Como o equipamento é um só, amplie a banda, ou trate os casos em equipamentos separados.")
+
+
+def size_envelope(eq, m, cases, max_corners=None):
+    """Um equipamento para todos os casos ativos de `cases` (faixas viram cantos)."""
+    if m.applies_to().method_id != eq.method_id:
+        return infeasible_envelope(f"O método '{m.label}' não se aplica a '{eq.label}'.")
+    specs = m.parameters()
+    k = m.constants()
+    try:
+        expanded = cases.expand(max_corners=max_corners)
+    except ValueError as e:
+        return infeasible_envelope(_erro(e))
+    if not expanded:
+        return infeasible_envelope("Nenhum caso ativo. Adicione ao menos uma corrente.")
+
+    names, conss, per_case, params = [], [], [], []
+    for name, vals in expanded:
+        try:
+            entrada = m.case_input(vals)
+        except ValueError as e:
+            return infeasible_envelope(f"Caso '{name}': {_erro(e)}")
+        p = with_defaults(specs, vals)
+        ok, cons, _ = m.sizing_constraints(entrada, p, k)
+        if not ok:
+            return infeasible_envelope(f"Caso '{name}': {cons}", case_names=names)
+        names.append(name)
+        conss.append(cons)
+        params.append(p)
+        per_case.append(m.size_equipment(eq, entrada, vals))
+
+    ok_p, p_env = m.envelope_params(params)
+    if not ok_p:
+        return infeasible_envelope(p_env, case_names=names, per_case=per_case, ceiling=_menor_teto(m, conss)[0])
+    eixo = m.sweep_axis(p_env)
+    if not eixo.values:
+        return infeasible_envelope(f"Grade de {eixo.label} vazia.", case_names=names, per_case=per_case)
+
+    teto, i_teto = _menor_teto(m, conss)
+    mecan = m.ceiling_mechanism_of(conss[i_teto])
+    rows = []
+    for x in eixo.values:
+        per_case_y = [m.requirement(x, c) for c in conss]
+        idx = max(range(len(per_case_y)), key=per_case_y.__getitem__)
+        y = per_case_y[idx]
+        gov = m.governing_of(x, conss[idx])
+        d = m.derived(x, y, gov, conss[idx], k, p_env)
+        ok = x <= teto and all(m.case_admissible(x, c, p_env) for c in conss) and m.admissible(x, d, p_env)
+        rows.append(EnvelopeRow(x, y, d, gov, names[idx], per_case_y, ok,
+                                m.presentation_data(x, conss[idx], k, p_env)))
+
+    admissivel = [r for r in rows if r.ok]
+    if not admissivel:
+        msg = m.selection_message(rows, teto, p_env, mechanism=mecan) + _sem_intersecao(m, eixo, conss, names, p_env)
+        return infeasible_envelope(f"Não há equipamento que atenda simultaneamente aos {len(names)} casos. " + msg,
+                                   case_names=names, rows=rows, per_case=per_case, ceiling=teto,
+                                   ceiling_case=names[i_teto], ceiling_mechanism=mecan)
+    best = min(admissivel, key=lambda r: m.objective(r.x, r.derivados, p_env))
+    slack = [best.y - v for v in best.per_case_y]
+    return EnvelopeResult(True, "", best.x, best.y, best.derivados, best.governing, best.driver_case, teto,
+                          names[i_teto], mecan, names, rows, slack, per_case)
+
+
+def governing_summary(m, r):
+    """Uma linha: quem governa, por qual caso, e o teto (se houver)."""
+    if not r.feasible:
+        return r.message
+    resumo = f"Governa: {m.governing_label(r.governing)}, pelo caso '{r.driver_case}'."
+    if not math.isfinite(r.ceiling):
+        return resumo
+    return resumo + f" Teto de decantação: {round(r.ceiling)} mm, imposto pelo caso '{r.ceiling_case}'."
+
+
+

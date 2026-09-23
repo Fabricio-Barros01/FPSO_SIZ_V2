@@ -24,7 +24,8 @@ REDE = {"socket", "urllib", "http", "requests", "httpx", "aiohttp", "ftplib", "s
 UI = {"tkinter", "PyQt5", "PyQt6", "PySide2", "PySide6", "flask", "fastapi", "streamlit", "dash"}
 SO_EM = {"numpy": {"_num.py"}, "scipy": {"_num.py"}, "jinja2": "output/"}
 LITERAIS_OK = {0, 1, 2, 10}
-EXATOS = {"core/unidades.py"}
+EXATOS = {"core/unidades.py",        # fatores de conversão exatos
+          "core/formato_julia.py"}   # regra de impressão de números do Julia (não é física)
 
 
 def arvore(p):
@@ -111,3 +112,14 @@ def test_cli_nao_nomeia_parametros_nem_grandezas():
     textos = {n.value for n in ast.walk(arvore(PACOTE / "cli.py"))
               if isinstance(n, ast.Constant) and isinstance(n.value, str)}
     assert not (textos & proibidos), textos & proibidos
+
+
+@pytest.mark.parametrize("nome", ["core/motor.py", "core/contrato.py"])
+def test_motor_nao_nomeia_grandezas(nome):
+    """O motor é genérico sobre equipamento E grandeza: nenhuma chave de corrente ou de
+    parâmetro de método aparece como texto nele (invariante 4, lado do núcleo)."""
+    from fpso_siz.core.corrente import STREAM_KEYS
+
+    textos = {n.value for n in ast.walk(arvore(PACOTE / nome)) if isinstance(n, ast.Constant) and isinstance(n.value, str)}
+    assert not (textos & set(STREAM_KEYS))
+    assert not (textos & {"d_min", "d_max", "sr", "lss", "leff", "sr_min", "sr_max", "dn", "npsh"})

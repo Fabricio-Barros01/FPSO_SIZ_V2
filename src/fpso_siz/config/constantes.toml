@@ -76,3 +76,7 @@ fonte = "Balanço_Preliminar.py (maxcase, M-01, P-001, DWH-001, seção 15)"
 [bot]
 T_separacao_max_C = 99.0   # temperatura máxima de separação (F-08)
 fonte = "BOT I-ET-3010.2K-1200-941-P4X-001 rev. C, item 2.7.1.10"
+
+[motor]
+max_cantos = 256   # limite de casos de canto na expansão de faixas (explosão combinatória)
+fonte = "FPSO_Siz Julia, src/types/cases.jl (expand, max_corners)"

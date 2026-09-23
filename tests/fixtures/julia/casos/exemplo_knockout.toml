@@ -1,0 +1,32 @@
+label = "Exemplo — Stewart & Arnold (2008), Exemplo 3.2 (unidades convertidas)"
+equipment = "knockout"
+
+# O exemplo resolvido do livro, em SI. É o mesmo caso que `test/golden_knockout.jl`
+# usa para amarrar a Tabela 3.4 — aqui ele serve para a pessoa abrir a tela e ver o
+# método funcionando sem digitar nada.
+#
+# Fonte: Stewart & Arnold (2008), "Gas-Liquid and Liquid-Liquid Separators",
+# Gulf Equipment Guides, cap. 3, Exemplo 3.2 (horizontal, meio cheio).
+#
+# Dados publicados em unidades de campo, e a conversão de cada um:
+#   gás      10 MMscfd            → 10e6 · 0,028316846592 / 24 = 11 798,7 m³/h
+#   líquido  2000 BOPD, 40 °API   → 2000 · 0,158987294928 / 24 =     13,25 m³/h
+#   ρl       51,5 lb/ft³          → · 16,018463                =    824,95 kg/m³
+#   ρg        3,71 lb/ft³         → · 16,018463                =     59,43 kg/m³
+#   P        1000 psia            → · 6,894757                 =   6894,76 kPa
+#   T          60 °F              → (60−32)·5/9                =     15,56 °C
+#
+# O livro escolhe 36 in (914 mm) por 10 ft (3,05 m), SR 3,2. Com a grade comercial de
+# §3.8.6 (600 mm em diante, de 150 em 150) o software escolhe 900 mm, Lss 2,98 m,
+# SR 3,31.
+
+[[case]]
+name        = "Exemplo 3.2 — projeto"
+q_oil       = 13.2489
+q_gas       = 11798.686
+rho_oil     = 824.951
+rho_gas     = 59.428
+mu_gas      = 0.013
+pressure    = 6894.757
+temperature = 15.556
+z           = 0.84

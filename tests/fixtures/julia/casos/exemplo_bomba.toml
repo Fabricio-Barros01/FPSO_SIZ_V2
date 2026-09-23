@@ -1,0 +1,65 @@
+label = "Exemplo — bomba de transferência de óleo, dois pontos de operação"
+equipment = "pump"
+
+# Uma linha de transferência de óleo tratado do tratador para o tanque de carga, com os
+# dois pontos de operação que um FPSO de fato tem: produção nominal e produção reduzida.
+#
+# NÃO é um exemplo publicado — Moran (CEP, dez/2016) é um artigo didático e não traz um
+# caso resolvido fechado. O que ele traz, e o que `test/golden_moran.jl` amarra, são dois
+# números: a Antoine da Tabela 3 (água a 30 °C → 4243,81 Pa) e a leitura do nomograma da
+# Figura 3 (25 mm a 1 m/s ≈ 6 m/100 m). Este arquivo existe para a pessoa abrir a tela e
+# ver o método funcionando; a validação está nos testes.
+#
+# O ponto do arquivo ter DOIS casos: é o diferencial do programa. A linha é uma só, e o
+# DN escolhido precisa manter a velocidade dentro da banda nos DOIS — a vazão alta pode
+# erodir e a baixa pode deixar decantar. É a `case_admissible` do Sprint 8 em ação:
+# `admissible` sozinha só olharia o caso de maior carga.
+#
+# As duas vazões são propositalmente PRÓXIMAS (215,8 e 190 m³/h), e isso não é folga de
+# quem escolheu números fáceis: a banda 1,0-1,5 m/s corresponde a uma razão de diâmetros
+# de apenas √1,5 = 1,22, e o passo da série comercial é ~1,25. Duas vazões que diferem
+# por mais de ~20 % simplesmente NÃO têm DN em comum dentro dessa banda — o programa o
+# diz, nomeando a faixa que cada caso aceita. Quem tiver mesmo dois pontos muito
+# diferentes precisa alargar a banda, aceitar recirculação, ou duas linhas.
+
+[[case]]
+name        = "Produção nominal"
+q_oil       = 215.8
+rho_oil     = 863.0
+mu_oil      = 10.0
+pressure    = 250.0
+temperature = 45.0
+# Antoine de um corte leve de petróleo; a rigor a pressão de vapor de mistura pede
+# flash, e o que se usa aqui é a de um pseudocomponente. Ver o note do campo.
+antoine_a   = 4.02832
+antoine_b   = 1268.115
+antoine_c   = -56.199
+h_geometrica = 22.0
+p_recalque   = 180.0
+h_sucao      = 3.0
+l_sucao      = 6.0
+k_sucao      = 1.7
+l_recalque   = 120.0
+k_recalque   = 13.8
+npsh_requerido = 4.0
+rendimento   = 0.72
+
+[[case]]
+name        = "Fim de vida — óleo mais viscoso"
+q_oil       = 190.0
+rho_oil     = 866.0
+mu_oil      = 14.0
+pressure    = 250.0
+temperature = 38.0
+antoine_a   = 4.02832
+antoine_b   = 1268.115
+antoine_c   = -56.199
+h_geometrica = 22.0
+p_recalque   = 180.0
+h_sucao      = 1.2
+l_sucao      = 6.0
+k_sucao      = 1.7
+l_recalque   = 120.0
+k_recalque   = 13.8
+npsh_requerido = 4.0
+rendimento   = 0.72

@@ -21,3 +21,15 @@ def c_para_f(t_c):
 def c_para_f_linear(t_c):
     """°C → °F na forma T·1,8 + 32 (a da auditoria independente do original)."""
     return t_c * 1.8 + 32
+
+
+def m3h_para_m3s(q):
+    return q / 3600.0
+
+
+def cp_para_pas(mu):
+    return mu / 1000.0
+
+
+def kpa_para_pa(p):
+    return p * 1000.0

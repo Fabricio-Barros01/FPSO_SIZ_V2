@@ -1,0 +1,53 @@
+label = "Exemplo — resfriador de óleo a água do mar, verão e inverno"
+equipment = "exchanger"
+
+# Resfriador de óleo tratado, água do mar no lado tubo (que é onde vai o fluido
+# incrustante e corrosivo, para poder ser limpo mecanicamente).
+#
+# Dois casos, e a razão é a mesma da bomba: a temperatura da água do mar muda com a
+# estação, e o trocador é um só. No verão o ΔT médio cai e o feixe precisa ser maior; a
+# vazão de água também muda, e com ela a velocidade no tubo — que a Tabela 3.1 de Saari
+# limita nos dois lados.
+#
+# NÃO é um exemplo publicado. Saari é texto de aula e o único caso numérico resolvido que
+# traz é o Exemplo 4.1 (tubo duplo, com U dado), que `test/golden_saari.jl` reproduz
+# equação por equação. Ver a limitação declarada em config/equipment/exchanger/.
+#
+# `h_casco` NÃO aparece mais aqui: com Bell-Delaware ligado ele é calculado a partir da
+# geometria de chicana (Branan Eq. 2-18), e um campo que o arquivo declara e o cálculo
+# ignora é pior que um campo ausente — ele mente para quem o preenche. No lugar dele
+# entram `mu_casco` e `k_casco`, que são o que o lado do casco de fato consome agora.
+
+[[case]]
+name        = "Inverno — água do mar a 18 °C"
+m_tubo      = 22.0
+cp_tubo     = 4000.0
+t_tubo_in   = 18.0
+t_tubo_out  = 32.0
+rho_tubo    = 1025.0
+mu_tubo     = 1.05
+k_tubo      = 0.60
+m_casco     = 15.0
+cp_casco    = 2100.0
+t_casco_in  = 105.0
+mu_casco    = 3.0
+k_casco     = 0.13
+rf_tubo     = 0.00035
+rf_casco    = 0.00035
+
+[[case]]
+name        = "Verão — água do mar a 30 °C"
+m_tubo      = 26.0
+cp_tubo     = 4000.0
+t_tubo_in   = 30.0
+t_tubo_out  = 42.0
+rho_tubo    = 1022.0
+mu_tubo     = 0.80
+k_tubo      = 0.62
+m_casco     = 15.0
+cp_casco    = 2100.0
+t_casco_in  = 105.0
+mu_casco    = 3.0
+k_casco     = 0.13
+rf_tubo     = 0.00035
+rf_casco    = 0.00035
