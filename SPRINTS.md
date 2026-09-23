@@ -14,7 +14,10 @@ aquela fase).
 
 ## Estado atual
 
-**FASE ATUAL: F8 — Pinch (Kemp) ← ATUAL (aguardando aprovação)**
+**FASE ATUAL: F10a — Propriedades na condição real ← ATUAL (aguardando aprovação)**
+
+Ordem revista em 2026-09-23, por decisão do usuário: F10 (balanço → equipamentos, em
+F10a/b/c) e F11 (MC por TAG) vêm **antes** de F8 (Pinch) e F9 (Song).
 
 F0–F4 entregues: **o balanço preliminar está completo em Python**. O motor é bit a bit, a
 auditoria é independente, há JSON/CSV com esquema, e o memorial LaTeX A4 sai em dois
@@ -281,7 +284,7 @@ menu e no `dimensionar`. O Pinch precisa de exemplo em `config/exemplos/` (copia
 `exemplo_pinch_kemp.toml`) e talvez de resumo próprio: não tem varredura de diâmetro, e a
 tabela de caso usa `sweep_columns()[0]`.
 
-### F8 — Pinch (Kemp) ← ATUAL
+### F8 — Pinch (Kemp) (depois da F11)
 **Aceite:** `golden_kemp`, `pinch_encaixe`; cobertura ≥ 90 %.
 
 ### F9 — Separador dinâmico (Song)
@@ -290,15 +293,63 @@ verificação cruzada, fora do núcleo.
 **Aceite:** trajetórias iguais às fixtures; oráculo de convergência por refino de malha;
 cobertura ≥ 90 %.
 
-### F10 — Integração balanço → PFD
-As correntes do balanço geram as entradas de 16 casos por TAG (SG-001, V-001/002,
-TO-001/002, P-001..003, B-001..003). Um envelope independente por TAG, sem interpolação
-entre casos.
-**Aceite:** 11 envelopes com o caso governante por restrição; lacunas listadas, sem valor
-inventado; CLI `fpso-siz pfd`.
+### F10 — Integração balanço → PFD (adiantada; em três subfases)
+**Visão do usuário:** o arquivo de casos 1–16 alimenta o balanço, e o balanço fornece
+**automaticamente** as entradas do dimensionamento dos 11 TAGs (SG-001, V-001/002,
+TO-001/002, P-001..003, B-001..003). O usuário só informa algo se quiser, pelo modo
+interativo. O detalhamento que falta ao balanço preliminar (propriedades na condição do
+equipamento) é feito numa camada **oculta no balanço** (`src/fpso_siz/pfd/`, a jusante; o
+balanço e a paridade não mudam) e **exposta no MC do equipamento** (F11).
 
-### F11 — Memoriais LaTeX dos equipamentos
-Mesmo pipeline da F4; conteúdo de referência em `src/memorial_specs/` do Julia.
+**Regra das fontes (usuário, 2026-09-23): "para as referências sem fonte não suponha
+nada, complete o que é possível".**
+- Entra só o que tem equação, tabela ou premissa citável **no acervo** (`references/`).
+- O que não tem vira **lacuna de entrada** (sem valor recomendado): o TAG fica "aguardando
+  entrada" até o usuário informar.
+- Tabela de fontes e lacunas: μ da água, μ do gás, k dos trocadores, geometria da linha
+  das bombas, NPSHr e temperaturas das utilidades são lacunas. O plano completo, com a
+  tabela, está em `docs/decisoes/0002-pfd-automatico.md`.
+- Mapeamento TAG → método → correntes: igual ao PFD F1 do Julia
+  (`../FPSO_Siz/docs/validacao/10-pfd-casos-bot.md`, lacunas L01–L12).
+
+#### F10a — Propriedades na condição real ← ATUAL
+`pfd/fluidos.py` + `config/fluidos.toml`. As fontes que estão no acervo:
+- Z por Redlich-Kwong (Branan, eqs. 27-10/11), com Tc/Pc de S&A Tab. 1.2. A regra de
+  mistura das pseudocríticas tem de estar no acervo; senão, fica Z = 1 (P-39), sinalizado.
+- μ de emulsão por Zanker (Branan, eq. 27-4).
+- Pv = P do vaso a montante para líquido saturado (Branan, Ex. 5-2).
+- Retenção: S&A Tab. 3.2 (alto CO₂ → 5 min) e Tab. 4.1 + "água 10 min".
+- μ do óleo morto pela tabela do BOT com P-40.
+
+**Aceite:** exemplos numéricos das fontes, limites físicos, invariante 2, cobertura ≥ 90 %.
+
+#### F10b — Mapeamento balanço → TAG e `fpso-siz pfd`
+- `pfd/{tags,entradas,planta}.py` e `config/pfd/<tag>.toml`.
+- Cada valor tem sua **origem** registrada: balanço, correlação, recomendada, default ou
+  usuário.
+- A bomba ganha `pv_informada`, com paridade preservada.
+- Caso sem vazão no TAG fica inativo, com o motivo.
+- Override de faixa para a salmoura.
+
+**Aceite:**
+- sem lacunas preenchidas, "aguardando entrada" com a lista exata do que falta;
+- com ajustes de teste, 11 envelopes;
+- o que vem do balanço é igual, bit a bit, às fixtures do PFD F1 do Julia (copiadas para
+  `tests/fixtures/julia/pfd/`).
+
+#### F10c — PFD no modo interativo
+Menu "Planta":
+- pede as lacunas, sem valor padrão, e oferece as recomendadas, com fonte, para confirmar;
+- mostra o resumo dos 11 TAGs e o detalhe de cada um (coluna Origem, rastro de
+  propriedades);
+- permite editar e redimensionar;
+- exporta JSONs, `planta.csv` e `ajustes_pfd.toml`, com o comando `fpso-siz pfd` que
+  reproduz a sessão byte a byte.
+
+### F11 — Memoriais LaTeX dos equipamentos (logo após a F10)
+Mesmo pipeline da F4; conteúdo de referência em `src/memorial_specs/` do Julia. O MC por TAG
+expõe o detalhamento de propriedades (equações, fontes, valores por caso), a origem de cada
+entrada e as lacunas/recomendadas não revisadas.
 **Aceite:** um memorial A4 compilável por equipamento/TAG; bijeção testada.
 
 ### F12 — Portabilidade (Java/C) e distribuição
