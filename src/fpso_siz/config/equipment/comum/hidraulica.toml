@@ -1,0 +1,16 @@
+# Correlações de escoamento em tubo usadas pela bomba (Moran, 2016). No Julia estavam no
+# código (sizing/pump/hydraulics.jl); aqui são dados (invariante 2).
+
+[colebrook]
+# 1/√f = −coef_log·log₁₀(ε/(div_rugosidade·D) + coef_re/(Re·√f))   (Eq. 2 de Moran)
+coef_log = 2.0
+div_rugosidade = 3.7
+coef_re = 2.51
+fonte = "Colebrook-White (1939), forma de Moran (2016), Eq. 2"
+
+[colebrook_iteracao]
+# defaults da iteração (o método da bomba passa os seus, de moran.toml)
+f0 = 0.02
+tolerancia = 1e-10
+max_iteracoes = 60
+fonte = "FPSO_Siz Julia, sizing/pump/hydraulics.jl (colebrook_white)"

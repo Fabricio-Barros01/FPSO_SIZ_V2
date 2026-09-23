@@ -1,0 +1,26 @@
+# Campos da corrente que a bomba reescreve (port de _AJUSTES_BOMBA, sizing/pump/moran.jl).
+
+[q_oil]
+label = "Vazão bombeada"
+default = 60.0
+note = "Vazão no ponto de operação. Entra em v = Q/A e na potência."
+
+[rho_oil]
+label = "Densidade do líquido"
+default = 998.0
+note = "Entra no Reynolds, na carga estática por pressão e na potência. O default é água a 30 °C, coerente com a Antoine default."
+
+[mu_oil]
+label = "Viscosidade do líquido"
+default = 1.0
+note = "Entra no Reynolds, e por ele no fator de atrito de Darcy. 1,0 cP é água a ~20 °C; 0,8 a 30 °C."
+
+[pressure]
+label = "Pressão no reservatório de sucção"
+default = 101.3
+note = "Absoluta. É o P₀ do NPSH disponível, e a parcela de sucção da carga estática. 101,3 kPa = tanque aberto à atmosfera."
+
+[temperature]
+label = "Temperatura"
+default = 30.0
+note = "Entra na equação de Antoine, que dá a pressão de vapor do NPSH. 30 °C é a linha que a Tabela 3 do artigo publica resolvida."

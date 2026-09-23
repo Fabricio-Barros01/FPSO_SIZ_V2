@@ -23,9 +23,9 @@ SAIDA = lambda p: ROTULO(p).startswith("output/") or ROTULO(p) in ("cli.py", "__
 REDE = {"socket", "urllib", "http", "requests", "httpx", "aiohttp", "ftplib", "smtplib", "websocket"}
 UI = {"tkinter", "PyQt5", "PyQt6", "PySide2", "PySide6", "flask", "fastapi", "streamlit", "dash"}
 SO_EM = {"numpy": {"_num.py"}, "scipy": {"_num.py"}, "jinja2": "output/"}
-# 0,5 (vaso meio cheio, média), 4 (área πd²/4; casas decimais) e 10 (base) são estruturais,
-# não coeficientes empíricos; estes vão para TOML.
-LITERAIS_OK = {0, 0.5, 1, 2, 4, 10}
+# 0,5 (vaso meio cheio, média), 4 (área πd²/4; casas decimais), 8 (área do segmento circular
+# d²/8) e 10 (base) são estruturais, não coeficientes empíricos; estes vão para TOML.
+LITERAIS_OK = {0, 0.5, 1, 2, 4, 8, 10}
 EXATOS = {"core/unidades.py",        # fatores de conversão exatos
           "core/formato_julia.py",   # regra de impressão de números do Julia (não é física)
           "core/grade.py"}           # algoritmo de faixa float do Julia (limites de maxintfloat)
@@ -87,7 +87,12 @@ def test_toml_sem_url():
 
 @pytest.mark.parametrize("p", [p for p in MODULOS if ROTULO(p) not in EXATOS and not SAIDA(p)], ids=ROTULO)
 def test_sem_literal_numerico_nas_equacoes(p):
-    for n in ast.walk(arvore(p)):
+    arv = arvore(p)
+    # casas decimais de apresentação (`digits=3` no cartão de resultados) não são física
+    apresentacao = {id(k.value) for n in ast.walk(arv) if isinstance(n, ast.Call) for k in n.keywords if k.arg == "digits"}
+    for n in ast.walk(arv):
+        if id(n) in apresentacao:
+            continue
         if isinstance(n, ast.Constant) and type(n.value) in (int, float):
             assert n.value in LITERAIS_OK, f"{ROTULO(p)}:{n.lineno} literal {n.value!r} → TOML"
 

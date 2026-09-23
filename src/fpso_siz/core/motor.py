@@ -22,6 +22,12 @@ def _erro(e):
     return f"ArgumentError: {e}"
 
 
+def _numerico(e):
+    """Erro aritmético que a física não previu (divisão por zero, estouro). No Julia ele
+    viraria Inf/NaN; aqui vira inviabilidade explícita — nunca exceção (contrato do projeto)."""
+    return f"Erro numérico no cálculo ({type(e).__name__}: {e}). Confira as entradas deste caso."
+
+
 def sweep_row(m, x, cons, k, p):
     y = m.requirement(x, cons)
     gov = m.governing_of(x, cons)
@@ -34,6 +40,13 @@ def size_single(eq, m, entrada, params):
     """Varre a grade, descarta o que passa do teto ou sai da banda, e minimiza objective."""
     p = with_defaults(m.parameters(), params)
     k = m.constants()
+    try:
+        return _size_single(m, entrada, p, k)
+    except ArithmeticError as e:
+        return infeasible(m.method_id, _numerico(e))
+
+
+def _size_single(m, entrada, p, k):
     ok, cons, tr = m.sizing_constraints(entrada, p, k)
     if not ok:
         return infeasible(m.method_id, cons, trace=tr)
@@ -82,6 +95,13 @@ def _sem_intersecao(m, eixo, conss, names, p):
 
 def size_envelope(eq, m, cases, max_corners=None):
     """Um equipamento para todos os casos ativos de `cases` (faixas viram cantos)."""
+    try:
+        return _size_envelope(eq, m, cases, max_corners)
+    except ArithmeticError as e:
+        return infeasible_envelope(_numerico(e))
+
+
+def _size_envelope(eq, m, cases, max_corners):
     if m.applies_to().method_id != eq.method_id:
         return infeasible_envelope(f"O método '{m.label}' não se aplica a '{eq.label}'.")
     specs = m.parameters()

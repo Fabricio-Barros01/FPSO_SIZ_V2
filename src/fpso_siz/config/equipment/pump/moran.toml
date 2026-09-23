@@ -1,0 +1,236 @@
+label = "Moran (2016) — carga do sistema, NPSH e potência"
+equipment = "pump"
+reference = "Moran, S. (2016), \"Pump Sizing: Bridging the Gap Between Theory and Practice\", Chemical Engineering Progress, dez/2016, p. 38-44 (AIChE)."
+
+# Bomba centrífuga e a linha que ela alimenta.
+#
+# O que se varre é o DIÂMETRO NOMINAL da tubulação: é dele que saem velocidade,
+# Reynolds, fator de atrito, perda de carga e, por consequência, a carga que a bomba
+# tem de gerar. A bomba em si é especificada pelo par (Q, H) resultante.
+#
+# LIMITE DA FONTE, registrado: as equações do artigo são imagem dentro do PDF. As
+# formas foram recuperadas da prosa — que nomeia cada símbolo, a unidade e a faixa de
+# validade — e conferidas contra os dois números que o artigo publica (a Antoine da
+# Tabela 3 e a leitura do nomograma da Figura 3). Os coeficientes da Tabela 2
+# (Zigrang-Sylvester, Haaland) também são imagem e não têm número conferível no texto;
+# por isso só Colebrook-White está implementada, que é a que o autor prefere.
+
+# --- entradas do método ------------------------------------------------------
+
+[[parameter]]
+key     = "h_geometrica"
+label   = "Desnível geométrico"
+unit    = "m"
+default = 18.0
+min     = -100.0
+max     = 500.0
+note    = "Cota de chegada menos cota de sucção. Parte da carga estática, que o artigo define como a que existe com a bomba desligada. Negativo = escoamento descendente."
+
+[[parameter]]
+key     = "p_recalque"
+label   = "Pressão no reservatório de recalque"
+unit    = "kPa"
+default = 400.0
+min     = 1.0
+max     = 20000.0
+note    = "Absoluta. A outra parcela da carga estática: (P_rec − P_suc)/(ρg). Use 101,3 para descarga em tanque aberto."
+
+[[parameter]]
+key     = "h_sucao"
+label   = "Nível de sucção sobre a bomba"
+unit    = "m"
+default = 2.0
+min     = -20.0
+max     = 100.0
+note    = "h₀ do NPSH disponível: nível de líquido no reservatório de sucção em relação à linha de centro da bomba. Negativo quando a bomba puxa de baixo (sucção negativa)."
+
+[[parameter]]
+key     = "l_sucao"
+label   = "Comprimento reto na sucção"
+unit    = "m"
+default = 8.0
+min     = 0.0
+max     = 5000.0
+note    = "Entra em Darcy-Weisbach e, por ela, no NPSH disponível — é a única perda que desconta do NPSH. Mantê-la curta é a primeira defesa contra cavitação."
+
+[[parameter]]
+key     = "k_sucao"
+label   = "Σk das peças na sucção"
+unit    = "–"
+default = 2.1
+min     = 0.0
+max     = 200.0
+note    = "Soma dos k-values da Tabela 1 do artigo. O default é entrada viva (0,5) + válvula de bloqueio aberta (0,4) + três curvas de raio longo de 90° (3 × 4 × 0,1 = 1,2) = 2,1. A Tabela 1 tarifa curva por 22,5°, então uma de 90° vale quatro trechos. Conte no P&ID e na planta de arranjo."
+
+[[parameter]]
+key     = "l_recalque"
+label   = "Comprimento reto no recalque"
+unit    = "m"
+default = 150.0
+min     = 0.0
+max     = 50000.0
+note    = "Entra em Darcy-Weisbach. Não afeta o NPSH — só a carga que a bomba precisa gerar."
+
+[[parameter]]
+key     = "k_recalque"
+label   = "Σk das peças no recalque"
+unit    = "–"
+default = 13.8
+min     = 0.0
+max     = 500.0
+note    = "Tabela 1. O default é válvula de controle aberta (10,8) + retenção de portinhola (1,0) + bloqueio (0,4) + quatro curvas de raio longo de 90° (4 × 4 × 0,1 = 1,6) = 13,8. A válvula de controle costuma dominar — sozinha vale 78 % do total."
+
+[[parameter]]
+key     = "npsh_requerido"
+label   = "NPSH requerido pela bomba"
+unit    = "m"
+default = 3.0
+min     = 0.0
+max     = 50.0
+note    = "NPSHr, da curva do fabricante no ponto de operação. O artigo manda determiná-lo já na fase conceitual, porque ele afeta muito mais que a especificação da bomba (arranjo, elevação do vaso de sucção)."
+
+[[parameter]]
+key     = "npsh_margem"
+label   = "Margem sobre o NPSH requerido"
+unit    = "m"
+default = 0.5
+min     = 0.0
+max     = 20.0
+note    = "Folga exigida entre NPSH disponível e requerido. O artigo não fixa um valor; 0,5 m é o piso usual de projeto, e prática comum é exigir o maior entre 0,6 m e 10 % do NPSHr."
+
+[[parameter]]
+key      = "rendimento"
+label    = "Rendimento da bomba"
+unit     = "–"
+default  = 0.7
+min      = 0.2
+max      = 0.95
+advanced = true
+note     = "η da fórmula de potência. O artigo: \"if you do not know the efficiency, use η = 0.7\", e recomenda errar para o lado conservador — o elétrico prefere baixar a potência depois a subi-la."
+
+[[parameter]]
+key      = "rugosidade"
+label    = "Rugosidade absoluta ε"
+unit     = "mm"
+default  = 0.045
+min      = 0.0
+max      = 5.0
+advanced = true
+note     = "Entra em Colebrook-White como ε/D. 0,045 mm é aço-carbono comercial novo; ~0,0015 mm para plástico e aço inoxidável polido; 0,26 mm para ferro fundido. O artigo cita ε sem tabelar valores."
+
+[[parameter]]
+key      = "antoine_a"
+label    = "Antoine A"
+unit     = "–"
+default  = 5.40221
+min      = 0.0
+max      = 20.0
+advanced = true
+note     = "Tabela 3 do artigo (água). Forma do NIST: log₁₀(Pv[bar]) = A − B/(T[K]+C). Busque os três em webbook.nist.gov para o líquido em questão."
+
+[[parameter]]
+key      = "antoine_b"
+label    = "Antoine B"
+unit     = "K"
+default  = 1838.675
+min      = 0.0
+max      = 20000.0
+advanced = true
+note     = "Tabela 3 do artigo (água). Válido na faixa em que o NIST o publica; extrapolar a Antoine para longe dela erra a pressão de vapor em ordens de grandeza."
+
+[[parameter]]
+key      = "antoine_c"
+label    = "Antoine C"
+unit     = "K"
+default  = -31.737
+min      = -273.15
+max      = 200.0
+advanced = true
+note     = "Tabela 3 do artigo (água). Negativo na convenção do NIST com T em kelvin."
+
+# --- grade e banda: decisão de projeto, painel único (ver global_keys) --------
+
+[[parameter]]
+key      = "dn_min"
+label    = "DN mínimo"
+unit     = "mm"
+default  = 25.0
+min      = 10.0
+max      = 1000.0
+advanced = true
+note     = "Início da faixa recortada da série comercial. A grade é a série, não um passo constante: diâmetro de tubo é catálogo, não contínuo."
+
+[[parameter]]
+key      = "dn_max"
+label    = "DN máximo"
+unit     = "mm"
+default  = 500.0
+min      = 10.0
+max      = 1000.0
+advanced = true
+note     = "Fim da faixa recortada da série comercial."
+
+[[parameter]]
+key      = "v_min"
+label    = "Velocidade mínima"
+unit     = "m/s"
+default  = 1.0
+min      = 0.0
+max      = 10.0
+advanced = true
+note     = "Piso da banda. O artigo dá dois lados só para \"water-like fluids with settleable solids: >1, <1.5 m/sec\" — que é o caso de uma linha de água produzida. Para líquido limpo o artigo só impõe o teto; ponha 0 aqui para recuperar essa regra."
+
+[[parameter]]
+key      = "v_max"
+label    = "Velocidade máxima"
+unit     = "m/s"
+default  = 1.5
+min      = 0.1
+max      = 30.0
+advanced = true
+note     = "Teto da banda. Artigo: \"pumped water-like fluids: <1.5 m/sec\"; gravidade: <1; gases: 20 m/s. Manter-se na faixa produz perdas de carga sensatas para os comprimentos usuais de planta."
+
+# ---------------------------------------------------------------------------
+# Constantes, com a origem em cada linha.
+# ---------------------------------------------------------------------------
+[constants]
+
+# Aceleração da gravidade. É o valor que o artigo declara ao definir a perda localizada
+# ("g is the acceleration due to gravity (9.81 m/sec2)"). O padrão ISO é 9,80665; a
+# diferença de 0,03 % não move nenhum diâmetro nominal da série.
+gravity = 9.81
+
+# Série comercial de diâmetros nominais, em mm (ISO 6708 / EN 10220).
+#
+# NÃO é a escala da Figura 3 do artigo, e a diferença é deliberada. Aquela escala
+# (…, 90, 100, 150, 200, …) é a faixa de produtos do fabricante de tubo ABS que cedeu o
+# nomograma, não uma série de tubulação de processo: entre 100 e 150 mm ela não tem
+# nada, e uma vazão que peça ~1,3 m/s em DN 125 não teria diâmetro nenhum admissível —
+# o programa diria "não há solução" onde existe uma óbvia. A série normalizada é o que
+# um projetista de fato tem em catálogo.
+#
+# É dado, e não código, exatamente para isto: quem tiver outra família de tubos
+# (Sch 80, ABS, PEAD) troca a lista aqui sem tocar em Julia.
+nominal_diameters = [15.0, 20.0, 25.0, 32.0, 40.0, 50.0, 65.0, 80.0, 100.0, 125.0,
+                     150.0, 200.0, 250.0, 300.0, 350.0, 400.0, 450.0, 500.0, 600.0,
+                     700.0, 800.0]
+
+# Iteração de Colebrook-White, resolvida por ponto fixo em x = 1/√f. O artigo manda
+# resolvê-la iterativamente e não fixa partida nem tolerância — "the Goal Seek function
+# in Excel does this quickly and easily". f = 0,02 é o meio da faixa de tubo comercial;
+# a recorrência é contrativa e fecha em ~8 passagens, então 60 é margem larga.
+colebrook_initial   = 0.02
+colebrook_tolerance = 1e-10
+colebrook_max_iter  = 60
+
+# Regime laminar: f = 64/Re (Hagen-Poiseuille), EXATA para escoamento plenamente
+# desenvolvido em duto circular — e que NÃO vem do artigo, que declara Colebrook-White
+# só para Re > 4000 e não diz o que fazer abaixo disso. Ver `darcy_friction`.
+laminar_coefficient = 64.0
+
+# Fronteiras de regime. 2300 é o Reynolds crítico clássico de duto circular; 4000 é o
+# piso que o artigo declara para Colebrook-White e para as duas alternativas da Tabela 2.
+# Entre os dois não há correlação que valha — a zona é instável por natureza —, e o que
+# o programa faz ali é usar Colebrook-White marcando o resultado como não confiável.
+reynolds_laminar_max   = 2300.0
+reynolds_turbulent_min = 4000.0

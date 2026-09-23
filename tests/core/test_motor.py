@@ -191,6 +191,16 @@ def test_so_o_motor_sabe_que_as_faixas_nao_se_cruzam():
     assert env(("baixo", BASE | {"teto": 100.0}), ("alto", BASE | {"piso": 1000.0})).message.count("'baixo' aceita 100.0 mm")
 
 
+def test_erro_aritmetico_vira_inviabilidade_nunca_excecao():
+    class Quebra(MetodoTanque):
+        def requirement(self, x, c):
+            return 1.0 / 0.0
+    e = env(("A", BASE), m=Quebra())
+    assert not e.feasible and e.message.startswith("Erro numérico no cálculo (ZeroDivisionError")
+    s = size_single(EQ, Quebra(), Quebra().case_input(BASE), BASE)
+    assert not s.feasible and "Erro numérico" in s.message
+
+
 def test_metodo_de_outro_equipamento():
     e = env(("A", BASE), eq=Linha())
     assert not e.feasible and e.message == "O método 'Método de brinquedo' não se aplica a 'Linha (não é vaso)'."

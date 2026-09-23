@@ -74,3 +74,15 @@ def liquid_capacity_coefficient():
     lhs = (INCH_M * 1000.0) ** 2 * FOOT_M
     rhs = 24.0 / BARREL_M3
     return lhs * 1.42 * rhs
+
+
+def m_para_mm(x):
+    return x * 1000.0
+
+
+BAR_PA = 1.0e5
+
+
+def potencia_hidraulica_kw(rho, q_m3h, h_m, eta, g):
+    """P = ρ·g·Q·H/(3,6×10⁶·η), Q em m³/h: os 3600 s/h e 1000 W/kW são conversão exata."""
+    return rho * g * q_m3h * h_m / (3.6e6 * eta)

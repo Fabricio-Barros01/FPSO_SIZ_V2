@@ -1,0 +1,35 @@
+# Coeficientes e tolerâncias do trocador casco-e-tubos que o Julia deixava no código
+# (sizing/exchanger/shell_and_tube.jl e bell_delaware.jl); aqui são dados (invariante 2).
+
+[dittus_boelter]
+expoente_re = 0.8          # Nu = a·Re^0,8·Pr^b (Saari Eq. 6.23)
+fonte = "Saari (LUT), Eq. 6.23"
+
+[colburn]
+# a = a3/(1 + coef_a·Re^a4);  j = a1·(base_passo/(p_t/d_o))^a·Re^a2   (Branan Eq. 2-21)
+coef_a = 0.14
+base_passo = 1.33
+fonte = "Branan (2012), Eq. 2-21 e Tabela 2-5"
+
+[casco]
+expoente_prandtl = 0.6666666666666666   # (k/(cp·µ))^(2/3) em h_ideal (Branan Eq. 2-19)
+expoente_viscosidade = 0.14             # (µ/µ_parede)^0,14 (Branan Eq. 2-18)
+fonte = "Branan (2012), Eq. 2-18 e 2-19"
+
+[singularidades]
+tol_lmtd = 1e-9             # ΔT1/ΔT2 ≈ 1: limite removível da Eq. 4.6
+tol_f_r1 = 1e-6             # R ≈ 1: limite removível do fator F 1-2 (Fig. 4.3)
+tol_ntu = 1e-9              # C* ≈ 1 em ε-NTU contracorrente
+fonte = "FPSO_Siz Julia (limites removíveis), Saari §4.2"
+
+[layout]
+# usados se o TOML do método não trouxer [constants.bell_delaware]
+layouts = [30, 45, 60, 90]
+area_celula_sobre_pt2 = [0.8660254037844386, 1.0, 0.8660254037844386, 1.0]
+fonte = "Branan (2012), Eq. 2-13 e 2-14"
+
+[laco_comprimento]
+# defaults do ponto fixo L ↔ h_o (o TOML do método traz os seus em [constants.bell_delaware])
+tolerancia = 1e-9
+max_iteracoes = 60
+fonte = "FPSO_Siz Julia, sizing/exchanger/shell_and_tube.jl (_tubo_bell_delaware)"

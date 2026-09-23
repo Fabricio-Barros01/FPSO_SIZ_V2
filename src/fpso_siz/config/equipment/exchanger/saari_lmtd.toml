@@ -1,0 +1,550 @@
+label = "Saari (LUT) — LMTD com fator F, casco-e-tubos"
+equipment = "exchanger"
+reference = "Saari, J., \"Heat Exchanger Dimensioning\", Lappeenranta University of Technology, cap. 3-6 (Algoritmo 4.1, Eq. 4.4-4.9, 5.7a, 6.23; Tabelas 3.1, 4.1). Coeficiente do lado do casco por Bell-Delaware: Branan, C. R., \"Rules of Thumb for Chemical Engineers\", 5. ed., Elsevier, 2012, cap. 2 (Eq. 2-13, 2-18 a 2-31; Tabelas 2-5, 2-6, 2-7). Estrutura conferida contra Toledo-Velazquez, M. et al. (2014), \"Delaware Method Improvement for the Shell and Tubes Heat Exchanger Design\", Engineering 6, 193-201."
+
+# Trocador casco-e-tubos, um passe no casco, contracorrente.
+#
+# O eixo varrido é o NÚMERO DE TUBOS POR PASSE. Ele fixa a velocidade no tubo, e a
+# velocidade fixa o coeficiente interno pela correlação de Dittus-Boelter — que é o que
+# faz a varredura ter conteúdo em vez de ser a hipérbole L = A/(N·π·d_o).
+#
+# BURACO DECLARADO: Saari é texto de aula e não traz um exemplo numérico do trocador
+# casco-e-tubos completo. O que ele traz é o Exemplo 4.1 (tubo duplo, com U DADO), que o
+# caso-ouro reproduz equação por equação, e a afirmação do §4.1 de que LMTD e ε-NTU são
+# exatamente equivalentes, que o caso-ouro usa como conferência cruzada. Um exemplo de
+# literatura com o laço de U fechado fecharia o buraco.
+#
+# A ANÁLISE PINCH NÃO ESTÁ AQUI, e a razão mudou. Enquanto References/ não tinha
+# Linnhoff nem Kemp, a razão era falta de fonte. Kemp está lá desde então, e a análise
+# existe: config/equipment/pinch/kemp.toml, com o núcleo em src/analysis/pinch.jl.
+#
+# Ela continua não estando AQUI porque são perguntas diferentes. Pinch dá os ALVOS de
+# energia de uma REDE de correntes, antes de existir trocador; este arquivo dimensiona
+# UM trocador com o serviço já definido. O box "analise-pinch" responde à primeira; este,
+# à segunda.
+#
+# O que continua verdadeiro sem ressalva: dimensionar um trocador com ΔT_min arbitrado,
+# sem a análise da rede que o justifique, é dar um número com aparência de otimizado. O
+# programa ainda não LIGA as duas telas — o alvo de pinch não alimenta o serviço do
+# trocador, e ninguém aqui alega que alimente.
+
+# --- lado do tubo ------------------------------------------------------------
+
+[[parameter]]
+key     = "m_tubo"
+label   = "Vazão mássica no tubo"
+unit    = "kg/s"
+default = 20.0
+min     = 0.001
+max     = 5000.0
+note    = "Eq. 4.5. Fixa a capacidade térmica ṁ·cp e, dividida pelo número de tubos, a velocidade que a Tabela 3.1 restringe."
+
+[[parameter]]
+key     = "cp_tubo"
+label   = "Calor específico no tubo"
+unit    = "J/kg·K"
+default = 4180.0
+min     = 500.0
+max     = 20000.0
+note    = "Eq. 4.5, avaliado na temperatura média de mistura (Eq. 6.21). 4180 é água líquida; ~2100 para óleo leve."
+
+[[parameter]]
+key     = "t_tubo_in"
+label   = "Temperatura de entrada no tubo"
+unit    = "°C"
+default = 25.0
+min     = -50.0
+max     = 600.0
+note    = "Eq. 4.7. Junto com a do casco define qual lado é o quente — não há campo de escolha, e não pode haver: ele poderia contradizer estes números."
+
+[[parameter]]
+key     = "t_tubo_out"
+label   = "Temperatura de saída no tubo"
+unit    = "°C"
+default = 40.0
+min     = -50.0
+max     = 600.0
+note    = "Eq. 4.5. É o dado de projeto do serviço; a saída do lado casco NÃO é pedida — ela sai do balanço, e pedi-la deixaria quatro números descreverem três graus de liberdade."
+
+[[parameter]]
+key     = "rho_tubo"
+label   = "Densidade no tubo"
+unit    = "kg/m³"
+default = 995.0
+min     = 0.05
+max     = 2000.0
+note    = "Entra na velocidade (ṁ/ρA) e no Reynolds. 995 é água a ~33 °C."
+
+[[parameter]]
+key     = "mu_tubo"
+label   = "Viscosidade no tubo"
+unit    = "cP"
+default = 0.75
+min     = 0.001
+max     = 10000.0
+note    = "§6.3: entra no Reynolds e no Prandtl, ambos avaliados na temperatura média de mistura. 0,75 cP é água a ~33 °C."
+
+[[parameter]]
+key     = "k_tubo"
+label   = "Condutividade do fluido do tubo"
+unit    = "W/m·K"
+default = 0.62
+min     = 0.005
+max     = 100.0
+note    = "Fecha o Prandtl (cp·µ/k) e converte o Nusselt em coeficiente (h = Nu·k/d_i). 0,62 é água a ~33 °C; ~0,13 para óleo."
+
+# --- lado do casco -----------------------------------------------------------
+
+[[parameter]]
+key     = "m_casco"
+label   = "Vazão mássica no casco"
+unit    = "kg/s"
+default = 15.0
+min     = 0.001
+max     = 5000.0
+note    = "Eq. 4.5. Só entra pelo balanço: o coeficiente do casco é informado, não calculado — ver `h_casco`."
+
+[[parameter]]
+key     = "cp_casco"
+label   = "Calor específico no casco"
+unit    = "J/kg·K"
+default = 2100.0
+min     = 500.0
+max     = 20000.0
+note    = "Eq. 4.5. 2100 é óleo leve; 4180, água."
+
+[[parameter]]
+key     = "t_casco_in"
+label   = "Temperatura de entrada no casco"
+unit    = "°C"
+default = 110.0
+min     = -50.0
+max     = 800.0
+note    = "Eq. 4.7. A de saída é calculada pelo balanço e aparece no memorial."
+
+[[parameter]]
+key     = "mu_casco"
+label   = "Viscosidade no casco"
+unit    = "cP"
+default = 3.0
+min     = 0.001
+max     = 10000.0
+note    = "Entra no Reynolds do casco (Branan Eq. 2-20) e no Prandtl do casco (Eq. 2-19). Antes não era pedida porque h_casco era digitado; agora ele é CALCULADO por Bell-Delaware, e sem viscosidade não há nem Reynolds nem Prandtl daquele lado. 3 cP é óleo leve a ~90 °C."
+
+[[parameter]]
+key     = "k_casco"
+label   = "Condutividade do fluido do casco"
+unit    = "W/m·K"
+default = 0.13
+min     = 0.005
+max     = 100.0
+note    = "Fecha o Prandtl do casco (cp·µ/k) na Eq. 2-19 de Branan. 0,13 é óleo; 0,62 é água a ~33 °C."
+
+# --- superfície: o que separa os dois --------------------------------------
+
+[[parameter]]
+key      = "h_casco"
+label    = "Coeficiente de convecção no casco (se Bell-Delaware desligado)"
+unit     = "W/m²·K"
+default  = 500.0
+min      = 5.0
+max      = 50000.0
+advanced = true
+note     = "SÓ é usado com `bell_delaware.ativo = false`. Com Bell-Delaware ligado (o padrão) h_o é CALCULADO pela Eq. 2-18 de Branan a partir da geometria de chicana, e este campo é ignorado. Deixou de ser a maior aproximação do box por isso. ATENÇÃO ao arbitrar um valor aqui: as Tabelas 4.1 e 4.2 de Saari tabelam o COEFICIENTE GLOBAL U, não o coeficiente de película h_o, e as duas grandezas não são intercambiáveis — como 1/U = 1/h_o + (resistências de parede, incrustação e lado do tubo), h_o é sempre MAIOR que U, tipicamente por um fator de 2 a 4. Pôr aqui um U tabelado subestima h_o e infla a área. Saari não publica tabela de h por serviço; use um h_o de handbook (Perry, TEMA) ou deixe Bell-Delaware calcular."
+
+# --- geometria de chicana: o que Bell-Delaware precisa saber -----------------
+# Nenhum destes existia antes, porque h_casco era digitado. São o preço de calcular o
+# coeficiente do casco em vez de arbitrá-lo — e o preço é honesto: cada um deles é uma
+# decisão de projeto que o trocador real tem de tomar de qualquer jeito.
+
+[[parameter]]
+key      = "corte_chicana"
+label    = "Corte da chicana / diâmetro do casco"
+unit     = "–"
+default  = 0.25
+min      = 0.15
+max      = 0.45
+advanced = true
+note     = "lc/Ds, a altura da janela. Entra em Jc (Eq. 2-22), nas áreas de vazamento (Eq. 2-24 a 2-26) e no número de fileiras cruzadas. Branan: Jc vai de ~0,53 num corte grande a ~1,15 numa janela pequena — mais de 2× entre os extremos, e é o fator mais sensível ao que se põe aqui. 20-25 % é a prática usual."
+
+[[parameter]]
+key      = "espacamento_chicana"
+label    = "Espaçamento de chicana / diâmetro do casco"
+unit     = "–"
+default  = 0.40
+min      = 0.20
+max      = 1.00
+advanced = true
+note     = "Lbc/Ds. Entra na área de escoamento cruzado (Eq. 2-19) e, por ela, no Reynolds do casco. TEMA limita a 1/5 do diâmetro por baixo (vibração) e ao diâmetro por cima. Chicana mais apertada NÃO é sempre melhor: aumenta a fração da vazão que vaza em vez de cruzar o feixe, e Jl cai."
+
+[[parameter]]
+key      = "layout_tubos"
+label    = "Arranjo do feixe"
+unit     = "°"
+default  = 30.0
+min      = 30.0
+max      = 90.0
+advanced = true
+note     = "30 (triangular), 45 (quadrado rotacionado), 60 (triangular rotacionado) ou 90 (quadrado alinhado) — os quatro da Tabela 2-6 de Branan. Define pn e pp, e a faixa de coeficientes da Tabela 2-5. 30° é o mais compacto e o padrão em serviço limpo; 90° é o que permite limpeza mecânica externa. Arredondado para o mais próximo dos quatro."
+
+[[parameter]]
+key      = "pares_veda"
+label    = "Pares de faixas de vedação"
+unit     = "–"
+default  = 1.0
+min      = 0.0
+max      = 20.0
+advanced = true
+note     = "nss, na Eq. 2-27. Bloqueiam o desvio pelo vão entre feixe e casco. Branan: um par a cada seis fileiras de tubo é a regra de bolso; a API 660 pede dispositivo a cada 5-7 passos de tubo, o que dá z ≈ 0,17. Com z ≥ 0,5 o desvio é considerado totalmente bloqueado e Jb = 1."
+
+[[parameter]]
+key      = "folga_furo_chicana"
+label    = "Folga furo da chicana − diâmetro do tubo"
+unit     = "mm"
+default  = 0.8
+min      = 0.0
+max      = 3.0
+advanced = true
+note     = "dtb, na Eq. 2-25. Branan: 0,8 mm (1/32 in) é o usual, redutível a 0,4 mm (1/64 in) para diminuir o vazamento tubo-chicana. Entra em Jl."
+
+[[parameter]]
+key      = "faixas_divisoras"
+label    = "Faixas divisoras de passe paralelas ao escoamento"
+unit     = "–"
+default  = 0.0
+min      = 0.0
+max      = 8.0
+advanced = true
+note     = "ndp, na Eq. 2-27 (Abp). São as canaletas abertas no feixe pelas chapas divisórias de passe, quando ORIENTADAS na direção do escoamento no casco — só elas contribuem para o desvio. Zero quando a divisória é perpendicular, que é o arranjo usual de 2 passes. A largura assumida é 2× o diâmetro do tubo, como Branan indica quando ela é desconhecida."
+
+[[parameter]]
+key     = "d_externo"
+label   = "Diâmetro externo do tubo"
+unit    = "mm"
+default = 19.05
+min     = 5.0
+max     = 55.0
+note    = "Tabela 3.1: tubos padronizados de 5 a 55 mm, tipicamente 12,7 a 25,4 mm. 19,05 mm é o 3/4 in, o mais comum em serviço de processo. É a área externa que define U (§5.1: usa-se a maior)."
+
+[[parameter]]
+key     = "espessura"
+label   = "Espessura da parede do tubo"
+unit    = "mm"
+default = 2.11
+min     = 0.3
+max     = 10.0
+note    = "d_i = d_o − 2·espessura. 2,11 mm é o BWG 14, bitola usual em aço-carbono. Entra na resistência de parede (Eq. 5.4) e na seção livre."
+
+[[parameter]]
+key      = "k_parede"
+label    = "Condutividade da parede"
+unit     = "W/m·K"
+default  = 50.0
+min      = 1.0
+max      = 500.0
+advanced = true
+note     = "Eq. 5.4. 50 para aço-carbono, ~16 para inox 316, ~110 para latão, ~390 para cobre. Costuma ser a menor das cinco resistências — e é a única que não se pode melhorar sem trocar de material."
+
+[[parameter]]
+key      = "rf_tubo"
+label    = "Incrustação no lado tubo"
+unit     = "m²·K/W"
+default  = 0.00018
+min      = 0.0
+max      = 0.01
+advanced = true
+note     = "Cap. 8: R\"f tabelado por serviço, não calculado por espessura — \"rarely known precisely enough\". 0,00018 é água de resfriamento tratada; água bruta chega a 0,0005."
+
+[[parameter]]
+key      = "rf_casco"
+label    = "Incrustação no lado casco"
+unit     = "m²·K/W"
+default  = 0.00035
+min      = 0.0
+max      = 0.01
+advanced = true
+note     = "Cap. 8. 0,00035 é óleo leve; hidrocarboneto pesado passa de 0,0009. Somada à do tubo, costuma ser a segunda maior resistência do conjunto."
+
+[[parameter]]
+key      = "razao_passo"
+label    = "Passo do feixe / diâmetro do tubo"
+unit     = "–"
+default  = 1.25
+min      = 1.1
+max      = 2.0
+advanced = true
+note     = "Tabela 3.1: 1,25 a 1,5 vezes d_o. Mais apertado não dá rigidez ao espelho; mais folgado infla o casco e piora a troca. Define o diâmetro do feixe, e por ele o teto de casco."
+
+[[parameter]]
+key      = "passes_tubo"
+label    = "Passes no lado tubo"
+unit     = "–"
+default  = 2.0
+min      = 1.0
+max      = 2.0
+advanced = true
+note     = "1 = contracorrente puro, F = 1 (§4.2.1). 2 = arranjo TEMA E parcialmente paralelo, com F da Fig. 4.3. Arredondado para o inteiro mais próximo: só estes dois têm fórmula em Saari."
+
+# --- grade e limites: decisão de projeto, painel único (ver global_keys) ------
+
+[[parameter]]
+key      = "n_min"
+label    = "Tubos por passe — mínimo"
+unit     = "–"
+default  = 10.0
+min      = 1.0
+max      = 5000.0
+advanced = true
+note     = "Início da grade varrida."
+
+[[parameter]]
+key      = "n_max"
+label    = "Tubos por passe — máximo"
+unit     = "–"
+default  = 400.0
+min      = 1.0
+max      = 20000.0
+advanced = true
+note     = "Fim da grade varrida."
+
+[[parameter]]
+key      = "n_step"
+label    = "Passo da grade de tubos"
+unit     = "–"
+default  = 5.0
+min      = 1.0
+max      = 500.0
+advanced = true
+note     = "Número de tubos é inteiro; passo 5 mantém a varredura legível sem perder resolução útil no diâmetro do feixe."
+
+[[parameter]]
+key      = "v_min"
+label    = "Velocidade mínima no tubo"
+unit     = "m/s"
+default  = 1.0
+min      = 0.0
+max      = 10.0
+advanced = true
+note     = "Tabela 3.1: \"limitations due to fouling and heat transfer: often 1 m/s unless better information is available\" (Taborek). Abaixo disso o tubo incrusta e o coeficiente despenca."
+
+[[parameter]]
+key      = "v_max"
+label    = "Velocidade máxima no tubo"
+unit     = "m/s"
+default  = 3.0
+min      = 0.1
+max      = 20.0
+advanced = true
+note     = "Tabela 3.1, limite de erosão: 3 m/s em aço-carbono ou Cu-Ni, 5 em inox, 6 em titânio. Suba conforme o material do tubo."
+
+[[parameter]]
+key      = "d_casco_max"
+label    = "Diâmetro máximo do casco"
+unit     = "mm"
+default  = 2500.0
+min      = 100.0
+max      = 5000.0
+advanced = true
+note     = "Tabela 3.1: casco de tubo padronizado vai a 500 mm, de chapa enrolada a 2500 mm. Acima disso o serviço é dividido em cascos em paralelo."
+
+[[parameter]]
+key      = "l_tubo_max"
+label    = "Comprimento máximo do tubo"
+unit     = "m"
+default  = 6.0
+min      = 0.5
+max      = 30.0
+advanced = true
+note     = "NÃO é de Saari — é limite de fabricação: tubo de trocador vem em comprimento de estoque, e 6 m (20 ft) é o mais longo comum. Sem este teto o programa escolheria o feixe de menor área com tubo de treze metros, que minimiza a conta e não existe em catálogo."
+
+# ---------------------------------------------------------------------------
+# Constantes das correlações.
+# ---------------------------------------------------------------------------
+[constants]
+
+# Eq. (6.23), Dittus-Boelter na forma que Saari publica: coeficiente E expoente de
+# Prandtl diferentes para aquecimento e resfriamento. A maioria dos textos traz 0,023
+# com os mesmos expoentes; segue-se a fonte. Válida em 10⁴ < Re < 1,2×10⁵ e
+# 0,7 < Pr < 120, com erro de -26…+7 % para água — o próprio §6.3.1 a declara adequada
+# só a estimativas iniciais, o que é exatamente o estágio deste programa.
+dittus_boelter_heating    = 0.024
+dittus_boelter_pr_heating = 0.4
+dittus_boelter_cooling    = 0.026
+dittus_boelter_pr_cooling = 0.3
+
+# FAIXA DE VALIDADE, e o que o programa faz com ela.
+#
+# Saari (p. 68) declara, logo abaixo da Eq. (6.23): "Equation (6.23) is valid within
+# 10^4 < Re < 1.2*10^5 and 0.7 < Pr < 120", e o período seguinte é explícito sobre o que
+# há fora: "Below Re = 10^4 the results are much worse."
+#
+# Fora dessas quatro fronteiras o feixe é RECUSADO, não extrapolado. Um ponto fora do
+# domínio de validade não é necessariamente impossível — é um ponto que o modelo
+# implementado não está autorizado a avaliar, e h_i atravessa U -> A -> L, de modo que
+# aceitá-lo devolveria um comprimento de tubo que nenhuma correlação daqui sustenta.
+# Ver `case_admissible` em src/sizing/exchanger/shell_and_tube.jl.
+#
+# Estão aqui, e não no código, porque são PREMISSA REVISÁVEL declarada pela fonte — a
+# mesma regra que põe as fronteiras de regime da bomba no TOML dela. O teto (1,2e5) é a
+# metade mais discutível das quatro: a literatura usa Dittus-Boelter bem acima dele, e
+# 1,2e5 é o limite que ESTA fonte declara, não um limite físico. Quem tiver base para
+# outro valor troca a linha.
+#
+# Erro DENTRO da faixa, pela própria fonte: -26...+7 % para água, +10...+33 % para ar
+# (Pr = 0,7) e -39...+21 % para óleos (Pr = 120). Daí o §6.3.1 concluir que a correlação
+# serve "only for rough initial estimates but not accurate sizing calculations" — que é
+# exatamente o estágio deste programa.
+dittus_boelter_re_min = 1.0e4
+dittus_boelter_re_max = 1.2e5
+dittus_boelter_pr_min = 0.7
+dittus_boelter_pr_max = 120.0
+
+# ---------------------------------------------------------------------------
+# BELL-DELAWARE — o coeficiente do lado do casco, calculado
+# ---------------------------------------------------------------------------
+# Saari descreve o método e não o fecha em fórmula; até aqui `h_casco` era ENTRADA do
+# usuário, e como ele domina U (1/500 contra ~1,5e-4 do tubo) o número que mais pesava
+# no resultado era um chute. Quem fecha é Branan, cap. 2, Eq. 2-18 a 2-29 e Tabelas
+# 2-5/2-6/2-7 — que também confirma, independentemente, o U da Eq. 5.7a de Saari
+# (Branan Eq. 2-31) e a área de feixe (√3/2)·passo² (Branan Eq. 2-13).
+#
+# QUATRO DIVERGÊNCIAS ENCONTRADAS AO REPRODUZIR A FONTE. Todas checáveis por dentro:
+#
+# 1. Eq. 2-21 imprime  J_ideal = a1·(1,33/(PR/d_o))^a·Re^a2 , com PR definido três
+#    páginas antes como "the pitch ratio" (p_t = PR·d_o), ou seja ADIMENSIONAL.
+#    "PR/d_o" tem dimensão de 1/comprimento: o valor de J_ideal passaria a depender de
+#    d_o estar em mm ou em m, e um coeficiente que muda com a unidade escolhida não é
+#    correlação. A forma de Bejan & Kraus [1], que a própria Eq. 2-21 cita, é
+#    1,33/(p_t/d_o) = 1,33/PR. É o que se usa.
+#
+# 2. Tabela 2-5, linha 90° / Re 0-10: o a2 sai impresso "0.667", SEM o sinal de menos
+#    que todas as outras 19 linhas trazem. j tem de CAIR com Re (é o que as outras
+#    quatro faixas do mesmo layout fazem, e as vinte dos outros três). a2 = -0,667.
+#
+# 3. Eq. 2-26 imprime θ2 = arccos(1 - 2·lc/Ds) para a área bruta da janela
+#    A_wg = (Ds²/8)(θ2 - sen θ2). Com o corte usual de 25 % isso dá 0,0227·Ds² contra
+#    os 0,1535·Ds² da área exata do segmento circular — 6,8× menos. Com
+#    θ2 = 2·arccos(1 - 2·lc/Ds) o resultado bate a área exata em TODA a faixa de corte,
+#    à precisão de máquina (ver test/golden_saari.jl, que confere contra a geometria de
+#    `_segment_area`, que o projeto já tinha). Falta o fator 2.
+#
+# 4. A Eq. 2-24, ao contrário, está certa como impressa: θ1 = arccos(1 - 2·lc/Ds) ali é
+#    MEIO ângulo de propósito, e ½(π - θ1)·Ds·d_sb reproduz o (2π - θ_janela)/4·Ds·d_sb
+#    da forma padrão. As duas usam o mesmo símbolo com convenções diferentes, que é
+#    provavelmente o que produziu o item 3.
+#
+# 5. Eq. 2-23 imprime  Jl = 0,44(1 - ra) + [1 - 0,044(1 - ra)]·exp(-2,2·rb) — com
+#    0,044 no SEGUNDO colchete e 0,44 no primeiro. Encontrada na fase de validação
+#    física; checável por dentro, como as três primeiras.
+#
+#    Jl é um fator que DESCONTA: com vazamento nulo (rb -> 0) ele tem de valer 1,
+#    porque não há o que descontar. Com 0,44 nos dois lugares e ra -> 1 dá
+#    0,44 + (1 - 0,44) = 1,000 exato. Com o 0,044 impresso daria 0,44 + 0,956 = 1,396 —
+#    um "fator de correção" que AUMENTA h_o em 40 % justamente no caso em que a
+#    construção é perfeita. É impossível, e 0,44 nos dois lugares é também a forma de
+#    Taborek e de Shah & Sekulic. Usa-se 0,44; o `jl_a` abaixo entra nos dois pontos.
+
+[constants.bell_delaware]
+
+# Liga o cálculo. Com `false`, `h_casco` volta a ser o valor informado no formulário —
+# é o caminho para quem não conhece a geometria de chicana, e é o que preserva o
+# caso-ouro do Exemplo 4.1, que tem U dado.
+ativo = true
+
+# Laço interno: h_o depende de Js, Js depende do nº de chicanas, o nº de chicanas
+# depende do comprimento de tubo — que é justamente o que a varredura devolve. Ponto
+# fixo em L. Converge em poucas passagens porque Js ∈ [0,85 , 1].
+tolerancia = 1.0e-9
+max_iter   = 60
+
+# Regra de bolso do próprio Branan para geometria desconhecida: "a total correction of
+# 0.60 may be used (h_o = 0.6·h_ideal) since this has long been used as a rule of
+# thumb". NÃO é usada no caminho normal — fica registrada como piso de comparação.
+correcao_de_bolso = 0.60
+
+# Tabela 2-6 — p_n (pitch normal ao escoamento) e p_p (paralelo), em múltiplos de p_t.
+# 30°: p_n = p_t,      p_p = (√3/2)·p_t
+# 45°: p_n = √2·p_t,   p_p = p_t/√2
+# 60°: p_n = √3·p_t,   p_p = p_t/2
+# 90°: p_n = p_t,      p_p = p_t
+layouts    = [30, 45, 60, 90]
+pn_sobre_pt = [1.0, 1.4142135623730951, 1.7320508075688772, 1.0]
+pp_sobre_pt = [0.8660254037844386, 0.7071067811865475, 0.5, 1.0]
+
+# Eq. (2-13) e (2-14) — área da célula que cada tubo ocupa no campo tubular, em
+# múltiplos de p_t². É o que fixa o diâmetro do feixe: D_otl = √(4·N·A_célula/π).
+#
+#     Area_1tubo,triangular = (√3/2)·(PR·d_o)²      (2-13)   -> 30° e 60°
+#     Area_1tubo,quadrada   = (PR·d_o)²             (2-14)   -> 45° e 90°
+#
+# Branan publica as duas lado a lado e explica cada uma em prosa: "For triangular pitch,
+# draw the equilateral triangle with vertices at the center of three tubes. The area of
+# the triangle is one-half of the area required to accommodate one tube. Similarly, for
+# square pitch draw the square with corners at the center of four tubes. The area of the
+# square is equal to the area required to accommodate one tube." A Tabela 2-6 nomeia os
+# quatro layouts, e são ELAS que dizem quem é triangular e quem é quadrado: "30°
+# Triangular Staggered", "60° Rotated Triangular Staggered", "90° Square Inline",
+# "45° Rotated Square Staggered".
+#
+# Até a fase de validação física o código usava a (2-13) nos QUATRO layouts, o que
+# subestimava o feixe de um passo quadrado em 7,5 % (= √(2/√3) − 1) e propagava para D_s,
+# a área de escoamento cruzado, o Reynolds do casco e os cinco fatores J. O default
+# (30°) não é afetado. Ver test/golden_saari.jl e docs/validacao/02-*.md, defeito 4.
+area_celula_sobre_pt2 = [0.8660254037844386, 1.0, 0.8660254037844386, 1.0]
+
+# Limiar de p_t/d_o abaixo do qual a área de escoamento cruzado (A_s) usa a diagonal em
+# vez da transversal — Eq. 2-19, as duas variantes. 1,707 = 1 + 1/√2 (45°);
+# 3,732 = 2 + √3 (60°). Para 30° e 90° Branan não dá variante nenhuma, e `0.0` é o que a
+# desliga: `crossflow_area` só troca de garganta quando `limiar > 0`.
+limiar_diagonal = [0.0, 1.7071067811865475, 3.7320508075688772, 0.0]
+
+# Tabela 2-5 — coeficientes de J_ideal, por layout e faixa de Reynolds do casco.
+# `re_max` é o topo de cada faixa; a última é aberta. Só os `a` entram no coeficiente
+# de troca; os `b` são de perda de carga, que este método ainda não calcula (ver
+# SPRINTS: Δp é o próximo item), e por isso não estão aqui — pôr constante que o código
+# não consome é o mesmo defeito que `stream_keys` corrige no formulário.
+re_max = [10.0, 100.0, 1000.0, 10000.0, 1.0e300]
+
+# a1 e a2 por faixa (índice = faixa), um bloco por layout.
+a1_30 = [1.400, 1.360, 0.593, 0.321, 0.321]
+a2_30 = [-0.667, -0.657, -0.477, -0.388, -0.388]
+a1_45 = [1.550, 0.498, 0.730, 0.370, 0.370]
+a2_45 = [-0.667, -0.656, -0.500, -0.396, -0.396]
+a1_60 = [1.400, 1.360, 0.593, 0.321, 0.321]
+a2_60 = [-0.667, -0.657, -0.477, -0.388, -0.388]
+a1_90 = [0.970, 0.900, 0.408, 0.107, 0.370]
+# O primeiro é o da divergência 2: impresso "0.667", sem sinal.
+a2_90 = [-0.667, -0.631, -0.460, -0.266, -0.395]
+
+# a3 e a4 não dependem da faixa de Re, só do layout (as cinco linhas de cada layout
+# repetem o mesmo par na Tabela 2-5).
+a3 = [1.450, 1.930, 1.450, 1.187]
+a4 = [0.519, 0.500, 0.519, 0.370]
+
+# Tabela 2-7 — folga diametral casco-chicana (TEMA classe R), em mm, por faixa de DN
+# do casco. `dn_max` é o topo de cada faixa. Os valores são conversão exata das
+# polegadas impressas ao lado (0,100 / 0,125 / 0,150 / 0,175 / 0,225 / 0,300 in).
+folga_dn_max   = [325.0, 425.0, 575.0, 975.0, 1350.0, 1.0e300]
+folga_chicana  = [2.540, 3.175, 3.810, 4.445, 5.715, 7.620]
+
+# Eq. 2-22 — Jc = 0,55 + 0,72·Fc.
+jc_a = 0.55
+jc_b = 0.72
+
+# Eq. 2-23 — Jl = 0,44(1 − ra) + [1 − 0,44(1 − ra)]·exp(−2,2·rb).
+jl_a = 0.44
+jl_b = 2.2
+
+# Eq. 2-27 — Jb = exp[−C·rc·(1 − (2z)^(1/3))], C = 1,35 se Re ≤ 100 e 1,25 se Re > 100.
+jb_c_laminar    = 1.35
+jb_c_turbulento = 1.25
+jb_re_corte     = 100.0
+
+# Eq. 2-28 — expoente n de Js: 3/5 turbulento, 1/3 laminar.
+js_n_turbulento = 0.6
+js_n_laminar    = 0.3333333333333333
+
+# Eq. 2-29 — Jr = (10/nr_cc)^0,18 abaixo de Re 20; 1 acima de Re 100; linear entre.
+jr_expoente = 0.18
+jr_re_min   = 20.0
+jr_re_max   = 100.0

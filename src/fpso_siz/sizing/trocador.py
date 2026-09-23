@@ -1,0 +1,459 @@
+"""Trocador casco-e-tubos — Saari (LUT), LMTD com fator F (Algoritmo 4.1), com o lado do
+casco por Bell-Delaware (Branan). Port de sizing/exchanger/shell_and_tube.jl.
+
+Não é vaso: varre o número de tubos por passe; a exigência é o comprimento de tubo L que
+fecha U·A = q/(F·ΔT_lm); cada caso restringe pela velocidade no tubo e pela validade de
+Dittus-Boelter (case_admissible); o conjunto, pelos tetos de casco e de comprimento.
+Escolhe-se o feixe de MENOR área.
+"""
+import math
+from dataclasses import dataclass
+
+from fpso_siz.core.configuracao import carregar
+from fpso_siz.core.contrato import Equipamento, ResultField, SweepAxis, SweepColumn, der
+from fpso_siz.core.formato_julia import jl, jl_round
+from fpso_siz.core.grade import faixa_julia
+from fpso_siz.core.ieee import div
+from fpso_siz.core.trace import Rastro
+from fpso_siz.core.unidades import cp_para_pas, m_para_mm, mm_para_m
+from fpso_siz.sizing.base import MetodoTOML, driver_case
+from fpso_siz.sizing.bell_delaware import ShellGeometry, baffle_clearance, bell_delaware, layout_pitches
+from fpso_siz.sizing.hidraulica import reynolds_pipe
+
+EXCHANGER_KEYS = ("m_tubo", "cp_tubo", "t_tubo_in", "t_tubo_out", "rho_tubo", "mu_tubo", "k_tubo",
+                  "m_casco", "cp_casco", "t_casco_in", "mu_casco", "k_casco")
+
+
+def _t():
+    return carregar("equipment/comum/trocador.toml")
+
+
+class ShellTubeExchanger(Equipamento):
+    method_id, label = "exchanger", "Trocador de Calor Casco-e-Tubos"
+
+
+@dataclass(frozen=True)
+class ExchangerDuty:
+    m_tubo: float
+    cp_tubo: float
+    t_tubo_in: float
+    t_tubo_out: float
+    rho_tubo: float
+    mu_tubo: float      # Pa·s
+    k_tubo: float
+    m_casco: float
+    cp_casco: float
+    t_casco_in: float
+    mu_casco: float     # Pa·s
+    k_casco: float
+
+
+def lmtd(dt1, dt2):
+    """ΔT médio logarítmico (Eq. 4.6); NaN se algum ΔT ≤ 0 (cruzamento)."""
+    if not (math.isfinite(dt1) and math.isfinite(dt2) and dt1 > 0 and dt2 > 0):
+        return math.nan
+    r = dt1 / dt2
+    if abs(r - 1.0) <= _t()["singularidades"]["tol_lmtd"]:
+        return float(dt1)
+    return (dt1 - dt2) / math.log(r)
+
+
+def f_correction_1_2(p, r):
+    """Fator F do arranjo 1 casco / 2 passes (Fig. 4.3); R = 1 é limite removível."""
+    if not (math.isfinite(p) and math.isfinite(r)):
+        return math.nan
+    if p <= 0:
+        return 1.0
+    if p >= 1 or r * p >= 1:
+        return math.nan
+    s = math.sqrt(1 + r * r)
+    den_log = (2 - p * (1 + r - s)) / (2 - p * (1 + r + s))
+    if not (math.isfinite(den_log) and den_log > 0):
+        return math.nan
+    if abs(r - 1.0) <= _t()["singularidades"]["tol_f_r1"]:
+        return math.sqrt(2.0) * (p / (1 - p)) / math.log(den_log)
+    return s * math.log((1 - r * p) / (1 - p)) / ((1 - r) * math.log(den_log))
+
+
+def nusselt_dittus_boelter(re, pr, aquecendo, k):
+    """(Nu, dentro da faixa declarada?) — Eq. 6.23 na forma de Saari."""
+    if not (math.isfinite(re) and re > 0 and math.isfinite(pr) and pr > 0):
+        return math.nan, False
+    e = _t()["dittus_boelter"]["expoente_re"]
+    if aquecendo:
+        nu = float(k["dittus_boelter_heating"]) * re ** e * pr ** float(k["dittus_boelter_pr_heating"])
+    else:
+        nu = float(k["dittus_boelter_cooling"]) * re ** e * pr ** float(k["dittus_boelter_pr_cooling"])
+    valida = (float(k["dittus_boelter_re_min"]) <= re <= float(k["dittus_boelter_re_max"])
+              and float(k["dittus_boelter_pr_min"]) <= pr <= float(k["dittus_boelter_pr_max"]))
+    return nu, valida
+
+
+def overall_u(h_i, h_o, rf_i, rf_o, d_i, d_o, k_w):
+    """U referido à área externa, resistências em série (Eq. 5.7a)."""
+    if not (h_i > 0 and h_o > 0 and d_i > 0 and d_o > d_i and k_w > 0):
+        return math.nan
+    razao = d_o / d_i
+    r_tot = 1 / h_o + rf_o + d_o * math.log(razao) / (2 * k_w) + razao * rf_i + razao / h_i
+    return 1 / r_tot
+
+
+def effectiveness_ntu_counterflow(ntu, c_star):
+    if not (math.isfinite(ntu) and ntu >= 0 and math.isfinite(c_star) and 0 <= c_star <= 1):
+        return math.nan
+    if abs(c_star - 1.0) <= _t()["singularidades"]["tol_ntu"]:
+        return ntu / (1 + ntu)
+    e = math.exp(-ntu * (1 - c_star))
+    return (1 - e) / (1 - c_star * e)
+
+
+@dataclass(frozen=True)
+class ExchangerConstraints:
+    q: float
+    dt_lm: float
+    f: float
+    ua_exigido: float
+    t_casco_out: float
+    aquecendo: bool
+    m_tubo: float
+    rho_tubo: float
+    mu_tubo: float
+    pr_tubo: float
+    k_tubo: float
+    d_i: float
+    d_o: float
+    passes: int
+    h_casco: float
+    rf_tubo: float
+    rf_casco: float
+    k_parede: float
+    area_tubo: float
+    passo_m: float
+    area_celula: float
+    m_casco: float
+    cp_casco: float
+    mu_casco: float
+    k_casco: float
+    layout: int
+    corte_chicana: float
+    espac_chicana: float
+    pares_veda: float
+    folga_furo_m: float
+    faixas_divisoras: float
+    bd_ativo: bool
+    kbd: dict
+    k: dict
+
+
+VAZIO = dict(v=math.inf, re=math.nan, h_i=math.nan, h_o=math.nan, u=math.nan, area=math.inf, l=math.inf, n_total=0.0,
+             d_casco=math.inf, d_shell=math.inf, re_casco=math.nan, jc=math.nan, jl=math.nan, jb=math.nan,
+             js=math.nan, jr=math.nan, j_produto=math.nan, h_ideal=math.nan, n_chicanas=math.nan, nu_valido=False,
+             ok=False)
+
+
+def _tubo(c, n):
+    """O feixe com n tubos por passe: velocidade, h_i, h_o, U, área, L, casco."""
+    if not n >= 1:
+        return dict(VAZIO)
+    n_total = n * c.passes
+    v = c.m_tubo / (c.rho_tubo * n * c.area_tubo)
+    re = reynolds_pipe(c.rho_tubo, v, c.d_i, c.mu_tubo)
+    nu, nu_valido = nusselt_dittus_boelter(re, c.pr_tubo, c.aquecendo, c.k)
+    h_i = nu * c.k_tubo / c.d_i
+    d_feixe = math.sqrt(4 * n_total * c.area_celula * (c.passo_m * c.passo_m) / math.pi)
+    if not c.bd_ativo:
+        u = overall_u(h_i, c.h_casco, c.rf_tubo, c.rf_casco, c.d_i, c.d_o, c.k_parede)
+        area = c.ua_exigido / u
+        l = area / (n_total * math.pi * c.d_o)
+        return dict(VAZIO, v=v, re=re, h_i=h_i, h_o=c.h_casco, u=u, area=area, l=l, n_total=float(n_total),
+                    d_casco=d_feixe, d_shell=d_feixe + 2 * c.d_o, nu_valido=nu_valido, ok=math.isfinite(u) and u > 0)
+    return _tubo_bell_delaware(c, n_total, v, re, h_i, d_feixe, nu_valido)
+
+
+def _tubo_bell_delaware(c, n_total, v, re, h_i, d_feixe, nu_valido):
+    """Bell-Delaware depende de L (nº de chicanas) e L depende de h_o: ponto fixo em L."""
+    kbd = c.kbd
+    padrao = _t()["laco_comprimento"]
+    tol = float(kbd.get("tolerancia", padrao["tolerancia"]))
+    maxit = int(kbd.get("max_iter", padrao["max_iteracoes"]))
+    d_otl = d_feixe
+    d_s = d_otl + 2 * c.d_o
+    folga_mm = baffle_clearance(m_para_mm(d_s), kbd)
+    p_n, p_p, _ = layout_pitches(c.layout, c.passo_m, kbd)
+    l_bc = c.espac_chicana * d_s
+    geo = ShellGeometry(d_s, d_otl, c.d_o, c.passo_m, p_n, p_p, c.corte_chicana * d_s, l_bc, mm_para_m(folga_mm),
+                        c.folga_furo_m, float(n_total), c.pares_veda, c.faixas_divisoras, 2 * c.d_o, c.layout)
+    l = u = area = h_o = math.nan
+    fat = None
+    n_b = 1.0
+    ok = False
+    for it in range(1, maxit + 1):
+        n_b = max(l / l_bc - 1, 1.0) if (math.isfinite(l) and l > 0 and l_bc > 0) else 1.0
+        h_o, fat, bd_ok = bell_delaware(geo, c.m_casco, c.cp_casco, c.mu_casco, c.k_casco, n_b, l_bc, l_bc, kbd)
+        if not bd_ok:
+            return dict(VAZIO, v=v, re=re, h_i=h_i, n_total=float(n_total), d_casco=d_feixe, d_shell=d_s,
+                        re_casco=fat.re, h_ideal=fat.h_ideal, nu_valido=nu_valido)
+        u = overall_u(h_i, h_o, c.rf_tubo, c.rf_casco, c.d_i, c.d_o, c.k_parede)
+        if not (math.isfinite(u) and u > 0):
+            return dict(VAZIO, v=v, re=re, h_i=h_i, h_o=h_o, n_total=float(n_total), d_casco=d_feixe, d_shell=d_s,
+                        nu_valido=nu_valido)
+        area = c.ua_exigido / u
+        novo = area / (n_total * math.pi * c.d_o)
+        if math.isfinite(l) and abs(novo - l) <= tol * max(1.0, abs(novo)):
+            l = novo
+            ok = True
+            break
+        l = novo
+        if it == maxit:
+            ok = False
+    return dict(v=v, re=re, h_i=h_i, h_o=h_o, u=u, area=area, l=l, n_total=float(n_total), d_casco=d_feixe,
+                d_shell=d_s, re_casco=fat.re, jc=fat.jc, jl=fat.jl, jb=fat.jb, js=fat.js, jr=fat.jr,
+                j_produto=fat.produto, h_ideal=fat.h_ideal, n_chicanas=n_b, nu_valido=nu_valido, ok=ok)
+
+
+class SaariLMTD(MetodoTOML):
+    method_id = "saari_lmtd"
+    config = "equipment/exchanger/saari_lmtd.toml"
+    rotulo_padrao = "Saari — LMTD com fator F"
+
+    def applies_to(self):
+        return ShellTubeExchanger()
+
+    def stream_keys(self):
+        return ()
+
+    def case_input(self, vals):
+        faltando = [k for k in EXCHANGER_KEYS if k not in vals]
+        if faltando:
+            raise ValueError("caso sem as entradas do trocador: " + ", ".join(faltando))
+        v = {k: float(vals[k]) for k in EXCHANGER_KEYS}
+        return ExchangerDuty(v["m_tubo"], v["cp_tubo"], v["t_tubo_in"], v["t_tubo_out"], v["rho_tubo"],
+                             cp_para_pas(v["mu_tubo"]), v["k_tubo"], v["m_casco"], v["cp_casco"], v["t_casco_in"],
+                             cp_para_pas(v["mu_casco"]), v["k_casco"])
+
+    def sizing_constraints(self, e, p, k):
+        tr = Rastro()
+        c_tubo = e.m_tubo * e.cp_tubo
+        c_casco = e.m_casco * e.cp_casco
+        if not (math.isfinite(c_tubo) and c_tubo > 0):
+            return False, "Capacidade térmica do lado tubo inválida: confira vazão mássica e cp.", tr
+        if not (math.isfinite(c_casco) and c_casco > 0):
+            return False, "Capacidade térmica do lado casco inválida: confira vazão mássica e cp.", tr
+        q = c_tubo * (e.t_tubo_out - e.t_tubo_in)
+        aquecendo = q > 0
+        if not abs(q) > 0:
+            return (False, "As temperaturas de entrada e saída do lado tubo são iguais: não há calor a trocar, e não "
+                           "há trocador a dimensionar.", tr)
+        t_casco_out = e.t_casco_in - q / c_casco
+        tr.trace("balanco", "Eq. 4.5", "q", "ṁ·cp·(T_saída − T_entrada) no tubo", q, "W")
+        tr.trace("balanco", "Eq. 4.5", "T_casco,saída", "T_casco,ent − q/(ṁ·cp)_casco", t_casco_out, "°C")
+        if aquecendo:
+            quente_in, quente_out, frio_in, frio_out = e.t_casco_in, t_casco_out, e.t_tubo_in, e.t_tubo_out
+        else:
+            quente_in, quente_out, frio_in, frio_out = e.t_tubo_in, e.t_tubo_out, e.t_casco_in, t_casco_out
+        dt1 = quente_in - frio_out
+        dt2 = quente_out - frio_in
+        dtlm = lmtd(dt1, dt2)
+        tr.trace("balanco", "Eq. 4.7", "ΔT₁", "T_quente,ent − T_frio,saída", dt1, "K")
+        tr.trace("balanco", "Eq. 4.7", "ΔT₂", "T_quente,saída − T_frio,ent", dt2, "K")
+        if not math.isfinite(dtlm):
+            return (False, "Cruzamento de temperatura: com estas vazões e capacidades térmicas, um fluido ultrapassaria "
+                           f"a temperatura de entrada do outro (ΔT₁ = {jl_round(dt1, 1)} K, ΔT₂ = {jl_round(dt2, 1)} K). "
+                           "Nenhum trocador em contracorrente faz isso — reveja vazões, cp ou temperaturas.", tr)
+        tr.trace("balanco", "Eq. 4.6", "ΔT_lm", "(ΔT₁ − ΔT₂)/ln(ΔT₁/ΔT₂)", dtlm, "K")
+        passes = min(max(round(p["passes_tubo"]), 1), 2)
+        fator = 1.0
+        if passes == 2:
+            p_ef = div(e.t_tubo_out - e.t_tubo_in, e.t_casco_in - e.t_tubo_in)
+            r_ef = (e.t_casco_in - t_casco_out) / (e.t_tubo_out - e.t_tubo_in)
+            fator = f_correction_1_2(abs(p_ef), abs(r_ef))
+            tr.trace("balanco", "Fig. 4.3", "P", "ΔT do tubo / (T_casco,ent − T_tubo,ent)", abs(p_ef), "–")
+            tr.trace("balanco", "Fig. 4.3", "R", "ΔT do casco / ΔT do tubo", abs(r_ef), "–")
+            if not (math.isfinite(fator) and fator > 0):
+                return (False, "O arranjo 1-2 não fecha com estas temperaturas: o fator de correção F sai do domínio da "
+                               "Fig. 4.3. Em contracorrente puro (1 passe) o caso é viável — o cruzamento interno de um "
+                               "segundo passe é que não é.", tr)
+        tr.trace("balanco", "Fig. 4.3" if passes == 2 else "§4.2.1", "F",
+                 "correção do arranjo 1-2" if passes == 2 else "contracorrente puro: F = 1", fator, "–")
+        ua = abs(q) / (fator * dtlm)
+        tr.trace("balanco", "Eq. 4.9", "U·A", "q/(F·ΔT_lm)", ua, "W/K")
+        d_o = mm_para_m(p["d_externo"])
+        d_i = d_o - 2 * mm_para_m(p["espessura"])
+        if not d_i > 0:
+            return (False, f"A espessura de parede ({jl(p['espessura'])} mm) consome o diâmetro externo "
+                           f"({jl(p['d_externo'])} mm): não sobra seção livre no tubo.", tr)
+        pr = div(e.cp_tubo * e.mu_tubo, e.k_tubo)
+        if not (math.isfinite(pr) and pr > 0):
+            return (False, "Prandtl do fluido do tubo inválido: confira cp, viscosidade e condutividade térmica.", tr)
+        tr.trace("tubo", "§6.1.1", "Pr", "cp·µ/k", pr, "–")
+        tr.trace("tubo", "§3.2.2", "d_i", "d_o − 2·espessura", m_para_mm(d_i), "mm")
+        kbd = dict(k.get("bell_delaware", {}))
+        bd_ativo = bool(kbd) and bool(kbd.get("ativo", False))
+        if bd_ativo:
+            if not (math.isfinite(e.mu_casco) and e.mu_casco > 0):
+                return (False, "Viscosidade do fluido do casco inválida: sem ela não há Reynolds do casco, e o "
+                               "coeficiente h_o não pode ser calculado.", tr)
+            if not (math.isfinite(e.k_casco) and e.k_casco > 0):
+                return (False, "Condutividade do fluido do casco inválida: sem ela não há Prandtl do casco, e o "
+                               "coeficiente h_o não pode ser calculado.", tr)
+            tr.trace("casco", "§6.1.1", "Pr (casco)", "cp·µ/k", div(e.cp_casco * e.mu_casco, e.k_casco), "–")
+            tr.trace("casco", "Br. 2-18", "hipótese", "(µ/µ_parede)^0,14 = 1 — T de parede não iterada", 1.0, "–")
+        padrao = _t()["layout"]
+        layouts = [int(x) for x in kbd.get("layouts", padrao["layouts"])]
+        layout = round(p["layout_tubos"])
+        layout = layout if layout in [int(x) for x in padrao["layouts"]] else int(padrao["layouts"][0])
+        razoes = [float(x) for x in kbd.get("area_celula_sobre_pt2", padrao["area_celula_sobre_pt2"])]
+        area_celula = razoes[layouts.index(layout)] if layout in layouts else float(padrao["area_celula_sobre_pt2"][0])
+        cons = ExchangerConstraints(
+            abs(q), dtlm, fator, ua, t_casco_out, aquecendo, e.m_tubo, e.rho_tubo, e.mu_tubo, pr, e.k_tubo, d_i, d_o,
+            passes, p["h_casco"], p["rf_tubo"], p["rf_casco"], p["k_parede"], math.pi * (d_i * d_i) / 4,
+            p["razao_passo"] * d_o, area_celula, e.m_casco, e.cp_casco, e.mu_casco, e.k_casco, layout,
+            p["corte_chicana"], p["espacamento_chicana"], p["pares_veda"], mm_para_m(p["folga_furo_chicana"]),
+            p["faixas_divisoras"], bd_ativo, kbd, dict(k))
+        return True, cons, tr
+
+    def sweep_axis(self, p):
+        return SweepAxis("n_tubos", "tubos por passe", "–", faixa_julia(p["n_min"], p["n_step"], p["n_max"]))
+
+    def global_keys(self):
+        return ["n_min", "n_max", "n_step", "v_min", "v_max", "d_casco_max", "l_tubo_max"]
+
+    def requirement(self, n, c):
+        return _tubo(c, n)["l"]
+
+    def governing_of(self, n, c):
+        return "termica"
+
+    def derived(self, n, l, gov, c, k, p):
+        t = _tubo(c, n)
+        return {"v": t["v"], "re": t["re"], "h_tubo": t["h_i"], "h_casco": t["h_o"], "re_casco": t["re_casco"],
+                "h_ideal": t["h_ideal"], "jc": t["jc"], "jl": t["jl"], "jb": t["jb"], "js": t["js"], "jr": t["jr"],
+                "j_produto": t["j_produto"], "n_chicanas": t["n_chicanas"], "nu_valido": 1.0 if t["nu_valido"] else 0.0,
+                "pr": c.pr_tubo, "re_min_correlacao": float(k.get("dittus_boelter_re_min", math.nan)),
+                "re_max_correlacao": float(k.get("dittus_boelter_re_max", math.nan)), "u": t["u"], "area": t["area"],
+                "n_total": t["n_total"], "d_casco": m_para_mm(t["d_casco"]), "d_shell": m_para_mm(t["d_shell"]),
+                "l": float(l), "l_sobre_d": l / t["d_casco"] if t["d_casco"] > 0 else math.nan, "q": c.q,
+                "dt_lm": c.dt_lm, "f": c.f, "passes": float(c.passes)}
+
+    def case_admissible(self, n, c, p):
+        t = _tubo(c, n)
+        return t["ok"] and t["nu_valido"] and p["v_min"] <= t["v"] <= p["v_max"]
+
+    def admissible(self, n, der_, p):
+        return der_.get("d_shell", math.inf) <= p["d_casco_max"] and der_.get("l", math.inf) <= p["l_tubo_max"]
+
+    def objective(self, n, der_, p):
+        return der_.get("area", math.inf)
+
+    def envelope_params(self, params):
+        v_min = max(p["v_min"] for p in params)
+        v_max = min(p["v_max"] for p in params)
+        if not v_min <= v_max:
+            return (False, f"As bandas de velocidade no tubo pedidas pelos casos não se cruzam: um exige v ≥ {jl(v_min)} "
+                           f"m/s e outro v ≤ {jl(v_max)} m/s. O feixe é um só.")
+        return True, dict(n_min=min(p["n_min"] for p in params), n_max=max(p["n_max"] for p in params),
+                          n_step=min(p["n_step"] for p in params), v_min=v_min, v_max=v_max,
+                          d_casco_max=min(p["d_casco_max"] for p in params),
+                          l_tubo_max=min(p["l_tubo_max"] for p in params))
+
+    def selection_message(self, rows, teto, p, mechanism="none"):
+        if not rows:
+            return "A grade de números de tubos ficou vazia."
+        banda = f"{jl(p['v_min'])}–{jl(p['v_max'])} m/s"
+        vs = [x for x in (r.derivados.get("v", math.nan) for r in rows) if math.isfinite(x)]
+        na_banda = [r for r in rows if p["v_min"] <= r.derivados.get("v", math.nan) <= p["v_max"]]
+        if not na_banda:
+            lo, hi = (min(vs), max(vs)) if vs else (math.nan, math.nan)
+            return (f"Nenhum feixe da grade mantém a velocidade no tubo na banda {banda}: na grade oferecida ela varia "
+                    f"de {jl_round(lo, 2)} a {jl_round(hi, 2)} m/s. Amplie a grade de tubos, mude o diâmetro do tubo, "
+                    "ou reveja a banda.")
+        k = self.constants()
+        validos = [r for r in na_banda if r.derivados.get("nu_valido", 1.0) != 0.0]
+        if not validos:
+            res = [x for x in (r.derivados.get("re", math.nan) for r in na_banda) if math.isfinite(x)]
+            lo, hi = (min(res), max(res)) if res else (math.nan, math.nan)
+            prs = [x for x in (r.derivados.get("pr", math.nan) for r in na_banda) if math.isfinite(x)]
+            pr = prs[0] if prs else math.nan
+            return (f"Na banda de velocidade {banda} todos os feixes caem fora da faixa em que Saari declara a "
+                    f"correlação de Dittus-Boelter (Eq. 6.23): o Reynolds no tubo vai de {jl_round(lo, 0)} a "
+                    f"{jl_round(hi, 0)} e o Prandtl vale {jl_round(pr, 1)}, contra "
+                    f"{jl_round(float(k['dittus_boelter_re_min']), 0)}–{jl_round(float(k['dittus_boelter_re_max']), 0)} e "
+                    f"{jl(k['dittus_boelter_pr_min'])}–{jl(k['dittus_boelter_pr_max'])}. Como h_i atravessa U, a área e o "
+                    "comprimento, o programa não extrapola. Mude o diâmetro do tubo, reveja a viscosidade ou a "
+                    "temperatura do fluido do tubo, ou desloque a banda de velocidade.")
+        curto = [r for r in validos if r.derivados.get("l", math.inf) <= p["l_tubo_max"]]
+        if not curto:
+            menor_l = min(r.derivados.get("l", math.inf) for r in validos)
+            return (f"Na banda de velocidade {banda} todos os feixes pedem tubo mais longo que o limite de "
+                    f"{jl(p['l_tubo_max'])} m — o mais curto dá {jl_round(menor_l, 2)} m. Amplie a grade para mais "
+                    "tubos, aceite tubo mais longo, ou melhore o coeficiente do casco.")
+        menor = min(r.derivados.get("d_shell", math.inf) for r in curto)
+        return (f"Na banda de velocidade todos os feixes pedem casco maior que o limite de {jl(p['d_casco_max'])} mm — "
+                f"o menor deles dá {jl_round(menor, 0)} mm. Use tubo de menor diâmetro, passo mais apertado, ou divida o "
+                "serviço em dois cascos em paralelo.")
+
+    def governing_label(self, g):
+        return "área de troca térmica" if g == "termica" else str(g)
+
+    def requirement_spec(self):
+        return ("comprimento de tubo", "m")
+
+    def result_fields(self, r):
+        tem = getattr(r, "feasible", True) and math.isfinite(r.x)
+        ok = "neutro" if not tem else ("ok" if getattr(r, "ok", True) else "erro")
+        return [
+            ResultField("Tubos por passe", r.x if tem else math.nan, digits=0, highlight=True),
+            ResultField("Comprimento do tubo L", r.y if tem else math.nan, unit="m", highlight=True),
+            ResultField("Área de troca A", der(r, "area"), unit="m²"),
+            ResultField("Tubos no total", der(r, "n_total"), digits=0),
+            ResultField("Diâmetro do feixe", der(r, "d_casco"), unit="mm", digits=0),
+            ResultField("Diâmetro do casco", der(r, "d_shell"), unit="mm", digits=0),
+            ResultField("Esbeltez do feixe L/D", der(r, "l_sobre_d")),
+            ResultField("Velocidade no tubo", der(r, "v"), unit="m/s", status=ok),
+            ResultField("Reynolds no tubo", der(r, "re"), digits=0),
+            ResultField("Coeficiente interno h_i", der(r, "h_tubo"), unit="W/m²K", digits=0),
+            ResultField("Coeficiente do casco h_o", der(r, "h_casco"), unit="W/m²K", digits=0),
+            ResultField("Correção de Bell-Delaware", der(r, "j_produto"), digits=3),
+            ResultField("Coeficiente global U", der(r, "u"), unit="W/m²K", digits=1),
+            ResultField("Carga térmica q", der(r, "q"), unit="W", digits=0),
+            ResultField("ΔT médio logarítmico", der(r, "dt_lm"), unit="K"),
+            ResultField("Fator de correção F", der(r, "f"), digits=3),
+            ResultField("Caso governante", driver_case(r) if tem else "—"),
+        ]
+
+    def sweep_columns(self):
+        return [SweepColumn("tubos/passe", "x", 0), SweepColumn("L (m)", "y"), SweepColumn("A (m²)", "area", 1),
+                SweepColumn("v (m/s)", "v"), SweepColumn("U (W/m²K)", "u", 0)]
+
+    def trace_blocks(self):
+        return [("balanco", "Bloco A — balanço térmico e ΔT médio"), ("tubo", "Bloco B — lado do tubo"),
+                ("casco", "Bloco C — lado do casco (Bell-Delaware)"), ("selection", "Seleção do feixe")]
+
+    def grid_hint(self, p):
+        return f"Verifique tubos mínimo ({jl(p['n_min'])}), máximo ({jl(p['n_max'])}) e passo ({jl(p['n_step'])})."
+
+    def trace_selection(self, tr, best, p):
+        d = best.derivados
+        tr.trace("selection", "—", "tubos por passe", f"menor área com {jl(p['v_min'])} ≤ v ≤ {jl(p['v_max'])} m/s",
+                 best.x, "–")
+        tr.trace("selection", "§3.2.2", "v", "ṁ/(ρ·n·πd_i²/4)", d.get("v", math.nan), "m/s")
+        tr.trace("selection", "§6.3", "Re", "ρvd_i/µ", d.get("re", math.nan), "–")
+        tr.trace("selection", "Eq. 6.23", "h_i", "Nu·k/d_i (Dittus-Boelter)", d.get("h_tubo", math.nan), "W/m²K")
+        if math.isfinite(d.get("j_produto", math.nan)):
+            tr.trace("selection", "Br. 2-20", "Re (casco)", "d_o·W_s/(µ_s·A_s)", d.get("re_casco", math.nan), "–")
+            tr.trace("selection", "Br. 2-19", "h_ideal", "j·cp·(W_s/A_s)·(k/(cp·µ))^(2/3)", d.get("h_ideal", math.nan),
+                     "W/m²K")
+            tr.trace("selection", "Br. 2-22", "Jc", "corte e espaçamento de chicana", d.get("jc", math.nan), "–")
+            tr.trace("selection", "Br. 2-23", "Jl", "vazamento casco- e tubo-chicana", d.get("jl", math.nan), "–")
+            tr.trace("selection", "Br. 2-27", "Jb", "desvio pelo vão feixe-casco", d.get("jb", math.nan), "–")
+            tr.trace("selection", "Br. 2-28", "Js", "pontas de chicana alargadas", d.get("js", math.nan), "–")
+            tr.trace("selection", "Br. 2-29", "Jr", "gradiente adverso (laminar)", d.get("jr", math.nan), "–")
+            tr.trace("selection", "Br. 2-18", "h_o", "h_ideal·Jc·Jl·Jb·Js·Jr", d.get("h_casco", math.nan), "W/m²K")
+        else:
+            tr.trace("selection", "Tab. 4.1", "h_o", "informado (Bell-Delaware desligado)", d.get("h_casco", math.nan),
+                     "W/m²K")
+        tr.trace("selection", "Eq. 5.7a", "U", "resistências em série, área externa", d.get("u", math.nan), "W/m²K")
+        tr.trace("selection", "Eq. 4.4", "A", "q/(U·F·ΔT_lm)", d.get("area", math.nan), "m²")
+        tr.trace("selection", "—", "L", "A/(N·π·d_o)", best.y, "m")
+        tr.trace("selection", "Br. 2-13", "d_feixe", "√(4·N·A_célula/π)", d.get("d_casco", math.nan), "mm")
+        tr.trace("selection", "Br. 2-17", "D_casco", "d_feixe + 2·d_o", d.get("d_shell", math.nan), "mm")

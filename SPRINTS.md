@@ -14,7 +14,7 @@ aquela fase).
 
 ## Estado atual
 
-**FASE ATUAL: F7 — Bomba (Moran) + trocador (Saari/Bell-Delaware) ← ATUAL (aguardando aprovação)**
+**FASE ATUAL: F8 — Pinch (Kemp) ← ATUAL (aguardando aprovação)**
 
 F0–F4 entregues: **o balanço preliminar está completo em Python**. O motor é bit a bit, a
 auditoria é independente, há JSON/CSV com esquema, e o memorial LaTeX A4 sai em dois
@@ -22,8 +22,9 @@ layouts: `original`, idêntico ao script de referência, e `senai`, com o templa
 CETIQT. F5 entregue: o contrato de dimensionamento e o motor de envelope foram portados, e
 as fixtures do Julia (`ab58fc6`) foram exportadas e são reproduzíveis. F6 entregue: os três vasos
 (separador 3F, knockout, tratador) reproduzem o Julia (bit a bit em 2, e ≤ 1,25e-15 no
-separador) e os casos-ouro da literatura. São 364 testes (+2 `-m latex`, +1 `-m julia`) e
-cobertura de 98,5 %. Uso:
+separador) e os casos-ouro da literatura. F7 entregue: bomba (Moran) e trocador (Saari +
+Bell-Delaware) com o ponto escolhido idêntico ao Julia (intermediários a ≤ 4,8e-16). São 449
+testes (+2 `-m latex`, +1 `-m julia`) e cobertura de 98 %. Uso:
 `uv run fpso-siz balanco|memorial --casos tests/fixtures/python_ref/design_cases_bot.json --saida saida/`.
 
 ---
@@ -226,10 +227,22 @@ estendem `MetodoDimensionamento` direto e escrevem os próprios hooks (DN/nº de
 `trocador-calor.json` e `test/golden_{moran,saari}.jl`. Com dois vasos já comparados bit a
 bit, a meta é igualdade exata onde não houver `libm` transcendental.
 
-### F7 — Bomba (Moran) + trocador (Saari/Bell-Delaware) ← ATUAL
+### F7 — Bomba (Moran) + trocador (Saari/Bell-Delaware) ✅
 **Aceite:** `golden_moran`, `golden_saari`; cobertura ≥ 90 %.
+Entregue: `sizing/{base,hidraulica,bomba,bell_delaware,trocador}.py` e `core/ieee.py`; TOMLs
+literais do snapshot; coeficientes que o Julia deixava no código foram para
+`equipment/comum/{hidraulica,trocador}.toml`. Paridade: x, y e caso governante bit a bit;
+intermediários ≤ 2,5e-16 (bomba) e ≤ 4,8e-16 (trocador), pela `libm`. Casos-ouro de Moran,
+Saari e Branan portados. **Achado:** a divisão por zero do Python quebrava o diagnóstico
+que o Julia faz via Inf/NaN. Foram usados `ieee.div` nos pontos críticos e uma rede de
+segurança no motor (erro aritmético → inviabilidade). Detalhes em
+`docs/validacao/06-bomba-trocador.md`.
+**Notas para a F8:** o Pinch (`analysis/pinch.jl` + `pinch_method.jl`, cerca de 1.080
+linhas) usa grupos repetíveis de parâmetros (N correntes) e `presentation_data` (curvas
+compostas). Oráculo: `analise-pinch.json` + `test/golden_kemp.jl` + `test/pinch_encaixe.jl`.
+Ao portar, conferir onde o Julia depende de Inf/NaN (usar `ieee.div`).
 
-### F8 — Pinch (Kemp)
+### F8 — Pinch (Kemp) ← ATUAL
 **Aceite:** `golden_kemp`, `pinch_encaixe`; cobertura ≥ 90 %.
 
 ### F9 — Separador dinâmico (Song)

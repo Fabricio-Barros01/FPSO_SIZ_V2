@@ -1,10 +1,12 @@
-"""F6 — os três vasos reproduzem o FPSO_Siz Julia (tests/fixtures/julia, commit no manifesto):
+"""F6/F7 — vasos, bomba e trocador reproduzem o FPSO_Siz Julia (tests/fixtures/julia, commit no manifesto):
 envelope, varredura, casos individuais com varredura e rastro, cartão, colunas, blocos,
 descritores (com reetiquetamentos) e constantes.
 
-Knockout e tratador: igualdade BIT A BIT. Separador: ≤ 1e-13 relativo — a cadeia de β
-(bisseção sobre acos) difere no último ulp entre a libm do Julia e a do sistema; o maior
-desvio medido é 1,25e-15 (11 números, todos derivados de β).
+Knockout e tratador: igualdade BIT A BIT. Separador, bomba e trocador: ≤ 1e-13 relativo —
+funções transcendentais (acos na bisseção de β; log10 no Colebrook; pow/acos/exp/cbrt no
+Bell-Delaware) diferem no último ulp entre a libm do Julia e a do sistema. Desvios máximos
+medidos: separador 1,25e-15 (11 números), bomba 2,5e-16 (5), trocador 4,8e-16 (846); o ponto
+escolhido (x, y) é idêntico nos cinco.
 """
 import json
 import tomllib
@@ -15,13 +17,16 @@ import pytest
 from comparacao import diferencas, puro
 from fpso_siz.core.casos import case_set_from_config
 from fpso_siz.core.motor import governing_summary, size_envelope
-from fpso_siz.sizing import (ArnoldElectrostatic, ElectrostaticTreater, KnockoutDrum, Separator, StewartArnold,
+from fpso_siz.sizing import (ArnoldElectrostatic, CentrifugalPump, ElectrostaticTreater, KnockoutDrum,
+                             MoranPumpSizing, SaariLMTD, Separator, ShellTubeExchanger, StewartArnold,
                              StewartArnoldTwoPhase)
 
 FJ = Path(__file__).resolve().parents[1] / "fixtures" / "julia"
 VASOS = [("separador-3f", Separator(), StewartArnold(), 1e-13),
          ("knockout-2f", KnockoutDrum(), StewartArnoldTwoPhase(), 0.0),
-         ("vaso-eletrostatico", ElectrostaticTreater(), ArnoldElectrostatic(), 0.0)]
+         ("vaso-eletrostatico", ElectrostaticTreater(), ArnoldElectrostatic(), 0.0),
+         ("bomba-centrifuga", CentrifugalPump(), MoranPumpSizing(), 1e-13),
+         ("trocador-calor", ShellTubeExchanger(), SaariLMTD(), 1e-13)]
 
 
 def envelope_puro(r):
@@ -46,6 +51,7 @@ def vaso(request):
 def test_envelope_completo(vaso):
     fx, _, _, rtol, r = vaso
     assert diferencas(envelope_puro(r), fx["envelope"], rtol) == []
+    assert (r.x, r.y, r.driver_case) == (fx["envelope"]["x"], fx["envelope"]["y"], fx["envelope"]["driver_case"])
 
 
 def test_cartao_resumo_e_colunas(vaso):
@@ -67,6 +73,6 @@ def test_descritores_e_constantes(vaso):
          fx["equipment_label"], fx["parameter_groups"])
 
 
-def test_familia_declara_os_seis_descritores(vaso):
+def test_ajustes_globais_sao_descritores_do_metodo(vaso):
     _, _, m, _, _ = vaso
     assert set(m.global_keys()) <= {s.key for s in m.parameters()}

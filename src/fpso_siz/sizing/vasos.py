@@ -13,14 +13,13 @@ escolha, cartão — vem daqui. Os seis descritores que a família exige por nom
 d_max, d_step (grade) e sr_min, sr_max, sr_target (banda de esbeltez).
 """
 import math
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 
-from fpso_siz.core.configuracao import carregar
-from fpso_siz.core.contrato import MetodoDimensionamento, ResultField, SweepAxis, SweepColumn, der
+from fpso_siz.core.contrato import ResultField, SweepAxis, SweepColumn, der
 from fpso_siz.core.formato_julia import jl, jl_round
 from fpso_siz.core.grade import faixa_julia
-from fpso_siz.core.parametros import parameter_specs
 from fpso_siz.core.unidades import mm_para_m
+from fpso_siz.sizing.base import MetodoTOML, driver_case
 
 SEM_EQUACAO = "—"
 
@@ -56,35 +55,8 @@ def mechanism_label(m):
             "none": "sem teto de decantação"}.get(m, str(m))
 
 
-class MetodoVaso(MetodoDimensionamento):
+class MetodoVaso(MetodoTOML):
     """Base dos métodos de vaso (AbstractVesselMethod)."""
-    config = ""   # caminho do TOML em config/, ex. "equipment/separator/stewart_arnold.toml"
-    rotulo_padrao = ""
-
-    # --- identidade e configuração
-    def method_config(self):
-        return carregar(self.config)
-
-    @property
-    def label(self):
-        return self.method_config().get("label", self.rotulo_padrao)
-
-    def method_reference(self):
-        return self.method_config().get("reference", "")
-
-    def parameters(self):
-        return parameter_specs(self.method_config())
-
-    ajustes_corrente = ""   # TOML com os campos de corrente que o método reescreve
-
-    def stream_parameters(self):
-        """Default filtrado por stream_keys; campos listados em `ajustes_corrente` têm rótulo,
-        default e nota reescritos (o resto — unidade, faixa, ordem — vem de stream.toml)."""
-        base = super().stream_parameters()
-        if not self.ajustes_corrente:
-            return base
-        aj = carregar(self.ajustes_corrente)
-        return [replace(s, **aj[s.key]) if s.key in aj else s for s in base]
 
     # --- geometria
     def lss_from(self, d_mm, leff, gov, k):
@@ -200,7 +172,7 @@ class MetodoVaso(MetodoDimensionamento):
             ResultField("Esbeltez SR", der(r, "sr"), status=na_banda),
             ResultField("Volume (casco, entre tampos)", der(r, "volume"), unit="m³", digits=0),
             ResultField("Restrição governante", txt(self.governing_label(r.governing))),
-            ResultField("Caso governante", txt(getattr(r, "driver_case", "—"))),
+            ResultField("Caso governante", txt(driver_case(r))),
             ResultField("Teto de decantação", r.ceiling if math.isfinite(r.ceiling) else math.nan, unit="mm",
                         digits=0, status=sob_teto),
         ]
