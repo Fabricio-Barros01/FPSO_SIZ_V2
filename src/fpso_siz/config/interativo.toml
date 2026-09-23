@@ -1,0 +1,82 @@
+# Descritores de apresentação do modo interativo e dos resumos de terminal (F7b).
+# Invariante 4: a CLI não nomeia grandeza; ela itera o que está aqui. Nada disto é física:
+# só escolhe QUAIS campos já calculados aparecem, com que rótulo e quantas casas.
+
+# Arquivo de casos procurado na pasta corrente quando nenhum é informado.
+arquivo_casos_padrao = "design_cases_bot.json"
+
+# Contexto do arquivo de casos: chave do JSON do BOT que cita a fonte dos dados.
+[contexto]
+origem = "source"
+
+# Tabela de casos do balanço (uma linha por caso do JSON do BOT).
+[[casos]]
+chave = "num"
+rotulo = "#"
+casas = 0
+
+[[casos]]
+chave = "name"
+rotulo = "Caso"
+
+[[casos]]
+chave = "fluid_type"
+rotulo = "Fluido"
+
+[[casos]]
+chave = "T_C"
+rotulo = "T (°C)"
+casas = 0
+
+[[casos]]
+chave = "oil_sm3d"
+rotulo = "Óleo (m³/d)"
+casas = 0
+
+[[casos]]
+chave = "liquid_sm3d"
+rotulo = "Líquido (m³/d)"
+casas = 0
+
+[[casos]]
+chave = "total_gas_sm3d"
+rotulo = "Gás total (Sm³/d)"
+casas = 0
+
+# Tabela de correntes de um caso: colunas do CSV (config/saida_correntes.toml), por id.
+# A descrição vai por último: é texto livre e pode passar da largura do terminal.
+[correntes]
+chave_caso = "caso"
+colunas = [
+    { id = "corrente", rotulo = "Corrente" },
+    { id = "T_C", rotulo = "T °C", casas = 1 },
+    { id = "P_kPa", rotulo = "P kPa", casas = 0 },
+    { id = "m_total_kg_s", rotulo = "ṁ kg/s", casas = 2 },
+    { id = "Q_O_m3_d", rotulo = "Óleo m³/d", casas = 0 },
+    { id = "Q_W_m3_d", rotulo = "Água m³/d", casas = 0 },
+    { id = "Q_D_m3_d", rotulo = "Dil. m³/d", casas = 0 },
+    { id = "Q_G_Sm3_d", rotulo = "Gás Sm³/d", casas = 0 },
+    { id = "nome", rotulo = "Descrição" },
+]
+
+# Casos críticos por equipamento (mesmos ids de fpso_siz.balanco.indicadores.criticos),
+# em texto puro para o terminal (o memorial usa criticos_memorial.toml, em LaTeX).
+[criticos]
+"SG-001/gas_real" = { equipamento = "SG-001 FWKO", criterio = "Gás real", unidade = "m³/h", casas = 0 }
+"SG-001/liquido_C03" = { equipamento = "SG-001 FWKO", criterio = "Líquido total em C-03", unidade = "m³/d", casas = 0 }
+"SG-001/viscosidade" = { equipamento = "SG-001 FWKO", criterio = "Viscosidade (menor T)", unidade = "cP", casas = 1 }
+"P-001/Q" = { equipamento = "P-001 Pré-aquecedor", criterio = "Carga térmica", unidade = "kW", casas = 0 }
+"P-002/Q" = { equipamento = "P-002 Aquecedor", criterio = "Carga térmica", unidade = "kW", casas = 0 }
+"V-001/gas_real" = { equipamento = "V-001 Desgaseificador 1", criterio = "Gás real", unidade = "m³/h", casas = 0 }
+"V-001/liquido_C10" = { equipamento = "V-001 Desgaseificador 1", criterio = "Líquido C-10", unidade = "m³/d", casas = 0 }
+"TO-001/agua_C12" = { equipamento = "TO-001 Desidratador", criterio = "Água removida C-12", unidade = "m³/d", casas = 0 }
+"TO-001/oleo_C10" = { equipamento = "TO-001 Desidratador", criterio = "Óleo C-10", unidade = "m³/d", casas = 0 }
+"B-002/vazao_C12" = { equipamento = "B-002 Bomba", criterio = "Vazão C-12", unidade = "m³/d", casas = 0 }
+"DWH-001/Q_D" = { equipamento = "DWH-001 Aquecedor diluição", criterio = "Água de diluição", unidade = "m³/d", casas = 0 }
+"V-002/gas_real" = { equipamento = "V-002 Desgaseificador 2", criterio = "Gás real", unidade = "m³/h", casas = 0 }
+"TO-002/liquido_C18" = { equipamento = "TO-002 Dessalinizador", criterio = "Líquido C-18", unidade = "m³/d", casas = 0 }
+"B-003/vazao_C19" = { equipamento = "B-003 Bomba", criterio = "Vazão C-19", unidade = "m³/d", casas = 0 }
+"B-001/vazao_C21" = { equipamento = "B-001 Bomba óleo", criterio = "Vazão C-21", unidade = "m³/d", casas = 0 }
+"P-003/Q" = { equipamento = "P-003 Resfriador", criterio = "Carga térmica", unidade = "kW", casas = 0 }
+"materiais/CO2_molar" = { equipamento = "Materiais (todos)", criterio = "CO₂ molar no gás", unidade = "kmol/s", casas = 2 }
+"materiais/H2S_ppmv" = { equipamento = "Materiais (todos)", criterio = "H₂S", unidade = "ppmv", casas = 0 }

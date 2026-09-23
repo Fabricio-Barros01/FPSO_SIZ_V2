@@ -23,9 +23,12 @@ CETIQT. F5 entregue: o contrato de dimensionamento e o motor de envelope foram p
 as fixtures do Julia (`ab58fc6`) foram exportadas e são reproduzíveis. F6 entregue: os três vasos
 (separador 3F, knockout, tratador) reproduzem o Julia (bit a bit em 2, e ≤ 1,25e-15 no
 separador) e os casos-ouro da literatura. F7 entregue: bomba (Moran) e trocador (Saari +
-Bell-Delaware) com o ponto escolhido idêntico ao Julia (intermediários a ≤ 4,8e-16). São 449
-testes (+2 `-m latex`, +1 `-m julia`) e cobertura de 98 %. Uso:
-`uv run fpso-siz balanco|memorial --casos tests/fixtures/python_ref/design_cases_bot.json --saida saida/`.
+Bell-Delaware) com o ponto escolhido idêntico ao Julia (intermediários a ≤ 4,8e-16). F7b
+entregue (fase extra, pedida pelo usuário): modo interativo com cabeçalho no estilo OpenFOAM
+e subcomando `dimensionar`. São 516 testes (+2 `-m latex`, +1 `-m julia`) e cobertura de
+98 %. Uso: `uv run fpso-siz` (interativo, num terminal) ou
+`uv run fpso-siz balanco|memorial --casos tests/fixtures/python_ref/design_cases_bot.json --saida saida/`
+e `uv run fpso-siz dimensionar --exemplo alves_komesu [--saida saida/]`.
 
 ---
 
@@ -241,6 +244,42 @@ segurança no motor (erro aritmético → inviabilidade). Detalhes em
 linhas) usa grupos repetíveis de parâmetros (N correntes) e `presentation_data` (curvas
 compostas). Oráculo: `analise-pinch.json` + `test/golden_kemp.jl` + `test/pinch_encaixe.jl`.
 Ao portar, conferir onde o Julia depende de Inf/NaN (usar `ieee.div`).
+
+### F7b — CLI interativa ✅
+Fase extra, aprovada em 2026-09-23 fora do plano original. Pedido: dar ao usuário noção do
+contexto, dos casos e um resumo dos resultados, e deixar exportar como opção. Pedido
+adicional: um cabeçalho "como o do OpenFOAM e dos CLIs de agentes".
+Entregue:
+- `output/terminal/`:
+  - `cabecalho.py`: moldura do OpenFOAM, com o acrônimo **F**loating **P**roduction
+    **S**torage and **O**ffloading no lugar de Field/Operation/And/Manipulation, degradê ANSI
+    e linha de dicas.
+  - `estilo.py`: cor só em TTY; respeita `NO_COLOR`, `FORCE_COLOR` e `TERM=dumb`.
+  - `relatorio.py`: resumos.
+  - `sessao.py`: menus.
+  - `comum.py`
+- Fluxo da sessão:
+  1. mostra o contexto: arquivo, sha256, fonte, casos e fluidos;
+  2. o usuário escolhe balanço, equipamento, premissas ou casos;
+  3. vem o resumo: no balanço, convergência e o caso que maximiza cada critério; no
+     equipamento, cartão, governante e folga por caso;
+  4. o usuário pode ver auditoria, correntes, varredura ou rastro;
+  5. se quiser exportar, a sessão grava e mostra o **comando equivalente**. Um teste
+     garante que esse comando grava os mesmos bytes.
+- Subcomando `fpso-siz dimensionar --exemplo|--casos [--equipamento] [--metodo] [--saida]`.
+  Sem `--saida`, só mostra o resumo. Sai com 1 se o resultado for inviável.
+- `output/dimensionamento.py` grava o JSON (entrada, cartão, casos) e o CSV da varredura.
+- Exemplos do Julia embutidos em `config/exemplos/`; um teste garante que são idênticos às
+  fixtures. Novas funções `core.configuracao.exemplos()` e `core.registro.resolver()`.
+- Descritores de apresentação em `config/interativo.toml`. A invariante 4 passou a cobrir a
+  CLI inteira: `cli.py`, `output/terminal/*` e `output/dimensionamento.py`. Também ficam
+  proibidos nesses módulos os nomes dos parâmetros dos métodos e as chaves de corrente.
+
+Detalhes em `docs/validacao/07-cli-interativa.md`.
+**Notas para a F8:** um método novo registrado em `sizing/__init__.py` aparece sozinho no
+menu e no `dimensionar`. O Pinch precisa de exemplo em `config/exemplos/` (copiar
+`exemplo_pinch_kemp.toml`) e talvez de resumo próprio: não tem varredura de diâmetro, e a
+tabela de caso usa `sweep_columns()[0]`.
 
 ### F8 — Pinch (Kemp) ← ATUAL
 **Aceite:** `golden_kemp`, `pinch_encaixe`; cobertura ≥ 90 %.

@@ -25,6 +25,8 @@ backlog: [`SPRINTS.md`](SPRINTS.md), que deve ser lido primeiro.
 3. **Uma física, três saídas.** Toda equação avaliada emite `CalcTrace`, e o memorial, o
    JSON e o CSV saem desse mesmo rastro, com bijeção equação↔rastro.
 4. **A CLI não nomeia parâmetros.** Ela itera os `ParameterSpec` declarados por cada método.
+   Isso vale para `cli.py`, `output/terminal/*` (modo interativo) e `output/dimensionamento.py`.
+   O que aparece na tela e em que ordem vem de `config/interativo.toml`.
 
 ## Contrato de dimensionamento
 Todo método herda `core.contrato.MetodoDimensionamento` e implementa os hooks com os
@@ -45,6 +47,8 @@ uv run pytest -m latex                      # compila os memoriais (lento)
 uv run pytest -m julia                      # regenera as fixtures do Julia e compara
 tools/exportar_fixtures_julia.sh [commit]   # fixtures do Julia (git archive, só leitura)
 uv run python tools/comparar_memorial.py    # paridade do memorial, template a template
+uv run fpso-siz                             # modo interativo (num terminal)
+uv run fpso-siz dimensionar --exemplo alves_komesu [--saida saida/]
 ```
 
 ## Memoriais (LaTeX)

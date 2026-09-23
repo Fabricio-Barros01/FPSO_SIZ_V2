@@ -5,7 +5,8 @@
 2. Constantes e premissas em TOML; nenhum literal numérico nas equações além de
    {0, 1, 2, 10} (fatores exatos só em core/unidades.py; a camada de saída, que só
    apresenta, está fora desta regra).
-(3, a bijeção equação↔rastro, está em tests/balanco/test_trace.py; 4 entra com a CLI.)
+(3, a bijeção equação↔rastro, está em tests/balanco/test_trace.py.)
+4. A CLI não nomeia parâmetro: por comando, interativa e as saídas de dimensionamento.
 """
 import ast
 import re
@@ -109,15 +110,26 @@ def test_premissas_tem_id_unidade_e_descricao():
         assert "valor" in e or "chave_casos" in e or nome == "carry", nome
 
 
-def test_cli_nao_nomeia_parametros_nem_grandezas():
-    """Invariante 4: a CLI só itera descritores; nenhum nome de premissa, equação,
-    coluna, verificação ou campo de resultado aparece como texto em cli.py."""
-    from fpso_siz.balanco.modelo import ResultadoCaso
+INTERFACE = ["cli.py", "output/dimensionamento.py", *sorted(p.relative_to(PACOTE).as_posix()
+                                                            for p in (PACOTE / "output" / "terminal").glob("*.py"))]
 
+
+@pytest.mark.parametrize("nome", INTERFACE)
+def test_cli_nao_nomeia_parametros_nem_grandezas(nome):
+    """Invariante 4: a CLI (por comando e interativa) só itera descritores; nenhum nome de
+    premissa, equação, coluna, verificação, campo de resultado, parâmetro de método ou
+    chave de corrente aparece como texto nela."""
+    import fpso_siz.sizing  # noqa: F401
+    from fpso_siz.balanco.modelo import ResultadoCaso
+    from fpso_siz.core import registro
+    from fpso_siz.core.corrente import STREAM_KEYS
+
+    parametros = {s.key for eq in registro.equipments() for m in registro.methods_for(eq)
+                  for s in [*m.parameters(), *m.stream_parameters()]}
     proibidos = (set(carregar("premissas.toml")) | set(carregar("equacoes_balanco.toml"))
                  | set(carregar("auditoria.toml")) | {c["id"] for c in carregar("saida_correntes.toml")["colunas"]}
-                 | set(ResultadoCaso.__dataclass_fields__)) - {"caso", "nome"}
-    textos = {n.value for n in ast.walk(arvore(PACOTE / "cli.py"))
+                 | set(ResultadoCaso.__dataclass_fields__) | parametros | set(STREAM_KEYS)) - {"caso", "nome"}
+    textos = {n.value for n in ast.walk(arvore(PACOTE / nome))
               if isinstance(n, ast.Constant) and isinstance(n.value, str)}
     assert not (textos & proibidos), textos & proibidos
 

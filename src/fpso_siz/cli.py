@@ -1,33 +1,30 @@
 """Linha de comando `fpso-siz`. Invariante 4: não nomeia parâmetro nem grandeza; só itera
-os descritores declarados em TOML (premissas, colunas, verificações)."""
+os descritores declarados em TOML (premissas, colunas, verificações) e o registro de
+métodos. Sem argumentos, num terminal, abre o modo interativo."""
 import argparse
 import sys
+import tomllib
 from pathlib import Path
 
+import fpso_siz.sizing  # noqa: F401  (registra os métodos de dimensionamento)
 from fpso_siz import __version__
 from fpso_siz.balanco.auditoria import auditar
 from fpso_siz.balanco.dados import carregar_casos, descritores_premissas, premissas
-from fpso_siz.balanco.exportacao import colunas_correntes, estrutura_balanco, tabela_correntes
 from fpso_siz.balanco.modelo import resolver_todos
-from fpso_siz.output.arquivos import escrever_csv, escrever_json
+from fpso_siz.core import registro
+from fpso_siz.core.casos import case_set_from_config
+from fpso_siz.core.configuracao import exemplos
+from fpso_siz.core.motor import size_envelope
+from fpso_siz.output import dimensionamento
 from fpso_siz.output.latex import compilacao
 from fpso_siz.output.latex.balanco import memorial
+from fpso_siz.output.terminal.comum import alteracoes as _alteracoes
+from fpso_siz.output.terminal.comum import gravar_balanco
+from fpso_siz.output.terminal.estilo import Estilo
+from fpso_siz.output.terminal.relatorio import resumo_dimensionamento
+from fpso_siz.output.terminal.sessao import Sessao
 
-ARQ_JSON = "balanco.json"
-ARQ_CSV = "correntes.csv"
-
-
-def _alteracoes(pares):
-    alt = {}
-    for par in pares:
-        nome, sep, valor = par.partition("=")
-        if not sep:
-            raise ValueError(f"--premissa espera NOME=VALOR, recebeu {par!r}")
-        try:
-            alt[nome.strip()] = float(valor)
-        except ValueError:
-            raise ValueError(f"--premissa {nome.strip()}: valor não numérico {valor!r}") from None
-    return alt
+COLUNAS = 79  # largura dos resumos fora do modo interativo (saída pode ser arquivo)
 
 
 def cmd_balanco(a):
@@ -35,9 +32,7 @@ def cmd_balanco(a):
     prem = premissas(dados, **_alteracoes(a.premissa))
     resultados = resolver_todos(dados, prem)
     aud = auditar(resultados, dados, prem)
-    a.saida.mkdir(parents=True, exist_ok=True)
-    escrever_json(estrutura_balanco(dados, prem, resultados, aud), a.saida / ARQ_JSON)
-    escrever_csv(colunas_correntes(), tabela_correntes(resultados), a.saida / ARQ_CSV)
+    arq_json, arq_csv = gravar_balanco(dados, prem, resultados, aud, a.saida)
 
     nao = [r for r in resultados if not r.convergiu]
     print(f"{dados.origem} (sha256 {dados.sha256[:12]}…): {len(resultados)} casos, "
@@ -52,7 +47,7 @@ def cmd_balanco(a):
     print("auditoria independente (maior |desvio| nos casos):")
     for v in aud:
         print(f"  {v['id']:<22} {v['max_desvio_abs']:.3e}  {v['unidade']}")
-    print(f"gravados: {a.saida / ARQ_JSON}, {a.saida / ARQ_CSV}")
+    print(f"gravados: {arq_json}, {arq_csv}")
     return 1 if nao else 0
 
 
@@ -79,10 +74,44 @@ def cmd_premissas(a):
     return 0
 
 
+def cmd_dimensionar(a):
+    if a.exemplo:
+        cfg, origem = exemplos()[a.exemplo], f"exemplo:{a.exemplo}"
+    else:
+        cfg, origem = tomllib.loads(a.casos.read_text(encoding="utf-8")), str(a.casos)
+    declarado = cfg.get("equipment")
+    if a.equipamento and declarado and declarado != a.equipamento:
+        raise ValueError(f"o arquivo declara equipment = {declarado!r}, mas --equipamento = {a.equipamento!r}")
+    eq_id = a.equipamento or declarado
+    if not eq_id:
+        raise ValueError("informe --equipamento: o arquivo de casos não declara `equipment`")
+    eq, m = registro.resolver(eq_id, a.metodo)
+    casos = case_set_from_config(cfg)
+    r = size_envelope(eq, m, casos)
+    print("\n".join(resumo_dimensionamento(eq, m, r, Estilo.para(sys.stdout), COLUNAS)).lstrip("\n"))
+    if a.saida:
+        print("gravados: " + ", ".join(str(p) for p in dimensionamento.gravar(eq, m, casos, r, a.saida, origem)))
+    return 0 if r.feasible else 1
+
+
+def cmd_interativo(a):
+    return Sessao(casos=a.casos).rodar()
+
+
+def _terminal():
+    return sys.stdin.isatty() and sys.stdout.isatty()
+
+
 def main(argv=None):
-    ap = argparse.ArgumentParser(prog="fpso-siz", description="FPSO_Siz — balanço preliminar e dimensionamento")
+    ap = argparse.ArgumentParser(prog="fpso-siz", description="FPSO_Siz — balanço preliminar e dimensionamento. "
+                                 "Sem argumentos, num terminal, abre o modo interativo.")
     ap.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     sub = ap.add_subparsers(dest="comando", required=True)
+
+    argv = sys.argv[1:] if argv is None else list(argv)
+    if not argv:
+        if _terminal():
+            return Sessao().rodar()
 
     b = sub.add_parser("balanco", help="balanço de massa e energia dos casos de projeto")
     b.add_argument("--casos", required=True, type=Path, help="arquivo de casos (JSON do BOT)")
@@ -103,6 +132,20 @@ def main(argv=None):
     p = sub.add_parser("premissas", help="lista as premissas do balanço (id, valor, unidade, fonte)")
     p.add_argument("--casos", type=Path, help="arquivo de casos, para os valores que vêm dele")
     p.set_defaults(func=cmd_premissas)
+
+    d = sub.add_parser("dimensionar", help="dimensiona um equipamento para um conjunto de casos (envelope)")
+    fonte = d.add_mutually_exclusive_group(required=True)
+    fonte.add_argument("--casos", type=Path, help="arquivo TOML com blocos [[case]]")
+    fonte.add_argument("--exemplo", choices=sorted(exemplos()), help="arquivo de casos de exemplo embutido")
+    d.add_argument("--equipamento", choices=[e.method_id for e in registro.equipments()],
+                   help="dispensável se o arquivo declara `equipment`")
+    d.add_argument("--metodo", help="id do método (padrão: o primeiro registrado para o equipamento)")
+    d.add_argument("--saida", type=Path, help="pasta de saída (JSON + CSV); sem ela, só o resumo")
+    d.set_defaults(func=cmd_dimensionar)
+
+    i = sub.add_parser("interativo", help="assistente: contexto, casos, resumo e exportação opcional")
+    i.add_argument("--casos", type=Path, help="arquivo de casos do balanço (JSON do BOT)")
+    i.set_defaults(func=cmd_interativo)
 
     a = ap.parse_args(argv)
     try:

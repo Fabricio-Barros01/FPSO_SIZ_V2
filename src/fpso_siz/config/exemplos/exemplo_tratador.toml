@@ -1,0 +1,39 @@
+label = "Exemplo — tratador eletrostático a jusante do separador trifásico"
+equipment = "treater"
+
+# O tratador que recebe o óleo do separador trifásico do exemplo de Alves & Komesu: a
+# mesma vazão de óleo (215,8 m³/h) carregando a água que o separador não tirou.
+#
+# O segundo caso é uma FAIXA de teor de água emulsionada — de 10 a 60 m³/h —, que o motor
+# expande em casos de canto. É o que o programa faz de diferente: o vaso resultante
+# atende a toda a faixa, e a legenda diz qual canto governou.
+#
+# A PREMISSA que carrega este dimensionamento é `dm_water`, a gotícula depois da
+# coalescência eletrostática — e ela é do usuário, não da fonte. Ver a nota de limitação
+# em config/equipment/treater/electrostatic.toml. Com 500 µm (o valor SEM tratamento, de
+# §4.7.2) este mesmo caso fica inviável: o teto de decantação cai de ~10 m para ~2,5 m e
+# nenhum diâmetro da grade tem esbeltez na banda. É o efeito do campo, medido.
+
+[[case]]
+name      = "Mid life — emulsão a 10 %"
+q_oil     = 215.8
+q_water   = 25.0
+rho_oil   = 863.0
+rho_water = 1000.0
+mu_oil    = 10.0
+mu_water  = 1.1
+dm_water  = 1000.0
+tr_oil    = 20.0
+tr_water  = 10.0
+
+[[case]]
+name      = "Late life — teor de água entre 10 e 60 m³/h"
+q_oil     = 215.8
+q_water   = [10.0, 60.0]
+rho_oil   = 866.0
+rho_water = 1010.0
+mu_oil    = 14.0
+mu_water  = 1.1
+dm_water  = 1000.0
+tr_oil    = 20.0
+tr_water  = 10.0
