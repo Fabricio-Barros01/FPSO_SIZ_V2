@@ -11,6 +11,11 @@ def carregar(nome):
     return tomllib.loads(texto)
 
 
+def listar(pasta):
+    """Nomes dos TOML de `fpso_siz/config/<pasta>/`, em ordem alfabética."""
+    return sorted(p.name for p in files("fpso_siz.config").joinpath(pasta).iterdir() if p.name.endswith(".toml"))
+
+
 PREFIXO_EXEMPLO = "exemplo_"
 
 

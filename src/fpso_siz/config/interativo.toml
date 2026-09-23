@@ -5,6 +5,14 @@
 # Arquivo de casos procurado na pasta corrente quando nenhum é informado.
 arquivo_casos_padrao = "design_cases_bot.json"
 
+[pfd]
+colunas = ["TAG", "Estado", "Casos ativos", "Resultado", "Caso governante"]
+[pfd.estados]
+aguardando_entrada = "aguardando entrada"
+dimensionado = "dimensionado"
+inviavel = "inviável"
+inativo = "inativo"
+
 # Contexto do arquivo de casos: chave do JSON do BOT que cita a fonte dos dados.
 [contexto]
 origem = "source"

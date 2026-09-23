@@ -1,0 +1,38 @@
+# P-002 — Aquecedor de óleo. Convenção do PFD F1 do Julia: processo no TUBO (C-07 → C-08); no
+# CASCO, a utilidade — água quente (meio de aquecimento), água pura de circuito fechado (BOT 2.7.3.7.16: 'All heaters shall use hot water (as heating medium) or electrical resistors').
+# As temperaturas da utilidade não estão no balanço nem no acervo: são LACUNAS (insumos). Com
+# elas, a vazão da utilidade fecha o balanço de energia com a carga Q_H do balanço,
+# ṁ = Q/(cp·ΔT), e as propriedades da água saem da IAPWS na temperatura média.
+tag = "P-002"
+nome = "Aquecedor de óleo"
+equipamento = "exchanger"
+metodo = "saari_lmtd"
+bloco = "P-002"
+
+[entradas]
+m_tubo = { regra = "vazao_massica", corrente = "C-07" }
+cp_tubo = { regra = "cp_corrente", corrente = "C-07" }
+t_tubo_in = { regra = "temperatura", corrente = "C-07" }
+t_tubo_out = { regra = "temperatura", corrente = "C-08" }
+rho_tubo = { regra = "densidade_fase", corrente = "C-07", fase = "liquido", t = ["C-07", "C-08"] }
+mu_tubo = { regra = "viscosidade_fase", corrente = "C-07", fase = "liquido", continua = "oleo", t = ["C-07", "C-08"] }
+m_casco = { regra = "vazao_utilidade", carga = "Q_H", entrada = "t_agua_in", saida = "t_agua_out" }
+cp_casco = { regra = "cp_utilidade", entrada = "t_agua_in", saida = "t_agua_out" }
+t_casco_in = { regra = "insumo", chave = "t_agua_in" }
+mu_casco = { regra = "viscosidade_utilidade", entrada = "t_agua_in", saida = "t_agua_out" }
+k_casco = { regra = "condutividade_utilidade", entrada = "t_agua_in", saida = "t_agua_out" }
+
+[insumos.t_agua_in]
+rotulo = "Temperatura de entrada da água quente (meio de aquecimento)"
+unidade = "°C"
+dica = "Temperatura de suprimento da utilidade no casco: dado do sistema de utilidades, sem fonte no acervo."
+limite_max = 120.0
+fonte_limite = "BOT 2.7.1.4: 'For oil treatment, the maximum heating medium temperature shall be 120°C'"
+
+[insumos.t_agua_out]
+rotulo = "Temperatura de saída da água quente (meio de aquecimento)"
+unidade = "°C"
+dica = "Temperatura de retorno da utilidade: com a de entrada e a carga Q_H do balanço, fixa a vazão da utilidade."
+
+[inativo_se]
+carga_nula = "Q_H"

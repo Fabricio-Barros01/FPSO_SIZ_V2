@@ -93,17 +93,41 @@ def agua(T_C, P_kPa, rastro=None):
     return Liquido(e["rho"], mu, math.nan, e["k"])
 
 
+def agua_saturada(T_C, rastro=None):
+    """Água pura de utilidade (circuito fechado de água quente ou de resfriamento; BOT 2.7.3.7.16
+    e 3.3.2) como líquido saturado a T: a pressão do circuito não é dado do balanço."""
+    c = cfg()["agua"]
+    e = _chedl.agua_saturada_iapws(c_para_k(T_C))
+    mu = pas_para_cp(e["mu"])
+    base = "líquido saturado a T"
+    _anotar(rastro, c["rotulo"], "ρ_w", f"IAPWS-95, {base}", e["rho"], "kg/m³")
+    _anotar(rastro, c["rotulo"], "μ_w", f"IAPWS 2008, {base}", mu, "cP")
+    _anotar(rastro, c["rotulo"], "k_w", f"IAPWS 2011, {base}", e["k"], "W/(m·K)")
+    _anotar(rastro, c["rotulo"], "cp_w", f"IAPWS-95, {base}", e["cp"], "J/(kg·K)")
+    return Liquido(e["rho"], mu, e["cp"], e["k"])
+
+
+def fracao_sal(S_mgL, rho_std):
+    """Fração mássica de sal de uma água de salinidade S (mg/L) e massa específica padrão ρ."""
+    return mgl_para_kgm3(S_mgL) / rho_std
+
+
 def salmoura(T_C, S_mgL, rho_std, rastro=None):
     """Água produzida como solução de NaCl: fração mássica w = S/ρ_padrão (S_W e rho_W das
     premissas). ρ, μ e cp de Laliberté (2009); k é lacuna (sem NaCl no banco de Magomedov)."""
+    return salmoura_fracao(T_C, fracao_sal(S_mgL, rho_std), rastro)
+
+
+def salmoura_fracao(T_C, w, rastro=None):
+    """Fase aquosa como solução de NaCl de fração mássica w (ex.: água produzida misturada à
+    de diluição, com o sal de cada uma). ρ, μ e cp de Laliberté (2009); k é lacuna."""
     c = cfg()["salmoura"]
-    w = mgl_para_kgm3(S_mgL) / rho_std
     v, faixas = _chedl.salmoura_laliberte(c_para_k(T_C), w, c["sal"])
     avisos = [f"{p}: fora da faixa de Laliberté (T {tmin:g}–{tmax:g} °C, w ≤ {wmax:.3f}; aqui {T_C:.1f} °C, "
               f"w = {w:.3f})" for p, (tmin, tmax, wmax) in faixas.items()
               if not (tmin <= T_C <= tmax and w <= wmax)]
     mu = pas_para_cp(v["mu"])
-    _anotar(rastro, c["rotulo"], "w_NaCl", "S_W/ρ_W", w, "–")
+    _anotar(rastro, c["rotulo"], "w_NaCl", "massa de sal / massa da fase aquosa", w, "–")
     _anotar(rastro, c["rotulo"], "ρ_w", "Laliberté, densidade", v["rho"], "kg/m³")
     _anotar(rastro, c["rotulo"], "μ_w", "Laliberté, viscosidade", mu, "cP")
     _anotar(rastro, c["rotulo"], "cp_w", "Laliberté, capacidade calorífica", v["cp"], "J/(kg·K)")

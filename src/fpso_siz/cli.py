@@ -98,6 +98,21 @@ def cmd_interativo(a):
     return Sessao(casos=a.casos).rodar()
 
 
+def cmd_pfd(a):
+    from fpso_siz.output import pfd
+    from fpso_siz.output.terminal.pfd import resumo
+    from fpso_siz.pfd.planta import dimensionar
+
+    dados = carregar_casos(a.casos)
+    prem = premissas(dados, **_alteracoes(a.premissa))
+    ajustes = tomllib.loads(a.ajustes.read_text(encoding="utf-8")) if a.ajustes else {}
+    planta = dimensionar(dados, prem, ajustes)
+    print("\n".join(resumo(planta, Estilo.para(sys.stdout), COLUNAS)).lstrip("\n"))
+    if a.saida:
+        print("gravados: " + ", ".join(str(p) for p in pfd.gravar(planta, a.saida)))
+    return 0 if planta.completa else 1
+
+
 def _terminal():
     return sys.stdin.isatty() and sys.stdout.isatty()
 
@@ -142,6 +157,13 @@ def main(argv=None):
     d.add_argument("--metodo", help="id do método (padrão: o primeiro registrado para o equipamento)")
     d.add_argument("--saida", type=Path, help="pasta de saída (JSON + CSV); sem ela, só o resumo")
     d.set_defaults(func=cmd_dimensionar)
+
+    f = sub.add_parser("pfd", help="dimensiona os TAGs da planta a partir do balanço")
+    f.add_argument("--casos", required=True, type=Path, help="arquivo de casos (JSON do BOT)")
+    f.add_argument("--ajustes", type=Path, help="TOML de entradas por TAG e por caso")
+    f.add_argument("--saida", type=Path, help="pasta de saída (JSON por TAG + planta.csv)")
+    f.add_argument("--premissa", action="append", default=[], metavar="NOME=VALOR")
+    f.set_defaults(func=cmd_pfd)
 
     i = sub.add_parser("interativo", help="assistente: contexto, casos, resumo e exportação opcional")
     i.add_argument("--casos", type=Path, help="arquivo de casos do balanço (JSON do BOT)")

@@ -1,0 +1,57 @@
+# Integração balanço → equipamentos (F10b): definições comuns aos TAGs de config/pfd/tags/.
+#
+# Cada entrada de um método de dimensionamento, em cada caso, sai de UMA origem, nesta ordem:
+#   usuário (arquivo de ajustes) > regra do TAG ([entradas]) > recomendada do TAG (com fonte)
+#   > default do método com fonte (metodos.toml) > LACUNA.
+# Lacuna é NaN: o TAG fica "aguardando entrada" e não é dimensionado (regra das fontes —
+# docs/decisoes/0002-pfd-automatico.md: sem fonte citável não se supõe valor).
+
+# nome do caso no envelope: único, como no PFD F1 do Julia ("BOT 01 — Early Life")
+nome_caso = "BOT {num:02d} — {nome}"
+
+# Limitações da modelagem adicional (não alteram o balanço preliminar).
+limitacoes = [
+    "Óleo morto: sem correção de óleo vivo nem Bo; densidade padrão do balanço.",
+    "Volume do líquido: óleo + fase aquosa; volume do gás dissolvido não modelado.",
+    "Utilidades: água pura como líquido saturado na temperatura média; pressão do circuito não informada.",
+    "Defaults de geometria e recomendações com fonte devem ser revisados no projeto.",
+]
+
+# fases líquidas como grupos de componentes do balanço (O, W, D, G). A fase aquosa é UMA
+# solução de NaCl com o sal de cada água ([sal]); o líquido é óleo + fase aquosa, com volumes
+# aditivos (fases imiscíveis). O gás dissolvido entra na massa das correntes, não no volume
+# do líquido (sem Bo no acervo).
+[fases]
+oleo = ["O"]
+agua = ["W", "D"]
+liquido = ["oleo", "agua"]
+
+# salinidade (mg/L) e massa específica padrão de cada água: premissas do balanço
+[sal]
+W = ["S_W", "rho_W"]
+D = ["S_D", "rho_D"]
+
+# rótulos das origens (JSON, terminal e MC)
+[origens]
+balanco = "balanço"
+propriedade = "propriedade"
+premissa = "premissa do balanço"
+recomendada = "recomendada"
+metodo = "método"
+usuario = "usuário"
+lacuna = "lacuna"
+
+# Faixas de apresentação DO PFD: não mudam o método nem suas fixtures Julia.
+# ρ_W = 1154 kg/m³ (P-08); 1500 inclui as salmouras da correlação Laliberté.
+[faixas.stewart_arnold.rho_water]
+max = 1500.0
+fonte = "PFD: faixa ampliada para salmoura (P-08 e Laliberté 2009); não é uma propriedade suposta."
+[faixas.arnold_electrostatic.rho_water]
+max = 1500.0
+fonte = "PFD: faixa ampliada para salmoura (P-08 e Laliberté 2009); não é uma propriedade suposta."
+[faixas.moran.rho_oil]
+max = 1500.0
+fonte = "PFD: líquido bombeado pode ser água produzida (P-08 e Laliberté 2009)."
+[faixas.stewart_arnold_2f.rho_oil]
+max = 1500.0
+fonte = "PFD: fase líquida pode conter salmoura (P-08 e Laliberté 2009)."

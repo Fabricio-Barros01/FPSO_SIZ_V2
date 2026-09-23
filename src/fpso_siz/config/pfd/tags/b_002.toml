@@ -1,0 +1,23 @@
+# B-002 — Bomba de água produzida do desidratador. Sucção C-12 (saída do TO-001), recalque C-13 (topologia do balanço).
+# Pressão de sucção = P do vaso a montante; pressão de recalque = P da corrente de descarga
+# (premissas de pressão do balanço). O líquido sai do vaso no ponto de bolha: Pv = P do vaso
+# (Branan, Ex. 5-2). Líquido como fase única, com a fase contínua "agua".
+tag = "B-002"
+nome = "Bomba de água produzida do desidratador"
+equipamento = "pump"
+metodo = "moran"
+bloco = "B-002"
+condicao = "C-12"
+
+[entradas]
+q_oil = { regra = "vazao_fase", corrente = "C-12", fase = "liquido" }
+rho_oil = { regra = "densidade_fase", corrente = "C-12", fase = "liquido" }
+mu_oil = { regra = "viscosidade_fase", corrente = "C-12", fase = "liquido", continua = "agua" }
+pressure = { regra = "pressao", corrente = "C-12" }
+temperature = { regra = "temperatura", corrente = "C-12" }
+p_recalque = { regra = "pressao", corrente = "C-13" }
+pv_informada = { regra = "pressao_vapor_saturado", corrente = "C-12" }
+rendimento = { regra = "premissa", nome = "eta_pump" }
+
+[inativo_se]
+vazao_nula = "q_oil"

@@ -1,0 +1,421 @@
+# GERADO PARA REVISÃO — lacunas explícitas; não é dimensionamento validado.
+# Fonte de física: gerar_memorial.py, local References/Balanço_Preliminar.py.
+# SHA-256 design_cases_bot.json: ca3dfe559b32926c9d9ca4d9e75e2cec711f00f7fdfd2247242bbf3a754dac60
+# SHA-256 Python: 1542e267bd03659234785e556d4934f5cd393ed851206f95f24944c73b764e8e
+# Sem port Julia. Regenerar: python3 scripts/gerar_casos_bot.py
+# nan = entrada pendente, não zero; rejeitada pela validação de campos do núcleo.
+# Todos os 16 casos permanecem ativos, inclusive correntes sem carga.
+# Vazões m³/h; gás nas condições do vaso; pressão kPa abs; T °C; μ cP.
+# Trocadores: massa kg/s e cp J/(kg K). Precisão Float64 preservada.
+# Origem, conversões e limitações: docs/validacao/10-pfd-casos-bot.md
+label = "BOT 1–16 — B-003 — LACUNAS PARA REVISÃO"
+equipment = "pump"
+
+[provenance]
+balance_authority = "gerar_memorial.py (nome local: References/Balanço_Preliminar.py)"
+python_sha256 = "1542e267bd03659234785e556d4934f5cd393ed851206f95f24944c73b764e8e"
+input_json = "References/design_cases_bot.json"
+input_json_sha256 = "ca3dfe559b32926c9d9ca4d9e75e2cec711f00f7fdfd2247242bbf3a754dac60"
+generator = "scripts/gerar_casos_bot.py"
+generator_sha256 = "f21dc3541fba74cfb9154aa2c6d894bad6bee6bdc662132c7793be47c4432bc7"
+julia_balance_port = false
+status = "DRAFT_MISSING_INPUTS"
+ready_for_sizing = false
+tag = "B-003"
+box = "bomba-centrifuga"
+snapshot = "config/bot/balanco_python.json"
+snapshot_sha256 = "8bffbd5575e378fc00b5d81badf392c3070e54274820d1cd74ea8a9eb2bfb268"
+inlet_streams = ["C-19"]
+outlet_streams = ["C-20"]
+missing_fields = ["antoine_a", "antoine_b", "antoine_c", "h_geometrica", "h_sucao", "k_recalque", "k_sucao", "l_recalque", "l_sucao", "mu_oil", "npsh_margem", "npsh_requerido", "p_recalque", "pressure", "rho_oil", "rugosidade"]
+method_defaults_review_required = true
+unreviewed_method_parameters = ["dn_min", "dn_max", "v_min", "v_max"]
+
+# BOT 01; alimentação C-19.
+# SEM CARGA LÍQUIDA NESTE CASO — mantido ativo; não substituir por epsilon.
+[[case]]
+name = "BOT 01 — Early Life"
+enabled = true
+q_oil = 0.0
+rho_oil = nan # LACUNA: revisar antes de dimensionar
+mu_oil = nan # LACUNA: revisar antes de dimensionar
+pressure = nan # LACUNA: revisar antes de dimensionar
+temperature = 90.0
+rendimento = 0.7
+h_geometrica = nan # LACUNA: revisar antes de dimensionar
+p_recalque = nan # LACUNA: revisar antes de dimensionar
+h_sucao = nan # LACUNA: revisar antes de dimensionar
+l_sucao = nan # LACUNA: revisar antes de dimensionar
+k_sucao = nan # LACUNA: revisar antes de dimensionar
+l_recalque = nan # LACUNA: revisar antes de dimensionar
+k_recalque = nan # LACUNA: revisar antes de dimensionar
+npsh_requerido = nan # LACUNA: revisar antes de dimensionar
+npsh_margem = nan # LACUNA: revisar antes de dimensionar
+rugosidade = nan # LACUNA: revisar antes de dimensionar
+antoine_a = nan # LACUNA: revisar antes de dimensionar
+antoine_b = nan # LACUNA: revisar antes de dimensionar
+antoine_c = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 02; alimentação C-19.
+[[case]]
+name = "BOT 02 — Early Life"
+enabled = true
+q_oil = 44.817488144213705
+rho_oil = 1027.9676091809893
+mu_oil = nan # LACUNA: revisar antes de dimensionar
+pressure = nan # LACUNA: revisar antes de dimensionar
+temperature = 90.00000000000001
+rendimento = 0.7
+h_geometrica = nan # LACUNA: revisar antes de dimensionar
+p_recalque = nan # LACUNA: revisar antes de dimensionar
+h_sucao = nan # LACUNA: revisar antes de dimensionar
+l_sucao = nan # LACUNA: revisar antes de dimensionar
+k_sucao = nan # LACUNA: revisar antes de dimensionar
+l_recalque = nan # LACUNA: revisar antes de dimensionar
+k_recalque = nan # LACUNA: revisar antes de dimensionar
+npsh_requerido = nan # LACUNA: revisar antes de dimensionar
+npsh_margem = nan # LACUNA: revisar antes de dimensionar
+rugosidade = nan # LACUNA: revisar antes de dimensionar
+antoine_a = nan # LACUNA: revisar antes de dimensionar
+antoine_b = nan # LACUNA: revisar antes de dimensionar
+antoine_c = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 03; alimentação C-19.
+[[case]]
+name = "BOT 03 — Early Life Blend"
+enabled = true
+q_oil = 44.817944908727746
+rho_oil = 1027.9574493947323
+mu_oil = nan # LACUNA: revisar antes de dimensionar
+pressure = nan # LACUNA: revisar antes de dimensionar
+temperature = 90.0
+rendimento = 0.7
+h_geometrica = nan # LACUNA: revisar antes de dimensionar
+p_recalque = nan # LACUNA: revisar antes de dimensionar
+h_sucao = nan # LACUNA: revisar antes de dimensionar
+l_sucao = nan # LACUNA: revisar antes de dimensionar
+k_sucao = nan # LACUNA: revisar antes de dimensionar
+l_recalque = nan # LACUNA: revisar antes de dimensionar
+k_recalque = nan # LACUNA: revisar antes de dimensionar
+npsh_requerido = nan # LACUNA: revisar antes de dimensionar
+npsh_margem = nan # LACUNA: revisar antes de dimensionar
+rugosidade = nan # LACUNA: revisar antes de dimensionar
+antoine_a = nan # LACUNA: revisar antes de dimensionar
+antoine_b = nan # LACUNA: revisar antes de dimensionar
+antoine_c = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 04; alimentação C-19.
+# SEM CARGA LÍQUIDA NESTE CASO — mantido ativo; não substituir por epsilon.
+[[case]]
+name = "BOT 04 — Early Life"
+enabled = true
+q_oil = 0.0
+rho_oil = nan # LACUNA: revisar antes de dimensionar
+mu_oil = nan # LACUNA: revisar antes de dimensionar
+pressure = nan # LACUNA: revisar antes de dimensionar
+temperature = 90.0
+rendimento = 0.7
+h_geometrica = nan # LACUNA: revisar antes de dimensionar
+p_recalque = nan # LACUNA: revisar antes de dimensionar
+h_sucao = nan # LACUNA: revisar antes de dimensionar
+l_sucao = nan # LACUNA: revisar antes de dimensionar
+k_sucao = nan # LACUNA: revisar antes de dimensionar
+l_recalque = nan # LACUNA: revisar antes de dimensionar
+k_recalque = nan # LACUNA: revisar antes de dimensionar
+npsh_requerido = nan # LACUNA: revisar antes de dimensionar
+npsh_margem = nan # LACUNA: revisar antes de dimensionar
+rugosidade = nan # LACUNA: revisar antes de dimensionar
+antoine_a = nan # LACUNA: revisar antes de dimensionar
+antoine_b = nan # LACUNA: revisar antes de dimensionar
+antoine_c = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 05; alimentação C-19.
+# SEM CARGA LÍQUIDA NESTE CASO — mantido ativo; não substituir por epsilon.
+[[case]]
+name = "BOT 05 — Low CO2"
+enabled = true
+q_oil = 0.0
+rho_oil = nan # LACUNA: revisar antes de dimensionar
+mu_oil = nan # LACUNA: revisar antes de dimensionar
+pressure = nan # LACUNA: revisar antes de dimensionar
+temperature = 90.0
+rendimento = 0.7
+h_geometrica = nan # LACUNA: revisar antes de dimensionar
+p_recalque = nan # LACUNA: revisar antes de dimensionar
+h_sucao = nan # LACUNA: revisar antes de dimensionar
+l_sucao = nan # LACUNA: revisar antes de dimensionar
+k_sucao = nan # LACUNA: revisar antes de dimensionar
+l_recalque = nan # LACUNA: revisar antes de dimensionar
+k_recalque = nan # LACUNA: revisar antes de dimensionar
+npsh_requerido = nan # LACUNA: revisar antes de dimensionar
+npsh_margem = nan # LACUNA: revisar antes de dimensionar
+rugosidade = nan # LACUNA: revisar antes de dimensionar
+antoine_a = nan # LACUNA: revisar antes de dimensionar
+antoine_b = nan # LACUNA: revisar antes de dimensionar
+antoine_c = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 06; alimentação C-19.
+# SEM CARGA LÍQUIDA NESTE CASO — mantido ativo; não substituir por epsilon.
+[[case]]
+name = "BOT 06 — Mid Life"
+enabled = true
+q_oil = 0.0
+rho_oil = nan # LACUNA: revisar antes de dimensionar
+mu_oil = nan # LACUNA: revisar antes de dimensionar
+pressure = nan # LACUNA: revisar antes de dimensionar
+temperature = 90.0
+rendimento = 0.7
+h_geometrica = nan # LACUNA: revisar antes de dimensionar
+p_recalque = nan # LACUNA: revisar antes de dimensionar
+h_sucao = nan # LACUNA: revisar antes de dimensionar
+l_sucao = nan # LACUNA: revisar antes de dimensionar
+k_sucao = nan # LACUNA: revisar antes de dimensionar
+l_recalque = nan # LACUNA: revisar antes de dimensionar
+k_recalque = nan # LACUNA: revisar antes de dimensionar
+npsh_requerido = nan # LACUNA: revisar antes de dimensionar
+npsh_margem = nan # LACUNA: revisar antes de dimensionar
+rugosidade = nan # LACUNA: revisar antes de dimensionar
+antoine_a = nan # LACUNA: revisar antes de dimensionar
+antoine_b = nan # LACUNA: revisar antes de dimensionar
+antoine_c = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 07; alimentação C-19.
+# SEM CARGA LÍQUIDA NESTE CASO — mantido ativo; não substituir por epsilon.
+[[case]]
+name = "BOT 07 — Mid Life"
+enabled = true
+q_oil = 0.0
+rho_oil = nan # LACUNA: revisar antes de dimensionar
+mu_oil = nan # LACUNA: revisar antes de dimensionar
+pressure = nan # LACUNA: revisar antes de dimensionar
+temperature = 90.0
+rendimento = 0.7
+h_geometrica = nan # LACUNA: revisar antes de dimensionar
+p_recalque = nan # LACUNA: revisar antes de dimensionar
+h_sucao = nan # LACUNA: revisar antes de dimensionar
+l_sucao = nan # LACUNA: revisar antes de dimensionar
+k_sucao = nan # LACUNA: revisar antes de dimensionar
+l_recalque = nan # LACUNA: revisar antes de dimensionar
+k_recalque = nan # LACUNA: revisar antes de dimensionar
+npsh_requerido = nan # LACUNA: revisar antes de dimensionar
+npsh_margem = nan # LACUNA: revisar antes de dimensionar
+rugosidade = nan # LACUNA: revisar antes de dimensionar
+antoine_a = nan # LACUNA: revisar antes de dimensionar
+antoine_b = nan # LACUNA: revisar antes de dimensionar
+antoine_c = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 08; alimentação C-19.
+[[case]]
+name = "BOT 08 — Mid Life"
+enabled = true
+q_oil = 29.84145501612015
+rho_oil = 1033.9744616118849
+mu_oil = nan # LACUNA: revisar antes de dimensionar
+pressure = nan # LACUNA: revisar antes de dimensionar
+temperature = 89.99999999999999
+rendimento = 0.7
+h_geometrica = nan # LACUNA: revisar antes de dimensionar
+p_recalque = nan # LACUNA: revisar antes de dimensionar
+h_sucao = nan # LACUNA: revisar antes de dimensionar
+l_sucao = nan # LACUNA: revisar antes de dimensionar
+k_sucao = nan # LACUNA: revisar antes de dimensionar
+l_recalque = nan # LACUNA: revisar antes de dimensionar
+k_recalque = nan # LACUNA: revisar antes de dimensionar
+npsh_requerido = nan # LACUNA: revisar antes de dimensionar
+npsh_margem = nan # LACUNA: revisar antes de dimensionar
+rugosidade = nan # LACUNA: revisar antes de dimensionar
+antoine_a = nan # LACUNA: revisar antes de dimensionar
+antoine_b = nan # LACUNA: revisar antes de dimensionar
+antoine_c = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 09; alimentação C-19.
+[[case]]
+name = "BOT 09 — Mid Life"
+enabled = true
+q_oil = 23.435022905851024
+rho_oil = 1034.5709047106125
+mu_oil = nan # LACUNA: revisar antes de dimensionar
+pressure = nan # LACUNA: revisar antes de dimensionar
+temperature = 89.99999999999999
+rendimento = 0.7
+h_geometrica = nan # LACUNA: revisar antes de dimensionar
+p_recalque = nan # LACUNA: revisar antes de dimensionar
+h_sucao = nan # LACUNA: revisar antes de dimensionar
+l_sucao = nan # LACUNA: revisar antes de dimensionar
+k_sucao = nan # LACUNA: revisar antes de dimensionar
+l_recalque = nan # LACUNA: revisar antes de dimensionar
+k_recalque = nan # LACUNA: revisar antes de dimensionar
+npsh_requerido = nan # LACUNA: revisar antes de dimensionar
+npsh_margem = nan # LACUNA: revisar antes de dimensionar
+rugosidade = nan # LACUNA: revisar antes de dimensionar
+antoine_a = nan # LACUNA: revisar antes de dimensionar
+antoine_b = nan # LACUNA: revisar antes de dimensionar
+antoine_c = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 10; alimentação C-19.
+[[case]]
+name = "BOT 10 — Late Life"
+enabled = true
+q_oil = 17.951916495051382
+rho_oil = 1034.7930918248549
+mu_oil = nan # LACUNA: revisar antes de dimensionar
+pressure = nan # LACUNA: revisar antes de dimensionar
+temperature = 90.20578473178071
+rendimento = 0.7
+h_geometrica = nan # LACUNA: revisar antes de dimensionar
+p_recalque = nan # LACUNA: revisar antes de dimensionar
+h_sucao = nan # LACUNA: revisar antes de dimensionar
+l_sucao = nan # LACUNA: revisar antes de dimensionar
+k_sucao = nan # LACUNA: revisar antes de dimensionar
+l_recalque = nan # LACUNA: revisar antes de dimensionar
+k_recalque = nan # LACUNA: revisar antes de dimensionar
+npsh_requerido = nan # LACUNA: revisar antes de dimensionar
+npsh_margem = nan # LACUNA: revisar antes de dimensionar
+rugosidade = nan # LACUNA: revisar antes de dimensionar
+antoine_a = nan # LACUNA: revisar antes de dimensionar
+antoine_b = nan # LACUNA: revisar antes de dimensionar
+antoine_c = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 11; alimentação C-19.
+[[case]]
+name = "BOT 11 — Late Life"
+enabled = true
+q_oil = 12.367818584111605
+rho_oil = 1035.1385927146357
+mu_oil = nan # LACUNA: revisar antes de dimensionar
+pressure = nan # LACUNA: revisar antes de dimensionar
+temperature = 90.0
+rendimento = 0.7
+h_geometrica = nan # LACUNA: revisar antes de dimensionar
+p_recalque = nan # LACUNA: revisar antes de dimensionar
+h_sucao = nan # LACUNA: revisar antes de dimensionar
+l_sucao = nan # LACUNA: revisar antes de dimensionar
+k_sucao = nan # LACUNA: revisar antes de dimensionar
+l_recalque = nan # LACUNA: revisar antes de dimensionar
+k_recalque = nan # LACUNA: revisar antes de dimensionar
+npsh_requerido = nan # LACUNA: revisar antes de dimensionar
+npsh_margem = nan # LACUNA: revisar antes de dimensionar
+rugosidade = nan # LACUNA: revisar antes de dimensionar
+antoine_a = nan # LACUNA: revisar antes de dimensionar
+antoine_b = nan # LACUNA: revisar antes de dimensionar
+antoine_c = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 12; alimentação C-19.
+[[case]]
+name = "BOT 12 — Late Life"
+enabled = true
+q_oil = 12.52794014134112
+rho_oil = 1035.1326910079104
+mu_oil = nan # LACUNA: revisar antes de dimensionar
+pressure = nan # LACUNA: revisar antes de dimensionar
+temperature = 90.11759668790148
+rendimento = 0.7
+h_geometrica = nan # LACUNA: revisar antes de dimensionar
+p_recalque = nan # LACUNA: revisar antes de dimensionar
+h_sucao = nan # LACUNA: revisar antes de dimensionar
+l_sucao = nan # LACUNA: revisar antes de dimensionar
+k_sucao = nan # LACUNA: revisar antes de dimensionar
+l_recalque = nan # LACUNA: revisar antes de dimensionar
+k_recalque = nan # LACUNA: revisar antes de dimensionar
+npsh_requerido = nan # LACUNA: revisar antes de dimensionar
+npsh_margem = nan # LACUNA: revisar antes de dimensionar
+rugosidade = nan # LACUNA: revisar antes de dimensionar
+antoine_a = nan # LACUNA: revisar antes de dimensionar
+antoine_b = nan # LACUNA: revisar antes de dimensionar
+antoine_c = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 13; alimentação C-19.
+[[case]]
+name = "BOT 13 — High CO2"
+enabled = true
+q_oil = 15.04435404424426
+rho_oil = 1035.0330910925143
+mu_oil = nan # LACUNA: revisar antes de dimensionar
+pressure = nan # LACUNA: revisar antes de dimensionar
+temperature = 90.14474418323614
+rendimento = 0.7
+h_geometrica = nan # LACUNA: revisar antes de dimensionar
+p_recalque = nan # LACUNA: revisar antes de dimensionar
+h_sucao = nan # LACUNA: revisar antes de dimensionar
+l_sucao = nan # LACUNA: revisar antes de dimensionar
+k_sucao = nan # LACUNA: revisar antes de dimensionar
+l_recalque = nan # LACUNA: revisar antes de dimensionar
+k_recalque = nan # LACUNA: revisar antes de dimensionar
+npsh_requerido = nan # LACUNA: revisar antes de dimensionar
+npsh_margem = nan # LACUNA: revisar antes de dimensionar
+rugosidade = nan # LACUNA: revisar antes de dimensionar
+antoine_a = nan # LACUNA: revisar antes de dimensionar
+antoine_b = nan # LACUNA: revisar antes de dimensionar
+antoine_c = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 14; alimentação C-19.
+[[case]]
+name = "BOT 14 — High CO2"
+enabled = true
+q_oil = 15.044297510780893
+rho_oil = 1035.0330927627524
+mu_oil = nan # LACUNA: revisar antes de dimensionar
+pressure = nan # LACUNA: revisar antes de dimensionar
+temperature = 90.13942623739429
+rendimento = 0.7
+h_geometrica = nan # LACUNA: revisar antes de dimensionar
+p_recalque = nan # LACUNA: revisar antes de dimensionar
+h_sucao = nan # LACUNA: revisar antes de dimensionar
+l_sucao = nan # LACUNA: revisar antes de dimensionar
+k_sucao = nan # LACUNA: revisar antes de dimensionar
+l_recalque = nan # LACUNA: revisar antes de dimensionar
+k_recalque = nan # LACUNA: revisar antes de dimensionar
+npsh_requerido = nan # LACUNA: revisar antes de dimensionar
+npsh_margem = nan # LACUNA: revisar antes de dimensionar
+rugosidade = nan # LACUNA: revisar antes de dimensionar
+antoine_a = nan # LACUNA: revisar antes de dimensionar
+antoine_b = nan # LACUNA: revisar antes de dimensionar
+antoine_c = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 15; alimentação C-19.
+[[case]]
+name = "BOT 15 — Highest CO2"
+enabled = true
+q_oil = 5.446538143477902
+rho_oil = 1035.3542819525685
+mu_oil = nan # LACUNA: revisar antes de dimensionar
+pressure = nan # LACUNA: revisar antes de dimensionar
+temperature = 90.04906294836623
+rendimento = 0.7
+h_geometrica = nan # LACUNA: revisar antes de dimensionar
+p_recalque = nan # LACUNA: revisar antes de dimensionar
+h_sucao = nan # LACUNA: revisar antes de dimensionar
+l_sucao = nan # LACUNA: revisar antes de dimensionar
+k_sucao = nan # LACUNA: revisar antes de dimensionar
+l_recalque = nan # LACUNA: revisar antes de dimensionar
+k_recalque = nan # LACUNA: revisar antes de dimensionar
+npsh_requerido = nan # LACUNA: revisar antes de dimensionar
+npsh_margem = nan # LACUNA: revisar antes de dimensionar
+rugosidade = nan # LACUNA: revisar antes de dimensionar
+antoine_a = nan # LACUNA: revisar antes de dimensionar
+antoine_b = nan # LACUNA: revisar antes de dimensionar
+antoine_c = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 16; alimentação C-19.
+[[case]]
+name = "BOT 16 — Highest CO2"
+enabled = true
+q_oil = 6.063466620031739
+rho_oil = 1035.3377369519494
+mu_oil = nan # LACUNA: revisar antes de dimensionar
+pressure = nan # LACUNA: revisar antes de dimensionar
+temperature = 90.05460993183937
+rendimento = 0.7
+h_geometrica = nan # LACUNA: revisar antes de dimensionar
+p_recalque = nan # LACUNA: revisar antes de dimensionar
+h_sucao = nan # LACUNA: revisar antes de dimensionar
+l_sucao = nan # LACUNA: revisar antes de dimensionar
+k_sucao = nan # LACUNA: revisar antes de dimensionar
+l_recalque = nan # LACUNA: revisar antes de dimensionar
+k_recalque = nan # LACUNA: revisar antes de dimensionar
+npsh_requerido = nan # LACUNA: revisar antes de dimensionar
+npsh_margem = nan # LACUNA: revisar antes de dimensionar
+rugosidade = nan # LACUNA: revisar antes de dimensionar
+antoine_a = nan # LACUNA: revisar antes de dimensionar
+antoine_b = nan # LACUNA: revisar antes de dimensionar
+antoine_c = nan # LACUNA: revisar antes de dimensionar

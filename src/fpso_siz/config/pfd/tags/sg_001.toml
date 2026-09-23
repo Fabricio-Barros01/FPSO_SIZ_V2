@@ -1,0 +1,36 @@
+# SG-001 — separador trifásico de água livre (FWKO). Mapeamento do PFD F1 do Julia
+# (../FPSO_Siz/docs/validacao/10-pfd-casos-bot.md): alimentação C-03; gás C-04, água C-05,
+# óleo C-06. O vaso opera na T e P do gás de saída.
+tag = "SG-001"
+nome = "Separador trifásico de água livre (FWKO)"
+equipamento = "separator"
+metodo = "stewart_arnold"
+bloco = "SG-001"
+condicao = "C-04"
+
+[entradas]
+q_oil = { regra = "vazao_fase", corrente = "C-03", fase = "oleo" }
+q_water = { regra = "vazao_fase", corrente = "C-03", fase = "agua" }
+q_gas = { regra = "vazao_gas_padrao", corrente = "C-04" }
+rho_oil = { regra = "densidade_fase", corrente = "C-03", fase = "oleo" }
+rho_water = { regra = "densidade_fase", corrente = "C-03", fase = "agua" }
+rho_gas = { regra = "densidade_gas", corrente = "C-04" }
+mu_oil = { regra = "viscosidade_fase", corrente = "C-03", fase = "oleo" }
+mu_water = { regra = "viscosidade_fase", corrente = "C-03", fase = "agua" }
+mu_gas = { regra = "viscosidade_gas", corrente = "C-04" }
+pressure = { regra = "pressao", corrente = "C-04" }
+temperature = { regra = "temperatura", corrente = "C-04" }
+z = { regra = "compressibilidade_gas", corrente = "C-04" }
+
+[recomendadas.tr_oil]
+valor = 10.0
+fonte = "Stewart & Arnold (2008) Tab. 4.1: óleo intermediário (20–30 °API; poços de 27,5 e 28,2 °API) 7,5–10 min, adotado o limite superior. Nota da tabela: com emulsão na entrada, ×2 a 4"
+perguntar = true
+
+[inativo_se]
+vazoes_nulas = ["q_oil", "q_water", "q_gas"]
+
+[recomendadas.tr_water]
+valor = 10.0
+fonte = "Stewart & Arnold (2008) §4.7.4: 'a water retention time of 10 min is recommended for design'"
+perguntar = true

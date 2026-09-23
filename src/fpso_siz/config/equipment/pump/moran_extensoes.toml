@@ -1,0 +1,12 @@
+# Extensões do V2 ao método de Moran (NÃO existem no Julia; o moran.toml é cópia literal).
+# Com o default (nan), a física é exatamente a do Julia: Pv pela equação de Antoine.
+
+[[parameter]]
+key     = "pv_informada"
+label   = "Pressão de vapor informada"
+unit    = "kPa"
+default = nan
+min     = 0.0
+max     = 20000.0
+advanced = true
+note    = "Absoluta. Quando informada, substitui a equação de Antoine no NPSH disponível. Uso típico: líquido que sai de um vaso de separação está no ponto de bolha, e a pressão de vapor é a pressão do vaso (Branan, Rules of Thumb for Chemical Engineers, 5ª ed., p. 116, Example 5-2 — 'Liquid at boiling point'). Vazio (nan) = Antoine."

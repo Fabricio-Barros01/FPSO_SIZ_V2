@@ -1,0 +1,245 @@
+# GERADO PARA REVISÃO — lacunas explícitas; não é dimensionamento validado.
+# Fonte de física: gerar_memorial.py, local References/Balanço_Preliminar.py.
+# SHA-256 design_cases_bot.json: ca3dfe559b32926c9d9ca4d9e75e2cec711f00f7fdfd2247242bbf3a754dac60
+# SHA-256 Python: 1542e267bd03659234785e556d4934f5cd393ed851206f95f24944c73b764e8e
+# Sem port Julia. Regenerar: python3 scripts/gerar_casos_bot.py
+# nan = entrada pendente, não zero; rejeitada pela validação de campos do núcleo.
+# Todos os 16 casos permanecem ativos, inclusive correntes sem carga.
+# Vazões m³/h; gás nas condições do vaso; pressão kPa abs; T °C; μ cP.
+# Trocadores: massa kg/s e cp J/(kg K). Precisão Float64 preservada.
+# Origem, conversões e limitações: docs/validacao/10-pfd-casos-bot.md
+label = "BOT 1–16 — V-001 — LACUNAS PARA REVISÃO"
+equipment = "knockout"
+
+[provenance]
+balance_authority = "gerar_memorial.py (nome local: References/Balanço_Preliminar.py)"
+python_sha256 = "1542e267bd03659234785e556d4934f5cd393ed851206f95f24944c73b764e8e"
+input_json = "References/design_cases_bot.json"
+input_json_sha256 = "ca3dfe559b32926c9d9ca4d9e75e2cec711f00f7fdfd2247242bbf3a754dac60"
+generator = "scripts/gerar_casos_bot.py"
+generator_sha256 = "f21dc3541fba74cfb9154aa2c6d894bad6bee6bdc662132c7793be47c4432bc7"
+julia_balance_port = false
+status = "DRAFT_MISSING_INPUTS"
+ready_for_sizing = false
+tag = "V-001"
+box = "knockout-2f"
+snapshot = "config/bot/balanco_python.json"
+snapshot_sha256 = "8bffbd5575e378fc00b5d81badf392c3070e54274820d1cd74ea8a9eb2bfb268"
+inlet_streams = ["C-08"]
+outlet_streams = ["C-09", "C-10"]
+missing_fields = ["mu_gas"]
+method_defaults_review_required = true
+unreviewed_method_parameters = ["dm_gas", "tr_liquid", "d_min", "d_max", "d_step", "sr_min", "sr_max", "sr_target"]
+
+# BOT 01; alimentação C-08.
+# SEM FASE AQUOSA NESTE CASO — vazão zero preservada.
+[[case]]
+name = "BOT 01 — Early Life"
+enabled = true
+q_oil = 1192.535154578427
+q_gas = 1956.173544950122
+rho_oil = 889.0471698113207
+rho_gas = 6.227351733335094
+mu_gas = nan # LACUNA: revisar antes de dimensionar
+pressure = 700.0
+temperature = 90.0
+z = 1.0
+
+# BOT 02; alimentação C-08.
+[[case]]
+name = "BOT 02 — Early Life"
+enabled = true
+q_oil = 1325.0761039345518
+q_gas = 2057.4385442163584
+rho_oil = 912.3767935554899
+rho_gas = 6.227351733335094
+mu_gas = nan # LACUNA: revisar antes de dimensionar
+pressure = 700.0
+temperature = 90.0
+z = 1.0
+
+# BOT 03; alimentação C-08.
+[[case]]
+name = "BOT 03 — Early Life Blend"
+enabled = true
+q_oil = 1325.0777734669
+q_gas = 2036.8545914960823
+rho_oil = 908.869691572388
+rho_gas = 6.02909781996865
+mu_gas = nan # LACUNA: revisar antes de dimensionar
+pressure = 700.0
+temperature = 90.0
+z = 1.0
+
+# BOT 04; alimentação C-08.
+# SEM FASE AQUOSA NESTE CASO — vazão zero preservada.
+[[case]]
+name = "BOT 04 — Early Life"
+enabled = true
+q_oil = 154.99952336028971
+q_gas = 285.76544374423855
+rho_oil = 889.0471698113208
+rho_gas = 6.227351733335096
+mu_gas = nan # LACUNA: revisar antes de dimensionar
+pressure = 700.0
+temperature = 90.0
+z = 1.0
+
+# BOT 05; alimentação C-08.
+# SEM FASE AQUOSA NESTE CASO — vazão zero preservada.
+[[case]]
+name = "BOT 05 — Low CO2"
+enabled = true
+q_oil = 202.66619570775393
+q_gas = 354.5315430361639
+rho_oil = 885.1502817783345
+rho_gas = 5.445719340151996
+mu_gas = nan # LACUNA: revisar antes de dimensionar
+pressure = 700.0
+temperature = 90.0
+z = 1.0
+
+# BOT 06; alimentação C-08.
+# SEM FASE AQUOSA NESTE CASO — vazão zero preservada.
+[[case]]
+name = "BOT 06 — Mid Life"
+enabled = true
+q_oil = 52.08284115519502
+q_gas = 106.60475522610788
+rho_oil = 889.0471698113207
+rho_gas = 6.528336093073425
+mu_gas = nan # LACUNA: revisar antes de dimensionar
+pressure = 700.0
+temperature = 90.0
+z = 1.0
+
+# BOT 07; alimentação C-08.
+# SEM FASE AQUOSA NESTE CASO — vazão zero preservada.
+[[case]]
+name = "BOT 07 — Mid Life"
+enabled = true
+q_oil = 1192.5362681761603
+q_gas = 1932.0389160449515
+rho_oil = 889.0471698113209
+rho_gas = 6.5283360930734275
+mu_gas = nan # LACUNA: revisar antes de dimensionar
+pressure = 700.0
+temperature = 90.0
+z = 1.0
+
+# BOT 08; alimentação C-08.
+[[case]]
+name = "BOT 08 — Mid Life"
+enabled = true
+q_oil = 1325.0602902408084
+q_gas = 1323.795493020091
+rho_oil = 992.4817586680294
+rho_gas = 6.528336093073425
+mu_gas = nan # LACUNA: revisar antes de dimensionar
+pressure = 700.0
+temperature = 90.0
+z = 1.0
+
+# BOT 09; alimentação C-08.
+[[case]]
+name = "BOT 09 — Mid Life"
+enabled = true
+q_oil = 1040.5933023572893
+q_gas = 1031.140582938622
+rho_oil = 993.4885542162873
+rho_gas = 6.528336093073427
+mu_gas = nan # LACUNA: revisar antes de dimensionar
+pressure = 700.0
+temperature = 90.0
+z = 1.0
+
+# BOT 10; alimentação C-08.
+[[case]]
+name = "BOT 10 — Late Life"
+enabled = true
+q_oil = 797.1250565662316
+q_gas = 753.5005265258533
+rho_oil = 993.8636059152285
+rho_gas = 6.939439257672012
+mu_gas = nan # LACUNA: revisar antes de dimensionar
+pressure = 700.0
+temperature = 90.22109189817459
+z = 1.0
+
+# BOT 11; alimentação C-08.
+[[case]]
+name = "BOT 11 — Late Life"
+enabled = true
+q_oil = 549.1724696844234
+q_gas = 622.7899321634776
+rho_oil = 994.4468111840846
+rho_gas = 6.943664106350919
+mu_gas = nan # LACUNA: revisar antes de dimensionar
+pressure = 700.0
+temperature = 90.0
+z = 1.0
+
+# BOT 12; alimentação C-08.
+[[case]]
+name = "BOT 12 — Late Life"
+enabled = true
+q_oil = 556.2823891683076
+q_gas = 527.6709816823005
+rho_oil = 994.4368491071132
+rho_gas = 6.9412491648584895
+mu_gas = nan # LACUNA: revisar antes de dimensionar
+pressure = 700.0
+temperature = 90.12634411791691
+z = 1.0
+
+# BOT 13; alimentação C-08.
+[[case]]
+name = "BOT 13 — High CO2"
+enabled = true
+q_oil = 668.0195752150432
+q_gas = 660.7973015612037
+rho_oil = 994.2687245171204
+rho_gas = 7.249065047438111
+mu_gas = nan # LACUNA: revisar antes de dimensionar
+pressure = 700.0
+temperature = 90.15551025976784
+z = 1.0
+
+# BOT 14; alimentação C-08.
+[[case]]
+name = "BOT 14 — High CO2"
+enabled = true
+q_oil = 668.0170649427274
+q_gas = 660.8040654845602
+rho_oil = 994.2687273364807
+rho_gas = 7.249179051085048
+mu_gas = nan # LACUNA: revisar antes de dimensionar
+pressure = 700.0
+temperature = 90.14979676409742
+z = 1.0
+
+# BOT 15; alimentação C-08.
+[[case]]
+name = "BOT 15 — Highest CO2"
+enabled = true
+q_oil = 241.84449190578576
+q_gas = 274.33920697672664
+rho_oil = 994.8108944721988
+rho_gas = 8.206744303373632
+mu_gas = nan # LACUNA: revisar antes de dimensionar
+pressure = 700.0
+temperature = 90.05271124687596
+z = 1.0
+
+# BOT 16; alimentação C-08.
+[[case]]
+name = "BOT 16 — Highest CO2"
+enabled = true
+q_oil = 269.238177511792
+q_gas = 304.78365497971157
+rho_oil = 994.7829665223159
+rho_gas = 8.206609648417237
+mu_gas = nan # LACUNA: revisar antes de dimensionar
+pressure = 700.0
+temperature = 90.05867071702757
+z = 1.0

@@ -1,0 +1,36 @@
+# P-003 — Resfriador de óleo. Convenção do PFD F1 do Julia: processo no TUBO (C-23 → C-24); no
+# CASCO, a utilidade — água de resfriamento (meio de resfriamento), água pura de circuito fechado (BOT 3.3.2: 'A closed freshwater cooling system shall be provided to supply cooling medium').
+# As temperaturas da utilidade não estão no balanço nem no acervo: são LACUNAS (insumos). Com
+# elas, a vazão da utilidade fecha o balanço de energia com a carga Q_C do balanço,
+# ṁ = Q/(cp·ΔT), e as propriedades da água saem da IAPWS na temperatura média.
+tag = "P-003"
+nome = "Resfriador de óleo"
+equipamento = "exchanger"
+metodo = "saari_lmtd"
+bloco = "P-003"
+
+[entradas]
+m_tubo = { regra = "vazao_massica", corrente = "C-23" }
+cp_tubo = { regra = "cp_corrente", corrente = "C-23" }
+t_tubo_in = { regra = "temperatura", corrente = "C-23" }
+t_tubo_out = { regra = "temperatura", corrente = "C-24" }
+rho_tubo = { regra = "densidade_fase", corrente = "C-23", fase = "liquido", t = ["C-23", "C-24"] }
+mu_tubo = { regra = "viscosidade_fase", corrente = "C-23", fase = "liquido", continua = "oleo", t = ["C-23", "C-24"] }
+m_casco = { regra = "vazao_utilidade", carga = "Q_C", entrada = "t_agua_in", saida = "t_agua_out" }
+cp_casco = { regra = "cp_utilidade", entrada = "t_agua_in", saida = "t_agua_out" }
+t_casco_in = { regra = "insumo", chave = "t_agua_in" }
+mu_casco = { regra = "viscosidade_utilidade", entrada = "t_agua_in", saida = "t_agua_out" }
+k_casco = { regra = "condutividade_utilidade", entrada = "t_agua_in", saida = "t_agua_out" }
+
+[insumos.t_agua_in]
+rotulo = "Temperatura de entrada da água de resfriamento (meio de resfriamento)"
+unidade = "°C"
+dica = "Temperatura de suprimento da utilidade no casco: dado do sistema de utilidades, sem fonte no acervo."
+
+[insumos.t_agua_out]
+rotulo = "Temperatura de saída da água de resfriamento (meio de resfriamento)"
+unidade = "°C"
+dica = "Temperatura de retorno da utilidade: com a de entrada e a carga Q_C do balanço, fixa a vazão da utilidade."
+
+[inativo_se]
+carga_nula = "Q_C"

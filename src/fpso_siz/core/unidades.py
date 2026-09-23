@@ -47,6 +47,14 @@ def pa_para_kpa(p):
     return p / 1000.0
 
 
+def kw_para_w(q):
+    return q * 1000.0
+
+
+def kj_para_j(e):
+    return e * 1000.0
+
+
 def mgl_para_kgm3(c):
     """mg/L → kg/m³ (1 mg/L = 1 g/m³)."""
     return c / 1000.0

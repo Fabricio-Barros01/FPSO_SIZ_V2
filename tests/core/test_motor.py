@@ -233,8 +233,11 @@ def test_rastro_sequencial():
     assert len(t) == 3 and [e.value for e in t] == [2.0, 3.0, 4.0]
 
 
-def test_registro():
-    registro._reset()
+def test_registro(monkeypatch):
+    # Isolar o registro-brinquedo; os métodos reais continuam disponíveis aos
+    # testes de integração que vêm depois, independentemente da ordem de execução.
+    monkeypatch.setattr(registro, "_EQUIPAMENTOS", {})
+    monkeypatch.setattr(registro, "_METODOS", {})
     try:
         registro.register(Tanque())
         registro.register(M)

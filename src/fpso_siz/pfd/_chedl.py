@@ -55,6 +55,19 @@ def agua_iapws(T, P):
     return dict(rho=rho, mu=mu_IAPWS(T, rho), k=k_IAPWS(T, rho))
 
 
+def agua_saturada_iapws(T):
+    """Água pura como líquido saturado a T (IAPWS-95; μ IAPWS 2008; k IAPWS 2011). Para
+    circuitos cuja pressão não é conhecida: o efeito da pressão sobre o líquido é
+    desprezado, sem arbitrar um valor para ela."""
+    from chemicals.iapws import iapws95_rhol_sat
+    from chemicals.thermal_conductivity import k_IAPWS
+    from chemicals.viscosity import mu_IAPWS
+    from thermo.electrochem import iapws95_Cpl_mass_sat
+
+    rho = iapws95_rhol_sat(T)
+    return dict(rho=rho, mu=mu_IAPWS(T, rho), k=k_IAPWS(T, rho), cp=iapws95_Cpl_mass_sat(T))
+
+
 # blocos de colunas do banco de Laliberté (2009) no thermo: faixa de validade por propriedade
 _FAIXAS_LALIBERTE = {"rho": "", "mu": ".1", "cp": ".2"}
 

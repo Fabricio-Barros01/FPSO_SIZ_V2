@@ -59,6 +59,7 @@ class MoranPumpSizing(MetodoTOML):
     config = "equipment/pump/moran.toml"
     rotulo_padrao = "Moran (2016) — carga do sistema"
     ajustes_corrente = "equipment/pump/moran_corrente.toml"
+    config_extensoes = "equipment/pump/moran_extensoes.toml"
 
     def applies_to(self):
         return CentrifugalPump()
@@ -86,12 +87,19 @@ class MoranPumpSizing(MetodoTOML):
         tr.trace("estatica", "—", "Δz", "cota de recalque − cota de sucção", p["h_geometrica"], "m")
         tr.trace("estatica", "—", "h_pressão", "(P_rec − P_suc)/(ρg)", h_pressao, "m")
         tr.trace("estatica", "—", "h_est", "Δz + h_pressão", h_est, "m")
-        pv = antoine_pressure(p["antoine_a"], p["antoine_b"], p["antoine_c"], fu.t_k)
-        if not math.isfinite(pv):
-            return (False, "A equação de Antoine não pôde ser avaliada (confira A, B, C e a temperatura): sem pressão "
-                           "de vapor não há NPSH disponível.", tr)
+        if not math.isnan(p["pv_informada"]):
+            if not math.isfinite(p["pv_informada"]) or p["pv_informada"] < 0:
+                return False, "Pressão de vapor informada deve ser finita e não negativa.", tr
+            # extensão V2: pressão de vapor dada (ex.: líquido saturado no vaso de sucção)
+            pv = kpa_para_pa(p["pv_informada"])
+            tr.trace("npsh", "—", "Pv", "informada", pv, "Pa")
+        else:
+            pv = antoine_pressure(p["antoine_a"], p["antoine_b"], p["antoine_c"], fu.t_k)
+            if not math.isfinite(pv):
+                return (False, "A equação de Antoine não pôde ser avaliada (confira A, B, C e a temperatura): sem "
+                               "pressão de vapor não há NPSH disponível.", tr)
+            tr.trace("npsh", "Eq. 5", "Pv", "10^(A − B/(T+C)) bar", pv, "Pa")
         npsh_est = (p_suc - pv) / (rho * g) + p["h_sucao"]
-        tr.trace("npsh", "Eq. 5", "Pv", "10^(A − B/(T+C)) bar", pv, "Pa")
         tr.trace("npsh", "Eq. 6", "NPSH sem atrito", "(P₀ − Pv)/(ρg) + h₀", npsh_est, "m")
         tr.trace("npsh", "—", "NPSH exigido", "NPSHr + margem", p["npsh_requerido"] + p["npsh_margem"], "m")
         cons = PumpConstraints(m3h_para_m3s(q_h), q_h, rho, mu, h_est, npsh_est, p["npsh_requerido"] + p["npsh_margem"],

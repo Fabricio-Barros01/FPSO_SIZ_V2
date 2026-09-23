@@ -1,0 +1,229 @@
+# GERADO PARA REVISÃO — lacunas explícitas; não é dimensionamento validado.
+# Fonte de física: gerar_memorial.py, local References/Balanço_Preliminar.py.
+# SHA-256 design_cases_bot.json: ca3dfe559b32926c9d9ca4d9e75e2cec711f00f7fdfd2247242bbf3a754dac60
+# SHA-256 Python: 1542e267bd03659234785e556d4934f5cd393ed851206f95f24944c73b764e8e
+# Sem port Julia. Regenerar: python3 scripts/gerar_casos_bot.py
+# nan = entrada pendente, não zero; rejeitada pela validação de campos do núcleo.
+# Todos os 16 casos permanecem ativos, inclusive correntes sem carga.
+# Vazões m³/h; gás nas condições do vaso; pressão kPa abs; T °C; μ cP.
+# Trocadores: massa kg/s e cp J/(kg K). Precisão Float64 preservada.
+# Origem, conversões e limitações: docs/validacao/10-pfd-casos-bot.md
+label = "BOT 1–16 — TO-002 — LACUNAS PARA REVISÃO"
+equipment = "treater"
+
+[provenance]
+balance_authority = "gerar_memorial.py (nome local: References/Balanço_Preliminar.py)"
+python_sha256 = "1542e267bd03659234785e556d4934f5cd393ed851206f95f24944c73b764e8e"
+input_json = "References/design_cases_bot.json"
+input_json_sha256 = "ca3dfe559b32926c9d9ca4d9e75e2cec711f00f7fdfd2247242bbf3a754dac60"
+generator = "scripts/gerar_casos_bot.py"
+generator_sha256 = "f21dc3541fba74cfb9154aa2c6d894bad6bee6bdc662132c7793be47c4432bc7"
+julia_balance_port = false
+status = "DRAFT_MISSING_INPUTS"
+ready_for_sizing = false
+tag = "TO-002"
+box = "vaso-eletrostatico"
+snapshot = "config/bot/balanco_python.json"
+snapshot_sha256 = "8bffbd5575e378fc00b5d81badf392c3070e54274820d1cd74ea8a9eb2bfb268"
+inlet_streams = ["C-18"]
+outlet_streams = ["C-19", "C-21"]
+missing_fields = ["dm_water", "mu_water", "rho_water"]
+method_defaults_review_required = true
+unreviewed_method_parameters = ["dm_oil", "tr_oil", "tr_water", "d_min", "d_max", "d_step", "sr_min", "sr_max", "sr_target"]
+
+# BOT 01; alimentação C-18.
+# SEM FASE AQUOSA NESTE CASO — vazão zero preservada.
+[[case]]
+name = "BOT 01 — Early Life"
+enabled = true
+q_oil = 1192.5349826388908
+q_water = 0.0
+rho_oil = 889.0471698113208
+rho_water = nan # LACUNA: revisar antes de dimensionar
+mu_oil = 7.9
+mu_water = nan # LACUNA: revisar antes de dimensionar
+dm_water = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 02; alimentação C-18.
+[[case]]
+name = "BOT 02 — Early Life"
+enabled = true
+q_oil = 1192.2639090655541
+q_water = 50.7076634693809
+rho_oil = 889.0471698113208
+rho_water = 1028.2801245212022
+mu_oil = 7.9
+mu_water = nan # LACUNA: revisar antes de dimensionar
+dm_water = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 03; alimentação C-18.
+[[case]]
+name = "BOT 03 — Early Life Blend"
+enabled = true
+q_oil = 1192.2642195732171
+q_water = 50.70767666577682
+rho_oil = 885.1502817783345
+rho_water = 1028.2801226640208
+mu_oil = 6.3
+mu_water = nan # LACUNA: revisar antes de dimensionar
+dm_water = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 04; alimentação C-18.
+# SEM FASE AQUOSA NESTE CASO — vazão zero preservada.
+[[case]]
+name = "BOT 04 — Early Life"
+enabled = true
+q_oil = 154.99949869791678
+q_water = 0.0
+rho_oil = 889.0471698113208
+rho_water = nan # LACUNA: revisar antes de dimensionar
+mu_oil = 7.9
+mu_water = nan # LACUNA: revisar antes de dimensionar
+dm_water = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 05; alimentação C-18.
+# SEM FASE AQUOSA NESTE CASO — vazão zero preservada.
+[[case]]
+name = "BOT 05 — Low CO2"
+enabled = true
+q_oil = 202.66616536458352
+q_water = 0.0
+rho_oil = 885.1502817783345
+rho_water = nan # LACUNA: revisar antes de dimensionar
+mu_oil = 6.3
+mu_water = nan # LACUNA: revisar antes de dimensionar
+dm_water = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 06; alimentação C-18.
+# SEM FASE AQUOSA NESTE CASO — vazão zero preservada.
+[[case]]
+name = "BOT 06 — Mid Life"
+enabled = true
+q_oil = 52.08283203125014
+q_water = 0.0
+rho_oil = 889.0471698113208
+rho_water = nan # LACUNA: revisar antes de dimensionar
+mu_oil = 7.9
+mu_water = nan # LACUNA: revisar antes de dimensionar
+dm_water = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 07; alimentação C-18.
+# SEM FASE AQUOSA NESTE CASO — vazão zero preservada.
+[[case]]
+name = "BOT 07 — Mid Life"
+enabled = true
+q_oil = 1192.53609664352
+q_water = 0.0
+rho_oil = 889.0471698113208
+rho_water = nan # LACUNA: revisar antes de dimensionar
+mu_oil = 7.9
+mu_water = nan # LACUNA: revisar antes de dimensionar
+dm_water = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 08; alimentação C-18.
+[[case]]
+name = "BOT 08 — Mid Life"
+enabled = true
+q_oil = 793.8617543170521
+q_water = 33.7633928364388
+rho_oil = 889.0471698113208
+rho_water = 1034.3004899638595
+mu_oil = 7.9
+mu_water = nan # LACUNA: revisar antes de dimensionar
+dm_water = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 09; alimentação C-18.
+[[case]]
+name = "BOT 09 — Mid Life"
+enabled = true
+q_oil = 623.4336893395923
+q_water = 26.514990105913427
+rho_oil = 889.0471698113208
+rho_water = 1034.8982748206374
+mu_oil = 7.9
+mu_water = nan # LACUNA: revisar antes de dimensionar
+dm_water = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 10; alimentação C-18.
+[[case]]
+name = "BOT 10 — Late Life"
+enabled = true
+q_oil = 477.5685330593362
+q_water = 20.311261911751572
+rho_oil = 889.0471698113208
+rho_water = 1035.120961766884
+mu_oil = 7.9
+mu_water = nan # LACUNA: revisar antes de dimensionar
+dm_water = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 11; alimentação C-18.
+[[case]]
+name = "BOT 11 — Late Life"
+enabled = true
+q_oil = 329.0167364082174
+q_water = 13.99326933164639
+rho_oil = 889.0471698113208
+rho_water = 1035.467239895267
+mu_oil = 7.9
+mu_water = nan # LACUNA: revisar antes de dimensionar
+dm_water = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 12; alimentação C-18.
+[[case]]
+name = "BOT 12 — Late Life"
+enabled = true
+q_oil = 333.27639399893076
+q_water = 14.1744349965129
+rho_oil = 889.0471698113208
+rho_water = 1035.4613249120655
+mu_oil = 7.9
+mu_water = nan # LACUNA: revisar antes de dimensionar
+dm_water = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 13; alimentação C-18.
+[[case]]
+name = "BOT 13 — High CO2"
+enabled = true
+q_oil = 400.2196692269363
+q_water = 17.02157066735821
+rho_oil = 889.0471698113208
+rho_water = 1035.3615009367575
+mu_oil = 7.9
+mu_water = nan # LACUNA: revisar antes de dimensionar
+dm_water = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 14; alimentação C-18.
+[[case]]
+name = "BOT 14 — High CO2"
+enabled = true
+q_oil = 400.21816528651243
+q_water = 17.021506703935117
+rho_oil = 889.0471698113208
+rho_water = 1035.3615026107527
+mu_oil = 7.9
+mu_water = nan # LACUNA: revisar antes de dimensionar
+dm_water = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 15; alimentação C-18.
+[[case]]
+name = "BOT 15 — Highest CO2"
+enabled = true
+q_oil = 144.89234151962873
+q_water = 6.162353902221381
+rho_oil = 889.0471698113208
+rho_water = 1035.6834143475849
+mu_oil = 7.9
+mu_water = nan # LACUNA: revisar antes de dimensionar
+dm_water = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 16; alimentação C-18.
+[[case]]
+name = "BOT 16 — Highest CO2"
+enabled = true
+q_oil = 161.30427314106987
+q_water = 6.860362711682986
+rho_oil = 889.0471698113208
+rho_water = 1035.6668321273419
+mu_oil = 7.9
+mu_water = nan # LACUNA: revisar antes de dimensionar
+dm_water = nan # LACUNA: revisar antes de dimensionar

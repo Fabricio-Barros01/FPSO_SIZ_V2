@@ -1,0 +1,309 @@
+# GERADO PARA REVISÃO — lacunas explícitas; não é dimensionamento validado.
+# Fonte de física: gerar_memorial.py, local References/Balanço_Preliminar.py.
+# SHA-256 design_cases_bot.json: ca3dfe559b32926c9d9ca4d9e75e2cec711f00f7fdfd2247242bbf3a754dac60
+# SHA-256 Python: 1542e267bd03659234785e556d4934f5cd393ed851206f95f24944c73b764e8e
+# Sem port Julia. Regenerar: python3 scripts/gerar_casos_bot.py
+# nan = entrada pendente, não zero; rejeitada pela validação de campos do núcleo.
+# Todos os 16 casos permanecem ativos, inclusive correntes sem carga.
+# Vazões m³/h; gás nas condições do vaso; pressão kPa abs; T °C; μ cP.
+# Trocadores: massa kg/s e cp J/(kg K). Precisão Float64 preservada.
+# Origem, conversões e limitações: docs/validacao/10-pfd-casos-bot.md
+label = "BOT 1–16 — P-003 — LACUNAS PARA REVISÃO"
+equipment = "exchanger"
+
+[provenance]
+balance_authority = "gerar_memorial.py (nome local: References/Balanço_Preliminar.py)"
+python_sha256 = "1542e267bd03659234785e556d4934f5cd393ed851206f95f24944c73b764e8e"
+input_json = "References/design_cases_bot.json"
+input_json_sha256 = "ca3dfe559b32926c9d9ca4d9e75e2cec711f00f7fdfd2247242bbf3a754dac60"
+generator = "scripts/gerar_casos_bot.py"
+generator_sha256 = "f21dc3541fba74cfb9154aa2c6d894bad6bee6bdc662132c7793be47c4432bc7"
+julia_balance_port = false
+status = "DRAFT_MISSING_INPUTS"
+ready_for_sizing = false
+tag = "P-003"
+box = "trocador-calor"
+snapshot = "config/bot/balanco_python.json"
+snapshot_sha256 = "8bffbd5575e378fc00b5d81badf392c3070e54274820d1cd74ea8a9eb2bfb268"
+inlet_streams = ["C-23"]
+outlet_streams = ["C-24"]
+missing_fields = ["cp_casco", "k_casco", "k_tubo", "m_casco", "mu_casco", "mu_tubo", "rho_tubo", "t_casco_in"]
+method_defaults_review_required = true
+unreviewed_method_parameters = ["h_casco", "corte_chicana", "espacamento_chicana", "layout_tubos", "pares_veda", "folga_furo_chicana", "faixas_divisoras", "d_externo", "espessura", "k_parede", "rf_tubo", "rf_casco", "razao_passo", "passes_tubo", "n_min", "n_max", "n_step", "v_min", "v_max", "d_casco_max", "l_tubo_max"]
+
+# BOT 01; alimentação C-23.
+# SEM FASE AQUOSA NESTE CASO — vazão zero preservada.
+[[case]]
+name = "BOT 01 — Early Life"
+enabled = true
+m_tubo = 294.505514226694
+cp_tubo = 2000.0
+t_tubo_in = 75.0
+t_tubo_out = 40.0
+rho_tubo = nan # LACUNA: revisar antes de dimensionar
+mu_tubo = nan # LACUNA: revisar antes de dimensionar
+k_tubo = nan # LACUNA: revisar antes de dimensionar
+m_casco = nan # LACUNA: revisar antes de dimensionar
+cp_casco = nan # LACUNA: revisar antes de dimensionar
+t_casco_in = nan # LACUNA: revisar antes de dimensionar
+mu_casco = nan # LACUNA: revisar antes de dimensionar
+k_casco = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 02; alimentação C-23.
+[[case]]
+name = "BOT 02 — Early Life"
+enabled = true
+m_tubo = 296.12489177563396
+cp_tubo = 2011.5803880407768
+t_tubo_in = 66.42457250240963
+t_tubo_out = 40.0
+rho_tubo = nan # LACUNA: revisar antes de dimensionar
+mu_tubo = nan # LACUNA: revisar antes de dimensionar
+k_tubo = nan # LACUNA: revisar antes de dimensionar
+m_casco = nan # LACUNA: revisar antes de dimensionar
+cp_casco = nan # LACUNA: revisar antes de dimensionar
+t_casco_in = nan # LACUNA: revisar antes de dimensionar
+mu_casco = nan # LACUNA: revisar antes de dimensionar
+k_casco = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 03; alimentação C-23.
+[[case]]
+name = "BOT 03 — Early Life Blend"
+enabled = true
+m_tubo = 294.8343793210728
+cp_tubo = 2011.6310750283576
+t_tubo_in = 66.762003091794
+t_tubo_out = 40.0
+rho_tubo = nan # LACUNA: revisar antes de dimensionar
+mu_tubo = nan # LACUNA: revisar antes de dimensionar
+k_tubo = nan # LACUNA: revisar antes de dimensionar
+m_casco = nan # LACUNA: revisar antes de dimensionar
+cp_casco = nan # LACUNA: revisar antes de dimensionar
+t_casco_in = nan # LACUNA: revisar antes de dimensionar
+mu_casco = nan # LACUNA: revisar antes de dimensionar
+k_casco = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 04; alimentação C-23.
+# SEM FASE AQUOSA NESTE CASO — vazão zero preservada.
+[[case]]
+name = "BOT 04 — Early Life"
+enabled = true
+m_tubo = 38.278296010987894
+cp_tubo = 2000.0
+t_tubo_in = 55.0
+t_tubo_out = 40.0
+rho_tubo = nan # LACUNA: revisar antes de dimensionar
+mu_tubo = nan # LACUNA: revisar antes de dimensionar
+k_tubo = nan # LACUNA: revisar antes de dimensionar
+m_casco = nan # LACUNA: revisar antes de dimensionar
+cp_casco = nan # LACUNA: revisar antes de dimensionar
+t_casco_in = nan # LACUNA: revisar antes de dimensionar
+mu_casco = nan # LACUNA: revisar antes de dimensionar
+k_casco = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 05; alimentação C-23.
+# SEM FASE AQUOSA NESTE CASO — vazão zero preservada.
+[[case]]
+name = "BOT 05 — Low CO2"
+enabled = true
+m_tubo = 49.83055927205434
+cp_tubo = 2000.0
+t_tubo_in = 45.0
+t_tubo_out = 40.0
+rho_tubo = nan # LACUNA: revisar antes de dimensionar
+mu_tubo = nan # LACUNA: revisar antes de dimensionar
+k_tubo = nan # LACUNA: revisar antes de dimensionar
+m_casco = nan # LACUNA: revisar antes de dimensionar
+cp_casco = nan # LACUNA: revisar antes de dimensionar
+t_casco_in = nan # LACUNA: revisar antes de dimensionar
+mu_casco = nan # LACUNA: revisar antes de dimensionar
+k_casco = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 06; alimentação C-23.
+# SEM FASE AQUOSA NESTE CASO — vazão zero preservada.
+[[case]]
+name = "BOT 06 — Mid Life"
+enabled = true
+m_tubo = 12.862248448094817
+cp_tubo = 2000.0
+t_tubo_in = 45.0
+t_tubo_out = 40.0
+rho_tubo = nan # LACUNA: revisar antes de dimensionar
+mu_tubo = nan # LACUNA: revisar antes de dimensionar
+k_tubo = nan # LACUNA: revisar antes de dimensionar
+m_casco = nan # LACUNA: revisar antes de dimensionar
+cp_casco = nan # LACUNA: revisar antes de dimensionar
+t_casco_in = nan # LACUNA: revisar antes de dimensionar
+mu_casco = nan # LACUNA: revisar antes de dimensionar
+k_casco = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 07; alimentação C-23.
+# SEM FASE AQUOSA NESTE CASO — vazão zero preservada.
+[[case]]
+name = "BOT 07 — Mid Life"
+enabled = true
+m_tubo = 294.5057893385448
+cp_tubo = 2000.0
+t_tubo_in = 85.0
+t_tubo_out = 40.0
+rho_tubo = nan # LACUNA: revisar antes de dimensionar
+mu_tubo = nan # LACUNA: revisar antes de dimensionar
+k_tubo = nan # LACUNA: revisar antes de dimensionar
+m_casco = nan # LACUNA: revisar antes de dimensionar
+cp_casco = nan # LACUNA: revisar antes de dimensionar
+t_casco_in = nan # LACUNA: revisar antes de dimensionar
+mu_casco = nan # LACUNA: revisar antes de dimensionar
+k_casco = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 08; alimentação C-23.
+[[case]]
+name = "BOT 08 — Mid Life"
+enabled = true
+m_tubo = 197.1796492407189
+cp_tubo = 2011.444690167223
+t_tubo_in = 80.42571215820256
+t_tubo_out = 40.0
+rho_tubo = nan # LACUNA: revisar antes de dimensionar
+mu_tubo = nan # LACUNA: revisar antes de dimensionar
+k_tubo = nan # LACUNA: revisar antes de dimensionar
+m_casco = nan # LACUNA: revisar antes de dimensionar
+cp_casco = nan # LACUNA: revisar antes de dimensionar
+t_casco_in = nan # LACUNA: revisar antes de dimensionar
+mu_casco = nan # LACUNA: revisar antes de dimensionar
+k_casco = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 09; alimentação C-23.
+[[case]]
+name = "BOT 09 — Mid Life"
+enabled = true
+m_tubo = 154.8491893722974
+cp_tubo = 2011.431216713178
+t_tubo_in = 81.96547094884686
+t_tubo_out = 40.0
+rho_tubo = nan # LACUNA: revisar antes de dimensionar
+mu_tubo = nan # LACUNA: revisar antes de dimensionar
+k_tubo = nan # LACUNA: revisar antes de dimensionar
+m_casco = nan # LACUNA: revisar antes de dimensionar
+cp_casco = nan # LACUNA: revisar antes de dimensionar
+t_casco_in = nan # LACUNA: revisar antes de dimensionar
+mu_casco = nan # LACUNA: revisar antes de dimensionar
+k_casco = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 10; alimentação C-23.
+[[case]]
+name = "BOT 10 — Late Life"
+enabled = true
+m_tubo = 118.61917958278958
+cp_tubo = 2011.426197602256
+t_tubo_in = 90.68470991024563
+t_tubo_out = 40.0
+rho_tubo = nan # LACUNA: revisar antes de dimensionar
+mu_tubo = nan # LACUNA: revisar antes de dimensionar
+k_tubo = nan # LACUNA: revisar antes de dimensionar
+m_casco = nan # LACUNA: revisar antes de dimensionar
+cp_casco = nan # LACUNA: revisar antes de dimensionar
+t_casco_in = nan # LACUNA: revisar antes de dimensionar
+mu_casco = nan # LACUNA: revisar antes de dimensionar
+k_casco = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 11; alimentação C-23.
+[[case]]
+name = "BOT 11 — Late Life"
+enabled = true
+m_tubo = 81.72182332559078
+cp_tubo = 2011.4183929113722
+t_tubo_in = 70.33061472612579
+t_tubo_out = 40.0
+rho_tubo = nan # LACUNA: revisar antes de dimensionar
+mu_tubo = nan # LACUNA: revisar antes de dimensionar
+k_tubo = nan # LACUNA: revisar antes de dimensionar
+m_casco = nan # LACUNA: revisar antes de dimensionar
+cp_casco = nan # LACUNA: revisar antes de dimensionar
+t_casco_in = nan # LACUNA: revisar antes de dimensionar
+mu_casco = nan # LACUNA: revisar antes de dimensionar
+k_casco = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 12; alimentação C-23.
+[[case]]
+name = "BOT 12 — Late Life"
+enabled = true
+m_tubo = 82.77984269437465
+cp_tubo = 2011.4185262276965
+t_tubo_in = 90.59652277693651
+t_tubo_out = 40.0
+rho_tubo = nan # LACUNA: revisar antes de dimensionar
+mu_tubo = nan # LACUNA: revisar antes de dimensionar
+k_tubo = nan # LACUNA: revisar antes de dimensionar
+m_casco = nan # LACUNA: revisar antes de dimensionar
+cp_casco = nan # LACUNA: revisar antes de dimensionar
+t_casco_in = nan # LACUNA: revisar antes de dimensionar
+mu_casco = nan # LACUNA: revisar antes de dimensionar
+k_casco = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 13; alimentação C-23.
+[[case]]
+name = "BOT 13 — High CO2"
+enabled = true
+m_tubo = 99.4072885871065
+cp_tubo = 2011.420776136596
+t_tubo_in = 90.62367000521273
+t_tubo_out = 40.0
+rho_tubo = nan # LACUNA: revisar antes de dimensionar
+mu_tubo = nan # LACUNA: revisar antes de dimensionar
+k_tubo = nan # LACUNA: revisar antes de dimensionar
+m_casco = nan # LACUNA: revisar antes de dimensionar
+cp_casco = nan # LACUNA: revisar antes de dimensionar
+t_casco_in = nan # LACUNA: revisar antes de dimensionar
+mu_casco = nan # LACUNA: revisar antes de dimensionar
+k_casco = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 14; alimentação C-23.
+[[case]]
+name = "BOT 14 — High CO2"
+enabled = true
+m_tubo = 99.40691503658667
+cp_tubo = 2011.4207760988663
+t_tubo_in = 90.61835205937537
+t_tubo_out = 40.0
+rho_tubo = nan # LACUNA: revisar antes de dimensionar
+mu_tubo = nan # LACUNA: revisar antes de dimensionar
+k_tubo = nan # LACUNA: revisar antes de dimensionar
+m_casco = nan # LACUNA: revisar antes de dimensionar
+cp_casco = nan # LACUNA: revisar antes de dimensionar
+t_casco_in = nan # LACUNA: revisar antes de dimensionar
+mu_casco = nan # LACUNA: revisar antes de dimensionar
+k_casco = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 15; alimentação C-23.
+[[case]]
+name = "BOT 15 — Highest CO2"
+enabled = true
+m_tubo = 35.9886881379345
+cp_tubo = 2011.4135206156468
+t_tubo_in = 90.52798963155678
+t_tubo_out = 40.0
+rho_tubo = nan # LACUNA: revisar antes de dimensionar
+mu_tubo = nan # LACUNA: revisar antes de dimensionar
+k_tubo = nan # LACUNA: revisar antes de dimensionar
+m_casco = nan # LACUNA: revisar antes de dimensionar
+cp_casco = nan # LACUNA: revisar antes de dimensionar
+t_casco_in = nan # LACUNA: revisar antes de dimensionar
+mu_casco = nan # LACUNA: revisar antes de dimensionar
+k_casco = nan # LACUNA: revisar antes de dimensionar
+
+# BOT 16; alimentação C-23.
+[[case]]
+name = "BOT 16 — Highest CO2"
+enabled = true
+m_tubo = 40.06511717303509
+cp_tubo = 2011.4138943572675
+t_tubo_in = 90.53353657066748
+t_tubo_out = 40.0
+rho_tubo = nan # LACUNA: revisar antes de dimensionar
+mu_tubo = nan # LACUNA: revisar antes de dimensionar
+k_tubo = nan # LACUNA: revisar antes de dimensionar
+m_casco = nan # LACUNA: revisar antes de dimensionar
+cp_casco = nan # LACUNA: revisar antes de dimensionar
+t_casco_in = nan # LACUNA: revisar antes de dimensionar
+mu_casco = nan # LACUNA: revisar antes de dimensionar
+k_casco = nan # LACUNA: revisar antes de dimensionar

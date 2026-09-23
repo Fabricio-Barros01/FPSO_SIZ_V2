@@ -14,7 +14,7 @@ aquela fase).
 
 ## Estado atual
 
-**FASE ATUAL: F10b — Mapeamento balanço → TAG e `fpso-siz pfd` ← ATUAL (aguardando aprovação)**
+**FASE ATUAL: F10c — PFD no modo interativo ← ATUAL (aguardando aprovação)**
 
 Ordem revista em 2026-09-23, por decisão do usuário: F10 (balanço → equipamentos, em
 F10a/b/c) e F11 (MC por TAG) vêm **antes** de F8 (Pinch) e F9 (Song).
@@ -32,6 +32,13 @@ e subcomando `dimensionar`. São 516 testes (+2 `-m latex`, +1 `-m julia`) e cob
 98 %. Uso: `uv run fpso-siz` (interativo, num terminal) ou
 `uv run fpso-siz balanco|memorial --casos tests/fixtures/python_ref/design_cases_bot.json --saida saida/`
 e `uv run fpso-siz dimensionar --exemplo alves_komesu [--saida saida/]`.
+
+F10a e F10b entregues: propriedades ChEDL e integração dos 11 TAGs ao balanço, com
+origem de cada entrada, lacunas, casos inativos e envelopes. Novo comando:
+`uv run fpso-siz pfd --casos tests/fixtures/python_ref/design_cases_bot.json [--ajustes A.toml] [--saida saida/pfd]`.
+**608 testes, cobertura de 97,93 %**. Sem ajustes, V-001/002 dimensionam, oito TAGs
+aguardam entradas e SG-001 é inviável com as premissas atuais. Nenhuma lacuna foi
+preenchida sem fonte. Ver [`docs/validacao/09-pfd.md`](docs/validacao/09-pfd.md).
 
 ---
 
@@ -338,7 +345,7 @@ Entregue:
 - **NixOS:** para rodar os testes é preciso o `LD_LIBRARY_PATH` do flake (numpy agora é
   importado de fato).
 
-#### F10b — Mapeamento balanço → TAG e `fpso-siz pfd` ← ATUAL
+#### F10b — Mapeamento balanço → TAG e `fpso-siz pfd` ✅
 - `pfd/{tags,entradas,planta}.py` e `config/pfd/<tag>.toml`.
 - Cada valor tem sua **origem** registrada: balanço, correlação, recomendada, default ou
   usuário.
@@ -352,7 +359,32 @@ Entregue:
 - o que vem do balanço é igual, bit a bit, às fixtures do PFD F1 do Julia (copiadas para
   `tests/fixtures/julia/pfd/`).
 
-#### F10c — PFD no modo interativo
+Entregue: `pfd/{tags,entradas,planta}.py`, 11 TOMLs de TAGs, defaults com fontes, ajustes
+por TAG/caso e `fpso-siz pfd`, com JSON por TAG e `planta.csv`. `pv_informada` preserva
+Antoine no default e a paridade Julia; faixas de salmoura ampliadas só nos descritores do
+PFD. **608 testes, cobertura 97,93 % (PFD 98 %)**. Commit: ver `git log` ("F10b: …").
+
+Verificação: 528 entradas compartilhadas com o PFD F1 bit a bit; hashes das 11 fixtures
+preservados; 11 envelopes viáveis com ajustes **sintéticos, exclusivos dos testes**;
+exportação API/CLI idêntica byte a byte. Núcleo do balanço e oráculos não alterados.
+
+Decisões/limitações documentadas em `docs/validacao/09-pfd.md`:
+- gás na base padrão exigida por S&A Eq. 3.8b (o rascunho F1 usava a base de operação);
+- uma solução aquosa W+D, com conservação da massa de sal; utilidades com ambas as
+  temperaturas pendentes, água pura IAPWS saturada à temperatura média;
+- knockouts com 5 min para alto CO₂, como no plano aprovado;
+- SG-001 mantém a inviabilidade e o teto do caso 6: retirar a restrição de decantação
+  quando não há água livre exige revisão física específica; não foi alterada nesta fase;
+- o teste de registro de métodos foi isolado, corrigindo dependência da ordem da suíte.
+
+**Notas para a F10c:** reutilizar `EntradasTAG.lacunas`, `specs`, `CasoTAG.insumos`,
+`valores`/`rastro` e `output.terminal.pfd.resumo`. Recomendações ainda aparecem como "a
+confirmar"; o menu deve registrar a aceitação como ajuste do usuário. Exportação do TOML
+de ajustes e reprodução da sessão são parte da F10c. Campos do CSV/JSON estão em
+`docs/esquemas/README.md`. Não tratar código 1 do `pfd` como falha de exportação: os
+arquivos são gravados também com lacunas/inviabilidade.
+
+#### F10c — PFD no modo interativo ← ATUAL
 Menu "Planta":
 - pede as lacunas, sem valor padrão, e oferece as recomendadas, com fonte, para confirmar;
 - mostra o resumo dos 11 TAGs e o detalhe de cada um (coluna Origem, rastro de

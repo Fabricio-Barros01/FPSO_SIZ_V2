@@ -1,0 +1,25 @@
+# P-001 — pré-aquecedor óleo/óleo. Convenção do PFD F1 do Julia (para revisão, não decisão
+# mecânica): processo frio no TUBO (C-06 → C-07, emulsão do FWKO), óleo tratado quente no
+# CASCO (C-22 → C-23). Propriedades de cada lado na temperatura média de mistura (Saari
+# Eq. 6.21, nota do método). Emulsão com o óleo como fase contínua (BOT, nota 1 da
+# Tab. 2.2.1.2: "emulsified oil viscosity").
+tag = "P-001"
+nome = "Pré-aquecedor óleo/óleo"
+equipamento = "exchanger"
+metodo = "saari_lmtd"
+bloco = "P-001"
+
+[entradas]
+m_tubo = { regra = "vazao_massica", corrente = "C-06" }
+cp_tubo = { regra = "cp_corrente", corrente = "C-06" }
+t_tubo_in = { regra = "temperatura", corrente = "C-06" }
+t_tubo_out = { regra = "temperatura", corrente = "C-07" }
+rho_tubo = { regra = "densidade_fase", corrente = "C-06", fase = "liquido", t = ["C-06", "C-07"] }
+mu_tubo = { regra = "viscosidade_fase", corrente = "C-06", fase = "liquido", continua = "oleo", t = ["C-06", "C-07"] }
+m_casco = { regra = "vazao_massica", corrente = "C-22" }
+cp_casco = { regra = "cp_corrente", corrente = "C-22" }
+t_casco_in = { regra = "temperatura", corrente = "C-22" }
+mu_casco = { regra = "viscosidade_fase", corrente = "C-22", fase = "liquido", continua = "oleo", t = ["C-22", "C-23"] }
+
+[inativo_se]
+carga_nula = "Q_pre"

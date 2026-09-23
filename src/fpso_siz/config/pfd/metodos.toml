@@ -1,0 +1,90 @@
+# Entradas dos métodos que NÃO vêm do balanço nem das propriedades, por método, valendo
+# para todo TAG que o usa (o TAG pode sobrescrever em [entradas] ou [recomendadas]).
+#
+# Cada chave é uma de:
+#   { tipo = "fonte",     fonte = "..." }  default do método, com fonte conferida no acervo
+#   { tipo = "escolha",   fonte = "..." }  escolha de projeto: a configuração padrão do método,
+#                                          listada no MC para revisão (não é dado de processo)
+#   { tipo = "nao_usado", fonte = "..." }  o método exige a chave, mas ela não entra no cálculo
+#   { regra = "...", ... }                 regra de pfd/entradas.py (ex.: grade de busca)
+# Parâmetro que não está aqui nem no TAG é LACUNA (regra das fontes). [<método>.dicas] ajuda
+# o usuário a preencher a lacuna, citando o que o acervo oferece.
+
+[stewart_arnold]
+dm_water = { tipo = "fonte", fonte = "Stewart & Arnold (2008) §4.7.2: gotas de água de 500 µm" }
+dm_oil = { tipo = "fonte", fonte = "Stewart & Arnold (2008) §4.7.3: gotas de óleo de 200 µm" }
+dm_gas = { tipo = "fonte", fonte = "Stewart & Arnold (2008), exemplo de projeto p. 168: remoção de líquido de 100 µm" }
+d_min = { regra = "grade_descritor", limite = "min" }
+d_max = { regra = "grade_descritor", limite = "max" }
+d_step = { tipo = "fonte", fonte = "Stewart & Arnold (2008) §3.8.6, p. 126: cascos em incrementos de 150 mm (6 in)" }
+sr_min = { tipo = "fonte", fonte = "Stewart & Arnold (2008) cap. 4: comprimento/diâmetro 'between 3 and 5'" }
+sr_max = { tipo = "fonte", fonte = "Stewart & Arnold (2008) cap. 4: comprimento/diâmetro 'between 3 and 5'" }
+sr_target = { tipo = "fonte", fonte = "centro da banda de Stewart & Arnold (2008)" }
+
+[stewart_arnold_2f]
+dm_gas = { tipo = "fonte", fonte = "Stewart & Arnold (2008) §3.7.1: equações de capacidade de gás baseadas em remoção de 140 µm" }
+d_min = { regra = "grade_descritor", limite = "min" }
+d_max = { regra = "grade_descritor", limite = "max" }
+d_step = { tipo = "fonte", fonte = "Stewart & Arnold (2008) §3.8.6, p. 126: cascos em incrementos de 150 mm (6 in)" }
+sr_min = { tipo = "fonte", fonte = "Stewart & Arnold (2008) §3.8.5: esbeltez entre 3 e 4" }
+sr_max = { tipo = "fonte", fonte = "Stewart & Arnold (2008) §3.8.5: esbeltez entre 3 e 4" }
+sr_target = { tipo = "fonte", fonte = "centro da banda de Stewart & Arnold (2008) §3.8.5" }
+
+[arnold_electrostatic]
+dm_oil = { tipo = "fonte", fonte = "Stewart & Arnold (2008) §4.7.3: gotas de óleo de 200 µm" }
+d_min = { regra = "grade_descritor", limite = "min" }
+d_max = { regra = "grade_descritor", limite = "max" }
+d_step = { tipo = "fonte", fonte = "Stewart & Arnold (2008) §4.9.3: 'heads come in outside diameters, which are multiples of 6 in. (150 mm)'" }
+sr_min = { tipo = "fonte", fonte = "Stewart & Arnold (2008) §4.9.2: Lss/d entre 3 e 5" }
+sr_max = { tipo = "fonte", fonte = "Stewart & Arnold (2008) §4.9.2: Lss/d entre 3 e 5" }
+sr_target = { tipo = "fonte", fonte = "centro da banda de Stewart & Arnold (2008) §4.9.2" }
+
+[arnold_electrostatic.dicas]
+dm_water = "Sem fonte no acervo: a correlação campo elétrico → gotícula coalescida está no volume 'Emulsions and Oil Treating' da série, que não temos. §4.7.2 dimensiona para 500 µm SEM tratamento; com dado de laboratório, use o dado."
+
+[moran]
+rugosidade = { tipo = "fonte", fonte = "Branan (2012) Tab. 1-5, p. 10: aço novo, 0,000045 m" }
+v_min = { tipo = "fonte", fonte = "Moran (2016): 'water-like fluids with settleable solids: >1, <1.5 m/sec'" }
+v_max = { tipo = "fonte", fonte = "Moran (2016): 'pumped water-like fluids: <1.5 m/sec'" }
+dn_min = { regra = "grade_descritor", limite = "min" }
+dn_max = { regra = "grade_descritor", limite = "max" }
+antoine_a = { tipo = "nao_usado", fonte = "Moran (2016) Tab. 3 (água); não entra no cálculo: Pv informada" }
+antoine_b = { tipo = "nao_usado", fonte = "Moran (2016) Tab. 3 (água); não entra no cálculo: Pv informada" }
+antoine_c = { tipo = "nao_usado", fonte = "Moran (2016) Tab. 3 (água); não entra no cálculo: Pv informada" }
+
+[moran.dicas]
+h_geometrica = "Cota de chegada − cota de sucção: dado do arranjo da planta, sem fonte no acervo."
+h_sucao = "Nível de líquido no vaso de sucção sobre a linha de centro da bomba: dado do arranjo."
+l_sucao = "Comprimento reto da linha de sucção: dado do arranjo."
+k_sucao = "Σk das peças da sucção: Moran (2016) Tab. 1 dá os k por peça; a lista de peças é do projeto."
+l_recalque = "Comprimento reto da linha de recalque: dado do arranjo."
+k_recalque = "Σk das peças do recalque: Moran (2016) Tab. 1 dá os k por peça; a lista de peças é do projeto."
+npsh_requerido = "Da curva do fabricante. Para estudo, Branan (2012) eq. 5-9, p. 117: NPSH^0,75 = n·q^0,5/C, C entre 7.000 e 10.000 (exige a rotação n, em rpm, e q em gpm)."
+npsh_margem = "Folga sobre o NPSHr: Moran (2016) não fixa valor; critério do projeto."
+
+[saari_lmtd]
+d_externo = { tipo = "escolha", fonte = "Saari Tab. 3.1 (p. 21): tubos típicos de 12,7 a 25,4 mm; 19,05 mm (3/4 in) dentro da faixa" }
+espessura = { tipo = "fonte", fonte = "Branan (2012) p. 38: 'start with 14 BWG' (2,11 mm)" }
+razao_passo = { tipo = "fonte", fonte = "Saari Tab. 3.1 (p. 21): passo de 1,25 a 1,5·d_o; adotado o menor" }
+v_min = { tipo = "fonte", fonte = "Saari Tab. 3.1 (p. 21): 'often 1m/s unless better information is available'" }
+v_max = { tipo = "fonte", fonte = "Saari Tab. 3.1 (p. 21): erosão, < 3 m/s em aço-carbono" }
+d_casco_max = { tipo = "fonte", fonte = "Saari Tab. 3.1 (p. 21): casco de chapa enrolada de 300 a 2500 mm" }
+l_tubo_max = { tipo = "fonte", fonte = "Branan (2012) p. 38: tubos de 4 a 20 ft (6,1 m); default do método 6 m" }
+corte_chicana = { tipo = "fonte", fonte = "Saari Tab. 3.1 (p. 21): 'very often 25% of shell inside diameter'" }
+folga_furo_chicana = { tipo = "fonte", fonte = "Branan (2012) p. 44: 'usually 0.8 mm' (furo da chicana − d_o)" }
+espacamento_chicana = { tipo = "escolha", fonte = "Saari Tab. 3.1 (p. 21): 0,2 a 1,0·Ds; adotado 0,4·Ds" }
+layout_tubos = { tipo = "escolha", fonte = "Branan (2012) Tab. 2-6: 30° triangular" }
+pares_veda = { tipo = "escolha", fonte = "1 par (Branan p. 44: regra de bolso de um par a cada ~6 fileiras de tubos)" }
+faixas_divisoras = { tipo = "escolha", fonte = "divisória de passe perpendicular ao escoamento (nota do método)" }
+passes_tubo = { tipo = "escolha", fonte = "2 passes no tubo (Saari Tab. 3.1: até Ds,i em centenas de mm; fator F da Fig. 4.3)" }
+h_casco = { tipo = "nao_usado", fonte = "só com Bell-Delaware desligado; aqui h_o é calculado (Branan Eq. 2-18)" }
+n_min = { regra = "grade_velocidade", limite = "min" }
+n_max = { regra = "grade_velocidade", limite = "max" }
+n_step = { tipo = "escolha", fonte = "passo da grade do método (5 tubos)" }
+
+[saari_lmtd.dicas]
+k_tubo = "Condutividade térmica do fluido do tubo. Petróleo e emulsão: sem correlação no acervo nem no ChEDL; salmoura: o banco de Magomedov do thermo não tem NaCl."
+k_casco = "Condutividade térmica do fluido do casco. Petróleo: sem correlação no acervo nem no ChEDL."
+k_parede = "Condutividade do material do tubo (aço-carbono é o material usual — Saari §3); valor de tabela de materiais."
+rf_tubo = "Incrustação do lado tubo: Saari Tab. 8.1, p. 98 (TEMA por serviço) — a tabela não tem petróleo nem emulsão líquida."
+rf_casco = "Incrustação do lado casco: Saari Tab. 8.1, p. 98 (TEMA por serviço)."

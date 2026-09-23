@@ -64,7 +64,8 @@ def test_cartao_resumo_e_colunas(vaso):
 
 def test_descritores_e_constantes(vaso):
     fx, eq, m, _, _ = vaso
-    assert [puro(s) for s in m.parameters()] == fx["parameters"]
+    extensoes = {s.key for s in m.extensoes()}  # acréscimos do V2, fora do Julia
+    assert [puro(s) for s in m.parameters() if s.key not in extensoes] == fx["parameters"]
     assert [puro(s) for s in m.stream_parameters()] == fx["stream_parameters"]
     assert m.constants() == fx["constants"]
     assert (list(m.stream_keys()), m.global_keys(), m.action_label(), list(m.requirement_spec()), m.label,

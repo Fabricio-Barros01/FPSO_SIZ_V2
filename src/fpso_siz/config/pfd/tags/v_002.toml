@@ -1,0 +1,27 @@
+# V-002 — vaso desgaseificador 2, dimensionado como knockout bifásico (mapeamento do PFD F1 do
+# Julia, P1: o box knockout-2f cobre a separação gás–líquido). Alimentação C-16; o vaso opera
+# a 200 kPa, na T e P do gás de saída C-17; líquido C-18 (fase líquida única: óleo + água).
+tag = "V-002"
+nome = "Vaso desgaseificador 2"
+equipamento = "knockout"
+metodo = "stewart_arnold_2f"
+bloco = "V-002"
+condicao = "C-17"
+
+[entradas]
+q_oil = { regra = "vazao_fase", corrente = "C-18", fase = "liquido" }
+q_gas = { regra = "vazao_gas_padrao", corrente = "C-17" }
+rho_oil = { regra = "densidade_fase", corrente = "C-18", fase = "liquido" }
+rho_gas = { regra = "densidade_gas", corrente = "C-17" }
+mu_gas = { regra = "viscosidade_gas", corrente = "C-17" }
+pressure = { regra = "pressao", corrente = "C-17" }
+temperature = { regra = "temperatura", corrente = "C-17" }
+z = { regra = "compressibilidade_gas", corrente = "C-17" }
+
+[recomendadas.tr_liquid]
+valor = 5.0
+fonte = "Stewart & Arnold (2008) Tab. 3.2, nota: mínimo de 5 min para alto CO2; gás dos casos BOT. Decisão registrada em docs/decisoes/0002-pfd-automatico.md."
+perguntar = true
+
+[inativo_se]
+vazoes_nulas = ["q_oil", "q_gas"]

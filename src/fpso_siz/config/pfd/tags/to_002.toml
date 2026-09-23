@@ -1,0 +1,29 @@
+# TO-002 — Dessalinizador (tratador eletrostático), dimensionado como tratador eletrostático cheio de líquido
+# (mapeamento do PFD F1 do Julia). Alimentação C-18 (emulsão já desgaseificada); óleo C-21, água C-19.
+tag = "TO-002"
+nome = "Dessalinizador (tratador eletrostático)"
+equipamento = "treater"
+metodo = "arnold_electrostatic"
+bloco = "TO-002"
+condicao = "C-18"
+
+[entradas]
+q_oil = { regra = "vazao_fase", corrente = "C-18", fase = "oleo" }
+q_water = { regra = "vazao_fase", corrente = "C-18", fase = "agua" }
+rho_oil = { regra = "densidade_fase", corrente = "C-18", fase = "oleo" }
+rho_water = { regra = "densidade_fase", corrente = "C-18", fase = "agua" }
+mu_oil = { regra = "viscosidade_fase", corrente = "C-18", fase = "oleo" }
+mu_water = { regra = "viscosidade_fase", corrente = "C-18", fase = "agua" }
+
+[recomendadas.tr_oil]
+valor = 20.0
+fonte = "Stewart & Arnold (2008) Tab. 4.1: óleo intermediário 7,5–10 min (limite superior), ×2 pela nota da tabela para emulsão na entrada (fator 2 a 4; adotado o menor)"
+perguntar = true
+
+[inativo_se]
+vazoes_nulas = ["q_oil", "q_water"]
+
+[recomendadas.tr_water]
+valor = 10.0
+fonte = "Stewart & Arnold (2008) §4.7.4: 'a water retention time of 10 min is recommended for design'"
+perguntar = true

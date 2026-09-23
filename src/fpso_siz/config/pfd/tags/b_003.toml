@@ -1,0 +1,23 @@
+# B-003 — Bomba de água produzida do dessalinizador. Sucção C-19 (saída do TO-002), recalque C-20 (topologia do balanço).
+# Pressão de sucção = P do vaso a montante; pressão de recalque = P da corrente de descarga
+# (premissas de pressão do balanço). O líquido sai do vaso no ponto de bolha: Pv = P do vaso
+# (Branan, Ex. 5-2). Líquido como fase única, com a fase contínua "agua".
+tag = "B-003"
+nome = "Bomba de água produzida do dessalinizador"
+equipamento = "pump"
+metodo = "moran"
+bloco = "B-003"
+condicao = "C-19"
+
+[entradas]
+q_oil = { regra = "vazao_fase", corrente = "C-19", fase = "liquido" }
+rho_oil = { regra = "densidade_fase", corrente = "C-19", fase = "liquido" }
+mu_oil = { regra = "viscosidade_fase", corrente = "C-19", fase = "liquido", continua = "agua" }
+pressure = { regra = "pressao", corrente = "C-19" }
+temperature = { regra = "temperatura", corrente = "C-19" }
+p_recalque = { regra = "pressao", corrente = "C-20" }
+pv_informada = { regra = "pressao_vapor_saturado", corrente = "C-19" }
+rendimento = { regra = "premissa", nome = "eta_pump" }
+
+[inativo_se]
+vazao_nula = "q_oil"

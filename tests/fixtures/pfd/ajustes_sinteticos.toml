@@ -1,0 +1,245 @@
+# SOMENTE TESTE: dados sintéticos; NÃO usar para dimensionamento de projeto.
+# Preenche lacunas e altera gotículas, viscosidade, passes, faixas e limites
+# deliberadamente para exercitar o caminho viável dos 11 envelopes.
+
+["B-001"]
+h_geometrica = 10
+h_sucao = 10
+l_sucao = 5
+k_sucao = 1
+l_recalque = 30
+k_recalque = 2
+npsh_requerido = 2
+npsh_margem = 1
+v_min = 0.01
+v_max = 5
+
+["B-002"]
+h_geometrica = 10
+h_sucao = 10
+l_sucao = 5
+k_sucao = 1
+l_recalque = 30
+k_recalque = 2
+npsh_requerido = 2
+npsh_margem = 1
+v_min = 0.01
+v_max = 5
+
+["B-003"]
+h_geometrica = 10
+h_sucao = 10
+l_sucao = 5
+k_sucao = 1
+l_recalque = 30
+k_recalque = 2
+npsh_requerido = 2
+npsh_margem = 1
+v_min = 0.01
+v_max = 5
+
+["TO-001"]
+dm_water = 1500
+dm_oil = 1000
+
+["TO-002"]
+dm_water = 1500
+dm_oil = 1000
+
+["SG-001"]
+dm_water = 1500
+dm_oil = 1000
+
+["P-001"]
+k_tubo = 0.13
+k_parede = 45
+rf_tubo = 0.0002
+rf_casco = 0.0002
+v_min = 0.01
+v_max = 20
+l_tubo_max = 100
+d_casco_max = 20000
+n_min = 100
+n_max = 2500
+n_step = 100
+mu_tubo = 0.5
+passes_tubo = 1
+k_casco = 0.13
+
+["P-002"]
+k_tubo = 0.13
+k_parede = 45
+rf_tubo = 0.0002
+rf_casco = 0.0002
+v_min = 0.01
+v_max = 20
+l_tubo_max = 100
+d_casco_max = 20000
+n_min = 100
+n_max = 2500
+n_step = 100
+mu_tubo = 0.5
+passes_tubo = 1
+t_agua_in = 120
+t_agua_out = 100
+
+["P-003"]
+k_tubo = 0.13
+k_parede = 45
+rf_tubo = 0.0002
+rf_casco = 0.0002
+v_min = 0.01
+v_max = 20
+l_tubo_max = 100
+d_casco_max = 20000
+n_min = 100
+n_max = 2500
+n_step = 100
+mu_tubo = 0.5
+passes_tubo = 1
+t_agua_in = 25
+t_agua_out = 35
+
+["P-001".caso."1"]
+mu_tubo = 1.4927744658194442
+
+["P-001".caso."2"]
+mu_tubo = 1.7002457097292463
+
+["P-001".caso."3"]
+mu_tubo = 1.6929226576150977
+
+["P-001".caso."4"]
+mu_tubo = 0.19429561995414882
+
+["P-001".caso."5"]
+mu_tubo = 0.25227740852567315
+
+["P-001".caso."6"]
+mu_tubo = 0.06543756853942256
+
+["P-001".caso."7"]
+mu_tubo = 1.493704186824228
+
+["P-001".caso."8"]
+mu_tubo = 1.8409662876368
+
+["P-001".caso."9"]
+mu_tubo = 1.4471237633325031
+
+["P-001".caso."10"]
+mu_tubo = 1.1092464642532707
+
+["P-001".caso."11"]
+mu_tubo = 0.7656592264455001
+
+["P-001".caso."12"]
+mu_tubo = 0.774566201216221
+
+["P-001".caso."13"]
+mu_tubo = 0.9306611777136051
+
+["P-001".caso."14"]
+mu_tubo = 0.9306579473539008
+
+["P-001".caso."15"]
+mu_tubo = 0.33799405442631775
+
+["P-001".caso."16"]
+mu_tubo = 0.376259238595368
+
+["P-002".caso."1"]
+mu_tubo = 1.4927744658194442
+
+["P-002".caso."2"]
+mu_tubo = 1.7002457097292463
+
+["P-002".caso."3"]
+mu_tubo = 1.6929226576150977
+
+["P-002".caso."4"]
+mu_tubo = 0.19429561995414882
+
+["P-002".caso."5"]
+mu_tubo = 0.25227740852567315
+
+["P-002".caso."6"]
+mu_tubo = 0.06543756853942256
+
+["P-002".caso."7"]
+mu_tubo = 1.493704186824228
+
+["P-002".caso."8"]
+mu_tubo = 1.8409662876368
+
+["P-002".caso."9"]
+mu_tubo = 1.4471237633325031
+
+["P-002".caso."10"]
+mu_tubo = 1.1092464642532707
+
+["P-002".caso."11"]
+mu_tubo = 0.7656592264455001
+
+["P-002".caso."12"]
+mu_tubo = 0.774566201216221
+
+["P-002".caso."13"]
+mu_tubo = 0.9306611777136051
+
+["P-002".caso."14"]
+mu_tubo = 0.9306579473539008
+
+["P-002".caso."15"]
+mu_tubo = 0.33799405442631775
+
+["P-002".caso."16"]
+mu_tubo = 0.376259238595368
+
+["P-003".caso."1"]
+mu_tubo = 1.47252757113347
+
+["P-003".caso."2"]
+mu_tubo = 1.4806244588781698
+
+["P-003".caso."3"]
+mu_tubo = 1.4741718966053639
+
+["P-003".caso."4"]
+mu_tubo = 0.19139148005493947
+
+["P-003".caso."5"]
+mu_tubo = 0.24915279636027168
+
+["P-003".caso."6"]
+mu_tubo = 0.06431124224047409
+
+["P-003".caso."7"]
+mu_tubo = 1.4725289466927238
+
+["P-003".caso."8"]
+mu_tubo = 0.9858982462035946
+
+["P-003".caso."9"]
+mu_tubo = 0.774245946861487
+
+["P-003".caso."10"]
+mu_tubo = 0.5930958979139479
+
+["P-003".caso."11"]
+mu_tubo = 0.4086091166279539
+
+["P-003".caso."12"]
+mu_tubo = 0.41389921347187325
+
+["P-003".caso."13"]
+mu_tubo = 0.4970364429355325
+
+["P-003".caso."14"]
+mu_tubo = 0.4970345751829333
+
+["P-003".caso."15"]
+mu_tubo = 0.17994344068967252
+
+["P-003".caso."16"]
+mu_tubo = 0.20032558586517546
