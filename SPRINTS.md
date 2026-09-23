@@ -362,7 +362,7 @@ Entregue:
 Entregue: `pfd/{tags,entradas,planta}.py`, 11 TOMLs de TAGs, defaults com fontes, ajustes
 por TAG/caso e `fpso-siz pfd`, com JSON por TAG e `planta.csv`. `pv_informada` preserva
 Antoine no default e a paridade Julia; faixas de salmoura ampliadas só nos descritores do
-PFD. **608 testes, cobertura 97,93 % (PFD 98 %)**. Commit: ver `git log` ("F10b: …").
+PFD. **608 testes, cobertura 97,93 % (PFD 98 %)**. Commit: `f9d5300`.
 
 Verificação: 528 entradas compartilhadas com o PFD F1 bit a bit; hashes das 11 fixtures
 preservados; 11 envelopes viáveis com ajustes **sintéticos, exclusivos dos testes**;
