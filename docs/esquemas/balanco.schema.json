@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "fpso-siz/balanco.schema.json",
+  "title": "Resultado do balanço preliminar (fpso-siz balanco → balanco.json)",
+  "type": "object",
+  "required": ["esquema", "gerador", "entrada", "premissas", "casos", "auditoria"],
+  "additionalProperties": false,
+  "$defs": {
+    "numero": {"type": "number"},
+    "corrente": {
+      "type": "object",
+      "required": ["O", "W", "D", "G"],
+      "additionalProperties": false,
+      "properties": {"O": {"type": "number"}, "W": {"type": "number"}, "D": {"type": "number"}, "G": {"type": "number"}}
+    },
+    "balanco": {
+      "type": "object",
+      "required": ["mi", "mo", "em", "Ein", "Eout", "eE"],
+      "properties": {
+        "mi": {"type": "number"}, "mo": {"type": "number"}, "em": {"type": "number", "minimum": 0},
+        "Ein": {"type": "number"}, "Eout": {"type": "number"}, "eE": {"type": "number", "minimum": 0},
+        "comp": {"$ref": "#/$defs/corrente"}, "W": {"type": "number"}
+      }
+    }
+  },
+  "properties": {
+    "esquema": {"const": 1},
+    "gerador": {
+      "type": "object", "required": ["pacote", "versao"],
+      "properties": {"pacote": {"const": "fpso-siz"}, "versao": {"type": "string"}}
+    },
+    "entrada": {
+      "type": "object", "required": ["arquivo", "sha256"],
+      "properties": {"arquivo": {"type": "string"}, "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+    },
+    "premissas": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["nome", "id", "unidade", "descricao", "valor", "origem", "alterada"],
+        "properties": {
+          "nome": {"type": "string"}, "id": {"type": "string", "pattern": "^[FP]-[0-9]{2}$"},
+          "unidade": {"type": "string"}, "descricao": {"type": "string"},
+          "valor": {"type": "number"}, "origem": {"enum": ["premissas.toml", "arquivo de casos"]},
+          "alterada": {"type": "boolean"}
+        }
+      }
+    },
+    "casos": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["num", "nome", "fluido", "poco", "api", "convergiu", "iteracoes", "residuo_reciclo",
+                     "viscosidade_oleo_cP", "BSW_chegada", "BSW_FWKO", "rho", "cp", "gas_props",
+                     "correntes", "cargas", "gas", "balancos_bloco", "balanco_global", "rastro"],
+        "additionalProperties": false,
+        "properties": {
+          "num": {"type": "integer"}, "nome": {"type": "string"}, "fluido": {"type": "string"},
+          "poco": {"type": "string"}, "api": {"type": "number"}, "convergiu": {"type": "boolean"},
+          "iteracoes": {"type": "integer", "minimum": 0}, "residuo_reciclo": {"type": "number", "minimum": 0},
+          "viscosidade_oleo_cP": {
+            "type": "object", "required": ["valor", "marcador"],
+            "properties": {"valor": {"type": "number", "exclusiveMinimum": 0}, "marcador": {"type": "string"}}
+          },
+          "BSW_chegada": {"type": "number", "minimum": 0, "maximum": 1},
+          "BSW_FWKO": {"type": "number", "minimum": 0, "maximum": 1},
+          "rho": {"$ref": "#/$defs/corrente"},
+          "cp": {"$ref": "#/$defs/corrente"},
+          "gas_props": {
+            "type": "object", "required": ["y", "frac_lights", "MW", "cp", "gamma", "rho_std", "xsum"],
+            "properties": {"y": {"type": "object", "additionalProperties": {"type": "number"}}}
+          },
+          "correntes": {
+            "type": "object", "minProperties": 26, "maxProperties": 26,
+            "propertyNames": {"pattern": "^C-[0-9]{2}$"},
+            "additionalProperties": {
+              "type": "object", "required": ["T_C", "P_kPa", "vazao_massica_kg_s"], "additionalProperties": false,
+              "properties": {"T_C": {"type": "number"}, "P_kPa": {"type": "number"},
+                             "vazao_massica_kg_s": {"$ref": "#/$defs/corrente"}}
+            }
+          },
+          "cargas": {
+            "type": "object", "required": ["Q_pre", "Q_H", "Q_D", "Q_C", "W_Bo", "W_B1", "W_B2"],
+            "additionalProperties": {"type": "number"}
+          },
+          "gas": {
+            "type": "object", "required": ["G_in", "G_F", "G_D1", "G_D2", "Dv", "dRsF", "dRsD1"],
+            "additionalProperties": {"type": "number"}
+          },
+          "balancos_bloco": {"type": "object", "minProperties": 16, "additionalProperties": {"$ref": "#/$defs/balanco"}},
+          "balanco_global": {"$ref": "#/$defs/balanco"},
+          "rastro": {
+            "type": "array", "minItems": 1,
+            "items": {
+              "type": "object", "required": ["equacao", "escopo", "valor", "entradas"], "additionalProperties": false,
+              "properties": {"equacao": {"type": "string"}, "escopo": {"type": "string"}, "valor": {}, "entradas": {"type": "object"}}
+            }
+          }
+        }
+      }
+    },
+    "auditoria": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "verificacao", "base", "unidade", "max_desvio_abs"], "additionalProperties": false,
+        "properties": {
+          "id": {"type": "string"}, "verificacao": {"type": "string"}, "base": {"type": "string"},
+          "unidade": {"type": "string"}, "max_desvio_abs": {"type": "number", "minimum": 0}
+        }
+      }
+    }
+  }
+}

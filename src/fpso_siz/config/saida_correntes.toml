@@ -1,0 +1,77 @@
+# Colunas do CSV de correntes (uma linha por caso × corrente). A ordem aqui é a ordem das
+# colunas; a camada de saída é genérica e só itera estes descritores.
+
+[[colunas]]
+id = "caso"
+unidade = "-"
+descricao = "Número do caso de projeto (BOT)"
+
+[[colunas]]
+id = "corrente"
+unidade = "-"
+descricao = "Identificador da corrente no diagrama de blocos (C-01 … C-26)"
+
+[[colunas]]
+id = "nome"
+unidade = "-"
+descricao = "Descrição da corrente"
+
+[[colunas]]
+id = "fase"
+unidade = "-"
+descricao = "Fase ou natureza da corrente"
+
+[[colunas]]
+id = "T_C"
+unidade = "°C"
+descricao = "Temperatura"
+
+[[colunas]]
+id = "P_kPa"
+unidade = "kPa abs"
+descricao = "Pressão"
+
+[[colunas]]
+id = "m_O_kg_s"
+unidade = "kg/s"
+descricao = "Vazão mássica de óleo"
+
+[[colunas]]
+id = "m_W_kg_s"
+unidade = "kg/s"
+descricao = "Vazão mássica de água produzida"
+
+[[colunas]]
+id = "m_D_kg_s"
+unidade = "kg/s"
+descricao = "Vazão mássica de água de diluição"
+
+[[colunas]]
+id = "m_G_kg_s"
+unidade = "kg/s"
+descricao = "Vazão mássica de gás"
+
+[[colunas]]
+id = "m_total_kg_s"
+unidade = "kg/s"
+descricao = "Vazão mássica total"
+
+[[colunas]]
+id = "Q_O_m3_d"
+unidade = "m³/d (padrão)"
+descricao = "Vazão volumétrica de óleo na condição padrão"
+
+[[colunas]]
+id = "Q_W_m3_d"
+unidade = "m³/d (padrão)"
+descricao = "Vazão volumétrica de água produzida na condição padrão"
+
+[[colunas]]
+id = "Q_D_m3_d"
+unidade = "m³/d (padrão)"
+descricao = "Vazão volumétrica de água de diluição na condição padrão"
+
+[[colunas]]
+id = "Q_G_Sm3_d"
+unidade = "Sm³/d"
+descricao = "Vazão de gás na condição padrão (Z = 1)"

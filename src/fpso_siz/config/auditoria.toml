@@ -1,0 +1,83 @@
+# Verificações da auditoria numérica independente (auditoria_independente() do original).
+# Ordem = ordem da tabela do memorial. Strings literais TOML: o LaTeX é preservado byte a byte.
+# Cada valor reportado é o maior |desvio| absoluto entre modelo e recálculo, nos casos.
+
+[identidade_liquido]
+verificacao = '$Q_L=Q_O+Q_A$ (JSON)'
+base = 'identidade do JSON'
+unidade = 'm³/d'
+
+[identidade_gas]
+verificacao = '$Q_{G,total}=Q_{G,prod}+Q_{G,lift}+Q_{G,transf}$'
+base = 'identidade do JSON'
+unidade = 'Sm³/d'
+
+[soma_composicao]
+verificacao = '$\sum_i x_i=1$ por fluido'
+base = 'JSON'
+unidade = '--'
+
+[volume_molar]
+verificacao = '$\bar V_m$'
+base = '$R\,T_{std}/P_{std}$'
+unidade = 'm³/kmol'
+
+[rho_oleo_api]
+verificacao = '$\rho_{O,std}$ a partir do grau API'
+base = 'eq.~(5.8)'
+unidade = 'kg/m³'
+
+[vazao_massica_C01]
+verificacao = '$\dot m$ de óleo, água e gás em C-01'
+base = 'eq.~(5.6) e (5.10)'
+unidade = 'kg/s'
+
+[vazao_molar_gas]
+verificacao = '$\dot n_G$ do gás de entrada'
+base = 'eq.~(5.6)'
+unidade = 'kmol/h'
+
+[gas_por_estagio]
+verificacao = 'gás liberado por estágio (C-04, C-09, C-17)'
+base = 'Standing na forma logarítmica'
+unidade = 'Sm³/d'
+
+[massa_global]
+verificacao = 'balanço de massa global'
+base = 'soma direta das correntes'
+unidade = 'kg/s'
+
+[energia_global]
+verificacao = 'balanço de energia global'
+base = 'eq.~(9.3)'
+unidade = 'kW'
+
+[cargas_termicas]
+verificacao = 'cargas térmicas $\dot Q_{\mbox{P-001}}$, $\dot Q_{\mbox{P-002}}$, $\dot Q_{\mbox{DWH-001}}$, $\dot Q_{\mbox{P-003}}$'
+base = '$\dot C\,\Delta T$ por corrente'
+unidade = 'kW'
+
+[potencias_bombas]
+verificacao = 'potências das bombas'
+base = '$\dot V\Delta P/\eta$'
+unidade = 'kW'
+
+[residuo_componente]
+verificacao = 'resíduo por pseudo-componente'
+base = 'soma por componente'
+unidade = 'kg/s'
+
+[molar_CO2_H2S]
+verificacao = 'balanço molar de CO$_2$ e H$_2$S'
+base = '$y_i\dot m_G/\bar M_G$'
+unidade = 'kmol/h'
+
+[bsw_saida]
+verificacao = 'BSW de saída versus premissas P-24, P-28, P-29'
+base = 'definição de BSW, eq.~(5.9)'
+unidade = '--'
+
+[salinidade_oleo]
+verificacao = 'salinidade do óleo tratado versus limite de 285 mg/L'
+base = 'balanço de sal, eq.~(10.7)'
+unidade = 'mg/L'

@@ -50,6 +50,7 @@ class ResultadoCaso:
     gas: dict
     iters: int
     residuo_reciclo: float
+    VM: float  # volume molar padrão usado (m³/kmol), exposto para a auditoria
     mu: tuple
     T_ref: float
     trace: CalcTrace
@@ -277,7 +278,7 @@ def resolver_caso(caso, dados, prem=None):
     t.reg("viscosidade_oleo", "SG-001", mu[0], T=T03, marcador=mu[1])
     return ResultadoCaso(caso=caso, fluid=fl, well=well, api=api, rho=rho, cp=cp, gp=gp, Wv=Wv,
                          BSW01=BSW01, BSW_F=BSW_F, streams=streams, T=temps, P=press, duties=duties,
-                         gas=gas, iters=it, residuo_reciclo=diff, mu=mu, T_ref=T_ref, trace=t)
+                         gas=gas, iters=it, residuo_reciclo=diff, VM=VM, mu=mu, T_ref=T_ref, trace=t)
 
 
 def resolver_todos(dados, prem=None):

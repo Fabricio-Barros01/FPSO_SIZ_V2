@@ -1,7 +1,13 @@
 # Premissas do balanço preliminar (dicionário PREM de Balanço_Preliminar.py).
 # id → Tabela de premissas do memorial (F-xx = dado de fonte, P-xx = premissa).
-# P_FWKO NÃO está aqui: vem do arquivo de casos (fwko_pressure_kPa, F-02).
-# A ordem das tabelas reproduz a ordem do PREM original.
+# A ordem das tabelas reproduz a ordem do PREM original. Uma premissa com `chave_casos`
+# não tem valor aqui: é lida do arquivo de casos.
+
+[P_FWKO]
+chave_casos = "fwko_pressure_kPa"
+unidade = "kPa"
+id = "F-02"
+descricao = "Pressão do FWKO (BOT 2.7.1.2), do arquivo de casos"
 
 [dP_HX]
 valor = 100.0

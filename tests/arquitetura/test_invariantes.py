@@ -3,7 +3,8 @@
 1. Núcleo sem UI e sem rede; nada formata/imprime fora de output/ e cli.py; caminhos
    resolvidos em runtime.
 2. Constantes e premissas em TOML; nenhum literal numérico nas equações além de
-   {0, 1, 2, 10} (fatores exatos só em core/unidades.py).
+   {0, 1, 2, 10} (fatores exatos só em core/unidades.py; a camada de saída, que só
+   apresenta, está fora desta regra).
 (3, a bijeção equação↔rastro, está em tests/balanco/test_trace.py; 4 entra com a CLI.)
 """
 import ast
@@ -17,7 +18,7 @@ from fpso_siz.core.configuracao import carregar
 PACOTE = Path(__file__).resolve().parents[2] / "src" / "fpso_siz"
 MODULOS = sorted(PACOTE.rglob("*.py"))
 ROTULO = lambda p: p.relative_to(PACOTE).as_posix()
-SAIDA = lambda p: ROTULO(p).startswith("output/") or ROTULO(p) == "cli.py"
+SAIDA = lambda p: ROTULO(p).startswith("output/") or ROTULO(p) in ("cli.py", "__main__.py")
 
 REDE = {"socket", "urllib", "http", "requests", "httpx", "aiohttp", "ftplib", "smtplib", "websocket"}
 UI = {"tkinter", "PyQt5", "PyQt6", "PySide2", "PySide6", "flask", "fastapi", "streamlit", "dash"}
@@ -80,7 +81,7 @@ def test_toml_sem_url():
         assert not re.search(r"https?://", p.read_text(encoding="utf-8")), p.name
 
 
-@pytest.mark.parametrize("p", [p for p in MODULOS if ROTULO(p) not in EXATOS], ids=ROTULO)
+@pytest.mark.parametrize("p", [p for p in MODULOS if ROTULO(p) not in EXATOS and not SAIDA(p)], ids=ROTULO)
 def test_sem_literal_numerico_nas_equacoes(p):
     for n in ast.walk(arvore(p)):
         if isinstance(n, ast.Constant) and type(n.value) in (int, float):
@@ -96,4 +97,17 @@ def test_premissas_tem_id_unidade_e_descricao():
     for nome, e in carregar("premissas.toml").items():
         assert re.fullmatch(r"[FP]-\d\d", e["id"]), nome
         assert e["unidade"] and e["descricao"], nome
-        assert "valor" in e or nome == "carry", nome
+        assert "valor" in e or "chave_casos" in e or nome == "carry", nome
+
+
+def test_cli_nao_nomeia_parametros_nem_grandezas():
+    """Invariante 4: a CLI só itera descritores; nenhum nome de premissa, equação,
+    coluna, verificação ou campo de resultado aparece como texto em cli.py."""
+    from fpso_siz.balanco.modelo import ResultadoCaso
+
+    proibidos = (set(carregar("premissas.toml")) | set(carregar("equacoes_balanco.toml"))
+                 | set(carregar("auditoria.toml")) | {c["id"] for c in carregar("saida_correntes.toml")["colunas"]}
+                 | set(ResultadoCaso.__dataclass_fields__)) - {"caso", "nome"}
+    textos = {n.value for n in ast.walk(arvore(PACOTE / "cli.py"))
+              if isinstance(n, ast.Constant) and isinstance(n.value, str)}
+    assert not (textos & proibidos), textos & proibidos

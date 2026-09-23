@@ -30,10 +30,6 @@ class DadosCasos:
         return self.bruto["standard_conditions"]["P_kPa"]
 
     @property
-    def P_FWKO_kPa(self):
-        return self.bruto["fwko_pressure_kPa"]
-
-    @property
     def casos(self):
         return self.bruto["cases"]
 
@@ -126,15 +122,28 @@ def pocos():
     })
 
 
+def _valor_premissa(e, dados):
+    if "valor" in e:
+        return e["valor"]
+    if "chave_casos" in e:
+        return None if dados is None else dados.bruto[e["chave_casos"]]
+    # carry: composto por conversões, na ordem do original
+    return e["gal_por_MMscf"] * e["m3_por_gal"] / e["m3_por_MMscf"]
+
+
+def descritores_premissas(dados=None):
+    """Descritores das premissas (nome, id, unidade, descrição, valor, origem): o que a CLI
+    itera. Sem `dados`, as premissas lidas do arquivo de casos ficam com valor None."""
+    return [dict(nome=nome, id=e["id"], unidade=e["unidade"], descricao=e["descricao"],
+                 valor=_valor_premissa(e, dados),
+                 origem="arquivo de casos" if "chave_casos" in e else "premissas.toml")
+            for nome, e in carregar("premissas.toml").items()]
+
+
 def premissas(dados, **alteracoes):
-    """Dicionário de premissas (equivalente ao PREM original), com P_FWKO do arquivo de
-    casos. `alteracoes` sobrescreve valores (sensibilidade); chave desconhecida é erro."""
-    p = {"P_FWKO": dados.P_FWKO_kPa}
-    for nome, e in carregar("premissas.toml").items():
-        if "valor" in e:
-            p[nome] = e["valor"]
-        else:  # carry: composto por conversões, na ordem do original
-            p[nome] = e["gal_por_MMscf"] * e["m3_por_gal"] / e["m3_por_MMscf"]
+    """Dicionário de premissas (equivalente ao PREM original). `alteracoes` sobrescreve
+    valores (sensibilidade); chave desconhecida é erro."""
+    p = {nome: _valor_premissa(e, dados) for nome, e in carregar("premissas.toml").items()}
     desconhecidas = set(alteracoes) - set(p)
     if desconhecidas:
         raise KeyError(f"premissas desconhecidas: {sorted(desconhecidas)}")

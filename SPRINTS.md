@@ -14,11 +14,12 @@ aquela fase).
 
 ## Estado atual
 
-**FASE ATUAL: F3 — Auditoria independente, saídas estruturadas e CLI ← ATUAL (aguardando aprovação)**
+**FASE ATUAL: F4 — Memorial LaTeX do balanço ← ATUAL (aguardando aprovação)**
 
-F0, F1 e F2 entregues. O motor do balanço (`fpso_siz.balanco`) reproduz o script original
-**bit a bit** nos 16 casos e nas 24 sensibilidades (ver `docs/validacao/01-motor-balanco.md`).
-São 113 testes e cobertura de 100 %.
+F0–F3 entregues. O motor do balanço reproduz o script original **bit a bit**, e a auditoria
+independente é idêntica à original. `fpso-siz balanco` grava `balanco.json` (com esquema) e
+`correntes.csv`. São 152 testes e cobertura de 100 %. Uso:
+`uv run fpso-siz balanco --casos tests/fixtures/python_ref/design_cases_bot.json --saida saida/`.
 
 ---
 
@@ -147,12 +148,21 @@ em `config/` na raiz, por causa da distribuição.
 os envelopes e críticos têm os valores em `oraculo["criticos"]`, e seus textos
 formatados vão para a F4.
 
-### F3 — Auditoria independente, saídas estruturadas e CLI ← ATUAL
+### F3 — Auditoria independente, saídas estruturadas e CLI ✅
 `balanco/auditoria.py` não importa `modelo`. Esquema JSON/CSV documentado. CLI
 `fpso-siz balanco --casos <json> --saida <dir>`.
 **Aceite:** auditoria idêntica à F1; esquemas validados; invariante 4 testada; cobertura ≥ 90 %.
+Entregue: auditoria idêntica (16 verificações), independente do motor por teste de AST e
+sensível a erro injetado. JSON validado por `docs/esquemas/balanco.schema.json`; CSV com
+colunas declaradas em TOML e documentadas; ida e volta exata. CLI com os subcomandos
+`balanco` e `premissas`, `--premissa NOME=VALOR` e códigos de saída 0/1/2; invariante 4
+testada. 152 testes, cobertura de 100 %. Detalhes em `docs/validacao/02-auditoria-saidas-cli.md`.
+**Notas para a F4:** os envelopes e os críticos do memorial (seção 16) ainda não têm função
+no núcleo; eles entram na F4, com os valores numéricos de `oraculo["criticos"]` e o texto
+de `main_ref.tex` como referência. O memorial deve ler o catálogo `auditoria.toml`, o
+`equacoes_balanco.toml` e os descritores de premissas.
 
-### F4 — Memorial LaTeX do balanço
+### F4 — Memorial LaTeX do balanço ← ATUAL
 Seções 1–18 e apêndices em templates jinja2 com o template SENAI; os dados vêm só de
 ResultField/CalcTrace.
 **Aceite:** `diff` do `main.tex` contra o original vazio ou com lista branca documentada;
