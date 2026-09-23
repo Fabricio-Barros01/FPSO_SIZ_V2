@@ -1,0 +1,12 @@
+# Dados de óleo por poço — BOT I-ET-3010.2K-1200-941-P4X-001 rev. C, Tab. 2.2.1.2
+# (fora do JSON de casos; F-03 e F-04 do memorial). A associação fluido→poço é feita
+# pelo pseudocomponente C20+ / C20++ do arquivo de casos (P-07).
+
+["Well A"]
+api = 27.5
+# viscosidade do óleo morto: pares [T °C, mu cP]; interpolação log-linear (P-40)
+viscosidade = [[30, 32.2], [40, 21.0], [50, 14.5], [60, 10.5], [70, 7.9]]
+
+["Well B"]
+api = 28.2
+viscosidade = [[30, 22.4], [40, 15.2], [50, 10.9], [60, 8.1], [70, 6.3]]

@@ -9,6 +9,9 @@ backlog: [`SPRINTS.md`](SPRINTS.md), que deve ser lido primeiro.
   `git archive <commit>` extraído em pasta temporária.
 - **`references/` é o acervo local fora do git.** O script `references/Balanço_Preliminar.py`
   nunca é editado: ele é o oráculo do balanço.
+- **Refatoração não muda número.** O balanço tem paridade bit a bit com o oráculo
+  (`tests/fixtures/python_ref`). Mudar um resultado exige justificativa escrita em
+  `docs/validacao/` e a revisão do oráculo.
 - Toda fase fecha com os testes verdes, cobertura ≥ 90 % no núcleo e o SPRINTS.md
   atualizado.
 
@@ -16,8 +19,9 @@ backlog: [`SPRINTS.md`](SPRINTS.md), que deve ser lido primeiro.
 1. **Núcleo sem UI e sem rede.** `fpso_siz` fora de `output/` e `cli.py` não formata
    nem imprime; nenhum módulo importa bibliotecas de rede nem contém URL remota; caminhos
    são resolvidos em runtime, nunca absolutos no código.
-2. **Constantes e premissas em TOML** (`config/`), com a fonte citada. Nenhum número físico
-   literal nas equações além de fatores de conversão exatos.
+2. **Constantes e premissas em TOML** (`src/fpso_siz/config/`, dentro do pacote), com a
+   fonte citada. Nenhum literal numérico no código fora de {0, 1, 2, 10}; os fatores de
+   conversão exatos ficam só em `core/unidades.py`.
 3. **Uma física, três saídas.** Toda equação avaliada emite `CalcTrace`, e o memorial, o
    JSON e o CSV saem desse mesmo rastro, com bijeção equação↔rastro.
 4. **A CLI não nomeia parâmetros.** Ela itera os `ParameterSpec` declarados por cada método.

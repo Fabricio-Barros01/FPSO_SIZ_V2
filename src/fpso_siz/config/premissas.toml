@@ -1,0 +1,169 @@
+# Premissas do balanço preliminar (dicionário PREM de Balanço_Preliminar.py).
+# id → Tabela de premissas do memorial (F-xx = dado de fonte, P-xx = premissa).
+# P_FWKO NÃO está aqui: vem do arquivo de casos (fwko_pressure_kPa, F-02).
+# A ordem das tabelas reproduz a ordem do PREM original.
+
+[dP_HX]
+valor = 100.0
+unidade = "kPa"
+id = "P-17"
+descricao = "ΔP por lado de trocador"
+
+[P_D1]
+valor = 700.0
+unidade = "kPa"
+id = "P-18"
+descricao = "Pressão do desgaseificador 1 e do desidratador"
+
+[P_D2]
+valor = 200.0
+unidade = "kPa"
+id = "P-19"
+descricao = "Pressão do desgaseificador 2 e do dessalinizador"
+
+[P_pump_oil]
+valor = 800.0
+unidade = "kPa"
+id = "P-20"
+descricao = "Descarga da bomba de transferência de óleo"
+
+[P_rec]
+valor = 2600.0
+unidade = "kPa"
+id = "P-21"
+descricao = "Descarga das bombas de água de reciclo (P_FWKO + 100 kPa)"
+
+[dP_cooler]
+valor = 100.0
+unidade = "kPa"
+id = "P-17"
+descricao = "ΔP do resfriador de óleo"
+
+[T_trat]
+valor = 90.0
+unidade = "°C"
+id = "F-05"
+descricao = "T mínima na entrada dos tratadores (BOT 2.7.1.4); P-33"
+
+[T_store]
+valor = 40.0
+unidade = "°C"
+id = "F-08"
+descricao = "T de armazenamento (BOT 2.7.1.10)"
+
+[T_dil_in]
+valor = 25.0
+unidade = "°C"
+id = "P-31"
+descricao = "T da água de diluição na entrada do aquecedor"
+
+[T_dil_out]
+valor = 90.0
+unidade = "°C"
+id = "P-31"
+descricao = "T da água de diluição na saída do aquecedor"
+
+[dT_app]
+valor = 10.0
+unidade = "°C"
+id = "P-32"
+descricao = "Aproximação mínima no pré-aquecedor (contracorrente)"
+
+[BSW_F]
+valor = 0.40
+unidade = "m³/m³"
+id = "F-06"
+descricao = "Água no óleo de saída do FWKO, máx. (BOT 2.7.1.2); P-24"
+
+[BSW_pre]
+valor = 0.01
+unidade = "m³/m³"
+id = "P-28"
+descricao = "BSW na saída do desidratador"
+
+[BSW_t]
+valor = 0.005
+unidade = "m³/m³"
+id = "P-29"
+descricao = "BSW na saída do dessalinizador (F-09, BOT 2.3.1.1)"
+
+[C_OiW]
+valor = 2.0
+unidade = "kg/m³"
+id = "P-25"
+descricao = "Óleo disperso na água, 2.000 mg/L (limite superior de F-12, Stewart & Arnold §4.7)"
+
+[carry]
+# carry = gal_por_MMscf · m3_por_gal / m3_por_MMscf, nesta ordem (paridade)
+unidade = "m³ líquido / Sm³ gás"
+id = "P-26"
+descricao = "Arraste de líquido no gás, 0,1 gal/MMscf (eliminador de névoa)"
+gal_por_MMscf = 0.1
+m3_por_gal = 3.785411784e-3
+m3_por_MMscf = 28316.8466
+
+[S_W]
+valor = 240000.0
+unidade = "mg/L"
+id = "F-10"
+descricao = "Salinidade da água produzida (BOT 2.2.5.1); P-30"
+
+[S_D]
+valor = 0.0
+unidade = "mg/L"
+id = "P-30"
+descricao = "Salinidade da água de diluição"
+
+[S_spec]
+valor = 285.0
+unidade = "mg/L"
+id = "F-09"
+descricao = "Salinidade máxima do óleo tratado (BOT 2.3.1.1)"
+
+[eta_mix]
+valor = 1.0
+unidade = "-"
+id = "P-30"
+descricao = "Eficiência de mistura da água de diluição"
+
+[rho_W]
+valor = 1154.0
+unidade = "kg/m³"
+id = "P-08"
+descricao = "Massa específica da água produzida (salmoura NaCl ≈ 20,8 % m/m)"
+
+[rho_D]
+valor = 999.0
+unidade = "kg/m³"
+id = "P-09"
+descricao = "Massa específica da água de diluição"
+
+[cp_O]
+valor = 2.0
+unidade = "kJ/(kg K)"
+id = "P-10"
+descricao = "cp do óleo"
+
+[cp_W]
+valor = 3.35
+unidade = "kJ/(kg K)"
+id = "P-11"
+descricao = "cp da água produzida"
+
+[cp_D]
+valor = 4.18
+unidade = "kJ/(kg K)"
+id = "P-12"
+descricao = "cp da água de diluição"
+
+[eta_pump]
+valor = 0.70
+unidade = "-"
+id = "P-22"
+descricao = "Eficiência global das bombas"
+
+[T_FWKO_min]
+valor = 40.0
+unidade = "°C"
+id = "F-07"
+descricao = "T de entrada do FWKO mantida por reciclo (BOT 2.7.1.6); só verificação"

@@ -14,11 +14,11 @@ aquela fase).
 
 ## Estado atual
 
-**FASE ATUAL: F2 — Motor do balanço modularizado ← ATUAL (aguardando aprovação)**
+**FASE ATUAL: F3 — Auditoria independente, saídas estruturadas e CLI ← ATUAL (aguardando aprovação)**
 
-F0 e F1 entregues. O oráculo do balanço existe, é determinístico e coincide exatamente com
-o snapshot Julia (ver `docs/validacao/00-oraculo-balanco.md`). Nenhuma física nova foi
-implementada ainda.
+F0, F1 e F2 entregues. O motor do balanço (`fpso_siz.balanco`) reproduz o script original
+**bit a bit** nos 16 casos e nas 24 sensibilidades (ver `docs/validacao/01-motor-balanco.md`).
+São 113 testes e cobertura de 100 %.
 
 ---
 
@@ -97,7 +97,8 @@ src/fpso_siz/
   output/     latex/ (jinja2), csv, json   ← único lugar que formata
   _num.py     única porta para numpy/scipy
   cli.py      argparse; itera descritores, nunca nomeia parâmetro
-config/       premissas.toml, constantes.toml, topologia_db.toml, casos/ ...
+  config/     TOML do modelo DENTRO do pacote (constantes, premissas, pocos, topologia_db,
+              equacoes_balanco), lidos via importlib.resources
 tests/        arquitetura/, balanco/, golden/, fixtures/{python_ref/, julia/}
 tools/        gerar_oraculo_balanco.py, exportar_fixtures_julia.jl
 ```
@@ -129,15 +130,24 @@ todos os demais campos). Os 16 casos convergem em 4 a 35 iterações. Commit: ve
 **Notas para a F2:** o resíduo de componente no M-01 (≈1e-10 kg/s) é o resíduo do reciclo e
 deve ser reproduzido. O original escreve `main.tex` sem `encoding`; o novo usa utf-8.
 
-### F2 — Motor do balanço modularizado ← ATUAL
+### F2 — Motor do balanço modularizado ✅
 `balanco/propriedades.py`, `modelo.py`, `balancos.py`; topologia (BLOCKS/STREAMS/GLOBAL_*)
 e constantes/premissas (PREM, MW, CP0, API_WELL, MU_WELL) em TOML com a fonte citada;
 CalcTrace por equação.
 **Aceite:** paridade com a F1 nos 16 casos × 26 correntes × componentes, com erro relativo
 ≤ 1e-12 e cada desvio justificado; fechamento de massa/energia por bloco e global;
 cobertura ≥ 90 %; invariantes 1–2 testadas.
+Entregue: paridade **exata** (tolerância travada em 0) em todos os campos, incluindo
+sensibilidades, balanços, iterações e μ. Fechamentos relativos < 5e-14. Resíduo do reciclo
+agora exposto (`residuo_reciclo`, `convergiu`). CalcTrace com 27 equações e 52 pares por
+caso, com bijeção testada. Invariantes 1–2 testadas por AST. 113 testes, cobertura de 100 %.
+O wheel inclui os TOML. **Desvio:** os TOML do modelo ficam em `src/fpso_siz/config/`, não
+em `config/` na raiz, por causa da distribuição.
+**Notas para a F3:** a auditoria deve reproduzir `oraculo["auditoria"]` (16 verificações);
+os envelopes e críticos têm os valores em `oraculo["criticos"]`, e seus textos
+formatados vão para a F4.
 
-### F3 — Auditoria independente, saídas estruturadas e CLI
+### F3 — Auditoria independente, saídas estruturadas e CLI ← ATUAL
 `balanco/auditoria.py` não importa `modelo`. Esquema JSON/CSV documentado. CLI
 `fpso-siz balanco --casos <json> --saida <dir>`.
 **Aceite:** auditoria idêntica à F1; esquemas validados; invariante 4 testada; cobertura ≥ 90 %.

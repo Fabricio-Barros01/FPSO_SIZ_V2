@@ -1,0 +1,280 @@
+# Topologia do diagrama de blocos DE-SEN-SEP-COO-001-0 (16 blocos, 26 correntes).
+# Transcrita de Balanço_Preliminar.py (BLOCKS, STREAMS, GLOBAL_IN/OUT) via oráculo F1.
+# Q_in/Q_out/W nomeiam as chaves de carga térmica e potência do resultado do balanço.
+
+global_in = ["C-01", "C-14"]
+global_out = ["C-04", "C-05", "C-09", "C-17", "C-25", "C-26"]
+
+[[blocos]]
+id = "M-01"
+nome = "Ponto de mistura de entrada (M-01)"
+entradas = ["C-01", "C-02"]
+saidas = ["C-03"]
+Q_in = []
+Q_out = []
+W = []
+
+[[blocos]]
+id = "SG-001"
+nome = "Separador trifásico de água livre (FWKO)"
+entradas = ["C-03"]
+saidas = ["C-04", "C-05", "C-06"]
+Q_in = []
+Q_out = []
+W = []
+
+[[blocos]]
+id = "P-001"
+nome = "Pré-aquecedor óleo/óleo"
+entradas = ["C-06", "C-22"]
+saidas = ["C-07", "C-23"]
+Q_in = []
+Q_out = []
+W = []
+
+[[blocos]]
+id = "P-002"
+nome = "Aquecedor de óleo"
+entradas = ["C-07"]
+saidas = ["C-08"]
+Q_in = ["Q_H"]
+Q_out = []
+W = []
+
+[[blocos]]
+id = "V-001"
+nome = "Vaso desgaseificador 1 (gás ao 2º estágio da VRU)"
+entradas = ["C-08"]
+saidas = ["C-09", "C-10"]
+Q_in = []
+Q_out = []
+W = []
+
+[[blocos]]
+id = "TO-001"
+nome = "Desidratador (pré-tratador eletrostático)"
+entradas = ["C-10"]
+saidas = ["C-11", "C-12"]
+Q_in = []
+Q_out = []
+W = []
+
+[[blocos]]
+id = "B-002"
+nome = "Bomba de água produzida do desidratador"
+entradas = ["C-12"]
+saidas = ["C-13"]
+Q_in = []
+Q_out = []
+W = ["W_B1"]
+
+[[blocos]]
+id = "DWH-001"
+nome = "Aquecedor de água de diluição"
+entradas = ["C-14"]
+saidas = ["C-15"]
+Q_in = ["Q_D"]
+Q_out = []
+W = []
+
+[[blocos]]
+id = "M-02"
+nome = "Ponto de injeção de água de diluição (M-02)"
+entradas = ["C-11", "C-15"]
+saidas = ["C-16"]
+Q_in = []
+Q_out = []
+W = []
+
+[[blocos]]
+id = "V-002"
+nome = "Vaso desgaseificador 2 (gás ao 1º estágio da VRU)"
+entradas = ["C-16"]
+saidas = ["C-17", "C-18"]
+Q_in = []
+Q_out = []
+W = []
+
+[[blocos]]
+id = "TO-002"
+nome = "Dessalinizador (tratador eletrostático)"
+entradas = ["C-18"]
+saidas = ["C-19", "C-21"]
+Q_in = []
+Q_out = []
+W = []
+
+[[blocos]]
+id = "B-003"
+nome = "Bomba de água produzida do dessalinizador"
+entradas = ["C-19"]
+saidas = ["C-20"]
+Q_in = []
+Q_out = []
+W = ["W_B2"]
+
+[[blocos]]
+id = "M-03"
+nome = "Nó de reciclo de água produzida (M-03)"
+entradas = ["C-13", "C-20"]
+saidas = ["C-02"]
+Q_in = []
+Q_out = []
+W = []
+
+[[blocos]]
+id = "B-001"
+nome = "Bomba de transferência de óleo"
+entradas = ["C-21"]
+saidas = ["C-22"]
+Q_in = []
+Q_out = []
+W = ["W_Bo"]
+
+[[blocos]]
+id = "P-003"
+nome = "Resfriador de óleo"
+entradas = ["C-23"]
+saidas = ["C-24"]
+Q_in = []
+Q_out = ["Q_C"]
+W = []
+
+[[blocos]]
+id = "MED-001"
+nome = "Medidor de BSW e desvio off-spec (Nota 1 do DB)"
+entradas = ["C-24"]
+saidas = ["C-25", "C-26"]
+Q_in = []
+Q_out = []
+W = []
+
+[[correntes]]
+id = "C-01"
+nome = "Fluido de poço (jusante do choke) — alimentação da unidade"
+fase = "Multifásica G/O/A"
+
+[[correntes]]
+id = "C-02"
+nome = "Reciclo de água produzida (após válvula de reciclo)"
+fase = "Aquosa"
+
+[[correntes]]
+id = "C-03"
+nome = "Alimentação do FWKO (C-01 + C-02)"
+fase = "Multifásica G/O/A"
+
+[[correntes]]
+id = "C-04"
+nome = "Gás do FWKO para o Safety K.O. Drum"
+fase = "Gás (névoa residual)"
+
+[[correntes]]
+id = "C-05"
+nome = "Água produzida do FWKO (saída da unidade)"
+fase = "Aquosa (óleo disperso)"
+
+[[correntes]]
+id = "C-06"
+nome = "Óleo/emulsão do FWKO ao pré-aquecedor (lado frio)"
+fase = "Emulsão + gás dissolvido"
+
+[[correntes]]
+id = "C-07"
+nome = "Saída lado frio do pré-aquecedor"
+fase = "Emulsão + gás dissolvido"
+
+[[correntes]]
+id = "C-08"
+nome = "Saída do aquecedor de óleo ao desgaseificador 1"
+fase = "Emulsão + gás dissolvido"
+
+[[correntes]]
+id = "C-09"
+nome = "Gás do desgaseificador 1 ao 2º estágio da VRU"
+fase = "Gás"
+
+[[correntes]]
+id = "C-10"
+nome = "Líquido do desgaseificador 1 ao desidratador"
+fase = "Emulsão + gás dissolvido"
+
+[[correntes]]
+id = "C-11"
+nome = "Óleo do desidratador"
+fase = "Óleo úmido + gás dissolvido"
+
+[[correntes]]
+id = "C-12"
+nome = "Água do desidratador à bomba"
+fase = "Aquosa"
+
+[[correntes]]
+id = "C-13"
+nome = "Descarga da bomba de água do desidratador"
+fase = "Aquosa"
+
+[[correntes]]
+id = "C-14"
+nome = "Água de diluição (osmose inversa) ao aquecedor"
+fase = "Água doce"
+
+[[correntes]]
+id = "C-15"
+nome = "Água de diluição aquecida ao ponto de injeção"
+fase = "Água doce"
+
+[[correntes]]
+id = "C-16"
+nome = "Óleo + água de diluição ao desgaseificador 2"
+fase = "Óleo úmido + gás dissolvido"
+
+[[correntes]]
+id = "C-17"
+nome = "Gás do desgaseificador 2 ao 1º estágio da VRU"
+fase = "Gás"
+
+[[correntes]]
+id = "C-18"
+nome = "Líquido do desgaseificador 2 ao dessalinizador"
+fase = "Óleo úmido"
+
+[[correntes]]
+id = "C-19"
+nome = "Água do dessalinizador à bomba"
+fase = "Aquosa"
+
+[[correntes]]
+id = "C-20"
+nome = "Descarga da bomba de água do dessalinizador"
+fase = "Aquosa"
+
+[[correntes]]
+id = "C-21"
+nome = "Óleo tratado à bomba de transferência"
+fase = "Óleo tratado"
+
+[[correntes]]
+id = "C-22"
+nome = "Óleo tratado ao pré-aquecedor (lado quente)"
+fase = "Óleo tratado"
+
+[[correntes]]
+id = "C-23"
+nome = "Saída lado quente do pré-aquecedor ao resfriador"
+fase = "Óleo tratado"
+
+[[correntes]]
+id = "C-24"
+nome = "Óleo resfriado ao medidor de BSW"
+fase = "Óleo tratado"
+
+[[correntes]]
+id = "C-25"
+nome = "Óleo à estação de medição (saída da unidade)"
+fase = "Óleo tratado"
+
+[[correntes]]
+id = "C-26"
+nome = "Óleo off-spec ao tanque off-spec (saída eventual)"
+fase = "Óleo fora de especificação"

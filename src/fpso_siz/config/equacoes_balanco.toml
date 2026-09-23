@@ -1,0 +1,160 @@
+# Catálogo das equações do balanço preliminar. Invariante 3: cada equação avaliada pelo
+# motor emite um passo de CalcTrace (equação, escopo), e o conjunto de pares emitidos é
+# EXATAMENTE o declarado aqui (teste de bijeção). O memorial (F4) lê este catálogo.
+# `forma` é texto de leitura; a notação LaTeX entra na F4.
+
+[rho_oleo_api]
+descricao = "Massa específica do óleo na condição padrão a partir do grau API"
+forma = "rho_O = a/(b + API) · rho_agua(15,6 °C)"
+unidade = "kg/m³"
+escopos = ["caso"]
+
+[gas_massa_molar]
+descricao = "Massa molar do gás (corte N2–nC4 renormalizado)"
+forma = "MW = Σ y_i MW_i, y_i = x_i / Σ x_leves"
+unidade = "kg/kmol"
+escopos = ["caso"]
+
+[gas_cp]
+descricao = "cp mássico do gás ideal"
+forma = "cp = Σ y_i cp0_i / MW"
+unidade = "kJ/(kg K)"
+escopos = ["caso"]
+
+[gas_densidade_relativa]
+descricao = "Densidade relativa do gás"
+forma = "gamma = MW / MW_ar"
+unidade = "-"
+escopos = ["caso"]
+
+[gas_massa_especifica_std]
+descricao = "Massa específica do gás na condição padrão (Z = 1)"
+forma = "rho_G = MW / V_m, V_m = R T_std / P_std"
+unidade = "kg/Sm³"
+escopos = ["caso"]
+
+[vazao_massica_entrada]
+descricao = "Vazões mássicas de óleo, água e gás no fluido de poço"
+forma = "ṁ_k = Q_k rho_k / 86400"
+unidade = "kg/s"
+escopos = ["C-01"]
+
+[bsw_chegada]
+descricao = "BSW do fluido de chegada"
+forma = "BSW = Q_A / (Q_A + Q_O)"
+unidade = "m³/m³"
+escopos = ["caso"]
+
+[bsw_fwko]
+descricao = "BSW imposto na saída de óleo do FWKO"
+forma = "BSW_F = min(BSW_F,max, BSW_chegada)"
+unidade = "m³/m³"
+escopos = ["caso"]
+
+[mistura]
+descricao = "Balanço por componente num ponto de mistura"
+forma = "ṁ_k,saída = Σ ṁ_k,entradas"
+unidade = "kg/s"
+escopos = ["C-03", "C-16", "C-02"]
+
+[temperatura_mistura]
+descricao = "Temperatura de mistura adiabática"
+forma = "T = Σ Ċ_j T_j / Σ Ċ_j, Ċ = Σ ṁ_k cp_k"
+unidade = "°C"
+escopos = ["C-03", "C-16", "C-02"]
+
+[rs_liberado]
+descricao = "Gás liberado por unidade de óleo entre o estágio e a condição de tanque (Standing)"
+forma = "ΔRs = max(0, Rs(P, T) − Rs(P_std, T_ref))"
+unidade = "Sm³/Sm³"
+escopos = ["SG-001", "V-001"]
+
+[gas_por_estagio]
+descricao = "Vazão de gás liberada em cada estágio"
+forma = "Q_G,D2 = ΔRs(P_D1,T_D1)·Q_O; Q_G,D1 = ΔRs(P_F,T_F)·Q_O − Q_G,D2; Q_G,F = Q_G,in − Q_G,D1 − Q_G,D2"
+unidade = "Sm³/d"
+escopos = ["C-04", "C-09", "C-17"]
+
+[arraste_liquido]
+descricao = "Óleo arrastado na corrente de gás"
+forma = "ṁ_O = carry · Q_G · rho_O / 86400"
+unidade = "kg/s"
+escopos = ["C-04", "C-09", "C-17"]
+
+[separacao_oleo_agua]
+descricao = "Divisão da fase aquosa com BSW imposto sobre o óleo que sai"
+forma = "w_óleo = BSW/(1−BSW) · Q_O,saída; w_rem = w_in − w_óleo; Q_O,água = C_OiW · w_rem / rho_O"
+unidade = "m³/d"
+escopos = ["SG-001", "TO-001", "TO-002"]
+
+[corrente_separada]
+descricao = "Composição de corrente de saída montada pelas vazões de separação"
+forma = "ṁ_k = Q_k rho_k / 86400 por componente"
+unidade = "kg/s"
+escopos = ["C-04", "C-05", "C-06", "C-09", "C-12", "C-14", "C-17", "C-19"]
+
+[corrente_diferenca]
+descricao = "Corrente obtida por fechamento de massa por componente"
+forma = "ṁ_k,saída = ṁ_k,entrada − Σ ṁ_k,outras saídas"
+unidade = "kg/s"
+escopos = ["C-10", "C-11", "C-18", "C-21"]
+
+[agua_diluicao]
+descricao = "Água de diluição por balanço de sal"
+forma = "Q_D = Q_A,C11 · (S_W / S_res − 1) / eta_mix, S_res = S_spec / BSW_t"
+unidade = "m³/d"
+escopos = ["C-14"]
+
+[potencia_bomba]
+descricao = "Potência de eixo da bomba"
+forma = "W = V̇ ΔP / eta"
+unidade = "kW"
+escopos = ["B-001", "B-002", "B-003"]
+
+[temperatura_bomba]
+descricao = "Aquecimento do líquido pelo trabalho da bomba"
+forma = "T_saída = T_entrada + W / Ċ"
+unidade = "°C"
+escopos = ["C-13", "C-20", "C-22"]
+
+[carga_preaquecedor]
+descricao = "Carga do pré-aquecedor óleo/óleo com aproximação mínima"
+forma = "Q = min(Ċ_f, Ċ_q) · max(0, T_q,in − T_f,in − ΔT_app)"
+unidade = "kW"
+escopos = ["P-001"]
+
+[temperatura_preaquecedor]
+descricao = "Temperaturas de saída do pré-aquecedor"
+forma = "T_f,out = T_f,in + Q/Ċ_f; T_q,out = T_q,in − Q/Ċ_q"
+unidade = "°C"
+escopos = ["C-07", "C-23"]
+
+[carga_aquecedor]
+descricao = "Carga do aquecedor de óleo até a temperatura de tratamento"
+forma = "T_08 = max(T_trat, T_07); Q_H = Ċ (T_08 − T_07)"
+unidade = "kW"
+escopos = ["P-002"]
+
+[carga_diluicao]
+descricao = "Carga do aquecedor de água de diluição"
+forma = "Q_D = Ċ_C14 (T_dil,out − T_dil,in)"
+unidade = "kW"
+escopos = ["DWH-001"]
+
+[carga_resfriador]
+descricao = "Carga do resfriador de óleo até a temperatura de armazenamento"
+forma = "T_24 = min(T_23, T_store); Q_C = Ċ (T_23 − T_24)"
+unidade = "kW"
+escopos = ["P-003"]
+
+[viscosidade_oleo]
+descricao = "Viscosidade do óleo morto na entrada do FWKO"
+forma = "ln mu interpolado linearmente em T; fora de 30–70 °C, valor do extremo"
+unidade = "cP"
+escopos = ["SG-001"]
+
+[convergencia_reciclo]
+descricao = "Critério de convergência do laço de reciclo de água"
+forma = "max_k |Δṁ_k,C02| + |ΔT_02| + |ΔT_08| < tol"
+unidade = "kg/s + °C"
+escopos = ["M-03"]

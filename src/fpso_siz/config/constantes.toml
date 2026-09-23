@@ -1,0 +1,65 @@
+# Constantes físicas, coeficientes de correlação e parâmetros numéricos do balanço
+# preliminar. Valores idênticos aos literais de Balanço_Preliminar.py (paridade F2).
+# Fatores de conversão EXATOS (86400 s/d, 273,15 K, °C→°F) ficam em core/unidades.py.
+
+[gas]
+R = 8.314462618           # kJ/(kmol K) — CODATA 2018
+MW_ar = 28.9647           # kg/kmol — densidade relativa do gás, gamma = MW/MW_ar
+fonte = "CODATA 2018 (R); massa molar do ar seco padrão (MW_ar)"
+
+[referencia]
+# Temperatura de referência da entalpia sensível h = cp (T − T_ref) e da condição de
+# tanque no ΔRs de Standing. No original é um literal (15,6), não lido do JSON.
+T_C = 15.6
+fonte = "Condição padrão 60 °F (Balanço_Preliminar.py, H e dRs); premissa P-14"
+
+[api]
+# SG = a / (b + °API); rho_O,std = SG · rho_agua(15,6 °C) — eq. (5.8) do memorial
+a = 141.5
+b = 131.5
+rho_agua_15_6C = 999.0    # kg/m³
+fonte = "Definição do grau API (API MPMS); água pura a 15,6 °C"
+
+[standing]
+# Rs [scf/bbl] = gamma · ((p/a + b) · 10^(c_api·API − c_T·T_F))^expoente — eq. (10.4)
+a = 18.2
+b = 1.4
+c_api = 0.0125
+c_T = 0.00091
+expoente = 1.2048
+kPa_por_psia = 6.894757           # conversão arredondada usada no original
+Sm3_Sm3_por_scf_bbl = 0.1781076   # conversão arredondada usada no original
+fonte = "Standing (1947), correlação de razão de solubilidade; premissa P-23"
+
+# Massas molares e cp de gás ideal a 25 °C do corte N2–nC4 (premissa P-03/P-13).
+# A ORDEM das chaves é a ordem de soma no modelo (paridade de ponto flutuante).
+[componentes.MW]          # kg/kmol
+N2 = 28.014
+CO2 = 44.010
+H2S = 34.081
+C1 = 16.043
+C2 = 30.070
+C3 = 44.097
+iC4 = 58.123
+nC4 = 58.123
+
+[componentes.cp0]         # kJ/(kmol K), gás ideal a 25 °C
+N2 = 29.12
+CO2 = 37.13
+H2S = 34.23
+C1 = 35.69
+C2 = 52.49
+C3 = 73.60
+iC4 = 96.8
+nC4 = 98.5
+
+[componentes]
+fonte = "Poling, Prausnitz & O'Connell, The Properties of Gases and Liquids (valores aproximados; ver item 28 das informações recomendadas)"
+
+[numerico]
+reciclo_max_iter = 500    # iterações do laço de reciclo (substituição sucessiva)
+reciclo_min_iter = 3      # só testa convergência depois de it > 3
+reciclo_tol = 1e-10       # max_k |Δṁ_k| (kg/s) + |ΔT02| + |ΔT08| (°C)
+split_iter = 8            # iterações internas de split_water (BSW sobre o óleo que sai)
+denom_min_energia = 1e-30 # piso do denominador do erro relativo de energia por bloco
+fonte = "Balanço_Preliminar.py, solve_case / split_water / block_balance"
