@@ -1,0 +1,29 @@
+[project]
+name = "fpso-siz"
+version = "0.1.0"
+description = "Balanço de massa/energia preliminar e dimensionamento de equipamentos de separação e tratamento de óleo de FPSO"
+readme = "SPRINTS.md"
+requires-python = ">=3.13"
+dependencies = [
+    "numpy>=2.0",
+    "scipy>=1.14",
+    "jinja2>=3.1",  # só na camada de saída (output/latex); o núcleo não importa
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-cov>=5",
+]
+
+[build-system]
+requires = ["uv_build>=0.11,<0.12"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.coverage.run]
+source = ["fpso_siz"]
+branch = true

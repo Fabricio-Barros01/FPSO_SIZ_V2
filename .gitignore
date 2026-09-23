@@ -1,0 +1,24 @@
+# Acervo local (PDFs, BOT, script de referência) — fora do versionamento, como no Julia
+/references/
+/Balanço_Preliminar.py
+
+# Ambiente
+.venv/
+.direnv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+build/
+dist/
+
+# Saídas LaTeX
+*.aux
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.pdf
