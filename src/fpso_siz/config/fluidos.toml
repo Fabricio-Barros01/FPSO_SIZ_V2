@@ -1,0 +1,76 @@
+# Propriedades de fluido na CONDIÇÃO DO EQUIPAMENTO (F10a) — o detalhamento que o balanço
+# preliminar não faz (ele trabalha na condição padrão, com Z = 1 e óleo morto; P-39, P-40).
+# Camada a jusante: o balanço não muda (paridade bit a bit mantida).
+#
+# Regra das fontes (usuário, 2026-09-23): só entra o que tem fonte citável — no acervo
+# `references/` ou na documentação da função do ecossistema ChEDL (thermo/chemicals, MIT;
+# decisão do usuário de 2026-09-23 de usá-lo como dependência direta). O que não tem fonte
+# é LACUNA de entrada, nunca valor suposto. Ver docs/decisoes/0002-pfd-automatico.md.
+
+[gas]
+# Gás = corte N2–nC4 do fluido, renormalizado — a MESMA composição do balanço (P-03).
+# Estado na condição (T, P) do vaso por equação de estado com a composição real, via
+# thermo.FlashVL; propriedades lidas da fase vapor.
+eos = "PR"
+rotulo_eos = "Peng-Robinson (thermo)"
+rotulo_z = "S&A eq. 1.8"
+rotulo_transporte = "thermo (gás diluído)"
+kij = "ChemSep PR"
+fonte_eos = "Peng & Robinson, Ind. Eng. Chem. Fundam. 15 (1976) 59-64 — referência [1] da docstring de thermo.PRMIX; kij do banco ChemSep (thermo.interaction_parameters.IPDB)"
+fonte_z = "Z da fase vapor pela EOS; massa específica rho = P·MW/(Z·R·T) — Stewart & Arnold, Gas-Liquid and Liquid-Liquid Separators, eq. 1.8 (PV = ZnRT), com MW e R do balanço (P-03, constantes.toml)"
+fonte_transporte = "thermo: componentes puros pelo método padrão da versão fixada (ajuste REFPROP_FIT na 0.6.1) e mistura por Brokaw (mu) e Lindsay-Bromley (k); regras de gás diluído, sem correção de pressão. Método e versão efetivos vão para o rastro"
+# chave do componente no balanço → identificador do chemicals
+[gas.componentes]
+N2 = "nitrogen"
+CO2 = "carbon dioxide"
+H2S = "hydrogen sulfide"
+C1 = "methane"
+C2 = "ethane"
+C3 = "propane"
+iC4 = "isobutane"
+nC4 = "butane"
+
+[agua]
+rotulo = "IAPWS"
+# Água sem sal (água de diluição, S_D = 0, premissa P-30): IAPWS.
+fonte_densidade = "IAPWS-95: Wagner & Pruß, J. Phys. Chem. Ref. Data 31 (2002) 387-535, via chemicals.iapws.iapws95_rho"
+fonte_viscosidade = "IAPWS 2008: Huber et al., J. Phys. Chem. Ref. Data 38 (2009) 101-125, via chemicals.viscosity.mu_IAPWS"
+fonte_condutividade = "IAPWS 2011: Huber et al., J. Phys. Chem. Ref. Data 41 (2012) 033102, via chemicals.thermal_conductivity.k_IAPWS"
+
+[salmoura]
+# Água produzida = solução de NaCl com a salinidade S_W (F-10, BOT 2.2.5.1) e a massa
+# específica padrão rho_W (P-08): fração mássica w = S_W / rho_W.
+rotulo = "Laliberté (2009)"
+rotulo_lacuna_k = "lacuna: sem NaCl no banco de Magomedov"
+sal = "7647-14-5"   # CAS do NaCl
+fonte = "Laliberté, M. J. Chem. Eng. Data 54 (2009) 1725-1760, via thermo.electrochem (Laliberte_density/viscosity/heat_capacity); faixas de validade por propriedade lidas do próprio banco (Min T, Max T, Max w)"
+# A condutividade de Magomedov (thermo.electrochem.thermal_conductivity_Magomedov) NÃO tem
+# NaCl no banco: k da salmoura é LACUNA de entrada.
+
+[oleo]
+rotulo_viscosidade = "BOT Tab. 2.2.1.2 / P-40"
+rotulo_densidade = "API (P-07)"
+# Viscosidade: óleo morto medido (BOT Tab. 2.2.1.2), interpolação log-linear e valor do
+# extremo fora da tabela — a mesma regra do balanço (P-40). Sem correção de óleo vivo nem
+# de Bo: não há fonte no acervo nem no ChEDL (limitação declarada no MC).
+fonte_viscosidade = "BOT I-ET-3010.2K-1200-941-P4X-001 rev. C, Tab. 2.2.1.2 (óleo morto); premissa P-40"
+fonte_densidade = "grau API do poço na condição padrão (balanço, P-07 e eq. do rho_oleo_api); sem correção por T e Bo"
+
+[emulsao]
+# Zanker — Branan, Rules of Thumb for Chemical Engineers, 5ª ed. (2012), p. 406, eq. 27-4:
+#   mu = (mu_C / delta_C) · (1 + a · mu_D · delta_D / (mu_D + mu_C))
+# BOT nota 1 da Tab. 2.2.1.2: "pressure loss due to emulsified oil viscosity shall be considered".
+a = 1.5
+rotulo = "Branan eq. 27-4"
+fonte = "Branan (2012), p. 406, eq. 27-4 (Zanker)"
+# faixas de validade declaradas na mesma página
+mu_continua_cP = [0.5, 50.0]
+mu_dispersa_cP = [0.5, 100.0]
+fracao_continua = [0.1, 1.0]
+fracao_dispersa = [0.0, 0.9]
+
+[vapor]
+rotulo = "Branan Ex. 5-2"
+# Líquido que sai de um vaso de separação está no ponto de bolha: a pressão de vapor na
+# sucção da bomba é a pressão do vaso a montante (Branan, Ex. 5-2, "Liquid at boiling point").
+fonte = "Branan (2012), p. 116, Example 5-2 — liquid at boiling point"

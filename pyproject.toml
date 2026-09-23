@@ -8,6 +8,8 @@ dependencies = [
     "numpy>=2.0",
     "scipy>=1.14",
     "jinja2>=3.1",  # só na camada de saída (output/latex); o núcleo não importa
+    "thermo>=0.6.1,<0.7",
+    "chemicals>=1.5.2,<1.6",
 ]
 
 [project.scripts]

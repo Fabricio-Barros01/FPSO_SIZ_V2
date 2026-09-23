@@ -1,5 +1,18 @@
 # F10 (adiantada) — do balanço ao dimensionamento automático dos 11 TAGs
 
+> **Atualização (2026-09-23, após o estudo de pacotes).** O usuário decidiu usar
+> **thermo/chemicals (ChEDL, MIT) como dependência direta de runtime**, atrás da porta única
+> `pfd/_chedl.py`. Isso muda a tabela de propriedades abaixo:
+> - o Z do gás passa a vir de Peng-Robinson com a composição real, no lugar de
+>   Redlich-Kwong;
+> - a μ do gás sai do thermo (Brokaw);
+> - ρ, μ e cp da salmoura saem de Laliberté (2009);
+> - a água de diluição usa IAPWS.
+>
+> Continuam lacunas: k da salmoura (o banco de Magomedov não tem NaCl), k do óleo, óleo
+> vivo e Bo. O estado entregue está em `docs/validacao/08-propriedades.md`. O restante do
+> plano (F10b/c, F11) não muda.
+
 > O plano geral F0–F12 continua em `SPRINTS.md`. Este arquivo planeja só a próxima etapa.
 > O usuário decidiu **adiantar a F10** (antes do Pinch e do Song) e fazer a F11 (os MCs)
 > logo em seguida. Cada subfase abaixo é aprovada separadamente com "aprovado, pode

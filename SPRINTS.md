@@ -14,7 +14,7 @@ aquela fase).
 
 ## Estado atual
 
-**FASE ATUAL: F10a — Propriedades na condição real ← ATUAL (aguardando aprovação)**
+**FASE ATUAL: F10b — Mapeamento balanço → TAG e `fpso-siz pfd` ← ATUAL (aguardando aprovação)**
 
 Ordem revista em 2026-09-23, por decisão do usuário: F10 (balanço → equipamentos, em
 F10a/b/c) e F11 (MC por TAG) vêm **antes** de F8 (Pinch) e F9 (Song).
@@ -63,7 +63,7 @@ e `uv run fpso-siz dimensionar --exemplo alves_komesu [--saida saida/]`.
 | Saídas do balanço | Motor + balanços, auditoria independente, memorial LaTeX A4, JSON/CSV de correntes |
 | Oráculos | Balanço: saída do script original congelado. Equipamentos: casos-ouro Julia (`docs/validacao/`, `test/golden_*.jl`) + fixtures exportadas do Julia |
 | Invariantes | Ver `CLAUDE.md` (4 invariantes, todas com teste de arquitetura) |
-| Dependências | numpy/scipy/jinja2 permitidos. numpy/scipy ficam **isolados em `fpso_siz/_num.py`** (port para C/Java); jinja2 só em `output/` |
+| Dependências | numpy/scipy/jinja2 permitidos. numpy/scipy ficam **isolados em `fpso_siz/_num.py`** (port para C/Java); jinja2 só em `output/`. thermo/chemicals (ChEDL, MIT) desde a F10a, só em `pfd/_chedl.py` |
 | "Pronto" | Paridade com o oráculo + cobertura de linha ≥ 90 % no núcleo + testes de arquitetura verdes |
 | Memoriais | Tudo em LaTeX A4, a partir do template SENAI (`references/Memorial_Template_Final (1).zip`) |
 | Java/C | Só um documento comparativo (F12), com PyInstaller/Nuitka como baseline; nenhum código Java/C |
@@ -312,18 +312,33 @@ nada, complete o que é possível".**
 - Mapeamento TAG → método → correntes: igual ao PFD F1 do Julia
   (`../FPSO_Siz/docs/validacao/10-pfd-casos-bot.md`, lacunas L01–L12).
 
-#### F10a — Propriedades na condição real ← ATUAL
-`pfd/fluidos.py` + `config/fluidos.toml`. As fontes que estão no acervo:
-- Z por Redlich-Kwong (Branan, eqs. 27-10/11), com Tc/Pc de S&A Tab. 1.2. A regra de
-  mistura das pseudocríticas tem de estar no acervo; senão, fica Z = 1 (P-39), sinalizado.
-- μ de emulsão por Zanker (Branan, eq. 27-4).
-- Pv = P do vaso a montante para líquido saturado (Branan, Ex. 5-2).
-- Retenção: S&A Tab. 3.2 (alto CO₂ → 5 min) e Tab. 4.1 + "água 10 min".
-- μ do óleo morto pela tabela do BOT com P-40.
+#### F10a — Propriedades na condição real ✅
+**Decisão do usuário (2026-09-23):** thermo/chemicals (ChEDL, MIT) como dependência direta
+de runtime, só por `pfd/_chedl.py`, com import preguiçoso e cache das constantes. O teste de
+arquitetura garante essa porta única.
 
-**Aceite:** exemplos numéricos das fontes, limites físicos, invariante 2, cobertura ≥ 90 %.
+Entregue:
+- `pfd/{_chedl,fluidos}.py`, `config/fluidos.toml` e `core/unidades.mgl_para_kgm3`.
+- Z do gás por Peng-Robinson com a composição do balanço; ρ = P·MW/(Z·R·T) (S&A eq. 1.8).
+- μ e k do gás pelo thermo (Brokaw, Lindsay-Bromley).
+- Água de diluição por IAPWS; salmoura (ρ, μ, cp) por Laliberté (2009).
+- Óleo morto pelo BOT com P-40; emulsão por Zanker (Branan eq. 27-4); Pv = P do vaso
+  (Branan Ex. 5-2).
+- **Lacunas:** k da salmoura, k do óleo, óleo vivo e Bo.
+- Cada propriedade vai para o rastro, no bloco "propriedades", com a fonte. O que sai da
+  faixa de validade vira aviso.
+- 548 testes, cobertura de 98 % (`pfd/fluidos.py` 100 %). Detalhes e a tabela dos 16 casos
+  em `docs/validacao/08-propriedades.md`: o gás ideal subestima ρ do gás no FWKO em 5–11 %.
 
-#### F10b — Mapeamento balanço → TAG e `fpso-siz pfd`
+**Notas para a F10b:**
+- As funções recebem (T, P) e os dados do balanço (`r.gp["y"]`, `r.gp["MW"]`,
+  `r.rho`, premissas `S_W`, `rho_W`, poço via `poco_do_fluido`).
+- As lacunas (NaN) viram entradas obrigatórias do TAG.
+- A vazão real de gás é ṁ_G/ρ_g.
+- **NixOS:** para rodar os testes é preciso o `LD_LIBRARY_PATH` do flake (numpy agora é
+  importado de fato).
+
+#### F10b — Mapeamento balanço → TAG e `fpso-siz pfd` ← ATUAL
 - `pfd/{tags,entradas,planta}.py` e `config/pfd/<tag>.toml`.
 - Cada valor tem sua **origem** registrada: balanço, correlação, recomendada, default ou
   usuário.

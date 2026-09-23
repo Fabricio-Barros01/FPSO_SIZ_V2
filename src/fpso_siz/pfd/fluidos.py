@@ -1,0 +1,150 @@
+"""Propriedades de fluido na condição do equipamento (F10a) — o detalhamento que o balanço
+preliminar não faz e que o MC do equipamento expõe.
+
+Cada função recebe a condição (T em °C, P em kPa) e os dados do balanço, devolve os valores
+nas unidades do projeto e, se receber um `Rastro`, anota cada propriedade no bloco
+"propriedades" com a fonte (rótulos e referências em config/fluidos.toml).
+
+Regra das fontes: só entra o que tem fonte citável. O que não tem vira LACUNA — valor NaN,
+anotado como tal — e nunca um número suposto. Condições fora da faixa de validade de uma
+correlação não bloqueiam o cálculo: viram `avisos`, que o MC lista.
+"""
+import math
+from dataclasses import dataclass, field
+
+from fpso_siz.balanco.dados import constantes
+from fpso_siz.balanco.propriedades import mu_interp
+from fpso_siz.core.configuracao import carregar
+from fpso_siz.core.unidades import c_para_k, kpa_para_pa, mgl_para_kgm3, pas_para_cp
+from fpso_siz.pfd import _chedl
+
+BLOCO = "propriedades"
+
+
+def cfg():
+    return carregar("fluidos.toml")
+
+
+def versoes():
+    """Versões do thermo/chemicals efetivamente usadas (vão para o JSON e o MC)."""
+    return _chedl.versoes()
+
+
+@dataclass(frozen=True)
+class Gas:
+    Z: float
+    rho: float      # kg/m³
+    mu: float       # cP
+    k: float        # W/(m·K)
+    VF: float       # fração vaporizada prevista pela EOS (1 = só vapor)
+    avisos: tuple = field(default_factory=tuple)
+
+
+@dataclass(frozen=True)
+class Liquido:
+    rho: float      # kg/m³
+    mu: float       # cP
+    cp: float       # J/(kg·K)
+    k: float        # W/(m·K); NaN = lacuna de entrada
+    avisos: tuple = field(default_factory=tuple)
+
+
+def _anotar(rastro, fonte, var, formula, valor, unidade):
+    if rastro is not None:
+        rastro.trace(BLOCO, fonte, var, formula, valor, unidade)
+
+
+# ------------------------------------------------------------------ gás
+def gas(y, MW, T_C, P_kPa, rastro=None):
+    """Gás de composição `y` (frações do balanço, corte N2–nC4, P-03) e massa molar `MW` do
+    balanço, a (T, P). Z pela EOS; ρ = P·MW/(Z·R·T) com MW e R do balanço, para que a vazão
+    real (ṁ/ρ) seja coerente com a massa do balanço."""
+    c = cfg()["gas"]
+    comp = c["componentes"]
+    faltam = sorted(set(y) - set(comp))
+    if faltam:
+        raise ValueError(f"componentes do gás sem identificador em fluidos.toml: {faltam}")
+    T = c_para_k(T_C)
+    e = _chedl.estado_gas([comp[k] for k in y], list(y.values()), T, kpa_para_pa(P_kPa), c["eos"], c["kij"])
+    R = constantes().R
+    rho = P_kPa * MW / (e["Z"] * R * T)
+    mu = pas_para_cp(e["mu"])
+    avisos = []
+    if e["VF"] < 1:
+        avisos.append(f"a EOS prevê condensação parcial do gás a {T_C:.1f} °C e {P_kPa:.0f} kPa "
+                      f"(fração vaporizada {e['VF']:.4f}); usadas as propriedades da fase vapor")
+    _anotar(rastro, c["rotulo_eos"], "Z", f"EOS {c['eos']}, kij {c['kij']}, composição do balanço (P-03)", e["Z"], "–")
+    _anotar(rastro, c["rotulo_z"], "ρ_g", "P·MW/(Z·R·T)", rho, "kg/m³")
+    _anotar(rastro, c["rotulo_transporte"], "μ_g", f"mistura {e['metodo_mu']} sobre {'/'.join(e['metodo_mu_puros'])}",
+            mu, "cP")
+    _anotar(rastro, c["rotulo_transporte"], "k_g", f"mistura {e['metodo_k']}", e["k"], "W/(m·K)")
+    return Gas(e["Z"], rho, mu, e["k"], e["VF"], tuple(avisos))
+
+
+# ------------------------------------------------------------------ água
+def agua(T_C, P_kPa, rastro=None):
+    """Água sem sal (diluição, S_D = 0): IAPWS. cp não é usado (vem do balanço): NaN."""
+    c = cfg()["agua"]
+    e = _chedl.agua_iapws(c_para_k(T_C), kpa_para_pa(P_kPa))
+    mu = pas_para_cp(e["mu"])
+    _anotar(rastro, c["rotulo"], "ρ_w", "IAPWS-95", e["rho"], "kg/m³")
+    _anotar(rastro, c["rotulo"], "μ_w", "IAPWS 2008", mu, "cP")
+    _anotar(rastro, c["rotulo"], "k_w", "IAPWS 2011", e["k"], "W/(m·K)")
+    return Liquido(e["rho"], mu, math.nan, e["k"])
+
+
+def salmoura(T_C, S_mgL, rho_std, rastro=None):
+    """Água produzida como solução de NaCl: fração mássica w = S/ρ_padrão (S_W e rho_W das
+    premissas). ρ, μ e cp de Laliberté (2009); k é lacuna (sem NaCl no banco de Magomedov)."""
+    c = cfg()["salmoura"]
+    w = mgl_para_kgm3(S_mgL) / rho_std
+    v, faixas = _chedl.salmoura_laliberte(c_para_k(T_C), w, c["sal"])
+    avisos = [f"{p}: fora da faixa de Laliberté (T {tmin:g}–{tmax:g} °C, w ≤ {wmax:.3f}; aqui {T_C:.1f} °C, "
+              f"w = {w:.3f})" for p, (tmin, tmax, wmax) in faixas.items()
+              if not (tmin <= T_C <= tmax and w <= wmax)]
+    mu = pas_para_cp(v["mu"])
+    _anotar(rastro, c["rotulo"], "w_NaCl", "S_W/ρ_W", w, "–")
+    _anotar(rastro, c["rotulo"], "ρ_w", "Laliberté, densidade", v["rho"], "kg/m³")
+    _anotar(rastro, c["rotulo"], "μ_w", "Laliberté, viscosidade", mu, "cP")
+    _anotar(rastro, c["rotulo"], "cp_w", "Laliberté, capacidade calorífica", v["cp"], "J/(kg·K)")
+    _anotar(rastro, c["rotulo_lacuna_k"], "k_w", "entrada do usuário", math.nan, "W/(m·K)")
+    return Liquido(v["rho"], mu, v["cp"], math.nan, tuple(avisos))
+
+
+# ------------------------------------------------------------------ óleo
+def oleo(poco, rho_std, T_C, rastro=None):
+    """Óleo morto: μ da tabela do poço (BOT) com a regra P-40 do balanço; ρ padrão pelo API.
+    cp vem do balanço e k é lacuna."""
+    c = cfg()["oleo"]
+    mu, marcador = mu_interp(poco.viscosidade, T_C)
+    avisos = [] if marcador == "interp." else [f"viscosidade do óleo {marcador} (tabela do BOT; P-40)"]
+    _anotar(rastro, c["rotulo_viscosidade"], "μ_o", f"óleo morto, log-linear em T ({marcador})", mu, "cP")
+    _anotar(rastro, c["rotulo_densidade"], "ρ_o", "condição padrão, sem correção por T e Bo", rho_std, "kg/m³")
+    return Liquido(rho_std, mu, math.nan, math.nan, tuple(avisos))
+
+
+# ------------------------------------------------------------------ emulsão
+def _fora(x, faixa):
+    return not faixa[0] <= x <= faixa[1]
+
+
+def emulsao(mu_c, mu_d, frac_d, rastro=None):
+    """Viscosidade de emulsão (Zanker; Branan eq. 27-4):
+    μ = (μ_C/δ_C)·(1 + a·μ_D·δ_D/(μ_D + μ_C)), δ_C = 1 − δ_D. Devolve (μ, avisos)."""
+    c = cfg()["emulsao"]
+    frac_c = 1 - frac_d
+    mu = mu_c / frac_c * (1 + c["a"] * mu_d * frac_d / (mu_d + mu_c))
+    checagens = [("μ da fase contínua", mu_c, c["mu_continua_cP"]), ("μ da fase dispersa", mu_d, c["mu_dispersa_cP"]),
+                 ("fração contínua", frac_c, c["fracao_continua"]), ("fração dispersa", frac_d, c["fracao_dispersa"])]
+    avisos = [f"{nome} = {v:.4g} fora da faixa de validade de Zanker ({faixa[0]:g}–{faixa[1]:g})"
+              for nome, v, faixa in checagens if _fora(v, faixa)]
+    _anotar(rastro, c["rotulo"], "μ_emulsão", f"(μC/δC)·(1 + {c['a']:g}·μD·δD/(μD + μC))", mu, "cP")
+    return mu, tuple(avisos)
+
+
+# ------------------------------------------------------------------ pressão de vapor
+def pressao_vapor_saturado(P_vaso_kPa, rastro=None):
+    """Líquido que sai de um vaso de separação está no ponto de bolha: Pv = P do vaso."""
+    c = cfg()["vapor"]
+    _anotar(rastro, c["rotulo"], "Pv", "líquido no ponto de bolha: Pv = P do vaso a montante", P_vaso_kPa, "kPa")
+    return P_vaso_kPa

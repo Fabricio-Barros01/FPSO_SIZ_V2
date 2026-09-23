@@ -36,7 +36,10 @@ estado (`feasible = False` + mensagem), nunca exceção. Oráculo dos equipament
 
 ## Dependências
 numpy/scipy só via `fpso_siz/_num.py`, para manter o port a C/Java mapeável; jinja2 só em
-`fpso_siz/output/`.
+`fpso_siz/output/`; thermo/chemicals (ChEDL, MIT; propriedades de fluido) só via
+`fpso_siz/pfd/_chedl.py`, com import preguiçoso. **Regra das fontes:** correlação ou valor
+sem fonte citável (acervo `references/` ou referência da docstring do ChEDL) é lacuna de
+entrada, nunca número suposto. No NixOS, os testes precisam do `LD_LIBRARY_PATH` do flake.
 
 ## Comandos
 ```
