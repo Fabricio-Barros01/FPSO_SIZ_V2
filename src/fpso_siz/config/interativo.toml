@@ -1,17 +1,465 @@
-# Descritores de apresentação do modo interativo e dos resumos de terminal (F7b).
+# Descritores de apresentação do modo interativo e dos resumos de terminal (F7b, F10c).
 # Invariante 4: a CLI não nomeia grandeza; ela itera o que está aqui. Nada disto é física:
-# só escolhe QUAIS campos já calculados aparecem, com que rótulo e quantas casas.
+# só escolhe QUAIS campos já calculados aparecem, com que rótulo, em que ordem e com
+# quantas casas. Menus são listas de ações com id (o código despacha pelo id; o texto e a
+# ordem vêm daqui). Rótulos e unidades de parâmetros ficam nos ParameterSpec; fontes, no
+# catálogo técnico (config/pfd/).
 
 # Arquivo de casos procurado na pasta corrente quando nenhum é informado.
 arquivo_casos_padrao = "design_cases_bot.json"
+# Pasta e arquivo de ajustes sugeridos ao exportar.
+pasta_padrao = "saida"
+pasta_planta = "planta"
+layout_padrao = "senai"
 
+# ------------------------------------------------------------------ menus (ordem = tela)
+[menus.principal]
+titulo = "O que você quer fazer?"
+voltar = "Sair"
+acoes = [
+    { id = "equipamento", rotulo = "Equipamento / TAG" },
+    { id = "planta", rotulo = "Planta / PFD — todos os TAGs" },
+    { id = "balanco", rotulo = "Balanço de massa e energia" },
+    { id = "casos", rotulo = "Casos de projeto" },
+    { id = "premissas", rotulo = "Premissas do balanço" },
+    { id = "ajustes", rotulo = "Abrir / salvar ajustes" },
+]
+
+[menus.preenchimento]
+titulo = "Equipamento: {id} · {nome}"
+acoes = [
+    { id = "automatico", rotulo = "Preenchimento automático — balanço preliminar" },
+    { id = "manual", rotulo = "Preenchimento manual" },
+    { id = "arquivo", rotulo = "Carregar arquivo de entradas / exemplo" },
+]
+
+[menus.tag]
+titulo = "{id} — o que fazer?"
+acoes = [
+    { id = "pendencias", rotulo = "Preencher pendências" },
+    { id = "revisar", rotulo = "Revisar recomendações e defaults" },
+    { id = "entradas", rotulo = "Ver entradas e fontes de um caso" },
+    { id = "editar", rotulo = "Editar entrada" },
+    { id = "restaurar", rotulo = "Restaurar entrada automática" },
+    { id = "atividade", rotulo = "Atividade dos casos" },
+    { id = "rastro", rotulo = "Propriedades e rastro de um caso" },
+    { id = "varredura", rotulo = "Varredura do envelope" },
+    { id = "exportar", rotulo = "Exportar JSON/CSV e ajustes" },
+    { id = "modo", rotulo = "Trocar preenchimento" },
+    { id = "associar", rotulo = "Associar a um TAG da planta" },
+]
+
+[menus.planta]
+titulo = "Planta / PFD"
+acoes = [
+    { id = "abrir", rotulo = "Abrir um TAG" },
+    { id = "pendencias", rotulo = "Preencher pendências" },
+    { id = "filtro", rotulo = "Filtrar por caso" },
+    { id = "exportar", rotulo = "Exportar" },
+]
+
+[menus.revisar]
+titulo = "Revisão"
+acoes = [
+    { id = "confirmar", rotulo = "Confirmar um item" },
+    { id = "confirmar_todos", rotulo = "Confirmar todos os itens mostrados" },
+    { id = "editar", rotulo = "Editar o valor de um item" },
+]
+
+[menus.escopo]
+titulo = "Aplicar a"
+acoes = [
+    { id = "todos", rotulo = "todos os casos afetados" },
+    { id = "escolher", rotulo = "escolher casos" },
+]
+
+[menus.balanco]
+titulo = "Próximo passo"
+acoes = [
+    { id = "auditoria", rotulo = "Ver auditoria independente" },
+    { id = "correntes", rotulo = "Ver correntes de um caso" },
+    { id = "exportar", rotulo = "Exportar" },
+]
+
+[menus.casos]
+titulo = "Casos"
+acoes = [
+    { id = "trocar", rotulo = "Trocar arquivo de casos" },
+]
+
+[menus.ajustes]
+titulo = "Ajustes da sessão"
+acoes = [
+    { id = "abrir", rotulo = "Abrir arquivo de ajustes" },
+    { id = "salvar", rotulo = "Salvar ajustes" },
+    { id = "ver", rotulo = "Ver estado dos equipamentos" },
+    { id = "descartar", rotulo = "Descartar todos os ajustes" },
+]
+
+[menus.reconciliar]
+titulo = "Como reconciliar?"
+voltar = "Cancelar"
+acoes = [
+    { id = "adotar_arquivo", rotulo = "Usar as premissas gravadas nos ajustes" },
+    { id = "adotar_sessao", rotulo = "Aplicar os ajustes ao contexto atual" },
+]
+
+# ------------------------------------------------------------------ textos
+[textos]
+# detalhes (coluna da direita) dos menus
+casos_n = "{n} casos"
+pede_casos = "pede um arquivo de casos"
+tags_n = "{n} TAGs · {avulsos} avulso(s)"
+premissas_alteradas = "{n} alterada(s)"
+premissas_base = "todas no valor de base"
+carregar_casos = "carregar arquivo"
+ajustes_n = "{n} equipamento(s) com estado"
+ajustes_vazio = "nenhum ajuste nesta sessão"
+auditoria_n = "{n} verificações"
+correntes = "T, P e vazões por corrente"
+formatos_balanco = "JSON/CSV, memorial LaTeX, PDF"
+auto_contexto = "{arquivo} · casos {casos}"
+manual_detalhe = "sem balanço; entradas informadas e defaults com fonte"
+arquivo_detalhe = "TOML [[case]] ou exemplo embutido"
+indisponivel_manual = "só no modo manual"
+indisponivel_avulso = "só para equipamento avulso"
+indisponivel_resultado = "sem resultado dimensionado"
+indisponivel_lacunas = "nenhuma pendência"
+indisponivel_revisoes = "nada a revisar"
+indisponivel_ajustes = "nenhuma entrada do usuário"
+# escolha de equipamento
+escolher_equipamento = "Qual equipamento?"
+novo_avulso = "Equipamento avulso…"
+novo_avulso_detalhe = "um tipo de equipamento, fora da planta"
+avulso_detalhe = "avulso · {equipamento} · {casos} caso(s)"
+tag_sem_estado = "{nome}"
+tag_com_estado = "{nome} · {modo} · {estado}"
+escolher_tipo = "Qual tipo de equipamento?"
+escolher_metodo = "Qual método?"
+nome_avulso = "Nome do avulso (letras, números, - _ .)"
+n_casos_avulso = "Quantos casos"
+nome_caso_avulso = "Nome do caso {i}"
+caso_padrao = "Caso {i}"
+tag_compativel = "Qual TAG compatível?"
+sem_tag_compativel = "nenhum TAG da planta usa este equipamento/método."
+avulso_associado = "{avulso} associado a {tag}: as entradas passam a ser o preenchimento manual do TAG."
+escolher_fonte = "Arquivo de entradas"
+arquivo_toml = "Arquivo TOML de casos…"
+arquivo_toml_detalhe = "blocos [[case]]; um caso vale para todos"
+exemplo_detalhe = "exemplo embutido · {n} caso(s)"
+caminho_toml = "Arquivo de casos (.toml)"
+importado = "Importado de {origem}: {n} caso(s); {pendentes} valor(es) não finito(s) ficaram pendentes."
+# tela do TAG
+modo_automatico = "automático (balanço preliminar)"
+modo_manual = "manual"
+modo_manual_arquivo = "manual · arquivo {arquivo}"
+contexto_auto = "{arquivo} · sha256 {sha}… · premissas: {premissas}"
+premissas_base_curto = "base"
+avulso_sem_esquema = "Equipamento avulso: fora do diagrama de blocos; sem correntes do balanço."
+alerta_lacunas = "! FALTA {n} ENTRADA(S), AFETANDO {casos} CASO(S) ATIVO(S)"
+lacuna_valor = "Valor: não informado; sem recomendação com fonte disponível."
+lacuna_dica = "Necessário: {dica}"
+lacuna_dependentes = "Dependem dela: {lista}"
+lacuna_faixa = "Faixa do descritor: {faixa}"
+titulo_revisoes = "RECOMENDADAS E DEFAULTS COM FONTE — REVISÃO PENDENTE"
+nota_revisoes = "Podem produzir cálculo preliminar; seguem destacadas até serem confirmadas."
+titulo_entradas = "ENTRADAS · {caso}"
+pendente_sem_resultado = "Dimensionamento pendente; nenhum resultado concluído é apresentado."
+inativo_todo = "Nenhum caso ativo neste TAG; nada a dimensionar."
+preliminar = "Resultado preliminar: {n} recomendação(ões)/default(s) sem revisão (ver Revisar)."
+avisos_n = "{n} aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro."
+casos_inativos = "Casos inativos: {lista}"
+memorial_indisponivel = "Memorial de cálculo do equipamento: previsto na F11; ainda não disponível."
+aviso_item = "{casos}: {aviso}"
+# formulários
+aplicar_a = "Aplicar preenchimento"
+casos_prompt = "Casos (ex.: 1-3, 5)"
+casos_invalidos = "casos inválidos: {texto!r}; use números e faixas entre {min} e {max}."
+valor_prompt = "{rotulo} [{unidade}] (Enter adia)"
+valor_edicao = "{rotulo} [{unidade}] (Enter cancela)"
+valor_invalido = "{texto!r} não é um número finito."
+fora_da_faixa = "{valor} está fora da faixa do descritor ({faixa}); o método dirá se é viável."
+adiado = "adiado: {chave} continua pendente."
+edicao_final = "Esta entrada é final do método: sobrescrevê-la não reescreve o balanço. Para recalcular os dependentes, altere a premissa (menu Premissas) ou o insumo correspondente."
+edicao_recusada = "edição desfeita: {erro}"
+escolher_entrada = "Qual entrada?"
+entrada_detalhe = "{unidade} · {origem}"
+escolher_item = "Item"
+item_invalido = "item {texto!r} não existe."
+confirmados = "{n} valor(es) confirmados com a fonte."
+nada_a_restaurar = "nenhuma entrada do usuário neste equipamento."
+restaurado = "{chave}: entrada do usuário removida; vale a regra de origem."
+caso_prompt = "Caso ({min}–{max}; Enter = {padrao})"
+caso_invalido = "caso {texto!r} não existe."
+atividade_prompt = "Caso a ativar/desativar"
+motivo_prompt = "Motivo da inatividade"
+motivo_padrao = "informado pelo usuário"
+atividade_so_manual = "a atividade vem do balanço no modo automático; troque para manual para informá-la."
+modo_trocado = "{id}: preenchimento {modo}."
+# planta
+titulo_planta = "Planta / PFD · {arquivo} · casos {casos}"
+titulo_planta_caso = "Planta / PFD · {arquivo} · filtro: {caso}"
+contagem = "{dimensionado} dimensionado(s) · {aguardando} aguardando entrada · {inviavel} inviável(is) · {inativo} inativo(s)"
+nota_filtro = "Marcador do caso filtrado: atividade/pendência do caso; a viabilidade do envelope segue na tabela."
+blocos_sem = "Blocos sem dimensionamento: {lista}"
+sem_pendencias = "nenhum TAG aguardando entrada."
+pendencias_tag = "Pendências de {id}"
+filtro_prompt = "Caso para filtrar ({min}–{max}; Enter remove o filtro)"
+# exportação
+pasta_prompt = "Pasta de saída"
+ajustes_prompt = "Arquivo de ajustes"
+formatos_prompt = "Formatos: 1 JSON+CSV · 2 memorial LaTeX · 3 memorial + PDF (ex.: 1,2)"
+formatos_invalidos = "formatos inválidos: {texto!r}."
+layout_prompt = "Layout do memorial ({layouts})"
+layout_invalido = "layout desconhecido {texto!r}."
+compilando = "Compilando o PDF (latexmk)…"
+pdf_falhou = "PDF não gerado: {erro}"
+gravado = "Gravado:"
+repetir = "Para repetir sem o assistente:"
+# ajustes
+arquivo_ajustes = "Arquivo de ajustes (.toml)"
+ajustes_abertos = "ajustes abertos de {arquivo}: {n} equipamento(s)."
+ajustes_legado = "arquivo no formato da F10b: tratado como ajustes automáticos, sem revisões nem contexto registrados."
+ajustes_salvos = "ajustes salvos em {arquivo}."
+ajustes_descartados = "ajustes descartados."
+confirmar_descartar = "Descartar TODOS os ajustes da sessão? (s/N)"
+divergencia = "{mensagem}"
+divergencias_titulo = "O contexto dos ajustes difere do atual:"
+metodo_descartado = "{tag}: estado descartado (método incompatível)."
+casos_descartados = "{id}: ajustes de casos inexistentes descartados: {casos}."
+estado_colunas = ["Equipamento", "Modo", "Entradas", "Revisões", "Arquivo"]
+# balanço, casos e premissas
+resolvendo = "Resolvendo {n} casos…"
+caso_balanco = "Caso ({min}–{max})"
+correntes_titulo = "Correntes do caso {n}"
+auditoria_titulo = "Auditoria independente"
+arquivo_casos = "Arquivo de casos (JSON do BOT)"
+casos_titulo = "Casos de projeto"
+premissas_titulo = "Premissas do balanço"
+premissas_prompt = "Alterar (NOME=VALOR; 'base' restaura todas; Enter volta)"
+premissas_colunas = ["Id", "Nome", "", "Valor", "Unidade", "Descrição"]
+premissa_alterada = "* alterada nesta sessão (vale para o balanço, os TAGs automáticos e o memorial)"
+sem_casos = "Nenhum arquivo de casos carregado. O balanço e os TAGs da planta pedem o JSON do BOT (Casos de projeto); o equipamento avulso usa exemplos embutidos."
+contexto_titulo = "Contexto"
+ler_casos_falhou = "não consegui ler o arquivo de casos: {erro}"
+novo_bot = "O arquivo de casos mudou; os ajustes da sessão foram feitos para o anterior."
+casos_necessarios = "esta ação precisa de um arquivo de casos (JSON do BOT) carregado"
+sem_divergencia_premissas = "as premissas não divergem"
+faixas_descartadas = "{id}: faixas [mín, máx] só valem no manual; descartadas: {chaves}."
+# sessão
+opcao = "Opção"
+opcao_invalida = "opção inválida: digite um número de 0 a {n}."
+indisponivel = "indisponível: {motivo}."
+voltar = "Voltar"
+erro = "erro: {erro}"
+interrompido = "Interrompido."
+ate_logo = "Até logo."
+
+# ------------------------------------------------------------------ PFD e TAG
 [pfd]
-colunas = ["TAG", "Estado", "Casos ativos", "Resultado", "Caso governante"]
 [pfd.estados]
 aguardando_entrada = "aguardando entrada"
 dimensionado = "dimensionado"
 inviavel = "inviável"
 inativo = "inativo"
+# marcador de cada estado no desenho da planta (e o de bloco sem dimensionamento)
+[pfd.marcadores]
+dimensionado = "D"
+aguardando_entrada = "?"
+inviavel = "X"
+inativo = "-"
+sem_dimensionamento = "·"
+[pfd.legenda]
+estados = "D dimensionado   ? aguardando entrada   X inviável   - inativo"
+blocos = "· bloco sem dimensionamento; permanece no balanço"
+[pfd.notas]
+saida = "saída"
+retorno = "retorno ao {bloco}"
+entrada = "entrada"
+de = "de"
+para = "para"
+
+# Coluna Origem na tela (o JSON mantém a classificação detalhada de config/pfd/pfd.toml).
+[origens_tela]
+balanco = "balanço"
+propriedade = "correlação"
+premissa = "premissa"
+recomendada = "recomendada"
+metodo = "default"
+usuario = "usuário"
+arquivo = "arquivo"
+lacuna = "lacuna"
+
+[revisao_tela]
+pendente = "revisão pendente"
+confirmada = "confirmada"
+desatualizada = "revisão desatualizada"
+
+# Tabelas com prioridade: em tela estreita, as colunas de maior número saem primeiro e
+# viram linhas de detalhe (nunca se trunca TAG, corrente ou a chave de uma pendência).
+[[colunas_planta]]
+id = "tag"
+rotulo = "TAG"
+prioridade = 0
+[[colunas_planta]]
+id = "estado"
+rotulo = "Estado"
+prioridade = 0
+[[colunas_planta]]
+id = "ativos"
+rotulo = "Casos ativos"
+prioridade = 2
+[[colunas_planta]]
+id = "resultado"
+rotulo = "Resultado"
+prioridade = 1
+[[colunas_planta]]
+id = "governante"
+rotulo = "Caso governante"
+prioridade = 3
+
+[[colunas_entradas]]
+id = "chave"
+rotulo = "Chave"
+prioridade = 0
+[[colunas_entradas]]
+id = "entrada"
+rotulo = "Entrada"
+prioridade = 3
+[[colunas_entradas]]
+id = "valor"
+rotulo = "Valor"
+prioridade = 0
+[[colunas_entradas]]
+id = "unidade"
+rotulo = "Unidade"
+prioridade = 1
+[[colunas_entradas]]
+id = "origem"
+rotulo = "Origem"
+prioridade = 0
+[[colunas_entradas]]
+id = "revisao"
+rotulo = "Revisão"
+prioridade = 2
+[[colunas_entradas]]
+id = "fonte"
+rotulo = "Fonte"
+prioridade = 4
+
+[[colunas_lacunas]]
+id = "chave"
+rotulo = "Chave"
+prioridade = 0
+[[colunas_lacunas]]
+id = "entrada"
+rotulo = "Entrada"
+prioridade = 2
+[[colunas_lacunas]]
+id = "unidade"
+rotulo = "Unidade"
+prioridade = 1
+[[colunas_lacunas]]
+id = "casos"
+rotulo = "Casos"
+prioridade = 0
+
+[[colunas_revisoes]]
+id = "item"
+rotulo = "#"
+prioridade = 0
+[[colunas_revisoes]]
+id = "chave"
+rotulo = "Chave"
+prioridade = 0
+[[colunas_revisoes]]
+id = "valor"
+rotulo = "Valor"
+prioridade = 0
+[[colunas_revisoes]]
+id = "unidade"
+rotulo = "Unidade"
+prioridade = 1
+[[colunas_revisoes]]
+id = "casos"
+rotulo = "Casos"
+prioridade = 0
+[[colunas_revisoes]]
+id = "origem"
+rotulo = "Origem"
+prioridade = 2
+[[colunas_revisoes]]
+id = "fonte"
+rotulo = "Fonte"
+prioridade = 3
+
+# ------------------------------------------------------------------ Unicode e ASCII
+# Glifos dos desenhos (planta e esquema local) em cada repertório.
+[esquema.unicode]
+seta = "→"
+traco = "──"
+seta_longa = "──→"
+horizontal = "─"
+vertical = "│"
+canto_se = "┌"
+canto_sd = "┐"
+canto_ie = "└"
+canto_id = "┘"
+[esquema.ascii]
+seta = "->"
+traco = "--"
+seta_longa = "-->"
+horizontal = "-"
+vertical = "|"
+canto_se = "+"
+canto_sd = "+"
+canto_ie = "+"
+canto_id = "+"
+
+# Degradação para ASCII seguro (texto em geral); o resto dos acentos sai por NFKD.
+[ascii]
+"→" = "->"
+"←" = "<-"
+"↑" = "^"
+"↓" = "v"
+"◀" = "<"
+"━" = "="
+"─" = "-"
+"│" = "|"
+"┌" = "+"
+"┐" = "+"
+"└" = "+"
+"┘" = "+"
+"·" = "."
+"•" = "*"
+"—" = "-"
+"–" = "-"
+"−" = "-"
+"…" = "..."
+"✓" = "ok"
+"✗" = "x"
+"×" = "x"
+"≤" = "<="
+"≥" = ">="
+"≈" = "~"
+"°" = "deg"
+"²" = "2"
+"³" = "3"
+"⁰" = "0"
+"µ" = "u"
+"§" = "sec. "
+"¶" = "par. "
+"μ" = "mu"
+"ρ" = "rho"
+"Σ" = "sum"
+"Δ" = "d"
+"η" = "eta"
+"ṁ" = "m"
+"₂" = "2"
+"‘" = "'"
+"’" = "'"
+"“" = '"'
+"”" = '"'
 
 # Contexto do arquivo de casos: chave do JSON do BOT que cita a fonte dos dados.
 [contexto]

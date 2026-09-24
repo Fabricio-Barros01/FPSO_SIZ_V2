@@ -113,8 +113,8 @@ def test_premissas_tem_id_unidade_e_descricao():
         assert "valor" in e or "chave_casos" in e or nome == "carry", nome
 
 
-INTERFACE = ["cli.py", "output/dimensionamento.py", "output/pfd.py", *sorted(p.relative_to(PACOTE).as_posix()
-                                                            for p in (PACOTE / "output" / "terminal").glob("*.py"))]
+INTERFACE = ["cli.py", "output/dimensionamento.py", "output/pfd.py", "output/ajustes.py",
+             *sorted(p.relative_to(PACOTE).as_posix() for p in (PACOTE / "output" / "terminal").glob("*.py"))]
 
 
 @pytest.mark.parametrize("nome", INTERFACE)
@@ -146,3 +146,56 @@ def test_motor_nao_nomeia_grandezas(nome):
     textos = {n.value for n in ast.walk(arvore(PACOTE / nome)) if isinstance(n, ast.Constant) and isinstance(n.value, str)}
     assert not (textos & set(STREAM_KEYS))
     assert not (textos & {"d_min", "d_max", "sr", "lss", "leff", "sr_min", "sr_max", "dn", "npsh"})
+
+
+def _textos(nome):
+    return {n.value for n in ast.walk(arvore(PACOTE / nome)) if isinstance(n, ast.Constant) and isinstance(n.value, str)}
+
+
+@pytest.mark.parametrize("nome", INTERFACE)
+def test_interface_nao_fixa_tags_blocos_nem_correntes(nome):
+    """F10c: TAGs, blocos e correntes vêm dos descritores e da topologia; um desenho ou uma
+    tela com 'V-001' ou 'C-10' escrito no código não acompanharia a configuração."""
+    from fpso_siz.balanco.balancos import topologia
+    from fpso_siz.pfd.tags import tags
+
+    topo = topologia()
+    ids = {t.tag for t in tags()} | {b["id"] for b in topo["blocos"]} | {c["id"] for c in topo["correntes"]}
+    assert not (_textos(nome) & ids)
+    assert not [s for s in _textos(nome) if re.search(r"(?<![\w-])C-\d\d(?![\w-])", s)]
+
+
+@pytest.mark.parametrize("nome", INTERFACE)
+def test_interface_nao_monta_entradas_nem_chama_o_motor(nome):
+    """F10c: comandos e menus só selecionam, leem/gravam e apresentam; a montagem de
+    entradas e a chamada do motor são do serviço por TAG (pfd/equipamento.py)."""
+    proibidos = {"size_envelope", "size_single", "montar", "montar_manual", "REGRAS"}
+    for n in ast.walk(arvore(PACOTE / nome)):
+        if isinstance(n, ast.ImportFrom):
+            assert not ({a.name for a in n.names} & proibidos), (nome, n.module)
+            assert n.module not in ("fpso_siz.pfd.entradas", "fpso_siz.pfd.fluidos", "fpso_siz.pfd._chedl"), nome
+        if isinstance(n, ast.Attribute):
+            assert n.attr not in proibidos, (nome, n.attr)
+
+
+def test_sessao_tira_textos_e_menus_do_toml():
+    """Os rótulos dos menus e os textos da sessão estão em interativo.toml, não no código."""
+    cfg = carregar("interativo.toml")
+    declarados = {a["rotulo"] for m in cfg["menus"].values() for a in m["acoes"]}
+    declarados |= {m["titulo"] for m in cfg["menus"].values()}
+    declarados |= {v for v in cfg["textos"].values() if isinstance(v, str)}
+    frases = {t for t in declarados if " " in t.strip()}  # palavras soltas coincidem com ids
+    for nome in ("output/terminal/sessao.py", "output/terminal/pfd.py", "cli.py"):
+        assert not (_textos(nome) & frases), nome
+
+
+def test_servico_por_tag_e_nucleo():
+    """O serviço por TAG não pergunta, não imprime nem grava: é núcleo."""
+    for nome in ("pfd/equipamento.py", "pfd/ajustes.py", "pfd/manual.py", "pfd/planta.py"):
+        mods = set()
+        for n in ast.walk(arvore(PACOTE / nome)):
+            if isinstance(n, ast.ImportFrom) and n.module:
+                mods.add(n.module)
+            if isinstance(n, ast.Call) and isinstance(n.func, ast.Name):
+                assert n.func.id not in ("print", "input"), nome
+        assert not {m for m in mods if m.startswith("fpso_siz.output")}, nome

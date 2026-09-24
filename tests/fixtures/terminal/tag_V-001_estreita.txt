@@ -1,0 +1,91 @@
+
+━━ V-001 · Vaso desgaseificador 1 ━━━━━━━━━━━━━━━━━
+  casos 1–16 · automático (balanço preliminar) ·
+  dimensionado
+  design_cases_bot.json · sha256 ca3dfe559b32… ·
+  premissas: base
+
+  [V-001 D]
+    de: P-002 (C-08)
+    para: saída (C-09), TO-001 (C-10)
+
+  RECOMENDADAS E DEFAULTS COM FONTE — REVISÃO PENDENTE
+  #  Chave      Valor  Unidade  Casos
+  ─  ─────────  ─────  ───────  ─────
+  1  dm_gas       140  µm       1–16
+  2  tr_liquid      5  min      1–16
+  3  d_step       150  mm       1–16
+  4  sr_min         3  –        1–16
+  5  sr_max         4  –        1–16
+  6  sr_target    3,5  –        1–16
+    dm_gas · Origem: default · revisão pendente
+    dm_gas · Fonte: Stewart & Arnold (2008)
+    §3.7.1: equações de capacidade de gás
+    baseadas em remoção de 140 µm
+    tr_liquid · Origem: recomendada · revisão
+    pendente
+    tr_liquid · Fonte: Stewart & Arnold (2008)
+    Tab. 3.2, nota: mínimo de 5 min para alto
+    CO2; gás dos casos BOT. Decisão registrada
+    em docs/decisoes/0002-pfd-automatico.md.
+    d_step · Origem: default · revisão pendente
+    d_step · Fonte: Stewart & Arnold (2008)
+    §3.8.6, p. 126: cascos em incrementos de 150
+    mm (6 in)
+    sr_min · Origem: default · revisão pendente
+    sr_min · Fonte: Stewart & Arnold (2008)
+    §3.8.5: esbeltez entre 3 e 4
+    sr_max · Origem: default · revisão pendente
+    sr_max · Fonte: Stewart & Arnold (2008)
+    §3.8.5: esbeltez entre 3 e 4
+    sr_target · Origem: default · revisão
+    pendente
+    sr_target · Fonte: centro da banda de
+    Stewart & Arnold (2008) §3.8.5
+  Podem produzir cálculo preliminar; seguem
+  destacadas até serem confirmadas.
+
+━━ Resultado · Vaso de Knockout Bifásico
+   (gás–líquido)
+  Método: Stewart & Arnold (2008) — bifásico, meio cheio
+  ✓ Viável
+
+    Diâmetro d                    4.850 mm
+    Comprimento efetivo Leff      12,12 m
+    Comprimento real Lss          16,97 m
+  ✓ Esbeltez SR                   3,50
+    Volume (casco, entre tampos)  313 m³
+    Restrição governante          capacidade de líquido
+    Caso governante               BOT 08 — Mid Life
+    Teto de decantação            —
+
+  Governa: capacidade de líquido, pelo caso 'BOT
+  08 — Mid Life'.
+
+  Casos
+  Caso                       Sozinho  d (mm)  Folga (m)
+  ─────────────────────────  ───────  ──────  ─────────
+  BOT 01 — Early Life        viável    4.700       1,36
+  BOT 02 — Early Life        viável    4.850       0,12
+  BOT 03 — Early Life Blend  viável    4.850       0,12
+  BOT 04 — Early Life        viável    2.300      10,72
+  BOT 05 — Low CO2           viável    2.600      10,29
+  BOT 06 — Mid Life          viável    1.700      11,65
+  BOT 07 — Mid Life          viável    4.700       1,36
+  BOT 08 — Mid Life          viável    4.850       0,00
+  BOT 09 — Mid Life          viável    4.550       2,60
+  BOT 10 — Late Life         viável    4.100       4,83
+  BOT 11 — Late Life         viável    3.650       7,10
+  BOT 12 — Late Life         viável    3.650       7,03
+  BOT 13 — High CO2          viável    3.800       6,01
+  BOT 14 — High CO2          viável    3.800       6,01
+  BOT 15 — Highest CO2       viável    2.750       9,91
+  BOT 16 — Highest CO2       viável    2.900       9,66
+  Folga = comprimento efetivo Leff do envelope − o
+  que o caso exige; 0 no caso governante.
+
+  Resultado preliminar: 6
+  recomendação(ões)/default(s) sem revisão (ver
+  Revisar).
+  Memorial de cálculo do equipamento: previsto na
+  F11; ainda não disponível.

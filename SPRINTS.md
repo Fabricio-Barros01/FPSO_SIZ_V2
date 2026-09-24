@@ -14,7 +14,8 @@ aquela fase).
 
 ## Estado atual
 
-**FASE ATUAL: F10c — PFD no modo interativo ← ATUAL (aguardando aprovação)**
+**FASE ATUAL: F11 — MC por equipamento/TAG ← ATUAL (proposta revisada; aguardando aprovação)**
+**F10c aprovada e entregue em 2026-09-23. Nenhuma implementação da F11 autorizada.**
 
 Ordem revista em 2026-09-23, por decisão do usuário: F10 (balanço → equipamentos, em
 F10a/b/c) e F11 (MC por TAG) vêm **antes** de F8 (Pinch) e F9 (Song).
@@ -36,9 +37,19 @@ e `uv run fpso-siz dimensionar --exemplo alves_komesu [--saida saida/]`.
 F10a e F10b entregues: propriedades ChEDL e integração dos 11 TAGs ao balanço, com
 origem de cada entrada, lacunas, casos inativos e envelopes. Novo comando:
 `uv run fpso-siz pfd --casos tests/fixtures/python_ref/design_cases_bot.json [--ajustes A.toml] [--saida saida/pfd]`.
-**608 testes, cobertura de 97,93 %**. Sem ajustes, V-001/002 dimensionam, oito TAGs
-aguardam entradas e SG-001 é inviável com as premissas atuais. Nenhuma lacuna foi
-preenchida sem fonte. Ver [`docs/validacao/09-pfd.md`](docs/validacao/09-pfd.md).
+Sem ajustes, V-001/002 dimensionam, oito TAGs aguardam entradas e SG-001 é inviável com
+as premissas atuais. Nenhuma lacuna foi preenchida sem fonte. Ver
+[`docs/validacao/09-pfd.md`](docs/validacao/09-pfd.md).
+
+F10c entregue: a unidade de trabalho é o **equipamento/TAG** — preenchimento automático
+(balanço), manual ou por arquivo/exemplo; pendências e recomendações por TAG × caso;
+revisão, edição por caso, restauração e retomada; a Planta/PFD percorre o mesmo serviço
+(`pfd/equipamento.py`). Um único `ajustes_pfd.toml` versionado (esquema 2, lê o legado)
+serve à sessão e aos comandos `dimensionar --tag … [--auto-balanco]`, `--avulso` e `pfd`,
+que gravam os mesmos bytes. Esquemas da planta e do TAG saem da topologia, em Unicode ou
+ASCII (`--ascii`), com tela estreita. **783 testes (+2 `-m latex`, +1 `-m julia`),
+cobertura de 96,86 %**; resultados numéricos iguais aos da F10b. Ver
+[`docs/validacao/10-fluxo-tag.md`](docs/validacao/10-fluxo-tag.md).
 
 ---
 
@@ -120,6 +131,8 @@ src/fpso_siz/
   balanco/    propriedades, modelo (solve_case + reciclo), balancos, auditoria, correntes_io
   sizing/     separador, knockout, tratador, bomba, trocador
   analysis/   pinch          dynamics/  song
+  pfd/        propriedades (ChEDL via _chedl), TAGs, adaptadores automático/manual,
+              serviço por TAG (equipamento.py), estado de sessão (ajustes.py), planta
   output/     latex/ (jinja2), csv, json   ← único lugar que formata
   _num.py     única porta para numpy/scipy
   cli.py      argparse; itera descritores, nunca nomeia parâmetro
@@ -300,22 +313,28 @@ verificação cruzada, fora do núcleo.
 **Aceite:** trajetórias iguais às fixtures; oráculo de convergência por refino de malha;
 cobertura ≥ 90 %.
 
-### F10 — Integração balanço → PFD (adiantada; em três subfases)
+### F10 — Integração balanço → equipamentos/TAGs (adiantada; em três subfases)
 **Visão do usuário:** o arquivo de casos 1–16 alimenta o balanço, e o balanço fornece
 **automaticamente** as entradas do dimensionamento dos 11 TAGs (SG-001, V-001/002,
-TO-001/002, P-001..003, B-001..003). O usuário só informa algo se quiser, pelo modo
-interativo. O detalhamento que falta ao balanço preliminar (propriedades na condição do
+TO-001/002, P-001..003, B-001..003). A unidade de trabalho é **um equipamento/TAG**:
+o usuário pode preencher manualmente, escolher o preenchimento automático ou sobrescrever
+valores. O automático usa balanço + propriedades com fonte; o que faltar é solicitado,
+sem valor suposto. Pode-se adiar o preenchimento, mantendo o TAG aguardando entrada.
+Planta/PFD é o atalho que percorre esse mesmo fluxo para todos os TAGs.
+O detalhamento que falta ao balanço preliminar (propriedades na condição do
 equipamento) é feito numa camada **oculta no balanço** (`src/fpso_siz/pfd/`, a jusante; o
 balanço e a paridade não mudam) e **exposta no MC do equipamento** (F11).
 
 **Regra das fontes (usuário, 2026-09-23): "para as referências sem fonte não suponha
 nada, complete o que é possível".**
-- Entra só o que tem equação, tabela ou premissa citável **no acervo** (`references/`).
+- Entra só o que tem equação, tabela ou premissa citável **no acervo** (`references/`)
+  ou referência da docstring ChEDL, conforme a decisão posterior da F10a.
 - O que não tem vira **lacuna de entrada** (sem valor recomendado): o TAG fica "aguardando
   entrada" até o usuário informar.
-- Tabela de fontes e lacunas: μ da água, μ do gás, k dos trocadores, geometria da linha
-  das bombas, NPSHr e temperaturas das utilidades são lacunas. O plano completo, com a
-  tabela, está em `docs/decisoes/0002-pfd-automatico.md`.
+- O levantamento inicial está em `docs/decisoes/0002-pfd-automatico.md`. μ da água e do
+  gás já foram atendidas pela F10a; as lacunas efetivas da F10b estão em
+  `docs/validacao/09-pfd.md`. O alerta será calculado das entradas do TAG/caso, nunca
+  copiado dessa lista histórica.
 - Mapeamento TAG → método → correntes: igual ao PFD F1 do Julia
   (`../FPSO_Siz/docs/validacao/10-pfd-casos-bot.md`, lacunas L01–L12).
 
@@ -379,25 +398,402 @@ Decisões/limitações documentadas em `docs/validacao/09-pfd.md`:
 
 **Notas para a F10c:** reutilizar `EntradasTAG.lacunas`, `specs`, `CasoTAG.insumos`,
 `valores`/`rastro` e `output.terminal.pfd.resumo`. Recomendações ainda aparecem como "a
-confirmar"; o menu deve registrar a aceitação como ajuste do usuário. Exportação do TOML
+confirmar"; a proposta abaixo distingue **confirmar a recomendação** de **editar o valor**,
+preservando a origem no primeiro caso e marcando usuário no segundo. Exportação do TOML
 de ajustes e reprodução da sessão são parte da F10c. Campos do CSV/JSON estão em
 `docs/esquemas/README.md`. Não tratar código 1 do `pfd` como falha de exportação: os
 arquivos são gravados também com lacunas/inviabilidade.
 
-#### F10c — PFD no modo interativo ← ATUAL
-Menu "Planta":
-- pede as lacunas, sem valor padrão, e oferece as recomendadas, com fonte, para confirmar;
-- mostra o resumo dos 11 TAGs e o detalhe de cada um (coluna Origem, rastro de
-  propriedades);
-- permite editar e redimensionar;
-- exporta JSONs, `planta.csv` e `ajustes_pfd.toml`, com o comando `fpso-siz pfd` que
-  reproduz a sessão byte a byte.
+#### F10c — Fluxo por equipamento/TAG no terminal; PFD como atalho ✅
 
-### F11 — Memoriais LaTeX dos equipamentos (logo após a F10)
-Mesmo pipeline da F4; conteúdo de referência em `src/memorial_specs/` do Julia. O MC por TAG
-expõe o detalhamento de propriedades (equações, fontes, valores por caso), a origem de cada
-entrada e as lacunas/recomendadas não revisadas.
-**Aceite:** um memorial A4 compilável por equipamento/TAG; bijeção testada.
+**Aprovada em 2026-09-23 e entregue** (registro da entrega no fim desta seção). O texto
+abaixo é a especificação aprovada. Esta seção substituiu a proposta anterior de começar
+pelo menu Planta. Aprovar esta fase não autorizou a F11 nem revisões de física.
+O produto continua sendo `fpso-siz` no terminal, com o cabeçalho atual no estilo OpenFOAM.
+Sem GUI, web, HTTP, app separado ou novas dependências de interface.
+
+**1. Um serviço por TAG, usado por todas as entradas**
+
+Inspeção da F10b: `pfd/entradas.montar` já é a única montagem automática. Porém
+`pfd/planta.dimensionar` contém a sequência montar → verificar pendências → dimensionar,
+enquanto `Sessao._equipamento` e `cmd_dimensionar` carregam TOML/exemplos e chamam o
+motor diretamente. Há caminhos separados de orquestração, sem uma segunda física PFD.
+
+Proposta de unificação:
+
+- Extrair o serviço por equipamento/TAG, por exemplo `pfd/equipamento.py`, com operações
+  de preparar entradas e dimensionar um `EntradasTAG`. O serviço retorna dados/estados;
+  não pergunta, imprime, desenha nem gera arquivos. O TAG identifica a instância; o tipo
+  de equipamento e método continuam no registro existente.
+- O adaptador automático continua em `pfd/entradas.py`: balanço → propriedades → ajustes
+  → pendências, sem duplicar regras. Um adaptador manual normaliza dados digitados,
+  TOML e exemplos para o mesmo contrato de entradas, origem e revisão. Ambos chegam à
+  mesma verificação de completude e à mesma chamada de `core.motor.size_envelope`.
+- Inviabilidade física, inclusive identificada ao preparar as entradas, retorna estado
+  e diagnóstico (`feasible = False`), nunca exceção para o usuário. Lacuna mantém
+  aguardando entrada. Erros de sintaxe, chave desconhecida ou contexto incompatível são
+  erros de entrada/uso separados; não se confundem com inviabilidade de equipamento.
+- O contexto compartilhado contém dados dos casos, premissas, balanço resolvido e versões.
+  Calcula-se o balanço uma vez por contexto quando houver preenchimento automático.
+  Selecionar um TAG não dimensiona os outros dez. O manual não consulta balanço/ChEDL
+  para completar campos que o usuário decidiu informar.
+- `pfd/planta.py` passa a percorrer o serviço por TAG e agregar resultados. O menu Planta
+  percorre também o mesmo formulário por TAG. O comando `pfd` usa o mesmo serviço, mas
+  sem perguntas: retorna as pendências em aberto e prossegue com os demais TAGs.
+- Os comandos e menus mantêm apenas seleção, leitura/escrita e apresentação. Extrair o
+  serializador de resultado por TAG de `output/pfd.py`, hoje dependente de `Planta`,
+  para exportar um equipamento sem fabricar uma execução dos onze.
+
+**2. Menu principal e percurso por equipamento**
+
+Ordem e textos propostos, declarados em `config/interativo.toml` por ids de ações:
+
+```text
+1) Equipamento / TAG
+2) Planta / PFD — todos os TAGs
+3) Balanço de massa e energia
+4) Casos de projeto
+5) Premissas do balanço
+6) Abrir / salvar ajustes
+0) Sair
+```
+
+Em Equipamento/TAG: escolher um TAG da planta ou um equipamento avulso. O catálogo de
+TAGs vem de `config/pfd/tags/`; tipos/métodos e parâmetros vêm do registro e dos
+`ParameterSpec`. Para o avulso, o automático solicita primeiro um TAG compatível, pois
+o tipo isolado não identifica suas correntes no balanço.
+
+```text
+Equipamento: V-001 · Vaso desgaseificador 1
+1) Preenchimento automático — balanço preliminar
+2) Preenchimento manual
+3) Carregar arquivo de entradas / exemplo
+0) Voltar
+```
+
+O automático mostra arquivo/hash, casos e premissas em uso, prepara o TAG, exibe o esquema
+local e a tabela de entradas por caso, depois o alerta exato de pendências. O manual
+permite começar sem os valores automáticos. Nos dois modos, qualquer entrada pode ser
+editada para todos os casos ou para casos específicos; a edição registra origem usuário.
+Os defaults numéricos de `ParameterSpec` não bastam como fonte: só oferecer os respaldados
+pelo catálogo de fontes, incluindo no manual. Arquivos/exemplos identificam sua origem;
+campos ausentes sem fonte continuam pendências, nunca herdam números silenciosamente.
+
+Com entradas completas nos casos ativos, dimensionar e mostrar resultado, governante,
+folga por caso e avisos. A tela permite ver entradas/fontes, propriedades/rastro,
+varredura, editar, redimensionar e exportar. Deve ser possível suspender um preenchimento
+incompleto, visitar outro TAG e retomar sem perder o trabalho. Inviabilidade mantém a
+mensagem e as entradas; não altera premissas para obter uma solução.
+
+**3. Pendências por TAG × caso e recomendações**
+
+- **Lacuna sem valor:** alerta destacado com chave, rótulo, unidade, faixa aplicável,
+  casos ativos afetados, motivo/dica e valores que dependem dela. Pergunta sem padrão;
+  Enter adia, não significa zero nem aceitação. Agrupar casos apenas quando a pendência
+  e seu contexto coincidirem; o detalhe por caso permanece acessível.
+- **Recomendada com fonte:** seção separada, com valor, fonte, casos e revisão. Oferecer
+  confirmar, editar ou deixar para revisão; aceitar todas exige ação explícita após
+  mostrar o conjunto. Confirmar preserva origem recomendada e registra a revisão;
+  editar registra origem usuário e preserva o valor/fonte anterior para auditoria.
+- **Default com fonte:** identificado como default, com referência e indicação de escolha
+  de projeto quando aplicável. Revisão não se confunde com disponibilidade numérica.
+  Recomendações/defaults ainda não revisados podem produzir cálculo preliminar, como na
+  F10b, mas seguem destacados no terminal, JSON e MC; nunca parecem confirmados.
+- A coluna Origem apresenta balanço, correlação, recomendada, default ou usuário. Premissa
+  do balanço mantém seu identificador; o rótulo de tela não elimina a classificação
+  detalhada já exportada na F10b. Lacuna tem marcador próprio, sem número.
+- Casos inativos mostram motivo, não pedem dados desnecessários e não governam o envelope.
+  Os estados continuam dimensionado / aguardando entrada / inviável / inativo. Avisos
+  de extrapolação e revisão são informações adicionais, não novos estados de viabilidade.
+
+**4. Ajustes únicos, reaproveitamento e reprodução**
+
+Um único estado de sessão, persistido em **`ajustes_pfd.toml`**, serve ao TAG isolado e ao
+PFD. Ao abrir Planta, os ajustes feitos em um equipamento já estão aplicados; somente
+pendências restantes são solicitadas. Nada é aplicado a outros TAGs implicitamente.
+
+Propor um esquema versionado, com seções de contexto e TAGs, em vez de misturar metadados
+com as tabelas de parâmetros hoje aceitas pela F10b:
+
+| Conteúdo | Persistência proposta |
+|---|---|
+| Contexto | versão do esquema, SHA-256 do BOT, premissas alteradas, versões do pacote/ChEDL e identidade da configuração |
+| Fonte por TAG | modo automático ou manual, método, identificação dos casos |
+| Ajustes | valores gerais do TAG e valores específicos por caso; caso prevalece sobre geral; manter origem/valor/fonte substituídos |
+| Revisões | confirmação por campo/caso com valor e fonte confirmados; independente da origem |
+| Manual | entradas e atividade por caso dentro do mesmo arquivo, inclusive preenchimento parcial |
+
+O leitor aceita os TOMLs legados da F10b (`["TAG"]` e `["TAG".caso."n"]`) como ajustes
+automáticos sem revisões registradas; o escritor gera o novo formato canônico. O contrato
+e a migração entram em `docs/esquemas/README.md`. O manual salvo de um TAG é respeitado
+pelo PFD, sem novo autopreenchimento. O avulso pode ser associado explicitamente a um TAG
+compatível; sem associação, não é transferido silenciosamente para a planta.
+
+Ao editar, invalidar o resultado afetado e recalcular antes de exibi-lo como atual. Ao
+trocar BOT/premissas, invalidar o balanço/propriedades/resultados automáticos dependentes.
+Revisões cujo valor/fonte mudou voltam a pendentes. Incompatibilidade de hash, casos ou
+método pede reconciliação explícita no terminal; no comando não interativo, erro de
+contexto com diagnóstico, sem reaplicar ajustes silenciosamente.
+
+Restaurar um campo automático remove seu ajuste e reaplica a regra com a origem original.
+Sobrescritas de entradas finais do método não reescrevem o balanço: editar a premissa
+de processo ou o insumo de propriedade correspondente é o caminho para recalcular seus
+dependentes. Essa distinção aparece na ação de edição e no rastro.
+
+**5. Subcomandos equivalentes**
+
+Formas propostas (disponíveis desde a entrega; o avulso ganhou `--avulso`, ver Entregue):
+
+```sh
+# Um TAG: inicia pelo balanço e usa os ajustes daquele TAG.
+fpso-siz dimensionar --tag V-001 --casos design_cases_bot.json --auto-balanco \
+  --ajustes ajustes_pfd.toml --saida saida/tag
+
+# Planta: mesmo fluxo por TAG; respeita modos/ajustes salvos, automático nos demais.
+fpso-siz pfd --casos design_cases_bot.json \
+  --ajustes ajustes_pfd.toml --saida saida/planta
+
+# Retomar um TAG manual salvo; não usa o balanço para preencher esse TAG.
+fpso-siz dimensionar --tag V-001 --casos design_cases_bot.json \
+  --ajustes ajustes_pfd.toml --saida saida/tag
+
+# Preservar a entrada avulsa existente (TOML/exemplo).
+fpso-siz dimensionar --exemplo alves_komesu --saida saida/exemplo
+fpso-siz dimensionar --casos entradas.toml --equipamento knockout --saida saida/manual
+```
+
+Com `--tag`, `--casos` identifica o contexto BOT JSON. Sem `--tag`, mantém o TOML atual.
+`--auto-balanco` seleciona o modo automático; sem ele, o TAG deve ter modo salvo no arquivo
+de ajustes (legado F10b implica automático). Conflito com modo manual salvo, método ou
+opções incompatíveis gera erro explícito; a troca de modo é uma decisão persistida.
+`--exemplo` não se combina com `--tag`/`--auto-balanco`. `--premissa` segue disponível,
+com a mesma validação de contexto nos dois comandos. Nenhum deles pede input em execução
+não interativa. Códigos 0/1/2 mantêm os significados documentados na F10b.
+
+A sessão exporta o arquivo único de ajustes e imprime o comando correspondente ao escopo
+escolhido. Um JSON e CSV de varredura por TAG saem do serializador comum; o PFD apenas
+acrescenta `planta.csv`. A exportação do mesmo TAG, pelo menu, comando isolado ou PFD,
+deve ser **idêntica byte a byte** para o mesmo contexto e ajustes. Estado dos outros TAGs
+não pode alterar seu artefato. A exportação dos ajustes também tem ordenação e números
+determinísticos, sem timestamps ou caminhos de saída embutidos. Resultado parcial pode
+ser salvo e reproduzido. A promessa é dos arquivos, não de prompts, cor ou tempo de execução.
+
+**6. Representação no terminal**
+
+Toda composição de telas/esquemas/tabelas fica em `output/terminal/`, inclusive para os
+subcomandos. `cli.py` delega a apresentação. `config/interativo.toml` passa a declarar
+menus, textos de ações/alertas, rótulos de estado/origem, legendas, ordem das colunas,
+formatos Unicode/ASCII e prioridades em telas estreitas. Rótulos/unidades de parâmetros
+continuam nos `ParameterSpec`; fontes permanecem no catálogo técnico, sem duplicação.
+Migrar também os menus hoje fixos em `sessao.py`, pois o teste atual verifica nomes de
+parâmetros, mas não assegura que textos e ordem venham da configuração.
+
+A conectividade vem exclusivamente de `config/topologia_db.toml`, acessada pelo módulo
+de topologia existente, e a associação bloco→TAG vem dos descritores de TAG. Misturadores,
+reciclo, ambos os lados do trocador e saídas de fronteira são preservados. Bloco fora do
+escopo de dimensionamento não recebe status inativo. Evitar um desenho fixo do FPSO em
+código: renderizar linhas bloco/correntes a partir das adjacências, em ordem declarada.
+
+Usar biblioteca padrão e a infraestrutura de estilo atual. Detectar capacidade da saída;
+degradar setas, bordas, símbolos, acentos e unidades para ASCII seguro quando necessário.
+Oferecer `--ascii` nos percursos de terminal e nos subcomandos relevantes para forçar o
+modo. Cor é independente de Unicode, respeita `NO_COLOR`, pipes e `TERM=dumb`. Os estados
+têm rótulos além de cor. Em terminal estreito, dividir o desenho em linhas e expandir
+fontes longas em detalhe; nunca truncar TAG, corrente ou a identificação de uma pendência.
+
+Exemplo de tela PFD (contexto real F10b, sem ajustes; cabeçalho OpenFOAM omitido aqui).
+O desenho mostra conectividade; o estado entre colchetes é do envelope dos 16 casos:
+
+```text
+Planta / PFD · design_cases_bot.json · casos 1–16
+2 dimensionados · 8 aguardando entrada · 1 inviável · 0 inativos
+
+C-01, C-02  → [M-01   ·] → C-03
+C-03        → [SG-001 X] → C-04 (saída), C-05 (saída), C-06
+C-06, C-22  → [P-001  ?] → C-07, C-23
+C-07        → [P-002  ?] → C-08
+C-08        → [V-001  D] → C-09 (saída), C-10
+C-10        → [TO-001 ?] → C-11, C-12
+C-12        → [B-002  ?] → C-13
+C-14        → [DWH-001·] → C-15
+C-11, C-15  → [M-02   ·] → C-16
+C-16        → [V-002  D] → C-17 (saída), C-18
+C-18        → [TO-002 ?] → C-19, C-21
+C-19        → [B-003  ?] → C-20
+C-13, C-20  → [M-03   ·] → C-02 (retorno ao M-01)
+C-21        → [B-001  ?] → C-22 (retorno ao P-001)
+C-23        → [P-003  ?] → C-24
+C-24        → [MED-001·] → C-25 (saída), C-26 (saída)
+
+D dimensionado   ? aguardando entrada   X inviável   - inativo
+· bloco sem dimensionamento; permanece no balanço
+
+TAG     Caso governante         Resultado
+V-001   BOT 08 — Mid Life       Diâmetro: 4850 mm
+V-002   BOT 03 — Early Life Blend  Diâmetro: 4700 mm
+
+1) Abrir um TAG   2) Preencher pendências   3) Exportar   0) Voltar
+```
+
+No desenho ASCII, `→` vira `->` e o marcador de bloco sem dimensionamento vira `.`;
+os rótulos também degradam para ASCII. Um filtro por caso mostra, por exemplo, B-002/003
+inativos no caso 1, sem confundir essa atividade com a viabilidade do envelope.
+
+Exemplo da tela de um TAG (TO-001 antes de preencher a gotícula; filtro de entradas no
+caso 1, pendências listadas para todos os casos ativos):
+
+```text
+TO-001 · Desidratador · casos 1–16 · aguardando entrada
+                  ┌────────────────┐
+V-001 ── C-10 ──→ │    TO-001 ?    │ ── C-11 ──→ M-02
+                  └────────────────┘ ── C-12 ──→ B-002
+
+! FALTA 1 ENTRADA, AFETANDO 16 CASOS ATIVOS
+Chave      Entrada                         Unidade  Casos
+dm_water   Gotícula após coalescência       µm       1–16
+Valor: não informado; sem recomendação com fonte disponível.
+Necessário: dado de coalescência/laboratório para este serviço.
+
+RECOMENDADAS COM FONTE — REVISÃO PENDENTE
+Entrada           Valor   Unidade  Casos  Origem       Fonte
+Retenção óleo     20      min      1–16  recomendada  S&A Tab. 4.1, nota
+Retenção água     10      min      1–16  recomendada  S&A §4.7.4
+Fonte detalhada: óleo intermediário, limite superior ×2 pela emulsão.
+
+ENTRADAS · caso 1 (trecho; as demais estão no detalhe)
+Entrada           Valor   Unidade  Origem       Fonte
+Vazão de água     0       m³/h     correlação   C-10: massa/ρ(T), Laliberté
+Retenção óleo     20      min      recomendada  S&A Tab. 4.1, nota
+Gotícula água     —       µm       lacuna       dado não informado
+
+Aplicar preenchimento: 1) todos os casos afetados  2) escolher casos
+Gotícula após coalescência [µm] (Enter adia): _
+1) Confirmar recomendadas   2) Editar entradas   3) Salvar   0) Voltar
+Dimensionamento pendente; nenhum resultado concluído é apresentado.
+```
+
+A tela real inclui a faixa do descritor e a referência completa em detalhe. Zero de vazão
+existente não é lacuna nem torna o TAG inativo enquanto houver outra fase com vazão.
+As folgas só aparecem após o cálculo, com o nome/unidade definidos pelo método.
+
+**7. Gancho para o MC e critérios de aceite da F10c**
+
+Recomendação: F10c entrega o fluxo e o contrato de dados; **a geração efetiva de MC fica
+inteira na F11**. O resultado por TAG já reúne entradas, revisões, fontes, propriedades,
+pendências e rastro do método. Preparar a conexão da ação de exportação a esse resultado,
+sem templates provisórios nem uma segunda execução da física. Até a F11, a interface
+informa que o memorial do equipamento ainda não está disponível; não oferece uma ação
+que aparenta gerar um MC. Após a F11, a mesma tela oferece gerar LaTeX/PDF ao dimensionar.
+
+Aceite proposto:
+
+- Sessões roteirizadas: escolher TAG, automático, manual, importação, preenchimento parcial,
+  editar por caso, restaurar, confirmar recomendações, redimensionar e retomar.
+- Sequência equipamento → PFD → equipamento reutiliza exatamente entradas, revisões e
+  resultados; trocar contexto invalida o que depende dele. Nenhum dado sem fonte é suposto.
+- Teste de delegação: PFD e TAG isolado chamam o mesmo serviço; no PFD o balanço é
+  reutilizado, e o TAG isolado não dimensiona os demais. Paridade numérica com a F10b,
+  inclusive lacunas, casos inativos e SG-001 inviável, sem revisão implícita do método.
+- Ida e volta do TOML versionado e leitura de legados; igualdade byte a byte dos arquivos
+  da sessão e dos comandos equivalentes, inclusive modos mistos manual/automático,
+  pendências salvas e recomendações não revisadas.
+- Snapshots do menu, PFD, esquema local, entradas/Origem, pendências, recomendações e
+  resultado/folga: Unicode, ASCII, terminal estreito e saída sem cor. Cor com teste
+  próprio; conteúdo/estados não dependem dela. Fixtures incluem os quatro estados.
+- Validar arestas dos esquemas contra a topologia, não apenas sua aparência. Teste com
+  TAGs/correntes renomeados e ordem alterada em configuração: a tela deve acompanhar;
+  verificar também reciclo, fronteiras e trocador com dois lados.
+- Expandir arquitetura: proibir TAGs/correntes fixos e montagem de entradas nos módulos
+  de interface; verificar ids/textos/ordem dos menus contra o TOML; manter a separação
+  núcleo/saída e as portas `_num.py` e `pfd/_chedl.py`. Sem dependências novas.
+- Suíte completa verde e cobertura ≥ 90 % no núcleo, incluindo os serviços novos.
+  Preservar paridade bit a bit do balanço e fixtures Julia. Registrar a validação, esquema
+  de exportação e números finais em docs e neste backlog.
+
+Arquivos previstos após aprovação: `pfd/{equipamento,entradas,planta}.py`, adaptador manual
+e persistência de ajustes; `cli.py`; `output/{dimensionamento,pfd}.py`;
+`output/terminal/{sessao,pfd,relatorio,estilo}.py` e renderizador de esquemas;
+`config/interativo.toml`; testes de integração, arquitetura e snapshots. A topologia é
+lida, não redesenhada. Atualizar o ADR 0002 para refletir esta proposta quando aprovada;
+as entregas F10a/b continuam registradas como histórico.
+
+**Entregue (2026-09-23).** Commit: pendente — registrar o hash ao commitar.
+- Núcleo: `pfd/equipamento.py` (Contexto com balanço único e cache por estado; preparar,
+  dimensionar, executar), `pfd/manual.py` (arquivo/exemplo → importados; avulso;
+  associação), `pfd/ajustes.py` (EstadoTAG/Ajustes, esquema 2, legado F10b, contexto),
+  `pfd/entradas.py` com o adaptador manual, revisões, substituídos, faixas e dependentes
+  das lacunas; `pfd/planta.py` percorre o serviço.
+- Saída: `output/pfd.py` (serializador por TAG, sem depender da planta; JSON esquema 2 e
+  `<TAG>_varredura.csv`), `output/ajustes.py` (TOML determinístico),
+  `output/terminal/{esquema,pfd,sessao,estilo,relatorio}.py`; menus, textos, rótulos,
+  colunas com prioridade e tabelas Unicode/ASCII em `config/interativo.toml`.
+- CLI: `dimensionar --tag/--auto-balanco/--ajustes/--premissa/--avulso`, `pfd --ajustes`
+  (esquema 2 ou legado), `interativo --ajustes`, `--ascii`. `dimensionar --exemplo/--casos`
+  segue no contrato do Julia, com bytes idênticos aos da F7b.
+- Verificação: fixture `tests/fixtures/pfd/f10b_resultados.json` (gerada pelo código da
+  F10b via `git archive`) — estados, lacunas, valores, envelopes, folgas e `planta.csv`
+  iguais; 4.128 valores e os envelopes conferidos também contra a saída direta da F10b.
+  Delegação espionada (11 TAGs com um balanço; TAG isolado sozinho), cache e invalidação,
+  manual sem balanço/ChEDL, ida e volta do TOML, sessões roteirizadas (automático, manual
+  parcial e retomada, importação por nome, edição por caso, restauração, revisão,
+  equipamento → PFD → equipamento, troca de premissa e de BOT, reconciliação, avulso),
+  igualdade byte a byte sessão × comando × PFD em modos mistos, snapshots (Unicode,
+  ASCII, estreita, sem cor; os quatro estados), esquemas relidos contra a topologia (e
+  renomeada/reordenada) e testes de arquitetura novos (sem TAG/corrente fixos nem
+  montagem de entradas na interface; textos e menus só no TOML; serviço no núcleo).
+- **783 testes (+2 `-m latex`, +1 `-m julia`), cobertura de 96,86 %** (`pfd/` 96–100 %).
+  Balanço, memoriais e fixtures Julia inalterados.
+- Desvios e decisões (detalhes em `docs/validacao/10-fluxo-tag.md`): `--avulso` para
+  reproduzir o avulso; conta impossível (erro de domínio) vira inviabilidade no serviço,
+  sem mexer no motor; no manual a atividade vem do usuário e das regras de vazão (a de
+  carga térmica depende do balanço); faixas [mín, máx] só no manual; importação casa
+  casos pelo nome; a grade do catálogo (F10b) deixa o exemplo de knockout do Julia
+  inviável como avulso (passo de 150 mm fora da banda de SR) — registrado, sem revisão de
+  física. ADR 0002, `docs/esquemas/README.md` e `CLAUDE.md` atualizados.
+
+**Notas para a F11:**
+- O gerador consome `ResultadoTAG` (`entradas`, `resultado`, `estado`) e o `Contexto`:
+  entradas com origem/fonte/`revisao`/`anterior`, lacunas com `dependentes`,
+  `revisoes()`, rastro por caso (blocos "entradas" e "propriedades") e o rastro do método
+  por caso no envelope. O JSON por TAG já tem os mesmos dados; o MC deve reproduzir os
+  mesmos valores.
+- A tela do TAG mostra só a nota "Memorial … previsto na F11"
+  (`textos.memorial_indisponivel`); a ação entra no menu `tag` do `interativo.toml` e no
+  `DESPACHO` da sessão. `--mc [--pdf]` entra em `dimensionar --tag` e `pfd`.
+- Relatório de pendências/diagnóstico: `status` aguardando/inviável/inativo e
+  `preliminar` já distinguem os casos.
+
+### F11 — MC por equipamento/TAG, ligado ao mesmo fluxo (proposta revisada) ← ATUAL
+
+**Aguardando aprovação própria.** Mesmo pipeline LaTeX A4 da F4, template SENAI e conteúdo
+de referência em `src/memorial_specs/` do Julia. Cada gerador consome o resultado do serviço
+por TAG da F10c, com os mesmos valores exportados em JSON/CSV; o template só apresenta.
+
+Ao terminar um dimensionamento, oferecer **Gerar memorial de cálculo** no menu do TAG.
+No PFD, oferecer geração para os TAGs selecionados usando o mesmo gerador em laço.
+Equivalente proposto: acrescentar `--mc [--pdf]` ao `dimensionar --tag ...` e ao `pfd`;
+`--saida` obrigatório para gravar, `--pdf` exige `--mc`. O comando impresso inclui contexto,
+ajustes e formato. O memorial do balanço mantém seu comando e sua paridade.
+
+Conteúdo por TAG: identificação e esquema de correntes; casos ativos/inativos e motivo;
+entradas com origem, fonte e revisões; valores anteriores às sobrescritas; propriedades
+com equações, hipóteses, versões e avisos; lacunas/recomendações/defaults não revisados;
+resultado, governante, folga, inviabilidade e rastro. O manual também é rastreável, sem
+atribuir ao balanço valores informados pelo usuário.
+
+Com entradas completas e resultado viável, gerar MC de dimensionamento, marcando revisão
+pendente quando aplicável. Se houver lacunas, inviabilidade ou inatividade, permitir
+**relatório de pendências/diagnóstico**, identificado como tal, sem conclusão de
+dimensionamento nem dimensões fictícias. Recomendações não revisadas não desaparecem
+do documento só porque o cálculo conseguiu terminar.
+
+Aceite proposto: memorial A4 compilável para os métodos já disponíveis e para cada um dos
+11 TAGs; casos manual/automático e diagnósticos exercitados; bijeção equação↔rastro testada;
+valores coincidentes entre terminal, JSON, CSV e MC; geração por TAG e em lote usa o mesmo
+resultado. LaTeX e dados devem reproduzir bytes sob contexto fixado. PDF exige também
+toolchain e metadados determinísticos fixados na F11 antes de prometer igualdade binária.
+Testes `-m latex` compilam os documentos; cobertura ≥ 90 % no núcleo e arquiteturas verdes.
+Pinch/Song recebem seus memoriais quando seus métodos forem portados nas fases seguintes.
 
 ### F12 — Portabilidade (Java/C) e distribuição
 Baseline medido com Nuitka/PyInstaller (tamanho, startup, deps) no Linux e passos para

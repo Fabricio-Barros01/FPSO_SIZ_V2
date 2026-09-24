@@ -1,0 +1,8 @@
+O que você quer fazer?
+   1  Equipamento / TAG             11 TAGs · 0 avulso(s)
+   2  Planta / PFD — todos os TAGs  16 casos
+   3  Balanço de massa e energia    16 casos
+   4  Casos de projeto              design_cases_bot.json
+   5  Premissas do balanço          todas no valor de base
+   6  Abrir / salvar ajustes        nenhum ajuste nesta sessão
+   0  Sair

@@ -25,14 +25,20 @@ backlog: [`SPRINTS.md`](SPRINTS.md), que deve ser lido primeiro.
 3. **Uma física, três saídas.** Toda equação avaliada emite `CalcTrace`, e o memorial, o
    JSON e o CSV saem desse mesmo rastro, com bijeção equação↔rastro.
 4. **A CLI não nomeia parâmetros.** Ela itera os `ParameterSpec` declarados por cada método.
-   Isso vale para `cli.py`, `output/terminal/*` (modo interativo) e `output/dimensionamento.py`.
-   O que aparece na tela e em que ordem vem de `config/interativo.toml`.
+   Isso vale para `cli.py`, `output/terminal/*` (modo interativo), `output/dimensionamento.py`,
+   `output/pfd.py` e `output/ajustes.py`. O que aparece na tela e em que ordem vem de
+   `config/interativo.toml` (menus por id de ação). A interface também não fixa TAG, bloco
+   nem corrente (os desenhos saem de `config/topologia_db.toml`) e não monta entradas nem
+   chama o motor: isso é do serviço por TAG.
 
 ## Contrato de dimensionamento
 Todo método herda `core.contrato.MetodoDimensionamento` e implementa os hooks com os
 **mesmos nomes do Julia**. O motor (`core/motor.py`) nunca cita grandeza. Inviabilidade é
 estado (`feasible = False` + mensagem), nunca exceção. Oráculo dos equipamentos:
-`tests/fixtures/julia/` (commit no `manifesto.json`).
+`tests/fixtures/julia/` (commit no `manifesto.json`). Um TAG da planta (ou um equipamento
+avulso) é sempre preparado e dimensionado por `pfd/equipamento.py` — o TAG isolado, o PFD e
+o modo interativo passam pelo mesmo serviço; o estado de sessão é um `ajustes_pfd.toml`
+versionado (`docs/esquemas/README.md`).
 
 ## Dependências
 numpy/scipy só via `fpso_siz/_num.py`, para manter o port a C/Java mapeável; jinja2 só em
@@ -50,8 +56,12 @@ uv run pytest -m latex                      # compila os memoriais (lento)
 uv run pytest -m julia                      # regenera as fixtures do Julia e compara
 tools/exportar_fixtures_julia.sh [commit]   # fixtures do Julia (git archive, só leitura)
 uv run python tools/comparar_memorial.py    # paridade do memorial, template a template
-uv run fpso-siz                             # modo interativo (num terminal)
-uv run fpso-siz dimensionar --exemplo alves_komesu [--saida saida/]
+uv run fpso-siz                             # modo interativo (num terminal); --ascii
+uv run fpso-siz dimensionar --exemplo alves_komesu [--saida saida/]      # contrato Julia
+uv run fpso-siz dimensionar --tag V-001 --casos design_cases_bot.json --auto-balanco \
+    [--ajustes ajustes_pfd.toml] [--saida saida/tag]
+uv run fpso-siz pfd --casos design_cases_bot.json [--ajustes ajustes_pfd.toml] [--saida saida/pfd]
+FPSO_SNAPSHOTS=1 uv run pytest tests/test_terminal_pfd.py   # regenera os snapshots de tela
 ```
 
 ## Memoriais (LaTeX)

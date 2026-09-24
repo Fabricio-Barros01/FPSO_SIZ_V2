@@ -1,0 +1,100 @@
+
+  ENTRADAS · BOT 01 — Early Life
+  Chave                  Valor  Unidade  Origem      Revisão
+  ───────────────────  ───────  ───────  ──────────  ────────────────
+  m_tubo               298,555  kg/s     balanço
+  cp_tubo              1993,99  J/kg·K   balanço
+  t_tubo_in            80,3181  °C       balanço
+  t_tubo_out                90  °C       balanço
+  rho_tubo             889,047  kg/m³    correlação
+  mu_tubo                  7,9  cP       correlação
+  k_tubo                     —  W/m·K    lacuna
+  m_casco                    —  kg/s     lacuna
+  cp_casco                   —  J/kg·K   lacuna
+  t_casco_in                 —  °C       lacuna
+  mu_casco                   —  cP       lacuna
+  k_casco                    —  W/m·K    lacuna
+  h_casco                  500  W/m²·K   default
+  corte_chicana           0,25  –        default     revisão pendente
+  espacamento_chicana      0,4  –        default     revisão pendente
+  layout_tubos              30  °        default     revisão pendente
+  pares_veda                 1  –        default     revisão pendente
+  folga_furo_chicana       0,8  mm       default     revisão pendente
+  faixas_divisoras           0  –        default     revisão pendente
+  d_externo              19,05  mm       default     revisão pendente
+  espessura               2,11  mm       default     revisão pendente
+  k_parede                   —  W/m·K    lacuna
+  rf_tubo                    —  m²·K/W   lacuna
+  rf_casco                   —  m²·K/W   lacuna
+  razao_passo             1,25  –        default     revisão pendente
+  passes_tubo                2  –        default     revisão pendente
+  n_min                    648  –        default
+  n_max                   1945  –        default
+  n_step                     5  –        default     revisão pendente
+  v_min                      1  m/s      default     revisão pendente
+  v_max                      3  m/s      default     revisão pendente
+  d_casco_max             2500  mm       default     revisão pendente
+  l_tubo_max                 6  m        default     revisão pendente
+    m_tubo · Entrada: Vazão mássica no tubo
+    m_tubo · Fonte: C-07: ṁ total
+    cp_tubo · Entrada: Calor específico no tubo
+    cp_tubo · Fonte: C-07: C/ṁ (cp do balanço)
+    t_tubo_in · Entrada: Temperatura de entrada no tubo
+    t_tubo_in · Fonte: C-07: T
+    t_tubo_out · Entrada: Temperatura de saída no tubo
+    t_tubo_out · Fonte: C-08: T
+    rho_tubo · Entrada: Densidade no tubo
+    rho_tubo · Fonte: C-07: ρ da fase liquido (volumes aditivos)
+    mu_tubo · Entrada: Viscosidade no tubo
+    mu_tubo · Fonte: C-07: μ da fase contínua (oleo), sem fase dispersa
+    k_tubo · Entrada: Condutividade do fluido do tubo
+    m_casco · Entrada: Vazão mássica no casco
+    m_casco · Fonte: t_agua_in, t_agua_out
+    cp_casco · Entrada: Calor específico no casco
+    cp_casco · Fonte: t_agua_in, t_agua_out
+    t_casco_in · Entrada: Temperatura de entrada no casco
+    t_casco_in · Fonte: t_agua_in
+    mu_casco · Entrada: Viscosidade no casco
+    mu_casco · Fonte: t_agua_in, t_agua_out
+    k_casco · Entrada: Condutividade do fluido do casco
+    k_casco · Fonte: t_agua_in, t_agua_out
+    h_casco · Entrada: Coeficiente de convecção no casco (se Bell-Delaware desligado)
+    h_casco · Fonte: só com Bell-Delaware desligado; aqui h_o é calculado (Branan Eq. 2-18)
+    corte_chicana · Entrada: Corte da chicana / diâmetro do casco
+    corte_chicana · Fonte: Saari Tab. 3.1 (p. 21): 'very often 25% of shell inside diameter'
+    espacamento_chicana · Entrada: Espaçamento de chicana / diâmetro do casco
+    espacamento_chicana · Fonte: Saari Tab. 3.1 (p. 21): 0,2 a 1,0·Ds; adotado 0,4·Ds
+    layout_tubos · Entrada: Arranjo do feixe
+    layout_tubos · Fonte: Branan (2012) Tab. 2-6: 30° triangular
+    pares_veda · Entrada: Pares de faixas de vedação
+    pares_veda · Fonte: 1 par (Branan p. 44: regra de bolso de um par a cada ~6 fileiras de tubos)
+    folga_furo_chicana · Entrada: Folga furo da chicana − diâmetro do tubo
+    folga_furo_chicana · Fonte: Branan (2012) p. 44: 'usually 0.8 mm' (furo da chicana − d_o)
+    faixas_divisoras · Entrada: Faixas divisoras de passe paralelas ao escoamento
+    faixas_divisoras · Fonte: divisória de passe perpendicular ao escoamento (nota do método)
+    d_externo · Entrada: Diâmetro externo do tubo
+    d_externo · Fonte: Saari Tab. 3.1 (p. 21): tubos típicos de 12,7 a 25,4 mm; 19,05 mm (3/4 in) dentro da faixa
+    espessura · Entrada: Espessura da parede do tubo
+    espessura · Fonte: Branan (2012) p. 38: 'start with 14 BWG' (2,11 mm)
+    k_parede · Entrada: Condutividade da parede
+    rf_tubo · Entrada: Incrustação no lado tubo
+    rf_casco · Entrada: Incrustação no lado casco
+    razao_passo · Entrada: Passo do feixe / diâmetro do tubo
+    razao_passo · Fonte: Saari Tab. 3.1 (p. 21): passo de 1,25 a 1,5·d_o; adotado o menor
+    passes_tubo · Entrada: Passes no lado tubo
+    passes_tubo · Fonte: 2 passes no tubo (Saari Tab. 3.1: até Ds,i em centenas de mm; fator F da Fig. 4.3)
+    n_min · Entrada: Tubos por passe — mínimo
+    n_min · Fonte: domínio de busca: banda de velocidade no tubo, n = ṁ/(ρ·v·A_i)
+    n_max · Entrada: Tubos por passe — máximo
+    n_max · Fonte: domínio de busca: banda de velocidade no tubo, n = ṁ/(ρ·v·A_i)
+    n_step · Entrada: Passo da grade de tubos
+    n_step · Fonte: passo da grade do método (5 tubos)
+    v_min · Entrada: Velocidade mínima no tubo
+    v_min · Fonte: Saari Tab. 3.1 (p. 21): 'often 1m/s unless better information is available'
+    v_max · Entrada: Velocidade máxima no tubo
+    v_max · Fonte: Saari Tab. 3.1 (p. 21): erosão, < 3 m/s em aço-carbono
+    d_casco_max · Entrada: Diâmetro máximo do casco
+    d_casco_max · Fonte: Saari Tab. 3.1 (p. 21): casco de chapa enrolada de 300 a 2500 mm
+    l_tubo_max · Entrada: Comprimento máximo do tubo
+    l_tubo_max · Fonte: Branan (2012) p. 38: tubos de 4 a 20 ft (6,1 m); default do método 6 m
+  ! C-07: viscosidade do óleo limitado a 70 °C (tabela do BOT; P-40)

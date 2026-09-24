@@ -1,15 +1,18 @@
-"""Entradas dos equipamentos a partir do balanço (F10b).
+"""Entradas dos equipamentos: adaptador automático (F10b) e adaptador manual (F10c).
 
-Para cada TAG (config/pfd/tags/) e cada caso do balanço, cada entrada do método de
-dimensionamento sai de UMA origem, nesta precedência:
+Para cada TAG (config/pfd/tags/) e cada caso, cada entrada do método de dimensionamento
+sai de UMA origem, nesta precedência:
 
-    usuário (ajustes) > regra do TAG > recomendada do TAG > default do método com fonte
-    (config/pfd/metodos.toml) > LACUNA
+    automático: usuário (caso > geral) > regra do TAG (balanço/propriedades) > recomendada
+                do TAG > default do método com fonte (config/pfd/metodos.toml) > LACUNA
+    manual:     usuário (caso > geral) > arquivo importado (caso > geral) > recomendada do
+                TAG > default do método com fonte > LACUNA
 
-e carrega a origem e a fonte (JSON, terminal e MC). As propriedades na condição do
-equipamento vêm de pfd/fluidos.py e vão para o rastro do caso (bloco "propriedades"); cada
-entrada resolvida vai para o bloco "entradas". Lacuna é NaN e deixa o TAG "aguardando
-entrada": pela regra das fontes, nada sem fonte citável é suposto.
+e carrega a origem, a fonte e o estado de revisão (JSON, terminal e MC). O manual não
+consulta o balanço nem o ChEDL. As propriedades na condição do equipamento vêm de
+pfd/fluidos.py e vão para o rastro do caso (bloco "propriedades"); cada entrada resolvida
+vai para o bloco "entradas". Lacuna é NaN e deixa o TAG "aguardando entrada": pela regra
+das fontes, nada sem fonte citável é suposto.
 """
 import math
 from dataclasses import dataclass, field, replace
@@ -24,9 +27,15 @@ from fpso_siz.core.ieee import div
 from fpso_siz.core.trace import Rastro
 from fpso_siz.core.unidades import HORAS_POR_DIA, SEGUNDOS_POR_HORA, kj_para_j, kw_para_w, mm_para_m
 from fpso_siz.pfd import fluidos
+from fpso_siz.pfd.ajustes import MANUAL, estado_legado
 
 BLOCO = "entradas"
 LACUNA = "lacuna"
+USUARIO = "usuario"
+ARQUIVO = "arquivo"
+# estados de revisão de um valor (o cálculo não depende deles; só o destaque)
+PENDENTE, CONFIRMADA, DESATUALIZADA = "pendente", "confirmada", "desatualizada"
+REVISAO_ABERTA = (PENDENTE, DESATUALIZADA)
 
 
 def cfg():
@@ -44,14 +53,28 @@ def rotulo_origem(origem):
 @dataclass(frozen=True)
 class Valor:
     valor: float
-    origem: str            # balanco | propriedade | premissa | recomendada | metodo | usuario | lacuna
+    origem: str            # balanco | propriedade | premissa | recomendada | metodo | usuario | arquivo | lacuna
     fonte: str = ""
     tipo: str = ""         # só para origem "metodo": fonte | escolha | nao_usado | grade
     pendente: tuple = ()   # lacunas de que o valor depende (chaves do método ou insumos do TAG)
+    faixa: tuple = ()      # (mín, máx) quando a entrada é uma faixa (arquivo/manual); valor = NaN
+    revisao: str = ""      # "" | pendente | confirmada | desatualizada
+    anterior: dict = None  # o que a entrada do usuário substituiu: {origem, fonte, valor}
 
     @property
     def lacuna(self):
         return self.origem == LACUNA
+
+    @property
+    def numero(self):
+        """O que foi informado/calculado: float, ou a tupla (mín, máx) de uma faixa."""
+        return self.faixa if self.faixa else self.valor
+
+    @property
+    def requer_revisao(self):
+        """Recomendações e defaults com fonte precisam de confirmação explícita; o cálculo
+        preliminar pode usá-los, mas eles seguem destacados até lá."""
+        return self.origem == "recomendada" or (self.origem == "metodo" and self.tipo in ("fonte", "escolha"))
 
 
 @dataclass(frozen=True)
@@ -62,6 +85,20 @@ class Lacuna:
     faixa: tuple            # (mín, máx) do descritor, ou () para insumo do TAG
     dica: str
     casos: tuple            # números dos casos ativos que dependem dela
+    dependentes: tuple = ()  # outras entradas que só se calculam com ela
+
+
+@dataclass(frozen=True)
+class Revisao:
+    """Recomendação/default (ou revisão desatualizada) ainda sem confirmação, agrupada
+    pelos casos ativos em que tem o mesmo valor e a mesma fonte."""
+    chave: str
+    valor: object           # float ou (mín, máx)
+    fonte: str
+    origem: str
+    tipo: str
+    estado: str             # pendente | desatualizada
+    casos: tuple
 
 
 @dataclass
@@ -84,13 +121,35 @@ class EntradasTAG:
     specs: dict             # chave → ParameterSpec, na ordem do método
     casos: list
     lacunas: list = field(default_factory=list)
+    modo: str = "automatico"
+    avulso: bool = False
 
     @property
     def pronto(self):
         return not self.lacunas
 
     def case_set(self):
-        return CaseSet([Case(c.nome, {k: v.valor for k, v in c.valores.items()}, c.ativo) for c in self.casos])
+        return CaseSet([Case(c.nome, {k: list(v.faixa) if v.faixa else v.valor for k, v in c.valores.items()},
+                             c.ativo) for c in self.casos])
+
+    def caso(self, num):
+        return next(c for c in self.casos if c.num == num)
+
+    def revisoes(self):
+        """[Revisao] em aberto nos casos ativos, na ordem do método."""
+        grupos = {}
+        for c in self.casos:
+            if not c.ativo:
+                continue
+            for k, v in c.valores.items():
+                if v.revisao in REVISAO_ABERTA:
+                    grupos.setdefault((k, v.numero, v.fonte, v.origem, v.tipo, v.revisao), []).append(c.num)
+        return [Revisao(k, n, f, o, t, r, tuple(nums)) for (k, n, f, o, t, r), nums in grupos.items()]
+
+    @property
+    def preliminar(self):
+        """Há recomendação/default sem revisão entre as entradas dos casos ativos."""
+        return bool(self.revisoes())
 
     def avisos(self):
         """[(aviso, [casos])] na ordem em que aparecem."""
@@ -109,9 +168,11 @@ class _Pendente(Exception):
 
 # ------------------------------------------------------------------ contexto de um caso
 class _Caso:
-    def __init__(self, tag, metodo, specs, r, dados, prem, ajustes):
+    def __init__(self, tag, metodo, specs, r, dados, prem, ajustes, importados=None, arquivo=""):
         self.tag, self.metodo, self.specs = tag, metodo, specs
         self.r, self.dados, self.prem, self.aj = r, dados, prem, ajustes
+        self.manual = importados is not None     # manual: não consulta balanço nem ChEDL
+        self.imp, self.arquivo = importados or {}, arquivo
         self.padroes = metodos().get(metodo.method_id, {})
         self.rastro = Rastro()
         self.avisos = []
@@ -135,8 +196,10 @@ class _Caso:
 
     def _resolver(self, chave):
         if chave in self.aj:
-            return Valor(float(self.aj[chave]), "usuario", "ajustes do usuário")
-        regra = self.tag.entradas.get(chave)
+            return _informado(self.aj[chave], USUARIO, "ajustes do usuário")
+        if self.manual and chave in self.imp:
+            return _informado(self.imp[chave], ARQUIVO, self.arquivo)
+        regra = None if self.manual else self.tag.entradas.get(chave)
         if regra is None and chave in self.tag.recomendadas:
             rec = self.tag.recomendadas[chave]
             return Valor(float(rec["valor"]), "recomendada", rec["fonte"])
@@ -197,6 +260,12 @@ class _Caso:
             return self.r.T[t], t
         a, b = t
         return (self.r.T[a] + self.r.T[b]) / 2, f"{a}→{b}"
+
+
+def _informado(v, origem, fonte):
+    if isinstance(v, tuple):
+        return Valor(math.nan, origem, fonte, faixa=v)
+    return Valor(float(v), origem, fonte)
 
 
 # ------------------------------------------------------------------ propriedades (memo por caso)
@@ -427,10 +496,11 @@ REGRAS = {
 
 
 # ------------------------------------------------------------------ montagem de um TAG
-def _validar_ajustes(tag, bruto, chaves, nums):
-    """(ajustes do TAG inteiro, {caso: ajustes}) validados: chave do método ou insumo do TAG,
-    valor numérico finito, caso existente."""
-    validas = set(chaves) | set(tag.insumos)
+def _validar_estado(tag, estado, specs, nums, insumos=True):
+    """Entradas do usuário/arquivo conferidas: chave do método (ou insumo do TAG, no
+    automático), número finito (ou faixa, no manual) e caso existente."""
+    validas = set(specs) | (set(tag.insumos) if insumos else set())
+    faixa = estado.modo == MANUAL
 
     def conferir(d, onde):
         if not isinstance(d, dict):
@@ -438,21 +508,21 @@ def _validar_ajustes(tag, bruto, chaves, nums):
         for k, v in d.items():
             if k not in validas:
                 raise ValueError(f"ajustes de {tag.tag}{onde}: entrada desconhecida {k!r}")
-            if isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v):
+            ok = (faixa and isinstance(v, tuple)) or (
+                not isinstance(v, bool) and isinstance(v, (int, float)) and math.isfinite(v))
+            if not ok:
                 raise ValueError(f"ajustes de {tag.tag}{onde}: {k} = {v!r} não é número finito")
-        return dict(d)
 
-    if not isinstance(bruto, dict) or not isinstance(bruto.get("caso", {}), dict):
-        raise ValueError(f"ajustes de {tag.tag}: esperada tabela, com subtabelas por caso")
-    geral = conferir({k: v for k, v in bruto.items() if k != "caso"}, "")
-    por_caso = {}
-    for n, d in bruto.get("caso", {}).items():
-        if not (str(n).isdigit() and int(n) in nums):
-            raise ValueError(f"ajustes de {tag.tag}: caso {n!r} não existe no arquivo de casos")
-        if int(n) in por_caso:
-            raise ValueError(f"ajustes de {tag.tag}: caso {n!r} duplicado")
-        por_caso[int(n)] = conferir(d, f", caso {n}")
-    return geral, por_caso
+    conferir(estado.geral, "")
+    conferir(estado.importado_geral, " (importados)")
+    for grupo, rotulo in ((estado.por_caso, ""), (estado.importado_caso, " (importados)")):
+        for n, d in grupo.items():
+            if n not in nums:
+                raise ValueError(f"ajustes de {tag.tag}: caso {str(n)!r} não existe no arquivo de casos")
+            conferir(d, f", caso {n}{rotulo}")
+    for n in [*estado.inativos, *(n for _, n in estado.revisoes), *(n for _, n in estado.substituidos)]:
+        if n not in nums:
+            raise ValueError(f"ajustes de {tag.tag}: caso {str(n)!r} não existe no arquivo de casos")
 
 
 def _atividade(tag, ctx, valores, specs):
@@ -465,7 +535,7 @@ def _atividade(tag, ctx, valores, specs):
         k = tag.inativo_se["vazao_nula"]
         if 0 <= valores[k].valor * HORAS_POR_DIA < crit["vazao_nula_m3_d"]:
             return False, f"sem vazão ({specs[k].label.lower()}) neste caso"
-    if "carga_nula" in tag.inativo_se:
+    if "carga_nula" in tag.inativo_se and not ctx.manual:
         c = tag.inativo_se["carga_nula"]
         if not ctx.r.duties[c] >= crit["carga_nula_kW"]:
             return False, f"carga térmica {c} nula neste caso"
@@ -475,30 +545,66 @@ def _atividade(tag, ctx, valores, specs):
 def _avisos_de_faixa(ctx, valores, specs):
     for k, v in valores.items():
         s = specs[k]
-        if not v.lacuna and math.isfinite(v.valor) and not s.min <= v.valor <= s.max:
-            ctx.aviso(f"{s.label} = {jl(v.valor)} {s.unit} fora da faixa do descritor do método "
+        numeros = v.faixa if v.faixa else (v.valor,)
+        fora = [x for x in numeros if math.isfinite(x) and not s.min <= x <= s.max]
+        if not v.lacuna and fora:
+            ctx.aviso(f"{s.label} = {jl(fora[0])} {s.unit} fora da faixa do descritor do método "
                       f"({jl(s.min)}–{jl(s.max)}); origem: {rotulo_origem(v.origem)}")
 
 
 def _lacunas(tag, metodo, specs, casos):
     dicas = metodos().get(metodo.method_id, {}).get("dicas", {})
-    pendentes = {}
+    pendentes, dependentes = {}, {}
     for c in casos:
         if c.ativo:
-            for v in c.valores.values():
+            for k, v in c.valores.items():
                 for p in v.pendente:
                     pendentes.setdefault(p, set()).add(c.num)
+                    if p != k:
+                        dependentes.setdefault(p, []).append(k)
     out = []
     for k in [*specs, *tag.insumos]:
         if k not in pendentes:
             continue
+        dep = tuple(d for d in specs if d in dependentes.get(k, ()))
         if k in specs:
             s = specs[k]
-            out.append(Lacuna(k, s.label, s.unit, (s.min, s.max), dicas.get(k, ""), tuple(sorted(pendentes[k]))))
+            out.append(Lacuna(k, s.label, s.unit, (s.min, s.max), dicas.get(k, ""), tuple(sorted(pendentes[k])), dep))
         else:
             ins = tag.insumos[k]
-            out.append(Lacuna(k, ins["rotulo"], ins["unidade"], (), ins.get("dica", ""), tuple(sorted(pendentes[k]))))
+            out.append(Lacuna(k, ins["rotulo"], ins["unidade"], (), ins.get("dica", ""), tuple(sorted(pendentes[k])),
+                              dep))
     return out
+
+
+def _auditar(valores, estado, num):
+    """Estado de revisão e valor substituído de cada entrada do caso."""
+    out = {}
+    for k, v in valores.items():
+        rev = estado.revisoes.get((k, num)) if estado is not None else None
+        if rev is not None:
+            status = CONFIRMADA if (rev[0] == v.numero and rev[1] == v.fonte) else DESATUALIZADA
+        else:
+            status = PENDENTE if v.requer_revisao else ""
+        ant = estado.substituidos.get((k, num)) if estado is not None and v.origem == USUARIO else None
+        anterior = None if ant is None else {"origem": ant[0], "fonte": ant[1] or "", "valor": ant[2]}
+        out[k] = replace(v, revisao=status, anterior=anterior)
+    return out
+
+
+def _rastrear(ctx, valores, specs):
+    for k, v in valores.items():
+        fonte = v.fonte
+        if v.anterior is not None:
+            fonte += (f"; substitui {rotulo_origem(v.anterior['origem'])}"
+                      + (f" ({v.anterior['fonte']})" if v.anterior["fonte"] else "")
+                      + (" sem alterar o balanço" if v.anterior["origem"] in ("balanco", "propriedade", "premissa")
+                         else ""))
+        valor = v.valor if not v.faixa else v.faixa[0]
+        ctx.rastro.trace(BLOCO, rotulo_origem(v.origem), k, fonte, valor, specs[k].unit)
+        if v.faixa:
+            ctx.rastro.trace(BLOCO, rotulo_origem(v.origem), k, fonte + " (máximo da faixa)", v.faixa[1],
+                             specs[k].unit)
 
 
 def conferir_tag(tag, specs):
@@ -518,23 +624,61 @@ def conferir_tag(tag, specs):
             raise ValueError(f"{tag.tag}: {k} é emulsão e precisa de 'continua' ({_subfases(regra['fase'])})")
 
 
-def montar(tag, balanco, dados, prem, ajustes=None):
-    """Entradas do TAG nos casos do balanço (`balanco`: ResultadoCaso de cada caso)."""
+def especificacoes(tag, pfd=True):
+    """(equipamento, método, {chave: ParameterSpec}) do TAG; `pfd` aplica as faixas de
+    apresentação do PFD (salmoura), que não mudam o método."""
     eq, m = tag.resolver()
     specs = {s.key: s for s in [*m.parameters(), *m.stream_parameters()]}
-    for k, ajuste in cfg().get("faixas", {}).get(m.method_id, {}).items():
-        specs[k] = replace(specs[k], max=ajuste["max"], note=specs[k].note + " " + ajuste["fonte"])
+    if pfd:
+        for k, ajuste in cfg().get("faixas", {}).get(m.method_id, {}).items():
+            specs[k] = replace(specs[k], max=ajuste["max"], note=specs[k].note + " " + ajuste["fonte"])
+    return eq, m, specs
+
+
+def montar(tag, balanco, dados, prem, ajustes=None, estado=None):
+    """Adaptador automático: entradas do TAG nos casos do balanço (`balanco`: ResultadoCaso
+    de cada caso). `estado` (EstadoTAG) ou `ajustes` (formato F10b) trazem o que o usuário
+    informou e revisou."""
+    eq, m, specs = especificacoes(tag)
     conferir_tag(tag, specs)
-    geral, por_caso = _validar_ajustes(tag, {} if ajustes is None else ajustes, specs, {r.num for r in balanco})
+    if estado is None:
+        estado = estado_legado(tag, {} if ajustes is None else ajustes)
+    _validar_estado(tag, estado, specs, {r.num for r in balanco})
     casos = []
     for r in balanco:
-        ctx = _Caso(tag, m, specs, r, dados, prem, {**geral, **por_caso.get(r.num, {})})
-        valores = {k: ctx.valor(k) for k in specs}
-        for k, v in valores.items():
-            ctx.rastro.trace(BLOCO, rotulo_origem(v.origem), k, v.fonte, v.valor, specs[k].unit)
+        ctx = _Caso(tag, m, specs, r, dados, prem, estado.ajustes_do_caso(r.num))
+        valores = _auditar({k: ctx.valor(k) for k in specs}, estado, r.num)
+        _rastrear(ctx, valores, specs)
         ativo, motivo = _atividade(tag, ctx, valores, specs)
         if ativo:
             _avisos_de_faixa(ctx, valores, specs)
         nome = cfg()["nome_caso"].format(num=r.num, nome=r.caso.get("name", r.fluid))
         casos.append(CasoTAG(r.num, nome, ativo, motivo, valores, ctx.rastro, ctx.avisos if ativo else [], ctx.insumos))
     return EntradasTAG(tag, eq, m, specs, casos, _lacunas(tag, m, specs, casos))
+
+
+def montar_manual(tag, casos, estado, pfd=True):
+    """Adaptador manual: `casos` = [(num, nome)]; valores do usuário e do arquivo importado,
+    recomendações do TAG e defaults com fonte; o resto é lacuna. Não consulta o balanço.
+    Atividade: a informada pelo usuário e as regras de vazão do TAG sobre os valores
+    informados (a de carga térmica depende do balanço e não se aplica)."""
+    eq, m, specs = especificacoes(tag, pfd)
+    conferir_tag(tag, specs)
+    nums = [n for n, _ in casos]
+    if len(set(nums)) != len(nums) or len({nome for _, nome in casos}) != len(casos):
+        raise ValueError(f"{tag.tag}: casos com número ou nome repetido")
+    _validar_estado(tag, estado, specs, set(nums), insumos=False)
+    out = []
+    for n, nome in casos:
+        ctx = _Caso(tag, m, specs, None, None, None, estado.ajustes_do_caso(n), estado.importados_do_caso(n),
+                    estado.arquivo)
+        valores = _auditar({k: ctx.valor(k) for k in specs}, estado, n)
+        _rastrear(ctx, valores, specs)
+        if n in estado.inativos:
+            ativo, motivo = False, estado.inativos[n]
+        else:
+            ativo, motivo = _atividade(tag, ctx, valores, specs)
+        if ativo:
+            _avisos_de_faixa(ctx, valores, specs)
+        out.append(CasoTAG(n, nome, ativo, motivo, valores, ctx.rastro, ctx.avisos if ativo else [], {}))
+    return EntradasTAG(tag, eq, m, specs, out, _lacunas(tag, m, specs, out), MANUAL, estado.avulso)

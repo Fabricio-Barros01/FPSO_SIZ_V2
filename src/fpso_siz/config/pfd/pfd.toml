@@ -1,8 +1,9 @@
 # Integração balanço → equipamentos (F10b): definições comuns aos TAGs de config/pfd/tags/.
 #
 # Cada entrada de um método de dimensionamento, em cada caso, sai de UMA origem, nesta ordem:
-#   usuário (arquivo de ajustes) > regra do TAG ([entradas]) > recomendada do TAG (com fonte)
-#   > default do método com fonte (metodos.toml) > LACUNA.
+#   automático: usuário (arquivo de ajustes) > regra do TAG ([entradas]) > recomendada do TAG
+#               (com fonte) > default do método com fonte (metodos.toml) > LACUNA;
+#   manual:     usuário > arquivo importado > recomendada do TAG > default com fonte > LACUNA.
 # Lacuna é NaN: o TAG fica "aguardando entrada" e não é dimensionado (regra das fontes —
 # docs/decisoes/0002-pfd-automatico.md: sem fonte citável não se supõe valor).
 
@@ -31,6 +32,10 @@ liquido = ["oleo", "agua"]
 W = ["S_W", "rho_W"]
 D = ["S_D", "rho_D"]
 
+# mensagens de estado produzidas pelo serviço por TAG
+[mensagens]
+conta_impossivel = "Cálculo impossível com as entradas informadas ({erro}); reveja os valores fora da faixa do descritor."
+
 # rótulos das origens (JSON, terminal e MC)
 [origens]
 balanco = "balanço"
@@ -39,6 +44,7 @@ premissa = "premissa do balanço"
 recomendada = "recomendada"
 metodo = "método"
 usuario = "usuário"
+arquivo = "arquivo"
 lacuna = "lacuna"
 
 # Faixas de apresentação DO PFD: não mudam o método nem suas fixtures Julia.

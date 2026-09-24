@@ -1,0 +1,288 @@
+
+━━ Planta / PFD · design_cases_bot.json · casos
+   1–16
+  2 dimensionado(s) · 8 aguardando entrada · 1
+  inviável(is) · 0 inativo(s)
+
+  C-01, C-02  → [M-01    ·] → C-03
+  C-03        → [SG-001  X] → C-04 (saída),
+                              C-05 (saída), C-06
+  C-06, C-22  → [P-001   ?] → C-07, C-23
+  C-07        → [P-002   ?] → C-08
+  C-08        → [V-001   D] → C-09 (saída), C-10
+  C-10        → [TO-001  ?] → C-11, C-12
+  C-12        → [B-002   ?] → C-13
+  C-14        → [DWH-001 ·] → C-15
+  C-11, C-15  → [M-02    ·] → C-16
+  C-16        → [V-002   D] → C-17 (saída), C-18
+  C-18        → [TO-002  ?] → C-19, C-21
+  C-19        → [B-003   ?] → C-20
+  [M-03    ·]
+    de: C-13, C-20
+    para: C-02 (retorno ao M-01)
+  [B-001   ?]
+    de: C-21
+    para: C-22 (retorno ao P-001)
+  C-23        → [P-003   ?] → C-24
+  C-24        → [MED-001 ·] → C-25 (saída),
+                              C-26 (saída)
+
+  D dimensionado   ? aguardando entrada   X
+  inviável   - inativo
+  · bloco sem dimensionamento; permanece no
+  balanço
+
+  TAG     Estado
+  ──────  ──────────────────
+  B-001   aguardando entrada
+  B-002   aguardando entrada
+  B-003   aguardando entrada
+  P-001   aguardando entrada
+  P-002   aguardando entrada
+  P-003   aguardando entrada
+  SG-001  inviável
+  TO-001  aguardando entrada
+  TO-002  aguardando entrada
+  V-001   dimensionado
+  V-002   dimensionado
+    B-001 · Casos ativos: 16
+    B-002 · Casos ativos: 11
+    B-003 · Casos ativos: 11
+    P-001 · Casos ativos: 10
+    P-002 · Casos ativos: 10
+    P-003 · Casos ativos: 16
+    SG-001 · Casos ativos: 16
+    TO-001 · Casos ativos: 16
+    TO-002 · Casos ativos: 16
+    V-001 · Casos ativos: 16
+    V-001 · Resultado: Diâmetro d: 4.850 mm
+    V-001 · Caso governante: BOT 08 — Mid
+    Life
+    V-002 · Casos ativos: 16
+    V-002 · Resultado: Diâmetro d: 4.700 mm
+    V-002 · Caso governante: BOT 03 — Early
+    Life Blend
+
+  B-001 — Bomba de transferência de óleo
+    ! h_geometrica — Desnível geométrico
+    [m]; casos 1–16
+    ! h_sucao — Nível de sucção sobre a
+    bomba [m]; casos 1–16
+    ! l_sucao — Comprimento reto na sucção
+    [m]; casos 1–16
+    ! k_sucao — Σk das peças na sucção [–];
+    casos 1–16
+    ! l_recalque — Comprimento reto no
+    recalque [m]; casos 1–16
+    ! k_recalque — Σk das peças no recalque
+    [–]; casos 1–16
+    ! npsh_requerido — NPSH requerido pela
+    bomba [m]; casos 1–16
+    ! npsh_margem — Margem sobre o NPSH
+    requerido [m]; casos 1–16
+    revisão pendente: Rugosidade absoluta ε
+    = 0,045 mm (default); casos 1–16
+    revisão pendente: Velocidade mínima = 1
+    m/s (default); casos 1–16
+    revisão pendente: Velocidade máxima =
+    1,5 m/s (default); casos 1–16
+    7 aviso(s) de propriedades/faixas;
+    detalhe no JSON do TAG e no rastro.
+
+  B-002 — Bomba de água produzida do desidratador
+    ! h_geometrica — Desnível geométrico
+    [m]; casos 2–3, 8–16
+    ! h_sucao — Nível de sucção sobre a
+    bomba [m]; casos 2–3, 8–16
+    ! l_sucao — Comprimento reto na sucção
+    [m]; casos 2–3, 8–16
+    ! k_sucao — Σk das peças na sucção [–];
+    casos 2–3, 8–16
+    ! l_recalque — Comprimento reto no
+    recalque [m]; casos 2–3, 8–16
+    ! k_recalque — Σk das peças no recalque
+    [–]; casos 2–3, 8–16
+    ! npsh_requerido — NPSH requerido pela
+    bomba [m]; casos 2–3, 8–16
+    ! npsh_margem — Margem sobre o NPSH
+    requerido [m]; casos 2–3, 8–16
+    revisão pendente: Rugosidade absoluta ε
+    = 0,045 mm (default); casos 2–3, 8–16
+    revisão pendente: Velocidade mínima = 1
+    m/s (default); casos 2–3, 8–16
+    revisão pendente: Velocidade máxima =
+    1,5 m/s (default); casos 2–3, 8–16
+    Casos inativos: 1, 4–7
+    2 aviso(s) de propriedades/faixas;
+    detalhe no JSON do TAG e no rastro.
+
+  B-003 — Bomba de água produzida do dessalinizador
+    ! h_geometrica — Desnível geométrico
+    [m]; casos 2–3, 8–16
+    ! h_sucao — Nível de sucção sobre a
+    bomba [m]; casos 2–3, 8–16
+    ! l_sucao — Comprimento reto na sucção
+    [m]; casos 2–3, 8–16
+    ! k_sucao — Σk das peças na sucção [–];
+    casos 2–3, 8–16
+    ! l_recalque — Comprimento reto no
+    recalque [m]; casos 2–3, 8–16
+    ! k_recalque — Σk das peças no recalque
+    [–]; casos 2–3, 8–16
+    ! npsh_requerido — NPSH requerido pela
+    bomba [m]; casos 2–3, 8–16
+    ! npsh_margem — Margem sobre o NPSH
+    requerido [m]; casos 2–3, 8–16
+    revisão pendente: Rugosidade absoluta ε
+    = 0,045 mm (default); casos 2–3, 8–16
+    revisão pendente: Velocidade mínima = 1
+    m/s (default); casos 2–3, 8–16
+    revisão pendente: Velocidade máxima =
+    1,5 m/s (default); casos 2–3, 8–16
+    Casos inativos: 1, 4–7
+    7 aviso(s) de propriedades/faixas;
+    detalhe no JSON do TAG e no rastro.
+
+  P-001 — Pré-aquecedor óleo/óleo
+    ! k_tubo — Condutividade do fluido do
+    tubo [W/m·K]; casos 1–9, 11
+    ! k_casco — Condutividade do fluido do
+    casco [W/m·K]; casos 1–9, 11
+    ! k_parede — Condutividade da parede
+    [W/m·K]; casos 1–9, 11
+    ! rf_tubo — Incrustação no lado tubo
+    [m²·K/W]; casos 1–9, 11
+    ! rf_casco — Incrustação no lado casco
+    [m²·K/W]; casos 1–9, 11
+    revisão pendente: Corte da chicana /
+    diâmetro do casco = 0,25 – (default);
+    casos 1–9, 11
+    revisão pendente: Espaçamento de chicana
+    / diâmetro do casco = 0,4 – (default);
+    casos 1–9, 11
+    revisão pendente: Arranjo do feixe = 30
+    ° (default); casos 1–9, 11
+    … +12
+    Casos inativos: 10, 12–16
+    7 aviso(s) de propriedades/faixas;
+    detalhe no JSON do TAG e no rastro.
+
+  P-002 — Aquecedor de óleo
+    ! k_tubo — Condutividade do fluido do
+    tubo [W/m·K]; casos 1–9, 11
+    ! k_parede — Condutividade da parede
+    [W/m·K]; casos 1–9, 11
+    ! rf_tubo — Incrustação no lado tubo
+    [m²·K/W]; casos 1–9, 11
+    ! rf_casco — Incrustação no lado casco
+    [m²·K/W]; casos 1–9, 11
+    ! t_agua_in — Temperatura de entrada da
+    água quente (meio de aquecimento) [°C];
+    casos 1–9, 11
+    ! t_agua_out — Temperatura de saída da
+    água quente (meio de aquecimento) [°C];
+    casos 1–9, 11
+    revisão pendente: Corte da chicana /
+    diâmetro do casco = 0,25 – (default);
+    casos 1–9, 11
+    revisão pendente: Espaçamento de chicana
+    / diâmetro do casco = 0,4 – (default);
+    casos 1–9, 11
+    revisão pendente: Arranjo do feixe = 30
+    ° (default); casos 1–9, 11
+    … +12
+    Casos inativos: 10, 12–16
+    1 aviso(s) de propriedades/faixas;
+    detalhe no JSON do TAG e no rastro.
+
+  P-003 — Resfriador de óleo
+    ! k_tubo — Condutividade do fluido do
+    tubo [W/m·K]; casos 1–16
+    ! k_parede — Condutividade da parede
+    [W/m·K]; casos 1–16
+    ! rf_tubo — Incrustação no lado tubo
+    [m²·K/W]; casos 1–16
+    ! rf_casco — Incrustação no lado casco
+    [m²·K/W]; casos 1–16
+    ! t_agua_in — Temperatura de entrada da
+    água de resfriamento (meio de
+    resfriamento) [°C]; casos 1–16
+    ! t_agua_out — Temperatura de saída da
+    água de resfriamento (meio de
+    resfriamento) [°C]; casos 1–16
+    revisão pendente: Corte da chicana /
+    diâmetro do casco = 0,25 – (default);
+    casos 1–16
+    revisão pendente: Espaçamento de chicana
+    / diâmetro do casco = 0,4 – (default);
+    casos 1–16
+    revisão pendente: Arranjo do feixe = 30
+    ° (default); casos 1–16
+    … +12
+    4 aviso(s) de propriedades/faixas;
+    detalhe no JSON do TAG e no rastro.
+
+  SG-001 — Separador trifásico de água livre (FWKO)
+    revisão pendente: Gotícula de água = 500
+    µm (default); casos 1–16
+    revisão pendente: Gotícula de óleo = 200
+    µm (default); casos 1–16
+    revisão pendente: Gotícula no gás = 100
+    µm (default); casos 1–16
+    … +6
+    Não há equipamento que atenda
+    simultaneamente aos 16 casos. Nenhum
+    diâmetro admissível tem esbeltez na
+    banda 3.0–5.0: abaixo do teto de
+    decantação (1635.0 mm) o SR varia de
+    287.29 a 8558.72. Amplie a grade de
+    diâmetros ou a banda de SR.
+    1 aviso(s) de propriedades/faixas;
+    detalhe no JSON do TAG e no rastro.
+
+  TO-001 — Desidratador (pré-tratador eletrostático)
+    ! dm_water — Gotícula de água após
+    coalescência [µm]; casos 1–16
+    revisão pendente: Gotícula de óleo na
+    água = 200 µm (default); casos 1–16
+    revisão pendente: Retenção do óleo = 20
+    min (recomendada); casos 1–16
+    revisão pendente: Retenção da água = 10
+    min (recomendada); casos 1–16
+    … +4
+    1 aviso(s) de propriedades/faixas;
+    detalhe no JSON do TAG e no rastro.
+
+  TO-002 — Dessalinizador (tratador eletrostático)
+    ! dm_water — Gotícula de água após
+    coalescência [µm]; casos 1–16
+    revisão pendente: Gotícula de óleo na
+    água = 200 µm (default); casos 1–16
+    revisão pendente: Retenção do óleo = 20
+    min (recomendada); casos 1–16
+    revisão pendente: Retenção da água = 10
+    min (recomendada); casos 1–16
+    … +4
+    1 aviso(s) de propriedades/faixas;
+    detalhe no JSON do TAG e no rastro.
+
+  V-001 — Vaso desgaseificador 1
+    revisão pendente: Gotícula no gás = 140
+    µm (default); casos 1–16
+    revisão pendente: Retenção do líquido =
+    5 min (recomendada); casos 1–16
+    revisão pendente: Passo da grade = 150
+    mm (default); casos 1–16
+    … +3
+
+  V-002 — Vaso desgaseificador 2
+    revisão pendente: Gotícula no gás = 140
+    µm (default); casos 1–16
+    revisão pendente: Retenção do líquido =
+    5 min (recomendada); casos 1–16
+    revisão pendente: Passo da grade = 150
+    mm (default); casos 1–16
+    … +3
+
+  Blocos sem dimensionamento: M-01, DWH-001,
+  M-02, M-03, MED-001

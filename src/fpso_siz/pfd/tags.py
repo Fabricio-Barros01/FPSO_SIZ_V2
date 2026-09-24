@@ -50,3 +50,16 @@ def tag(nome):
         if t.tag == nome:
             return t
     raise KeyError(f"TAG desconhecido {nome!r}; conhecidos: {', '.join(t.tag for t in tags())}")
+
+
+def compativeis(equipamento, metodo=None):
+    """TAGs da planta dimensionados pelo mesmo equipamento (e método, se dado)."""
+    return [t for t in tags() if t.equipamento == equipamento and metodo in (None, t.metodo)]
+
+
+def avulso(ident, equipamento, metodo):
+    """Descritor de um equipamento avulso: sem bloco, correntes, regras nem recomendações.
+    Só o catálogo de defaults com fonte do método (metodos.toml) completa as entradas."""
+    import fpso_siz.sizing  # noqa: F401  (registra os métodos)
+    eq, _ = registro.resolver(equipamento, metodo)
+    return Tag(ident, eq.label, equipamento, metodo, "")

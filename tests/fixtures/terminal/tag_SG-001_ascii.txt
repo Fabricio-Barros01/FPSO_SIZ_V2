@@ -1,0 +1,79 @@
+
+== SG-001 . Separador trifasico de agua livre (FWKO) ==============================================
+  casos 1-16 . automatico (balanco preliminar) . inviavel
+  design_cases_bot.json . sha256 ca3dfe559b32... . premissas: base
+
+                   +-------------+
+  M-01 -- C-03 --> |  SG-001  X  | -- C-04 --> saida
+                   |             | -- C-05 --> saida
+                   |             | -- C-06 --> P-001
+                   +-------------+
+
+  RECOMENDADAS E DEFAULTS COM FONTE - REVISAO PENDENTE
+  #  Chave      Valor  Unidade  Casos  Origem
+  -  ---------  -----  -------  -----  ------------------------------
+  1  dm_water     500  um       1-16   default . revisao pendente
+  2  dm_oil       200  um       1-16   default . revisao pendente
+  3  dm_gas       100  um       1-16   default . revisao pendente
+  4  tr_oil        10  min      1-16   recomendada . revisao pendente
+  5  tr_water      10  min      1-16   recomendada . revisao pendente
+  6  d_step       150  mm       1-16   default . revisao pendente
+  7  sr_min         3  -        1-16   default . revisao pendente
+  8  sr_max         5  -        1-16   default . revisao pendente
+  9  sr_target      4  -        1-16   default . revisao pendente
+    dm_water . Fonte: Stewart & Arnold (2008) sec. 4.7.2: gotas de agua de 500 um
+    dm_oil . Fonte: Stewart & Arnold (2008) sec. 4.7.3: gotas de oleo de 200 um
+    dm_gas . Fonte: Stewart & Arnold (2008), exemplo de projeto p. 168: remocao de liquido de
+    100 um
+    tr_oil . Fonte: Stewart & Arnold (2008) Tab. 4.1: oleo intermediario (20-30 degAPI; pocos de
+    27,5 e 28,2 degAPI) 7,5-10 min, adotado o limite superior. Nota da tabela: com emulsao na
+    entrada, x2 a 4
+    tr_water . Fonte: Stewart & Arnold (2008) sec. 4.7.4: 'a water retention time of 10 min is
+    recommended for design'
+    d_step . Fonte: Stewart & Arnold (2008) sec. 3.8.6, p. 126: cascos em incrementos de 150 mm
+    (6 in)
+    sr_min . Fonte: Stewart & Arnold (2008) cap. 4: comprimento/diametro 'between 3 and 5'
+    sr_max . Fonte: Stewart & Arnold (2008) cap. 4: comprimento/diametro 'between 3 and 5'
+    sr_target . Fonte: centro da banda de Stewart & Arnold (2008)
+  Podem produzir calculo preliminar; seguem destacadas ate serem confirmadas.
+
+== Resultado . Separador Trifasico Horizontal =====================================================
+  Metodo: Stewart & Arnold (2008)
+  x Inviavel
+
+     Diametro d                    -
+     Comprimento efetivo Leff      -
+     Comprimento real Lss          -
+     Esbeltez SR                   -
+     Volume (casco, entre tampos)  -
+     Restricao governante          -
+     Caso governante               -
+     Teto de decantacao            1.635 mm
+
+  Nao ha equipamento que atenda simultaneamente aos 16 casos. Nenhum diametro admissivel tem
+  esbeltez na banda 3.0-5.0: abaixo do teto de decantacao (1635.0 mm) o SR varia de 287.29 a
+  8558.72. Amplie a grade de diametros ou a banda de SR.
+
+  Casos
+  Caso                       Sozinho   d (mm)
+  -------------------------  --------  ------
+  BOT 01 - Early Life        inviavel       -
+  BOT 02 - Early Life        inviavel       -
+  BOT 03 - Early Life Blend  viavel     5.900
+  BOT 04 - Early Life        inviavel       -
+  BOT 05 - Low CO2           inviavel       -
+  BOT 06 - Mid Life          inviavel       -
+  BOT 07 - Mid Life          inviavel       -
+  BOT 08 - Mid Life          viavel     6.500
+  BOT 09 - Mid Life          viavel     6.350
+  BOT 10 - Late Life         viavel     6.050
+  BOT 11 - Late Life         viavel     6.050
+  BOT 12 - Late Life         viavel     6.050
+  BOT 13 - High CO2          viavel     6.200
+  BOT 14 - High CO2          viavel     6.200
+  BOT 15 - Highest CO2       viavel     5.900
+  BOT 16 - Highest CO2       viavel     5.900
+
+  Resultado preliminar: 9 recomendacao(oes)/default(s) sem revisao (ver Revisar).
+  1 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
+  Memorial de calculo do equipamento: previsto na F11; ainda nao disponivel.

@@ -30,6 +30,10 @@ h_sucao = 9.0
 Não há edição interativa nesta fase; o menu Planta está previsto na F10c. Os ajustes
 substituem entradas do dimensionamento, sem reescrever os resultados do balanço.
 
+> **Atualização (F10c):** este formato continua aceito como legado (automático, sem
+> revisões); o esquema 2, o fluxo por TAG e o `dimensionar --tag` estão em
+> [`10-fluxo-tag.md`](10-fluxo-tag.md).
+
 ## Entradas e rastreabilidade
 
 - `config/pfd/tags/*.toml`: método, correntes, regras, recomendações e critério de atividade.

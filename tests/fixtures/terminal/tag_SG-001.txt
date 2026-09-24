@@ -1,0 +1,79 @@
+
+━━ SG-001 · Separador trifásico de água livre (FWKO) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  casos 1–16 · automático (balanço preliminar) · inviável
+  design_cases_bot.json · sha256 ca3dfe559b32… · premissas: base
+
+                   ┌─────────────┐
+  M-01 ── C-03 ──→ │  SG-001  X  │ ── C-04 ──→ saída
+                   │             │ ── C-05 ──→ saída
+                   │             │ ── C-06 ──→ P-001
+                   └─────────────┘
+
+  RECOMENDADAS E DEFAULTS COM FONTE — REVISÃO PENDENTE
+  #  Chave      Valor  Unidade  Casos  Origem
+  ─  ─────────  ─────  ───────  ─────  ──────────────────────────────
+  1  dm_water     500  µm       1–16   default · revisão pendente
+  2  dm_oil       200  µm       1–16   default · revisão pendente
+  3  dm_gas       100  µm       1–16   default · revisão pendente
+  4  tr_oil        10  min      1–16   recomendada · revisão pendente
+  5  tr_water      10  min      1–16   recomendada · revisão pendente
+  6  d_step       150  mm       1–16   default · revisão pendente
+  7  sr_min         3  –        1–16   default · revisão pendente
+  8  sr_max         5  –        1–16   default · revisão pendente
+  9  sr_target      4  –        1–16   default · revisão pendente
+    dm_water · Fonte: Stewart & Arnold (2008) §4.7.2: gotas de água de 500 µm
+    dm_oil · Fonte: Stewart & Arnold (2008) §4.7.3: gotas de óleo de 200 µm
+    dm_gas · Fonte: Stewart & Arnold (2008), exemplo de projeto p. 168: remoção de líquido de
+    100 µm
+    tr_oil · Fonte: Stewart & Arnold (2008) Tab. 4.1: óleo intermediário (20–30 °API; poços de
+    27,5 e 28,2 °API) 7,5–10 min, adotado o limite superior. Nota da tabela: com emulsão na
+    entrada, ×2 a 4
+    tr_water · Fonte: Stewart & Arnold (2008) §4.7.4: 'a water retention time of 10 min is
+    recommended for design'
+    d_step · Fonte: Stewart & Arnold (2008) §3.8.6, p. 126: cascos em incrementos de 150 mm (6
+    in)
+    sr_min · Fonte: Stewart & Arnold (2008) cap. 4: comprimento/diâmetro 'between 3 and 5'
+    sr_max · Fonte: Stewart & Arnold (2008) cap. 4: comprimento/diâmetro 'between 3 and 5'
+    sr_target · Fonte: centro da banda de Stewart & Arnold (2008)
+  Podem produzir cálculo preliminar; seguem destacadas até serem confirmadas.
+
+━━ Resultado · Separador Trifásico Horizontal ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Método: Stewart & Arnold (2008)
+  ✗ Inviável
+
+    Diâmetro d                    —
+    Comprimento efetivo Leff      —
+    Comprimento real Lss          —
+    Esbeltez SR                   —
+    Volume (casco, entre tampos)  —
+    Restrição governante          —
+    Caso governante               —
+    Teto de decantação            1.635 mm
+
+  Não há equipamento que atenda simultaneamente aos 16 casos. Nenhum diâmetro admissível tem
+  esbeltez na banda 3.0–5.0: abaixo do teto de decantação (1635.0 mm) o SR varia de 287.29 a
+  8558.72. Amplie a grade de diâmetros ou a banda de SR.
+
+  Casos
+  Caso                       Sozinho   d (mm)
+  ─────────────────────────  ────────  ──────
+  BOT 01 — Early Life        inviável       —
+  BOT 02 — Early Life        inviável       —
+  BOT 03 — Early Life Blend  viável     5.900
+  BOT 04 — Early Life        inviável       —
+  BOT 05 — Low CO2           inviável       —
+  BOT 06 — Mid Life          inviável       —
+  BOT 07 — Mid Life          inviável       —
+  BOT 08 — Mid Life          viável     6.500
+  BOT 09 — Mid Life          viável     6.350
+  BOT 10 — Late Life         viável     6.050
+  BOT 11 — Late Life         viável     6.050
+  BOT 12 — Late Life         viável     6.050
+  BOT 13 — High CO2          viável     6.200
+  BOT 14 — High CO2          viável     6.200
+  BOT 15 — Highest CO2       viável     5.900
+  BOT 16 — Highest CO2       viável     5.900
+
+  Resultado preliminar: 9 recomendação(ões)/default(s) sem revisão (ver Revisar).
+  1 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
+  Memorial de cálculo do equipamento: previsto na F11; ainda não disponível.

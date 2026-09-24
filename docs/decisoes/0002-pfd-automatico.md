@@ -1,5 +1,22 @@
 # F10 (adiantada) — do balanço ao dimensionamento automático dos 11 TAGs
 
+> **Atualização (2026-09-23, F10c aprovada e entregue).** A F10c deixou de ser "um menu
+> Planta" e passou a ser o **fluxo por equipamento/TAG**, com a Planta/PFD como atalho do
+> mesmo fluxo (proposta revisada no `SPRINTS.md`). Decidido e implementado:
+> - um **serviço por TAG** (`pfd/equipamento.py`) usado pelo TAG isolado, pelo PFD e pelo
+>   modo interativo; o balanço é resolvido uma vez por contexto;
+> - **dois adaptadores** para o mesmo contrato de entradas: automático (balanço →
+>   propriedades → ajustes) e manual (digitado, arquivo ou exemplo), sem consultar o
+>   balanço nem o ChEDL; defaults sem fonte nunca completam um campo;
+> - **recomendações e defaults com fonte** são confirmados explicitamente (revisão por
+>   campo × caso, com valor e fonte); editar vira origem usuário e registra o substituído;
+> - **um único `ajustes_pfd.toml` versionado** (esquema 2, com contexto), que lê o legado
+>   da F10b; divergência de contexto bloqueia o comando e pede reconciliação no terminal;
+> - `fpso-siz dimensionar --tag … [--auto-balanco] --ajustes …`, `--avulso` e `--ascii`.
+>
+> A seção "F10c — PFD no modo interativo" abaixo é o plano original, mantido como
+> histórico. O entregue está em `docs/validacao/10-fluxo-tag.md`.
+
 > **Atualização (2026-09-23, após o estudo de pacotes).** O usuário decidiu usar
 > **thermo/chemicals (ChEDL, MIT) como dependência direta de runtime**, atrás da porta única
 > `pfd/_chedl.py`. Isso muda a tabela de propriedades abaixo:
@@ -185,7 +202,7 @@ Antoine. As fixtures do Julia seguem idênticas, com teste que garante isso.
   - invariante 4: a CLI itera `config/pfd` e as regras;
   - cobertura ≥ 90 %.
 
-### F10c — PFD no modo interativo
+### F10c — PFD no modo interativo (plano original; substituído, ver a atualização no topo)
 Novo item de menu: **"Planta: dimensionar os equipamentos a partir do balanço"**.
 1. Roda o balanço com as premissas da sessão e deriva as entradas dos 11 TAGs.
 2. **Entradas mínimas, agrupadas por TAG:**

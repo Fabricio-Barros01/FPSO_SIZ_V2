@@ -1,0 +1,19 @@
+
+━━ B-001 · Bomba de transferência de óleo ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  casos 1–16 · automático (balanço preliminar) · inativo
+  design_cases_bot.json · sha256 ca3dfe559b32… · premissas: base
+
+                     ┌────────────┐
+  TO-002 ── C-21 ──→ │  B-001  -  │ ── C-22 ──→ P-001
+                     └────────────┘
+
+  Casos inativos: 1 (sem vazão (vazão bombeada) neste caso); 2 (sem vazão (vazão bombeada) neste
+  caso); 3 (sem vazão (vazão bombeada) neste caso); 4 (sem vazão (vazão bombeada) neste caso); 5
+  (sem vazão (vazão bombeada) neste caso); 6 (sem vazão (vazão bombeada) neste caso); 7 (sem vazão
+  (vazão bombeada) neste caso); 8 (sem vazão (vazão bombeada) neste caso); 9 (sem vazão (vazão
+  bombeada) neste caso); 10 (sem vazão (vazão bombeada) neste caso); 11 (sem vazão (vazão
+  bombeada) neste caso); 12 (sem vazão (vazão bombeada) neste caso); 13 (sem vazão (vazão
+  bombeada) neste caso); 14 (sem vazão (vazão bombeada) neste caso); 15 (sem vazão (vazão
+  bombeada) neste caso); 16 (sem vazão (vazão bombeada) neste caso)
+
+  Nenhum caso ativo neste TAG; nada a dimensionar.

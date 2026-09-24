@@ -14,15 +14,21 @@ AJUSTES = FIXTURES / "pfd" / "ajustes_sinteticos.toml"
 
 def test_exportacao_estrita_com_lacunas_e_inviabilidade(planta_base, tmp_path):
     arquivos = pfd.gravar(planta_base, tmp_path)
-    assert len(arquivos) == 12
+    assert len(arquivos) == 23  # JSON + CSV de varredura por TAG, e planta.csv
     for t in planta_base.tags:
         texto = (tmp_path / f"{t.tag.tag}.json").read_text(encoding="utf-8")
         obj = json.loads(texto, parse_constant=lambda x: pytest.fail(f"JSON não estrito: {x}"))
-        assert obj["status"] == t.status
+        assert obj["schema_version"] == 2 and obj["modo"] == "automatico" and not obj["avulso"]
+        assert obj["status"] == t.status and obj["preliminar"] == bool(obj["revisoes"])
         assert obj["proveniencia"]["sha256"] == planta_base.dados.sha256
         assert len(obj["casos"]) == 16 and obj["limitacoes"]
         for c in obj["casos"]:
             assert all(v["valor"] is None for v in c["valores"].values() if v["origem"] == "lacuna")
+            assert all(v["revisao"] == "pendente" for v in c["valores"].values()
+                       if v["origem"] == "recomendada") or not c["ativo"]
+        with (tmp_path / f"{t.tag.tag}_varredura.csv").open(encoding="utf-8", newline="") as f:
+            varredura = list(csv.DictReader(f))
+        assert len(varredura) == (len(t.resultado.rows) if t.resultado is not None else 0)
     with (tmp_path / "planta.csv").open(encoding="utf-8", newline="") as f:
         linhas = list(csv.DictReader(f))
     assert len(linhas) == 11 and tuple(linhas[0]) == pfd.COLUNAS
@@ -34,7 +40,7 @@ def test_cli_sem_ajustes_e_sem_saida(capsys, monkeypatch, tmp_path):
     assert main(["pfd", "--casos", str(CASOS)]) == 1
     out = capsys.readouterr().out
     assert "aguardando entrada" in out and "t_agua_out" in out and "inviável" in out
-    assert "A confirmar" in out and "M-01" in out
+    assert "revisão pendente" in out and "M-01" in out and "[SG-001  X]" in out
     assert not list(tmp_path.iterdir())
 
 

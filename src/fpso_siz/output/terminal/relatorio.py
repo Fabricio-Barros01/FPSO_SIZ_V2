@@ -7,7 +7,6 @@ import textwrap
 
 from fpso_siz.balanco import indicadores
 from fpso_siz.balanco.exportacao import colunas_correntes, tabela_correntes
-from fpso_siz.core.casos import Interval
 from fpso_siz.core.configuracao import carregar
 from fpso_siz.core.contrato import column_value
 from fpso_siz.core.motor import governing_summary
@@ -21,12 +20,21 @@ def cfg():
 
 
 def titulo(texto, estilo, colunas):
-    faixa = "━" * max(colunas - largura(texto) - 5, 3)
-    return ["", estilo.negrito(f"━━ {texto} ") + estilo.fraco(faixa)]
+    """'━━ texto ━━━…' na largura; texto longo quebra em linhas (nada é cortado)."""
+    texto = estilo.t(texto)
+    marca = estilo.t("━━ ")
+    faixa = colunas - largura(texto) - largura(marca) - 2
+    if faixa >= 3:
+        return ["", estilo.negrito(marca + texto + " ") + estilo.fraco(estilo.t("━" * faixa))]
+    partes = textwrap.wrap(texto, width=max(colunas - largura(marca), 20), break_on_hyphens=False,
+                           break_long_words=False)
+    return ["", *(estilo.negrito((marca if i == 0 else " " * largura(marca)) + p) for i, p in enumerate(partes))]
 
 
 def quebrar(texto, colunas, recuo="  "):
-    return textwrap.wrap(texto, width=max(colunas - len(recuo), 20), initial_indent=recuo, subsequent_indent=recuo)
+    """Quebra em palavras sem partir identificadores (TAG, corrente, chave) no hífen."""
+    return textwrap.wrap(texto, width=max(colunas - len(recuo), 20), initial_indent=recuo, subsequent_indent=recuo,
+                         break_on_hyphens=False, break_long_words=False)
 
 
 def casos_lista(nums):
@@ -106,48 +114,24 @@ def tabela_correntes_caso(resultados, num_caso, estilo):
 
 
 # ------------------------------------------------------------------ dimensionamento
-def _entrada(v):
-    if isinstance(v, Interval):
-        return f"{sig(v.lo)} – {sig(v.hi)}"
-    return sig(v)
-
-
-def tabela_entradas(m, casos, estilo):
-    """Uma linha por entrada informada, uma coluna por caso; entradas com default ficam de fora."""
-    specs = [*m.parameters(), *m.stream_parameters()]
-    presentes = {k for c in casos.cases for k in c.values}
-    conhecidas = [s for s in specs if s.key in presentes]
-    extras = sorted(presentes - {s.key for s in specs})
-    cab = ["Entrada", "Unidade"] + [curto(c.name) + ("" if c.enabled else " (inativo)") for c in casos.cases]
-    linhas = [[s.label, s.unit] + [_entrada(c.values[s.key]) if s.key in c.values else TRAVESSAO
-                                    for c in casos.cases] for s in conhecidas]
-    linhas += [[k, "?"] + [_entrada(c.values[k]) if k in c.values else TRAVESSAO for c in casos.cases]
-               for k in extras]
-    out = tabela(cab, linhas, estilo)
-    faltam = len({s.key for s in specs} - presentes)
-    if faltam:
-        out.append(estilo.fraco(f"  Outras {faltam} entradas ficam no valor padrão do método."))
-    if extras:
-        out.append(estilo.aviso(f"  Entradas que o método não declara (ignoradas): {', '.join(extras)}"))
-    return out
-
-
 def resumo_dimensionamento(eq, m, r, estilo, colunas):
     out = titulo(f"Resultado · {eq.label}", estilo, colunas)
-    out.append(f"  Método: {m.label}")
+    out.append(estilo.t(f"  Método: {m.label}"))
     if r.feasible:
-        out.append("  " + estilo.ok("✓ Viável"))
+        out.append("  " + estilo.ok(estilo.t("✓ Viável")))
     else:
-        out.append("  " + estilo.erro("✗ Inviável"))
+        out.append("  " + estilo.erro(estilo.t("✗ Inviável")))
     out += [""]
     campos = m.result_fields(r)
-    rot = max(largura(f.label) for f in campos)
+    rot = max(largura(estilo.t(f.label)) for f in campos)
     for f in campos:
         valor = num(f.value, f.digits) + (f" {f.unit}" if f.unit and num(f.value, f.digits) != TRAVESSAO else "")
+        valor = estilo.t(valor)
         valor = estilo.destaque(valor) if f.highlight else valor
-        out.append(f"  {estilo.status(f.status)} {ajustar(f.label, rot)}  {valor}")
+        simbolo = ajustar(estilo.t(estilo.status(f.status)), largura(estilo.t(estilo.status("ok"))))
+        out.append(f"  {simbolo} {ajustar(estilo.t(f.label), rot)}  {valor}")
     out.append("")
-    out += quebrar(governing_summary(m, r), colunas)
+    out += quebrar(estilo.t(governing_summary(m, r)), colunas)
     if r.case_names:
         out += ["", estilo.negrito("  Casos")] + tabela_por_caso(m, r, estilo, colunas)
     return out
@@ -169,7 +153,7 @@ def tabela_por_caso(m, r, estilo, colunas):
     out = tabela(cab, linhas, estilo)
     if r.feasible:
         nota = f"Folga = {req} do envelope − o que o caso exige; 0 no caso governante."
-        out += [estilo.fraco(s) for s in quebrar(nota, colunas)]
+        out += [estilo.fraco(s) for s in quebrar(estilo.t(nota), colunas)]
     return out
 
 
@@ -186,18 +170,23 @@ def tabela_varredura(m, r, estilo):
     return tabela(cab, linhas, estilo)
 
 
+def rastro_blocos(tr, titulos, estilo, colunas):
+    """Um Rastro, bloco a bloco: [equação] variável = valor unidade, e a fórmula/fonte."""
+    out = []
+    for bloco in tr.block_order():
+        out += ["", estilo.negrito(estilo.t(f"  {titulos.get(bloco, bloco)}"))]
+        for e in tr.block_entries(bloco):
+            eq = "" if e.eq in ("", TRAVESSAO) else estilo.fraco(estilo.t(f"[{e.eq}] "))
+            val = sig(e.value) + (f" {e.unit}" if e.unit and e.unit != "–" else "")
+            out.append(estilo.t(f"    {eq}{e.var} = {val}"))
+            if e.formula:
+                out += [estilo.fraco(s) for s in quebrar(estilo.t(e.formula), colunas, recuo="        ")]
+    return out
+
+
 def rastro(m, sr, estilo, colunas):
     """Rastro de cálculo de um caso, bloco a bloco (mesma fonte do memorial)."""
-    out = []
-    titulos = dict(m.trace_blocks())
-    for bloco in sr.trace.block_order():
-        out += ["", estilo.negrito(f"  {titulos.get(bloco, bloco)}")]
-        for e in sr.trace.block_entries(bloco):
-            eq = "" if e.eq in ("", TRAVESSAO) else estilo.fraco(f"[{e.eq}] ")
-            val = sig(e.value) + (f" {e.unit}" if e.unit and e.unit != "–" else "")
-            out.append(f"    {eq}{e.var} = {val}")
-            if e.formula:
-                out += [estilo.fraco(s) for s in quebrar(e.formula, colunas, recuo="        ")]
+    out = rastro_blocos(sr.trace, dict(m.trace_blocks()), estilo, colunas)
     if not math.isfinite(sr.x) and sr.message:
-        out += [""] + quebrar(sr.message, colunas)
+        out += [""] + quebrar(estilo.t(sr.message), colunas)
     return out
