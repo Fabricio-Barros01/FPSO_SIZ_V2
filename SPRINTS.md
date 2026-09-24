@@ -717,7 +717,7 @@ e persistência de ajustes; `cli.py`; `output/{dimensionamento,pfd}.py`;
 lida, não redesenhada. Atualizar o ADR 0002 para refletir esta proposta quando aprovada;
 as entregas F10a/b continuam registradas como histórico.
 
-**Entregue (2026-09-23).** Commit: pendente — registrar o hash ao commitar.
+**Entregue (2026-09-23).** Commit: `d51782c`.
 - Núcleo: `pfd/equipamento.py` (Contexto com balanço único e cache por estado; preparar,
   dimensionar, executar), `pfd/manual.py` (arquivo/exemplo → importados; avulso;
   associação), `pfd/ajustes.py` (EstadoTAG/Ajustes, esquema 2, legado F10b, contexto),
