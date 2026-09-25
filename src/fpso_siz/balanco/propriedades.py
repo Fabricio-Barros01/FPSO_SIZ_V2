@@ -62,3 +62,25 @@ def split_water(O_in_v, w_in_v, bsw, C_OiW, rhoO, n_iter, extra_oil_v=0.0):
         oil_w = C_OiW * w_rem / rhoO
         Ov = max(O_in_v - extra_oil_v - oil_w, 0.0)
     return w_keep, w_rem, oil_w
+
+
+def split_eficiencia(O_in_v, w_in_v, eta_padrao, bsw_lim, C_OiW, rhoO, n_iter, extra_oil_v=0.0):
+    """Separação de água livre por eficiência (FWKO): remove a fração η da água que chega,
+    com η = máx(η_padrão; η_req) e η_req = 1 − [BSW_lim/(1 − BSW_lim)]·Q_O/Q_A,e, de modo
+    que o óleo que sai não passe de BSW_lim (BOT 2.7.1.2). Q_O é o óleo que efetivamente sai
+    (descontados o óleo disperso na água e o arraste), como em `split_water`, por iteração
+    curta de `n_iter` passos. Devolve (água no óleo, água removida, óleo na água, η, η_req),
+    volumes em m³/d; sem água, (0, 0, 0, η_padrão, None)."""
+    if not w_in_v > 0:
+        return 0.0, 0.0, 0.0, eta_padrao, None
+    Ov = max(O_in_v - extra_oil_v, 0.0)
+    w_keep = w_rem = oil_w = 0.0
+    eta = eta_req = eta_padrao
+    for _ in range(n_iter):
+        eta_req = 1 - bsw_lim / (1 - bsw_lim) * Ov / w_in_v
+        eta = max(eta_padrao, eta_req)
+        w_rem = eta * w_in_v
+        w_keep = w_in_v - w_rem
+        oil_w = C_OiW * w_rem / rhoO
+        Ov = max(O_in_v - extra_oil_v - oil_w, 0.0)
+    return w_keep, w_rem, oil_w, eta, eta_req

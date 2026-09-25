@@ -64,6 +64,13 @@
           },
           "BSW_chegada": {"type": "number", "minimum": 0, "maximum": 1},
           "BSW_FWKO": {"type": "number", "minimum": 0, "maximum": 1},
+          "FWKO": {
+            "type": "object", "required": ["regra", "eta", "eta_req", "eta_padrao", "exigido_acima"],
+            "additionalProperties": false,
+            "properties": {"regra": {"enum": ["eficiencia", "referencia"]},
+                           "eta": {"type": ["number", "null"]}, "eta_req": {"type": ["number", "null"]},
+                           "eta_padrao": {"type": ["number", "null"]}, "exigido_acima": {"type": "boolean"}}
+          },
           "rho": {"$ref": "#/$defs/corrente"},
           "cp": {"$ref": "#/$defs/corrente"},
           "gas_props": {

@@ -48,29 +48,29 @@
      Volume (casco, entre tampos)  -
      Restricao governante          -
      Caso governante               -
-     Teto de decantacao            4.434 mm
+     Teto de decantacao            3.612 mm
 
   Nao ha equipamento que atenda simultaneamente aos 16 casos. Nenhum diametro admissivel tem
-  esbeltez na banda 3.0-5.0: abaixo do teto de decantacao (4434.0 mm) o SR varia de 12.56 a
-  8558.72. Amplie a grade de diametros ou a banda de SR.
+  esbeltez na banda 3.0-5.0: abaixo do teto de decantacao (3612.0 mm) o SR varia de 20.34 a
+  6975.66. Amplie a grade de diametros ou a banda de SR.
 
   Casos
   Caso                       Sozinho   d (mm)
   -------------------------  --------  ------
   BOT 01 - Early Life        viavel     5.450
   BOT 02 - Early Life        inviavel       -
-  BOT 03 - Early Life Blend  viavel     5.900
+  BOT 03 - Early Life Blend  inviavel       -
   BOT 04 - Early Life        viavel     2.750
   BOT 05 - Low CO2           viavel     3.050
   BOT 06 - Mid Life          viavel     2.000
   BOT 07 - Mid Life          viavel     5.450
-  BOT 08 - Mid Life          viavel     6.500
-  BOT 09 - Mid Life          viavel     6.350
-  BOT 10 - Late Life         viavel     6.050
+  BOT 08 - Mid Life          viavel     5.900
+  BOT 09 - Mid Life          viavel     5.900
+  BOT 10 - Late Life         viavel     5.750
   BOT 11 - Late Life         viavel     6.050
   BOT 12 - Late Life         viavel     6.050
-  BOT 13 - High CO2          viavel     6.200
-  BOT 14 - High CO2          viavel     6.200
+  BOT 13 - High CO2          viavel     6.050
+  BOT 14 - High CO2          viavel     6.050
   BOT 15 - Highest CO2       viavel     5.900
   BOT 16 - Highest CO2       viavel     5.900
 

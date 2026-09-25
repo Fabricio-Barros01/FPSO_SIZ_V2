@@ -173,3 +173,10 @@ valor = 40.0
 unidade = "°C"
 id = "F-07"
 descricao = "T de entrada do FWKO mantida por reciclo (BOT 2.7.1.6); só verificação"
+
+# F10w: não existe no script de referência (a regra de referência não a usa)
+[eta_F]
+valor = 0.85
+unidade = "-"
+id = "P-43"
+descricao = "Eficiência padrão de remoção de água livre do SG-001, η_A = máx(η_padrão; η_req) com BSW de saída ≤ F-06; premissa do autor"

@@ -53,8 +53,10 @@ def test_planta_e_tag_isolado_delegam_ao_mesmo_servico(monkeypatch, tmp_path):
         assert (tmp_path / nome).read_bytes() == (tmp_path / "planta" / nome).read_bytes()
 
 
-def test_paridade_numerica_com_a_f10b(planta_base, ctx):
-    """Mesmos estados, lacunas, inativos e envelopes que a F10b registrou."""
+def test_paridade_numerica_com_a_f10b(planta_referencia):
+    """Mesmos estados, lacunas, inativos e envelopes que a F10b registrou (balanço de referência)."""
+    planta_base = planta_referencia
+    ctx = servico.Contexto(planta_base.dados, balanco=planta_base.balanco)
     assert {t.tag.tag: t.status for t in planta_base.tags} == {
         "B-001": "aguardando_entrada", "B-002": "aguardando_entrada", "B-003": "aguardando_entrada",
         "P-001": "aguardando_entrada", "P-002": "aguardando_entrada", "P-003": "aguardando_entrada",
@@ -224,14 +226,15 @@ P42_CHAVES = {"dm_water", "dm_oil", "tr_water", "rho_water", "mu_water"}
 
 
 @pytest.fixture
-def plantas_f10b(monkeypatch, planta_base, ajustes_sinteticos):
-    """As plantas com a premissa P-42 (sem fase aquosa) desligada: o código que a F10b tinha."""
+def plantas_f10b(monkeypatch, planta_referencia, ajustes_sinteticos):
+    """As plantas com a premissa P-42 (sem fase aquosa) desligada e o balanço de referência: o
+    código que a F10b tinha."""
     from fpso_siz.pfd import entradas
     from fpso_siz.sizing import separador, tratador
     monkeypatch.setattr(entradas, "_fase_aquosa", lambda metodo, valores: valores)
     monkeypatch.setattr(separador, "sem_fase_aquosa", lambda fu: False)
     monkeypatch.setattr(tratador, "sem_fase_aquosa", lambda fu: False)
-    base = planta.dimensionar(planta_base.dados, balanco=planta_base.balanco)
+    base = planta.dimensionar(planta_referencia.dados, balanco=planta_referencia.balanco)
     return {"sem_ajustes": base,
             "ajustes_sinteticos": planta.dimensionar(base.dados, ajustes=ajustes_sinteticos, balanco=base.balanco)}
 
@@ -274,11 +277,12 @@ def _valor(v):
 
 
 @pytest.mark.parametrize("modo", ["sem_ajustes", "ajustes_sinteticos"])
-def test_efeito_da_p42_restrito_a_fase_aquosa(modo, plantas_f10b, planta_base, planta_ajustada):
+def test_efeito_da_p42_restrito_a_fase_aquosa(modo, plantas_f10b, planta_referencia, planta_referencia_ajustada):
     """P-42 (BOT Tab. 2.2.2.3 Notas 5 e 11; 2.3.1.1): nos casos sem água (1, 4–7), só as entradas
     dos critérios aquosos do SG-001/TO-001/TO-002 deixam de ser pedidas/revisadas e só o teto do
     SG-001 muda de caso. Todo o resto é idêntico ao código da F10b."""
-    antes, depois = plantas_f10b[modo], (planta_base if modo == "sem_ajustes" else planta_ajustada)
+    antes = plantas_f10b[modo]
+    depois = planta_referencia if modo == "sem_ajustes" else planta_referencia_ajustada
     for a, d in zip(antes.tags, depois.tags, strict=True):
         assert a.tag.tag == d.tag.tag and a.status == d.status
         sem_agua = {c.num for c in d.entradas.casos if "q_water" in c.valores and c.valores["q_water"].valor == 0}

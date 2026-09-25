@@ -81,3 +81,8 @@ unidade = '--'
 verificacao = 'salinidade do óleo tratado versus limite de 285 mg/L'
 base = 'balanço de sal, eq.~(10.7)'
 unidade = 'mg/L'
+
+[eficiencia_fwko]
+verificacao = 'eficiência de água livre do SG-001: $\eta_A=\max(\eta_{\mbox{padrão}};\eta_{\mathrm{req}})$ e BSW$_{C06}\le$ F-06'
+base = 'definições de $\eta_A$ e $\eta_{\mathrm{req}}$ pelas correntes C-03, C-05 e C-06'
+unidade = '--'

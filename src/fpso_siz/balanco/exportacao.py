@@ -57,7 +57,7 @@ def estrutura_balanco(dados, prem, resultados, auditoria):
             "num": r.num, "nome": r.caso.get("name", ""), "fluido": r.fluid, "poco": r.well, "api": r.api,
             "convergiu": r.convergiu, "iteracoes": r.iters, "residuo_reciclo": r.residuo_reciclo,
             "viscosidade_oleo_cP": {"valor": r.mu[0], "marcador": r.mu[1]},
-            "BSW_chegada": r.BSW01, "BSW_FWKO": r.BSW_F,
+            "BSW_chegada": r.BSW01, "BSW_FWKO": r.BSW_F, "FWKO": dict(r.fwko),
             "rho": r.rho, "cp": r.cp, "gas_props": r.gp,
             "correntes": {sid: {"T_C": r.T[sid], "P_kPa": r.P[sid], "vazao_massica_kg_s": s}
                           for sid, s in r.streams.items()},

@@ -14,13 +14,17 @@ agua_antes_da_diluicao = "C-11"  # água residual do desidratador: sal real × S
 tol_rel = 1e-12
 
 # Premissa P-42: em cada separador, BSW_saída = min(BSW_entrada; especificação), sem água
-# fictícia. No FWKO o modelo impõe a especificação sobre o BSW da CHEGADA (C-01), como no
-# script de referência (BOT 2.7.1.2); nos tratadores, sobre a própria entrada.
+# fictícia. No FWKO, na regra de referência, a especificação é imposta sobre o BSW da
+# CHEGADA (C-01), como no script de referência (BOT 2.7.1.2); na regra de eficiência (F10w,
+# P-43) o BSW esperado sai de η_A = máx(η_padrão; η_req) aplicado à água de `alimentacao`,
+# e nunca passa de F-06. Nos tratadores, sobre a própria entrada.
 [[separadores]]
 bloco = "SG-001"
 entrada = "C-01"
+alimentacao = "C-03"
 oleo = "C-06"
 premissa = "BSW_F"
+eficiencia = "eta_F"
 
 [[separadores]]
 bloco = "TO-001"

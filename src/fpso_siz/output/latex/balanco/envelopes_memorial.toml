@@ -61,6 +61,7 @@ casas = 0
 [[linhas]]
 id = 'Q_pre'
 nome = 'Maior carga do pré-aquecedor'
+nome_senai = 'Maior calor recuperado no pré-aquecedor (P-001)'
 unidade = 'MW'
 origem = 'calculado'
 formato = 'mil'
@@ -69,6 +70,7 @@ casas = 2
 [[linhas]]
 id = 'Q_H'
 nome = 'Maior carga do aquecedor de óleo'
+nome_senai = 'Maior carga do aquecedor de óleo (P-002)'
 unidade = 'MW'
 origem = 'calculado'
 formato = 'mil'
@@ -77,6 +79,7 @@ casas = 2
 [[linhas]]
 id = 'Q_aquecimento'
 nome = 'Maior carga de aquecimento total (P-002 + DWH-001)'
+nome_senai = 'Maior carga de aquecimento por utilidade, $\dot Q_H$ = P-002 + DWH-001'
 unidade = 'MW'
 origem = 'calculado'
 formato = 'mil'
@@ -85,6 +88,7 @@ casas = 2
 [[linhas]]
 id = 'Q_C'
 nome = 'Maior carga do resfriador'
+nome_senai = 'Maior carga de resfriamento por utilidade, $\dot Q_C$ = P-003'
 unidade = 'MW'
 origem = 'calculado'
 formato = 'mil'

@@ -1,7 +1,7 @@
 \subsection{SG-001 --- Separador trifásico de água livre (FWKO)}
 \paragraph{Função:} primeiro estágio de separação: separa o gás livre (ao Safety K.O. Drum), a água livre (à saída de água produzida) e o óleo/emulsão com gás dissolvido (ao pré-aquecedor). Possui dispositivo ciclônico ou de palhetas para névoa (BOT 2.7.1.3).
 \paragraph{Entradas:} C-03 (Caso << DEMO >>): óleo << ind.q(RD, 'C-03', 'O')|br >> m³/d, água << ind.q_agua(RD, 'C-03')|br >> m³/d, gás << RD.gas['G_in']|br >> Sm³/d, $T=<< RD.T['C-03']|br(2) >>$~\si{\celsius}, $P=<< RD.P['C-03']|br >>$~\si{\kilo\pascal}; composição do gás na Tabela~\ref{tab:fluidprops}.
-\paragraph{Premissas:} F-02, F-06, F-12, P-23, P-24, P-25, P-26, P-27, P-34, P-15 (isotérmico).
+\paragraph{Premissas:} F-02, F-06, F-12, P-23, P-24, << 'P-43, ' if regra_fwko == 'eficiencia' else '' >>P-25, P-26, P-27, P-34, P-15 (isotérmico).
 \paragraph{Modelo de cálculo:} foram utilizadas três eficiências distintas.
 \emph{(i) Separação gás/líquido.} A liberação de gás foi estimada pela razão de solubilidade de Standing (\tipo{CORRELAÇÃO}, P-23), com $P$ em psia, $T$ em °F, $R_s$ em scf/STB e $1$~scf/STB$=0{,}178108$~Sm³/Sm³:
 \begin{equation}\label{eq:standing}
@@ -21,6 +21,30 @@ A eficiência de separação gás/líquido do FWKO, no sentido de gás liberado 
 \begin{equation}
 Q_{L,\mathrm{arraste}}=c_{\mathrm{arr}}\,Q_{G,C04},\qquad c_{\mathrm{arr}}=\frac{0{,}1\times3{,}785\times10^{-3}}{28\,316{,}8}=<< (P['carry'] * 1e8)|mb(4) >>\times10^{-8}\ \mathrm{m^3/Sm^3}.
 \end{equation}
+<% if regra_fwko == 'eficiencia' %>
+\emph{(ii) Separação óleo/água.} A remoção de água livre foi tratada como uma eficiência adotada (P-43, premissa do autor), aplicada a toda a água que chega ao vaso --- produzida, reciclo dos tratadores e diluição, $Q_{A+D,C03}$ --- e limitada pelo máximo de água no óleo de saída do BOT 2.7.1.2 (F-06):
+\begin{equation}\label{eq:etaF}
+\eta_{A,\mbox{SG-001}}=\max\left(\eta_{\mbox{padrão}};\ \eta_{\mathrm{req}}\right),\qquad
+\eta_{\mathrm{req}}=1-\frac{\mathrm{BSW}_{\mathrm{lim}}}{1-\mathrm{BSW}_{\mathrm{lim}}}\,\frac{Q_{O,C06}}{Q_{A+D,C03}},\qquad
+Q_{A+D,C06}=\left(1-\eta_{A,\mbox{SG-001}}\right)Q_{A+D,C03},
+\end{equation}
+com $\eta_{\mbox{padrão}}=<< P['eta_F']|mbn(2) >>$ e $\mathrm{BSW}_{\mathrm{lim}}=<< P['BSW_F']|mbn(2) >>$. $Q_{O,C06}$ é o óleo que efetivamente sai (descontados o óleo disperso na água e o arraste no gás) e $\eta_{\mathrm{req}}$ é recalculado a cada iteração do laço de reciclo; como $1-\eta_{A}<1$, cada passagem remove uma fração fixa da água que retorna e o estado estacionário é único. $\eta_{\mathrm{req}}$ é a eficiência mínima que mantém o BSW de saída no limite do BOT: quando $\eta_{\mathrm{req}}<\eta_{\mbox{padrão}}$, é apenas diagnóstico (o limite não restringe e vale o padrão).
+<% set rq = caso(meta['caso_eta_req']) %>
+No Caso << rq.num >>, com vazões volumétricas na condição padrão (F-01: << D['standard_conditions']['T_C']|br(1) >>~\si{\celsius} e << D['standard_conditions']['P_kPa']|br(1) >>~\si{\kilo\pascal}), a água que chega ao vaso (produzida + reciclo + diluição, em C-03) é $Q_{A+D,C03}=<< ind.q_agua(rq, 'C-03')|mb >>$~m³/d e o óleo que sai em C-06 é $Q_{O,C06}=<< ind.q(rq, 'C-06', 'O')|mb >>$~m³/d:
+\begin{equation}
+\eta_{\mathrm{req}}=1-\frac{<< P['BSW_F']|mbn(2) >>}{1-<< P['BSW_F']|mbn(2) >>}\times\frac{<< ind.q(rq, 'C-06', 'O')|mb >>\ \mathrm{m^3/d}}{<< ind.q_agua(rq, 'C-03')|mb >>\ \mathrm{m^3/d}}=<< rq.fwko['eta_req']|mb(3) >>,\qquad
+\eta_{A,\mbox{SG-001}}=\max\left(<< P['eta_F']|mbn(2) >>;\ << rq.fwko['eta_req']|mb(3) >>\right)=<< rq.fwko['eta']|mb(3) >>.
+\end{equation}
+<% if fwko_exigidos %>
+Nos casos << fwko_exigidos|ids >>, $\eta_{\mathrm{req}}>\eta_{\mbox{padrão}}$: o SG-001 é exigido acima da eficiência padrão para respeitar o BOT 2.7.1.2, e a água no óleo de saída fica no limite de << (100 * P['BSW_F'])|br >>~\%. Nos demais casos com água, $\eta_{\mathrm{req}}<\eta_{\mbox{padrão}}$ (diagnóstico) e vale o padrão.
+<% else %>
+Em todos os casos com água, $\eta_{\mathrm{req}}<\eta_{\mbox{padrão}}$ (diagnóstico) e vale o padrão.
+<% endif %>
+No Caso << DEMO >>, $\eta_{\mathrm{req}}=<< RD.fwko['eta_req']|mb(3) >>$ e a eficiência resulta
+\begin{equation}
+\eta_{A,\mbox{SG-001}}=\frac{Q_{A+D,C05}}{Q_{A+D,C03}}=\frac{<< ind.q_agua(RD, 'C-05')|mb >>}{<< ind.q_agua(RD, 'C-03')|mb >>}=<< ind.eta_agua(RD, 'C-05', 'C-03')|mb(4) >>.
+\end{equation}
+<% else %>
 \emph{(ii) Separação óleo/água.} Com $\mathrm{BSW}_{C01}$ da alimentação sem reciclo (P-24):
 \begin{equation}\label{eq:bswF}
 \mathrm{BSW}_{C06}=\min\left(0{,}40;\ \frac{Q_{A,C01}}{Q_{A,C01}+Q_{O,C01}}\right),\qquad Q_{A+D,C06}=\frac{\mathrm{BSW}_{C06}}{1-\mathrm{BSW}_{C06}}\,Q_{O,C03}.
@@ -29,6 +53,7 @@ Justificativa da forma mínima: com toda a água dos tratadores retornando ao FW
 \begin{equation}
 \eta_{A,\mbox{SG-001}}=\frac{Q_{A+D,C05}}{Q_{A+D,C03}}=\frac{<< ind.q_agua(RD, 'C-05')|mb >>}{<< ind.q_agua(RD, 'C-03')|mb >>}=<< ind.eta_agua(RD, 'C-05', 'C-03')|mb(4) >>.
 \end{equation}
+<% endif %>
 \emph{(iii) Óleo na água} (P-25): $\dot m_{O,C05}=C_{OiW}\,Q_{A+D,C05}=<< P['C_OiW']|mbn(1) >>\ \mathrm{kg/m^3}\times<< ind.q_agua(RD, 'C-05')|mb >>/86\,400=<< RD.streams['C-05']['O']|mb(4) >>$~\si{\kilogram\per\second}.
 
 \paragraph{Saídas:} C-04 gás << RD.gas['G_F']|br >> Sm³/d (<< ind.m(RD, 'C-04')|br(3) >>~\si{\kilogram\per\second}); C-05 água << ind.q_agua(RD, 'C-05')|br >> m³/d; C-06 óleo << ind.q(RD, 'C-06', 'O')|br >> m³/d com BSW << (100 * RD.BSW_F)|br(1) >>~\% e << (RD.gas['G_D1'] + RD.gas['G_D2'])|br >> Sm³/d de gás dissolvido. Todas a << RD.T['C-03']|br(2) >>~\si{\celsius} e << RD.P['C-03']|br >>~\si{\kilo\pascal}.

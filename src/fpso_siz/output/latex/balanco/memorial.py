@@ -4,6 +4,10 @@ O corpo (seções 1–18 e apêndices) é comum aos layouts; o layout define pre
 capa: `original` reproduz byte a byte o main.tex do script de referência, `senai` usa o
 template SENAI CETIQT. Toda grandeza vem do núcleo (resultado, rastro, indicadores,
 catálogos); aqui só se escolhe o texto e o formato.
+
+O texto do FWKO acompanha a regra dos resultados (constantes.toml [modelo]): o `original`
+é sempre gerado com a regra do script de referência (paridade); o `senai`, com a regra em
+uso (eficiência η_A = máx(η_padrão; η_req) desde a F10w).
 """
 import tomllib
 from pathlib import Path
@@ -12,6 +16,7 @@ from importlib.resources import files
 from fpso_siz.balanco import indicadores
 from fpso_siz.balanco.auditoria import auditar
 from fpso_siz.balanco.balancos import balanco_bloco, balanco_global, origem_destino, topologia
+from fpso_siz.balanco.modelo import REFERENCIA, resolver_todos
 from fpso_siz.core.configuracao import carregar
 from fpso_siz.core.unidades import c_para_k
 from fpso_siz.output.latex.ambiente import ambiente
@@ -24,6 +29,7 @@ CORPO = ["02_introducao", "03_escopo", "04_fonte", "05_condicoes", "06_conversao
          "22_ap_componentes", "23_ap_rastro", "24_reprodutibilidade"]
 LAYOUTS = {"original": ["00_preambulo_original", "01_capa_original"],
            "senai": ["00_preambulo_senai", "01_capa_senai"]}
+REGRA_DO_LAYOUT = {"original": REFERENCIA}  # layout que exige uma regra do FWKO (paridade)
 
 
 def contexto(dados, prem, resultados):
@@ -43,15 +49,21 @@ def _conteudo(nome):
     return tomllib.loads(texto)["linhas"]
 
 
+def nums_index(resultados, n):
+    return [r.num for r in resultados].index(n)
+
+
 def tipo(t):
     """Marcador de classificação de origem do valor."""
     return r"\AV" if t == "A VALIDAR" else r"\tipo{" + t + "}"
 
 
-def preparar(dados, prem, resultados):
-    """(ambiente, contexto) prontos para renderizar qualquer template do memorial."""
+def preparar(dados, prem, resultados, layout=None):
+    """(ambiente, contexto) prontos para renderizar qualquer template do memorial. `layout`
+    escolhe a terminologia própria do layout (o `original` segue o script de referência)."""
     env = ambiente("fpso_siz.output.latex.balanco")
     ctx = contexto(dados, prem, resultados)
+    ctx["layout"] = layout
     ctx["avaliar"] = lambda expr: env.from_string(expr).render(ctx)
     # máximo entre casos de uma grandeza escrita como expressão de template em `r`
     ctx["maximo"] = lambda expr: indicadores.maximo(
@@ -59,6 +71,12 @@ def preparar(dados, prem, resultados):
     ctx["tipo"] = tipo
     for nome in ("premissas", "envelopes", "criticos"):
         ctx[f"{nome}_memorial"] = _conteudo(f"{nome}_memorial.toml")
+    # regra do FWKO dos resultados: escolhe o texto do SG-001 e as linhas de premissa com `regra`
+    regra = resultados[0].fwko["regra"]
+    ctx["regra_fwko"] = regra
+    ctx["premissas_memorial"] = [p for p in ctx["premissas_memorial"] if p.get("regra", regra) == regra]
+    ctx["caso"] = lambda n: resultados[nums_index(resultados, n)]
+    ctx["fwko_exigidos"] = [r.num for r in resultados if r.fwko["exigido_acima"]]
     ctx["envelopes"] = indicadores.envelopes(resultados, dados, prem)
     ctx["criticos"] = indicadores.criticos(resultados, dados, prem)
     ctx["sens_casos"], ctx["sens_corridas"] = indicadores.sensibilidade(resultados, dados, prem)
@@ -68,7 +86,10 @@ def preparar(dados, prem, resultados):
 def gerar(dados, prem, resultados, layout="original"):
     if layout not in LAYOUTS:
         raise ValueError(f"layout desconhecido: {layout!r} (use {sorted(LAYOUTS)})")
-    env, ctx = preparar(dados, prem, resultados)
+    regra = REGRA_DO_LAYOUT.get(layout)
+    if regra is not None and resultados[0].fwko["regra"] != regra:
+        resultados = resolver_todos(dados, prem, regra)
+    env, ctx = preparar(dados, prem, resultados, layout)
     # linha com `layouts` só entra nos layouts citados (o `original` segue o script de referência)
     ctx["premissas_memorial"] = [p for p in ctx["premissas_memorial"] if layout in p.get("layouts", LAYOUTS)]
     return "".join(env.get_template(f"{nome}.tex.j2").render(ctx) for nome in LAYOUTS[layout] + CORPO)

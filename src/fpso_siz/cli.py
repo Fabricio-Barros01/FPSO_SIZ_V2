@@ -13,7 +13,7 @@ from fpso_siz import __version__
 from fpso_siz.balanco import indicadores
 from fpso_siz.balanco.auditoria import auditar
 from fpso_siz.balanco.dados import carregar_casos, descritores_premissas, premissas
-from fpso_siz.balanco.modelo import resolver_todos
+from fpso_siz.balanco.modelo import EFICIENCIA, REFERENCIA, resolver_todos
 from fpso_siz.core import registro
 from fpso_siz.core.configuracao import exemplos
 from fpso_siz.output import dimensionamento
@@ -42,7 +42,7 @@ def _mostrar(estilo, linhas):
 def cmd_balanco(a):
     dados = carregar_casos(a.casos)
     prem = premissas(dados, **_alteracoes(a.premissa))
-    resultados = resolver_todos(dados, prem)
+    resultados = resolver_todos(dados, prem, a.regra_fwko)
     aud = auditar(resultados, dados, prem)
     arq_json, arq_csv = gravar_balanco(dados, prem, resultados, aud, a.saida)
     e = _estilo(a)
@@ -228,6 +228,9 @@ def main(argv=None):
     b.add_argument("--saida", required=True, type=Path, help="pasta de saída (JSON + CSV)")
     b.add_argument("--premissa", action="append", default=[], metavar="NOME=VALOR",
                    help="sobrescreve uma premissa (repetível); ver `fpso-siz premissas`")
+    b.add_argument("--regra-fwko", choices=(EFICIENCIA, REFERENCIA), default=None,
+                   help="separação de água livre no SG-001: eficiência η = máx(η_padrão; η_req) (padrão) ou "
+                        "a regra do script de referência, mín(40 %%; BSW de chegada), para paridade com o oráculo")
     b.add_argument("--ascii", action="store_true", help="texto só em ASCII (setas, bordas, acentos)")
     b.set_defaults(func=cmd_balanco)
 

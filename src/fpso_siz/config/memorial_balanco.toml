@@ -10,6 +10,7 @@ execucao = "Fabrício O."
 verificacao = "Fabio P."
 aprovacao = "--"
 caso_demo = 8   # caso das substituições numéricas da seção 10 (ativa todos os blocos)
+caso_eta_req = 15   # caso da substituição numérica de η_req do SG-001 (F10w: o limite do BOT 2.7.1.2 governa)
 
 [senai]
 # Campos do template SENAI CETIQT (config/dados.tex do template)

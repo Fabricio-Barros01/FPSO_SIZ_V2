@@ -11,12 +11,20 @@ Validado por [`balanco.schema.json`](balanco.schema.json) (JSON Schema 2020-12).
 - `premissas`: cada premissa com id P-xx/F-xx, valor usado, unidade, origem e
   `alterada` (se foi mudada por `--premissa`).
 - `casos[]`: para cada caso, convergência do reciclo (`convergiu`, `iteracoes`,
-  `residuo_reciclo`), propriedades (`rho`, `cp`, `gas_props`), as 26 `correntes` (T em °C,
+  `residuo_reciclo`), `BSW_chegada`, `BSW_FWKO` (BSW do óleo que sai do SG-001) e `FWKO`
+  (F10w: `regra` `eficiencia`/`referencia`, `eta` adotado, `eta_req`, `eta_padrao` e
+  `exigido_acima` = o limite de F-06 exigiu η acima da P-43; `null` onde não há água),
+  propriedades (`rho`, `cp`, `gas_props`), as 26 `correntes` (T em °C,
   P em kPa abs, vazão mássica O/W/D/G em kg/s), `cargas` (kW), `gas` (Sm³/d; `Dv` em m³/d),
   balanços por bloco e global e o `rastro` (CalcTrace: equação, escopo, valor, entradas;
   catálogo em `src/fpso_siz/config/equacoes_balanco.toml`).
 - `auditoria[]`: as verificações independentes, com o maior |desvio| absoluto nos casos
-  (catálogo em `src/fpso_siz/config/auditoria.toml`).
+  (catálogo em `src/fpso_siz/config/auditoria.toml`; `eficiencia_fwko` só na regra de
+  eficiência).
+
+A regra do FWKO é a de `config/constantes.toml [modelo]` (eficiência, desde a F10w);
+`fpso-siz balanco --regra-fwko referencia` grava o JSON na regra do script de referência,
+igual ao oráculo (`docs/validacao/12-eficiencia-fwko.md`).
 
 ## `correntes.csv`
 Uma linha por caso × corrente (16 × 26 = 416 linhas no BOT). O cabeçalho usa os ids

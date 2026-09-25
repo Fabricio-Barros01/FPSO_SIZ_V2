@@ -1,5 +1,17 @@
 # F10v — verificação física do balanço e premissa "sem fase aquosa" (P-42)
 
+> **Atualização (F10w, 2026-09-25).** Os números desta página são da regra do FWKO do
+> script de referência, a padrão na época. Desde a F10w a regra padrão é a de eficiência
+> (P-43, η_A = máx(0,85; η_req)); a de referência segue como modo de paridade. Na regra
+> nova:
+> - a água continua saindo por C-05/C-25 e fecha em 1,1e-10 kg/s;
+> - o sal no óleo tratado chega a no máximo 284,0 mg/L;
+> - os casos 5–6 seguem abaixo de 40 °C;
+> - o SG-001 segue inviável pelo caso 2, com teto de 3612 mm;
+> - o V-001 passa a 4700 mm (BOT 03).
+>
+> Ver [`12-eficiencia-fwko.md`](12-eficiencia-fwko.md).
+
 Pedido do usuário (2026-09-25): verificação rigorosa dos balanços e dos cálculos, porque o
 FPSO "parecia não ter água saindo nas correntes". O plano aprovado tem dois escopos:
 - **Balanço:** só verificação. **Nenhum número muda**; a paridade bit a bit com o oráculo

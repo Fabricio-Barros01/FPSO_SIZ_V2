@@ -16,7 +16,7 @@ import pytest
 
 from fpso_siz.balanco import indicadores
 from fpso_siz.balanco.dados import carregar_casos, premissas
-from fpso_siz.balanco.modelo import resolver_todos
+from fpso_siz.balanco.modelo import EFICIENCIA, REFERENCIA, resolver_todos
 from fpso_siz.cli import main
 from fpso_siz.core.configuracao import carregar
 from fpso_siz.output.latex import compilacao, formatacao
@@ -56,22 +56,49 @@ def test_layout_original_identico_ao_script(base):
 
 
 def test_corpo_identico_entre_layouts_salvo_premissas_do_layout(base):
-    """O corpo é comum; só as linhas de premissa restritas a um layout (P-42, `senai`) diferem.
-    O `original` segue o script de referência (paridade byte a byte: test_layout_original_identico_ao_script)."""
-    env, ctx = memorial.preparar(*base)
+    """O corpo é comum aos layouts; só as linhas de premissa restritas a um layout (P-42,
+    `senai`) diferem entre eles com os mesmos resultados. O `original` usa sempre a regra do
+    FWKO do script de referência (paridade: test_layout_original_identico_ao_script); o
+    `senai`, a regra em uso (eficiência, F10w)."""
+    dados, prem, res_ef = base
+    res_ref = resolver_todos(dados, prem, REFERENCIA)
 
-    def corpo(layout):
-        c = dict(ctx, premissas_memorial=[p for p in ctx["premissas_memorial"]
-                                          if layout in p.get("layouts", memorial.LAYOUTS)])
-        return "".join(env.get_template(f"{n}.tex.j2").render(c) for n in memorial.CORPO)
+    def corpo(resultados, layout):
+        env, ctx = memorial.preparar(dados, prem, resultados, layout)
+        ctx["premissas_memorial"] = [p for p in ctx["premissas_memorial"] if layout in p.get("layouts", memorial.LAYOUTS)]
+        return "".join(env.get_template(f"{n}.tex.j2").render(ctx) for n in memorial.CORPO)
+
+    def sem_tabela_de_energia(tex):  # terminologia do senai: calor recuperado, Q_H e Q_C
+        i = tex.index("\\subsection{Cargas térmicas e potências por caso}")
+        return tex[:i] + tex[tex.index("\\section{Tabela consolidada"):]
 
     senai, original = memorial.gerar(*base, layout="senai"), memorial.gerar(*base)
-    assert senai.endswith(corpo("senai")) and original.endswith(corpo("original"))
-    linhas_original = set(corpo("original").splitlines())
-    so_senai = [x for x in corpo("senai").splitlines() if x not in linhas_original]
-    assert len(so_senai) == 2 and all("P-42" in x for x in so_senai)  # tabela de premissas + rastro
+    assert senai.endswith(corpo(res_ef, "senai")) and original.endswith(corpo(res_ref, "original"))
+    assert memorial.gerar(dados, prem, res_ref) == original  # o original não depende da regra recebida
+    linhas_original = set(sem_tabela_de_energia(corpo(res_ref, "original")).splitlines())
+    so_senai = [x for x in sem_tabela_de_energia(corpo(res_ref, "senai")).splitlines() if x not in linhas_original]
+    p42 = [x for x in so_senai if "P-42" in x]
+    rotulos = [x for x in so_senai if x.startswith("Maior ") and ("P-00" in x or "Q_H" in x or "Q_C" in x)]
+    assert len(p42) == 2 and len(rotulos) == 4 and len(so_senai) == 6  # premissas + rastro; 4 envelopes
     assert "P-42" not in original and "Nota~11" in senai
     assert "\\pagestyle{memorial}" in senai and base[0].sha256 in senai
+
+
+def test_senai_mostra_a_eficiencia_do_fwko(base):
+    """F10w: equação de η_req com a substituição do caso 15 (Q_A+D,C03, Q_O,C06, 0,924), a nota
+    de diagnóstico e os casos exigidos acima do padrão; a P-43 como premissa do autor."""
+    dados, prem, res = base
+    senai, original = memorial.gerar(*base, layout="senai"), memorial.gerar(*base)
+    r15 = next(r for r in res if r.num == 15)
+    subst = (f"\\frac{{{formatacao.mb(indicadores.q(r15, 'C-06', 'O'))}\\ \\mathrm{{m^3/d}}}}"
+             f"{{{formatacao.mb(indicadores.q_agua(r15, 'C-03'))}\\ \\mathrm{{m^3/d}}}}=0{{,}}924")
+    assert subst in senai and "\\label{eq:etaF}" in senai and "\\label{eq:bswF}" not in senai
+    assert "vazões volumétricas na condição padrão (F-01: 15,6~\\si{\\celsius} e 101,3~\\si{\\kilo\\pascal})" in senai
+    assert "\\emph{calor recuperado}" in senai and "\\dot Q_H=\\dot Q_{\\mbox{P-002}}+\\dot Q_{\\mbox{DWH-001}}" in senai
+    assert "calor recuperado" not in original.lower().replace("carga recuperada", "")
+    assert "apenas diagnóstico" in senai and "Nos casos 15, 16, $\\eta_{\\mathrm{req}}>\\eta_{\\mbox{padrão}}$" in senai
+    assert "P-43 & Eficiência padrão de remoção de água livre do SG-001" in senai and "Premissa do autor" in senai
+    assert "P-43" not in original and "\\label{eq:bswF}" in original and "eq:etaF" not in original
 
 
 def test_layout_desconhecido(base):
@@ -143,7 +170,7 @@ def test_robusto_a_outras_premissas(tmp_path):
     original, prem_orig = rodar_original(tmp_path, json.loads(CASOS.read_text(encoding="utf-8")), alt)
     dados = carregar_casos(tmp_path / "design_cases_bot.json")
     prem = premissas(dados, **alt)
-    assert prem == prem_orig
+    assert {k: v for k, v in prem.items() if k != "eta_F"} == prem_orig  # P-43 não existe no script
     novo = memorial.gerar(dados, prem, resolver_todos(dados, prem))
     ruins, previstas = diferencas_nao_previstas(original, novo)
     assert ruins == [] and previstas > 0
@@ -151,22 +178,25 @@ def test_robusto_a_outras_premissas(tmp_path):
 
 
 # ---------------------------------------------------------------- invariante 3
-def test_bijecao_equacoes_memorial(base):
-    tex = memorial.gerar(*base)
+@pytest.mark.parametrize("layout, regra", [("original", REFERENCIA), ("senai", EFICIENCIA)])
+def test_bijecao_equacoes_memorial(base, layout, regra):
+    tex = memorial.gerar(*base, layout=layout)
     rotulos = set(re.findall(r"\\label\{([^}]+)\}", tex))
     catalogo = carregar("equacoes_balanco.toml")
-    ancoras = {a for e in catalogo.values() for a in e["memorial"]}
+    ancoras = {a for e in catalogo.values() if e.get("regra", regra) == regra
+               for a in e.get("memorial_regra", {}).get(regra, e["memorial"])}
+    todas = {a for e in catalogo.values() for a in e["memorial"]}
     definicoes = set(tomllib.loads(files("fpso_siz.output.latex.balanco").joinpath("rastro_memorial.toml")
                                    .read_text(encoding="utf-8"))["definicoes"])
     assert ancoras <= rotulos, ancoras - rotulos                      # toda equação do motor aparece
     eqs = {r for r in rotulos if r.startswith("eq:")}
     assert eqs <= ancoras | definicoes, eqs - ancoras - definicoes    # toda equação escrita tem origem
-    assert not (definicoes & ancoras) and definicoes <= eqs
+    assert not (definicoes & todas) and definicoes <= eqs
 
 
 def test_criticos_iguais_ao_oraculo(base):
     oraculo = json.loads((FIX / "oraculo_balanco.json").read_text(encoding="utf-8"))["criticos"]
-    crit = indicadores.criticos(base[2], base[0], base[1])
+    crit = indicadores.criticos(resolver_todos(base[0], base[1], REFERENCIA), base[0], base[1])
     assert [(v, c) for _, v, c in crit] == [(o["valor"], o["casos"]) for o in oraculo]
     textos = tomllib.loads(files("fpso_siz.output.latex.balanco").joinpath("criticos_memorial.toml")
                            .read_text(encoding="utf-8"))["linhas"]

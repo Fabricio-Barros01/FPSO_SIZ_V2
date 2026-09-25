@@ -15,8 +15,9 @@ aquela fase).
 ## Estado atual
 
 **FASE ATUAL: F11 — MC por equipamento/TAG ← ATUAL (proposta revisada; aguardando aprovação)**
-**F10c aprovada e entregue em 2026-09-23. F10v (verificação do balanço + premissa P-42)
-aprovada e entregue em 2026-09-25. Nenhuma implementação da F11 autorizada.**
+**F10c aprovada e entregue em 2026-09-23. F10v (verificação do balanço + premissa P-42) e
+F10w (eficiência do FWKO, P-43) aprovadas e entregues em 2026-09-25. Nenhuma implementação
+da F11 autorizada.**
 
 Ordem revista em 2026-09-23, por decisão do usuário: F10 (balanço → equipamentos, em
 F10a/b/c) e F11 (MC por TAG) vêm **antes** de F8 (Pinch) e F9 (Song).
@@ -58,6 +59,18 @@ por C-05/C-25 e fecha em 1,3e-11 kg/s; os casos 1 e 4–7 não têm água no BOT
 fictícia. Balanço inalterado (bit a bit). SG-001 segue inviável, agora pelo caso 2 (com
 água). **802 testes (+2 `-m latex`, +1 `-m julia`), cobertura de 96,92 %.** Ver
 [`docs/validacao/11-verificacao-balanco.md`](docs/validacao/11-verificacao-balanco.md).
+
+F10w entregue: a separação de água livre do SG-001 passou a ser uma **eficiência**, η_A =
+máx(η_padrão = 0,85; η_req), com η_req calculado no laço para que o óleo não passe de 40 %
+de água (BOT 2.7.1.2). η_padrão é a P-43, premissa do autor editável. A regra do script de
+referência segue como **modo de paridade** (`--regra-fwko referencia`, layout `original`,
+testes do oráculo). Casos 15–16 exigem η acima do padrão (92,4 % e 91,5 %). Nos casos 2, 8,
+9 e 11, Q_H (P-002 + DWH-001) cai de 12,8 % a 49,5 % e Q_C (P-003) de 2,9 % a 18,1 %,
+porque o P-001 recupera mais calor. O V-001 vai a 4700 mm, e o SG-001 segue inviável (teto
+de 3612 mm, caso 2). **Pendência:** a η_A adotada não é sustentada pela geometria do SG-001
+nos casos 2 e 3. **814 testes (+2 `-m latex`, +1 `-m julia`),
+cobertura de 96,95 %.** Ver
+[`docs/validacao/12-eficiencia-fwko.md`](docs/validacao/12-eficiencia-fwko.md).
 
 ---
 
@@ -810,6 +823,65 @@ mostrar o mecanismo "não aplicável — sem fase aquosa" nos casos sem água. P
 aberto, cada uma com aprovação própria: M1 (diluição com o sal real), M2 (reciclo de óleo
 nos casos 5–6), M3 (fração de reciclo da água tratada), fonte de Standing no acervo e a
 premissa que resolva o SG-001 no caso 2.
+
+### F10w — Eficiência de água livre do SG-001 (P-43) ✅
+
+Fase extra, aprovada em 2026-09-25. Pedido: "a eficiência média do separador é uma premissa
+que costuma ficar entre 80 % e 90 %; utilize 85 %, editável pelo usuário; redimensione os
+cálculos". Decisões do usuário:
+- η_A do SG-001 = máx(η_padrão; η_req), com η_padrão = 0,85 em config (P-43, "premissa do
+  autor", sem referência bibliográfica);
+- η_req = 1 − [BSW_lim/(1 − BSW_lim)]·Q_O/Q_A,e, com BSW_lim = 0,40 (BOT 2.7.1.2), calculado
+  no laço com Q_A,e incluindo reciclo e diluição;
+- quando η_req > η_padrão, isso é registrado no resultado e no memorial, como estado;
+- a regra mín(40 %; BSW) do oráculo fica como modo de paridade;
+- a tabela dos 16 casos foi confirmada antes de atualizar testes e oráculo;
+- na comparação entram a carga do pré-aquecedor e a carga térmica total dos casos 2, 8, 9
+  e 11;
+- no memorial `senai`, η_req com a substituição do caso 15 (0,924) e a nota de que
+  η_req < η_padrão é diagnóstico.
+
+**Entregue (2026-09-25).** Commit: ver `git log` ("F10w: …").
+- **Núcleo:**
+  - `balanco/propriedades.split_eficiencia`;
+  - `balanco/modelo` (`regra_fwko`: `eficiencia` padrão, `referencia` = paridade; estado
+    `ResultadoCaso.fwko`);
+  - auditoria `eficiencia_fwko` (independente, 3,3e-16);
+  - sensibilidade na regra dos resultados, com η_padrão de 80 % e 90 %;
+  - verificação física por regra;
+  - `FWKO` no `balanco.json`;
+  - `--regra-fwko` em `fpso-siz balanco`.
+- **Configuração:** P-43 (`eta_F`) em `premissas.toml`; `constantes.toml [modelo]`; catálogo
+  de equações com `regra`/`memorial_regra` (`eficiencia_fwko` ↔ `eq:etaF`).
+- **Memorial:**
+  - o `original` é sempre gerado na regra de referência (byte a byte igual ao script);
+  - o `senai` traz a equação de η_req, a substituição do caso 15, o diagnóstico, os casos
+    exigidos (15 e 16), a P-43 e a P-24 derivada;
+  - as seções de eficiências, M-03, sensibilidade, fechamento e informações seguem a regra.
+- **Testes:**
+  - os de paridade (oráculo, PFD F1 do Julia, F10b) rodam na regra de referência;
+  - regressão nova `tests/fixtures/python_ref/regressao_eficiencia.json`
+    (`tools/gerar_regressao_eficiencia.py`, determinística);
+  - `tests/balanco/test_eficiencia_fwko.py` fixa a tabela confirmada;
+  - snapshots regenerados (V-001 4700 mm; SG-001 com teto de 3612 mm).
+- **Resultados:**
+  - a água produzida que sai pela C-05 e a diluição não mudam;
+  - menos água passa pelo aquecedor, pelo TO-001 e pelo reciclo;
+  - Q_H (P-002 + DWH-001): −3.671, −8.363, −5.064 e −1.197 kW nos casos 2, 8, 9 e 11;
+  - Q_C (P-003) cai o que o P-001 passa a recuperar: −2.204, −2.905, −1.286 e −143 kW.
+- **Rev. 0 do MC-SEN-SEP-COO-001:** não cita dimensões de TAG. No layout `senai` mudam os
+  critérios e envelopes listados no relatório (entre eles o líquido em C-10 do V-001, que
+  leva o V-001 de 4850 a 4700 mm); o `original` não muda.
+- **Pendência (aberta):** a η_A do SG-001 (P-43) não é sustentada pela geometria nos casos 2
+  e 3. O SG-001 é inviável, com teto de 3612 mm no caso 2 e de 4877 mm no caso 3, porque a
+  eficiência reduz o reciclo quente e esfria a entrada do FWKO (56,4 → 52,7 °C no caso 2;
+  56,8 → 52,9 °C no caso 3). Exige decisão de projeto com fonte (entrada mais quente,
+  gotícula/retenção, trens em paralelo ou η menor nesses casos).
+- **Números:** **814 testes (+2 `-m latex`, +1 `-m julia`), cobertura de 96,95 %.**
+
+**Notas para a F11:** o MC por TAG deve citar a P-43 e o estado `exigido_acima` do SG-001. A
+regra do FWKO muda as entradas do PFD, por isso o memorial de cada TAG deve dizer qual
+regra de balanço usou.
 
 ### F11 — MC por equipamento/TAG, ligado ao mesmo fluxo (proposta revisada) ← ATUAL
 

@@ -12,6 +12,16 @@ rotulo = 'BSW$_{C06}$ máx. = 10~\% (S\&A)'
 alteracoes = { BSW_F = 0.10 }
 
 [[variacoes]]
+rotulo = '$\eta_{A,\mbox{SG-001}}$ padrão = 80~\%'
+alteracoes = { eta_F = 0.80 }
+regra = "eficiencia"   # só na regra de eficiência do FWKO (F10w)
+
+[[variacoes]]
+rotulo = '$\eta_{A,\mbox{SG-001}}$ padrão = 90~\%'
+alteracoes = { eta_F = 0.90 }
+regra = "eficiencia"
+
+[[variacoes]]
 rotulo = 'BSW$_{\mbox{TO-001}}$ = 2~\%'
 alteracoes = { BSW_pre = 0.02 }
 

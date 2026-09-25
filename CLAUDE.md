@@ -10,8 +10,10 @@ backlog: [`SPRINTS.md`](SPRINTS.md), que deve ser lido primeiro.
 - **`references/` é o acervo local fora do git.** O script `references/Balanço_Preliminar.py`
   nunca é editado: ele é o oráculo do balanço.
 - **Refatoração não muda número.** O balanço tem paridade bit a bit com o oráculo
-  (`tests/fixtures/python_ref`). Mudar um resultado exige justificativa escrita em
-  `docs/validacao/` e a revisão do oráculo.
+  (`tests/fixtures/python_ref`) na regra do FWKO do script de referência (modo de
+  paridade, `--regra-fwko referencia`); a regra padrão (eficiência, P-43, F10w) é congelada
+  por `regressao_eficiencia.json`. Mudar um resultado exige justificativa escrita em
+  `docs/validacao/` e a revisão do oráculo ou da regressão.
 - Toda fase fecha com os testes verdes, cobertura ≥ 90 % no núcleo e o SPRINTS.md
   atualizado.
 
@@ -57,6 +59,8 @@ uv run pytest -m julia                      # regenera as fixtures do Julia e co
 tools/exportar_fixtures_julia.sh [commit]   # fixtures do Julia (git archive, só leitura)
 uv run python tools/comparar_memorial.py    # paridade do memorial, template a template
 uv run fpso-siz                             # modo interativo (num terminal); --ascii
+uv run fpso-siz balanco --casos design_cases_bot.json --saida saida/ [--regra-fwko referencia]
+uv run python tools/gerar_regressao_eficiencia.py   # regressão da regra padrão do FWKO (F10w)
 uv run fpso-siz dimensionar --exemplo alves_komesu [--saida saida/]      # contrato Julia
 uv run fpso-siz dimensionar --tag V-001 --casos design_cases_bot.json --auto-balanco \
     [--ajustes ajustes_pfd.toml] [--saida saida/tag]

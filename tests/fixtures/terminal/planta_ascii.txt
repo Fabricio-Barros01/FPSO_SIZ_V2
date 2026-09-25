@@ -33,7 +33,7 @@
   SG-001  inviavel                      16  -                     -
   TO-001  aguardando entrada            16  -                     -
   TO-002  aguardando entrada            16  -                     -
-  V-001   dimensionado                  16  Diametro d: 4.850 mm  BOT 08 - Mid Life
+  V-001   dimensionado                  16  Diametro d: 4.700 mm  BOT 03 - Early Life Blend
   V-002   dimensionado                  16  Diametro d: 4.700 mm  BOT 03 - Early Life Blend
 
   B-001 - Bomba de transferencia de oleo
@@ -48,7 +48,7 @@
     revisao pendente: Rugosidade absoluta ? = 0,045 mm (default); casos 1-16
     revisao pendente: Velocidade minima = 1 m/s (default); casos 1-16
     revisao pendente: Velocidade maxima = 1,5 m/s (default); casos 1-16
-    7 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
+    8 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
 
   B-002 - Bomba de agua produzida do desidratador
     ! h_geometrica - Desnivel geometrico [m]; casos 2-3, 8-16
@@ -78,7 +78,7 @@
     revisao pendente: Velocidade minima = 1 m/s (default); casos 2-3, 8-16
     revisao pendente: Velocidade maxima = 1,5 m/s (default); casos 2-3, 8-16
     Casos inativos: 1, 4-7
-    7 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
+    8 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
 
   P-001 - Pre-aquecedor oleo/oleo
     ! k_tubo - Condutividade do fluido do tubo [W/m.K]; casos 1-9, 11
@@ -132,8 +132,8 @@
     revisao pendente: Passo da grade = 150 mm (default); casos 1-16
     ... +6
     Nao ha equipamento que atenda simultaneamente aos 16 casos. Nenhum diametro admissivel tem
-    esbeltez na banda 3.0-5.0: abaixo do teto de decantacao (4434.0 mm) o SR varia de 12.56 a
-    8558.72. Amplie a grade de diametros ou a banda de SR.
+    esbeltez na banda 3.0-5.0: abaixo do teto de decantacao (3612.0 mm) o SR varia de 20.34 a
+    6975.66. Amplie a grade de diametros ou a banda de SR.
     1 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
 
   TO-001 - Desidratador (pre-tratador eletrostatico)

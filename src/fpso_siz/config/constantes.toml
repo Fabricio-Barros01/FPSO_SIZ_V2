@@ -64,6 +64,15 @@ split_iter = 8            # iterações internas de split_water (BSW sobre o ól
 denom_min_energia = 1e-30 # piso do denominador do erro relativo de energia por bloco
 fonte = "Balanço_Preliminar.py, solve_case / split_water / block_balance"
 
+[modelo]
+# Separação de água livre no SG-001 (FWKO):
+#   "eficiencia": η_A = máx(η_padrão (P-43); η_req), η_req = 1 − [BSW_lim/(1 − BSW_lim)]·Q_O,C06/Q_A+D,C03,
+#                 BSW_lim = F-06 (BOT 2.7.1.2); padrão desde a F10w (decisão do usuário, 2026-09-25);
+#   "referencia": BSW_C06 = mín(F-06; BSW de chegada), a regra do script de referência — modo de
+#                 paridade bit a bit com o oráculo (testes e layout `original` do memorial).
+regra_fwko = "eficiencia"
+fonte = "F10w (docs/validacao/12-eficiencia-fwko.md); regra de referência: Balanço_Preliminar.py, solve_case"
+
 [criterios]
 # Limiares de classificação usados nos relatórios (Balanço_Preliminar.py, seções 10–16).
 empate_rel = 1e-9          # dois casos empatam no máximo se |v − máx| ≤ 1e-9·max(1, |máx|)

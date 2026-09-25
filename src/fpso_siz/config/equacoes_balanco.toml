@@ -53,6 +53,7 @@ forma = "BSW = Q_A / (Q_A + Q_O)"
 unidade = "m³/m³"
 escopos = ["caso"]
 memorial = ["eq:bsw", "eq:bswF"]
+memorial_regra = { eficiencia = ["eq:bsw"] }   # na regra de eficiência o BSW de chegada não entra no FWKO
 
 [bsw_fwko]
 descricao = "BSW imposto na saída de óleo do FWKO"
@@ -60,6 +61,15 @@ forma = "BSW_F = min(BSW_F,max, BSW_chegada)"
 unidade = "m³/m³"
 escopos = ["caso"]
 memorial = ["eq:bswF"]
+regra = "referencia"   # só na regra do script de referência (constantes.toml [modelo])
+
+[eficiencia_fwko]
+descricao = "Eficiência de remoção de água livre do FWKO, limitada pelo BSW máximo de saída (BOT 2.7.1.2)"
+forma = "η_A = máx(η_padrão, η_req), η_req = 1 − [BSW_lim/(1 − BSW_lim)]·Q_O,C06/Q_A+D,C03"
+unidade = "-"
+escopos = ["SG-001"]
+memorial = ["eq:etaF"]
+regra = "eficiencia"
 
 [mistura]
 descricao = "Balanço por componente num ponto de mistura"
@@ -102,6 +112,7 @@ forma = "w_óleo = BSW/(1−BSW) · Q_O,saída; w_rem = w_in − w_óleo; Q_O,á
 unidade = "m³/d"
 escopos = ["SG-001", "TO-001", "TO-002"]
 memorial = ["eq:bswF", "tab:b06", "tab:b11"]
+memorial_regra = { eficiencia = ["eq:etaF", "tab:b06", "tab:b11"] }   # SG-001 por η_A (F10w)
 
 [corrente_separada]
 descricao = "Composição de corrente de saída montada pelas vazões de separação"

@@ -9,10 +9,12 @@ tests/fixtures/python_ref.
 Correntes: dict componente → kg/s, componentes O (óleo), W (água produzida),
 D (água de diluição), G (gás), sempre nesta ordem (a ordem de soma importa).
 """
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from fpso_siz.balanco.dados import constantes, pocos, premissas
-from fpso_siz.balanco.propriedades import gas_props, mu_interp, poco_do_fluido, split_water, standing_rs
+from fpso_siz.balanco.propriedades import (gas_props, mu_interp, poco_do_fluido, split_eficiencia, split_water,
+                                           standing_rs)
+from fpso_siz.core.configuracao import carregar
 from fpso_siz.core.trace import CalcTrace
 from fpso_siz.core.unidades import SEGUNDOS_POR_DIA, c_para_k
 
@@ -54,6 +56,7 @@ class ResultadoCaso:
     mu: tuple
     T_ref: float
     trace: CalcTrace
+    fwko: dict = field(default_factory=dict)  # regra, η adotado, η_req, η_padrão, exigido_acima
 
     @property
     def num(self):
@@ -77,8 +80,25 @@ class ResultadoCaso:
         return s[c] / self.rho[c] / K_DIA
 
 
-def resolver_caso(caso, dados, prem=None):
-    """Resolve um caso de projeto (laço de reciclo de água por substituição sucessiva)."""
+REFERENCIA, EFICIENCIA = "referencia", "eficiencia"
+
+
+def regra_fwko_padrao():
+    """Regra de separação de água livre do SG-001 em uso (constantes.toml [modelo])."""
+    return carregar("constantes.toml")["modelo"]["regra_fwko"]
+
+
+def resolver_caso(caso, dados, prem=None, regra_fwko=None):
+    """Resolve um caso de projeto (laço de reciclo de água por substituição sucessiva).
+
+    `regra_fwko` escolhe a separação de água livre no SG-001:
+    - "referencia": BSW_F = mín(BSW_F,máx; BSW de chegada), a do script de referência
+      (paridade bit a bit com o oráculo);
+    - "eficiencia": η_A = máx(η_padrão; η_req), com η_req calculado dentro do laço para que o
+      óleo de saída não passe de BSW_F,máx (BOT 2.7.1.2) — `split_eficiencia`."""
+    regra_fwko = regra_fwko or regra_fwko_padrao()
+    if regra_fwko not in (REFERENCIA, EFICIENCIA):
+        raise ValueError(f"regra do FWKO desconhecida: {regra_fwko!r} (use {REFERENCIA!r} ou {EFICIENCIA!r})")
     const = constantes()
     num = const.numerico
     ks = const.standing
@@ -122,7 +142,9 @@ def resolver_caso(caso, dados, prem=None):
                    - standing_rs(dados.P_std_kPa, T_ref, gp["gamma"], api, ks))
 
     BSW01 = t.reg("bsw_chegada", "caso", Wv / (Wv + Ov) if Wv + Ov > 0 else 0.0, Q_A=Wv, Q_O=Ov)
-    BSW_F = t.reg("bsw_fwko", "caso", min(p["BSW_F"], BSW01), BSW_F_max=p["BSW_F"], BSW_chegada=BSW01)
+    BSW_F = min(p["BSW_F"], BSW01)  # na regra de eficiência, é substituído pelo BSW que sai do laço
+    if regra_fwko == REFERENCIA:
+        t.reg("bsw_fwko", "caso", BSW_F, BSW_F_max=p["BSW_F"], BSW_chegada=BSW01)
 
     s01 = t.reg("vazao_massica_entrada", "C-01",
                 corrente(O=m("O", Ov), W=m("W", Wv), G=m("G", Gin_v)), Q_O=Ov, Q_A=Wv, Q_G=Gin_v)
@@ -146,8 +168,18 @@ def resolver_caso(caso, dados, prem=None):
         G_Fv = t.reg("gas_por_estagio", "C-04", Gin_v - G_D1v - G_D2v, Q_G_in=Gin_v, Q_G_D1=G_D1v, Q_G_D2=G_D2v)
         carryF = t.reg("arraste_liquido", "C-04", m("O", carry * G_Fv), carry=carry, Q_G=G_Fv)
         wat_in_v = vol(s03, "W") + vol(s03, "D")
-        wat06_v, wat05_v, oil05_v = split_water(vol(s03, "O"), wat_in_v, BSW_F, p["C_OiW"],
-                                                rho["O"], n_split, extra_oil_v=carry * G_Fv)
+        if regra_fwko == EFICIENCIA:
+            wat06_v, wat05_v, oil05_v, eta_A, eta_req = split_eficiencia(
+                vol(s03, "O"), wat_in_v, p["eta_F"], p["BSW_F"], p["C_OiW"], rho["O"], n_split,
+                extra_oil_v=carry * G_Fv)
+            O06_v = vol(s03, "O") - carry * G_Fv - oil05_v
+            BSW_F = wat06_v / (wat06_v + O06_v) if wat06_v + O06_v > 0 else 0.0
+            t.reg("eficiencia_fwko", "SG-001", eta_A, eta_padrao=p["eta_F"], eta_req=eta_req,
+                  BSW_lim=p["BSW_F"], Q_A_e=wat_in_v, Q_O=O06_v)
+        else:
+            wat06_v, wat05_v, oil05_v = split_water(vol(s03, "O"), wat_in_v, BSW_F, p["C_OiW"],
+                                                    rho["O"], n_split, extra_oil_v=carry * G_Fv)
+            eta_A, eta_req = (wat05_v / wat_in_v if wat_in_v > 0 else None), None
         t.reg("separacao_oleo_agua", "SG-001",
               dict(agua_no_oleo=wat06_v, agua_removida=wat05_v, oleo_na_agua=oil05_v),
               Q_O=vol(s03, "O"), Q_agua=wat_in_v, BSW=BSW_F)
@@ -276,10 +308,15 @@ def resolver_caso(caso, dados, prem=None):
                dRsF=dRs(p["P_FWKO"], TF), dRsD1=dRs(p["P_D1"], TD1))
     mu = mu_interp(poco.viscosidade, T03)
     t.reg("viscosidade_oleo", "SG-001", mu[0], T=T03, marcador=mu[1])
+    # estado do SG-001: regra usada, η adotado e, na regra de eficiência, se o BSW_F,máx do
+    # BOT 2.7.1.2 exigiu η acima do padrão (informação, não exceção)
+    fwko = dict(regra=regra_fwko, eta=eta_A, eta_req=eta_req,
+                eta_padrao=p["eta_F"] if regra_fwko == EFICIENCIA else None,
+                exigido_acima=regra_fwko == EFICIENCIA and eta_req is not None and eta_req > p["eta_F"])
     return ResultadoCaso(caso=caso, fluid=fl, well=well, api=api, rho=rho, cp=cp, gp=gp, Wv=Wv,
                          BSW01=BSW01, BSW_F=BSW_F, streams=streams, T=temps, P=press, duties=duties,
-                         gas=gas, iters=it, residuo_reciclo=diff, VM=VM, mu=mu, T_ref=T_ref, trace=t)
+                         gas=gas, iters=it, residuo_reciclo=diff, VM=VM, mu=mu, T_ref=T_ref, trace=t, fwko=fwko)
 
 
-def resolver_todos(dados, prem=None):
-    return [resolver_caso(c, dados, prem) for c in dados.casos]
+def resolver_todos(dados, prem=None, regra_fwko=None):
+    return [resolver_caso(c, dados, prem, regra_fwko) for c in dados.casos]

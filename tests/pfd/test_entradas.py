@@ -48,11 +48,12 @@ def test_lacunas_exatas(planta_base):
             assert l.rotulo and l.unidade and l.dica and l.casos
     assert not planta_base.completa
     # P-42: os casos sem fase aquosa (1, 4–7) não pedem a gotícula de água nem impõem teto;
-    # o SG-001 segue inviável, agora pelo teto do caso 2 (com água)
+    # o SG-001 segue inviável, pelo teto do caso 2 (com água). Com a eficiência do FWKO (F10w)
+    # o reciclo é menor, a entrada do FWKO mais fria e o teto cai de 4434 para 3612 mm
     for nome in ("TO-001", "TO-002"):
         assert planta_base.tag(nome).entradas.lacunas[0].casos == (2, 3, 8, 9, 10, 11, 12, 13, 14, 15, 16)
     sg = planta_base.tag("SG-001")
-    assert sg.status == "inviavel" and "4434" in sg.resultado.message
+    assert sg.status == "inviavel" and "3612" in sg.resultado.message
     assert sg.resultado.ceiling_case == "BOT 02 — Early Life"
 
 

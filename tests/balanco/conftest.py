@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from fpso_siz.balanco.dados import carregar_casos
-from fpso_siz.balanco.modelo import resolver_todos
+from fpso_siz.balanco.modelo import EFICIENCIA, REFERENCIA, resolver_todos
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "python_ref"
 ENTRADA = FIXTURES / "design_cases_bot.json"
@@ -25,4 +25,11 @@ def dados(oraculo):
 
 @pytest.fixture(scope="session")
 def resultados(dados):
-    return resolver_todos(dados)
+    """Modo de paridade: a regra do FWKO do script de referência (o oráculo foi gerado com ela)."""
+    return resolver_todos(dados, regra_fwko=REFERENCIA)
+
+
+@pytest.fixture(scope="session")
+def resultados_ef(dados):
+    """Regra padrão (F10w): η_A do SG-001 = máx(η_padrão; η_req)."""
+    return resolver_todos(dados, regra_fwko=EFICIENCIA)

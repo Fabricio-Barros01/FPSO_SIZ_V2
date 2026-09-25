@@ -15,13 +15,28 @@ RAIZ = Path(__file__).resolve().parents[1]
 CASOS = RAIZ / "tests" / "fixtures" / "python_ref" / "design_cases_bot.json"
 ESQUEMA = json.loads((RAIZ / "docs" / "esquemas" / "balanco.schema.json").read_text(encoding="utf-8"))
 ORACULO = json.loads((RAIZ / "tests" / "fixtures" / "python_ref" / "oraculo_balanco.json").read_text(encoding="utf-8"))
+PARIDADE = ["--regra-fwko", "referencia"]  # regra do FWKO do script de referência (o oráculo)
+NOVAS = {"eta_F"}                          # premissas que o script de referência não tem (F10w)
 
 
 @pytest.fixture(scope="module")
 def saida(tmp_path_factory):
     d = tmp_path_factory.mktemp("saida")
-    assert main(["balanco", "--casos", str(CASOS), "--saida", str(d)]) == 0
+    assert main(["balanco", "--casos", str(CASOS), "--saida", str(d), *PARIDADE]) == 0
     return d
+
+
+def test_padrao_usa_a_eficiencia_do_fwko(tmp_path, capsys):
+    """F10w: sem --regra-fwko, η_A do SG-001 = máx(η_padrão; η_req); o JSON traz o estado."""
+    assert main(["balanco", "--casos", str(CASOS), "--saida", str(tmp_path)]) == 0
+    capsys.readouterr()
+    j = json.loads((tmp_path / "balanco.json").read_text(encoding="utf-8"))
+    jsonschema.validate(j, ESQUEMA)
+    fw = {c["num"]: c["FWKO"] for c in j["casos"]}
+    assert {f["regra"] for f in fw.values()} == {"eficiencia"}
+    assert [n for n, f in fw.items() if f["exigido_acima"]] == [15, 16]
+    assert fw[2]["eta"] == 0.85 and fw[1]["eta_req"] is None
+    assert "eficiencia_fwko" in {a["id"] for a in j["auditoria"]}
 
 
 def test_json_valida_no_esquema(saida):
@@ -32,7 +47,7 @@ def test_json_reproduz_o_oraculo_bit_a_bit(saida):
     j = json.loads((saida / "balanco.json").read_text(encoding="utf-8"))
     assert j["entrada"]["sha256"] == ORACULO["proveniencia"]["entrada_sha256"]
     assert not any(p["alterada"] for p in j["premissas"])
-    assert {p["nome"]: p["valor"] for p in j["premissas"]} == ORACULO["premissas"]
+    assert {p["nome"]: p["valor"] for p in j["premissas"] if p["nome"] not in NOVAS} == ORACULO["premissas"]
     for c, o in zip(j["casos"], ORACULO["casos"], strict=True):
         assert c["num"] == o["num"] and c["convergiu"]
         assert {k: v["vazao_massica_kg_s"] for k, v in c["correntes"].items()} == o["streams"]
@@ -62,7 +77,7 @@ def test_readme_documenta_todas_as_colunas():
 
 def test_premissa_alterada(tmp_path, capsys):
     sens = next(s for s in ORACULO["sensibilidade"] if s["premissas_alteradas"] == {"BSW_pre": 0.02})
-    assert main(["balanco", "--casos", str(CASOS), "--saida", str(tmp_path), "--premissa", "BSW_pre=0.02"]) == 0
+    assert main(["balanco", "--casos", str(CASOS), "--saida", str(tmp_path), "--premissa", "BSW_pre=0.02", *PARIDADE]) == 0
     assert "premissa alterada P-28 BSW_pre = 0.02" in capsys.readouterr().out
     j = json.loads((tmp_path / "balanco.json").read_text(encoding="utf-8"))
     assert [p["nome"] for p in j["premissas"] if p["alterada"]] == ["BSW_pre"]

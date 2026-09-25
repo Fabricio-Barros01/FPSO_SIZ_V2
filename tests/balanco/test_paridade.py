@@ -10,7 +10,7 @@ import pytest
 
 from fpso_siz.balanco.balancos import balanco_global, balancos_por_bloco
 from fpso_siz.balanco.dados import premissas
-from fpso_siz.balanco.modelo import resolver_caso
+from fpso_siz.balanco.modelo import REFERENCIA, resolver_caso
 
 TOL_REL = 0.0
 CAMPOS = ("fluid", "well", "api", "rho", "cp", "gp", "Wv", "BSW01", "BSW_F",
@@ -44,7 +44,11 @@ def comparar_resultado(r, esperado):
 
 
 def test_premissas_iguais_ao_prem_original(dados, oraculo):
-    assert divergencias(premissas(dados), oraculo["premissas"]) == []
+    """As premissas do script de referência são as mesmas; a F10w só acrescenta a P-43 (η_A
+    padrão do SG-001), que a regra de referência não usa."""
+    p = premissas(dados)
+    assert set(p) - set(oraculo["premissas"]) == {"eta_F"} and p["eta_F"] == 0.85
+    assert divergencias({k: v for k, v in p.items() if k != "eta_F"}, oraculo["premissas"]) == []
 
 
 @pytest.mark.parametrize("i", range(16), ids=lambda i: f"caso{i + 1}")
@@ -58,7 +62,7 @@ def test_caso(i, resultados, oraculo):
 
 def test_sensibilidade(dados, oraculo):
     for s in oraculo["sensibilidade"]:
-        r = resolver_caso(dados.caso(s["num"]), dados, premissas(dados, **s["premissas_alteradas"]))
+        r = resolver_caso(dados.caso(s["num"]), dados, premissas(dados, **s["premissas_alteradas"]), REFERENCIA)
         assert comparar_resultado(r, s["resultado"]) == [], (s["num"], s["rotulo"])
         assert divergencias(balanco_global(r), s["global_balance"]) == [], (s["num"], s["rotulo"])
 
