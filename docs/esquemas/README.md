@@ -66,12 +66,18 @@ Cada JSON contém:
   `estado` (`pendente`/`desatualizada`) e casos;
 - `casos[]`: número, nome, atividade/motivo, `valores`, `insumos`, `rastro` e `avisos`;
 - cada valor: `valor`, `origem` (balanco, propriedade, premissa, recomendada, metodo,
-  usuario, arquivo, lacuna), `fonte`, `tipo`, `pendente`, `faixa` (`[mín, máx]` quando a
+  usuario, arquivo, lacuna, nao_aplicavel), `fonte`, `tipo`, `pendente`, `faixa` (`[mín, máx]` quando a
   entrada é uma faixa, com `valor` nulo), `revisao` (`""`, `pendente`, `confirmada`,
   `desatualizada`) e `anterior` (o que a entrada do usuário substituiu: origem, fonte e
   valor; `null` se não houver registro);
 - `envelope`: entrada, resultado, cartão, casos, varredura e rastros; `null` quando o TAG
   aguarda entrada ou está inteiramente inativo.
+- `nao_aplicavel` (F10v, premissa P-42): num caso sem vazão de água e com óleo, as entradas
+  usadas só pelos critérios da fase aquosa do separador e do tratador (`dm_water`, `dm_oil`,
+  `tr_water`, e `rho_water`/`mu_water` quando não vêm do balanço) têm `valor` nulo, `fonte`
+  citando a P-42, sem `pendente` nem `revisao`. O `mecanismo_teto` do caso é
+  `sem_fase_aquosa` (teto infinito, que não governa o envelope). A lista está em
+  `config/pfd/metodos.toml [<método>.fase_aquosa]`.
 
 NaN e Inf são `null`. `TAG_varredura.csv` tem as colunas da varredura do método e
 `governante,caso_governante,admissivel` (só o cabeçalho quando não há envelope).

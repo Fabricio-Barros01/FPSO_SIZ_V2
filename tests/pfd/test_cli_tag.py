@@ -63,7 +63,9 @@ def test_tag_isolado_planta_e_modos_mistos_mesmos_bytes(arquivo_misto, tmp_path,
     assert to["status"] == "dimensionado" and to["preliminar"] and to["revisoes"]
     assert to["casos"][0]["valores"]["dm_water"]["anterior"] == {"origem": "lacuna", "fonte": "", "valor": None}
     sg = json.loads((planta / "SG-001.json").read_text(encoding="utf-8"))
-    assert {c["valores"]["tr_water"]["revisao"] for c in sg["casos"]} == {"confirmada"}
+    tr_w = {c["num"]: c["valores"]["tr_water"] for c in sg["casos"]}
+    assert {tr_w[n]["revisao"] for n in (2, 3, *range(8, 17))} == {"confirmada"}
+    assert all(tr_w[n]["origem"] == "nao_aplicavel" and not tr_w[n]["revisao"] for n in (1, 4, 5, 6, 7))  # P-42
     b1 = json.loads((planta / "B-001.json").read_text(encoding="utf-8"))
     assert b1["casos"][0]["valores"]["rendimento"]["valor"] == 0.8
 

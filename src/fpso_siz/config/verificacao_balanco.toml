@@ -1,0 +1,35 @@
+# Verificação física do balanço (F10v) — docs/validacao/11-verificacao-balanco.md.
+# Não altera o balanço: confere, caso a caso, as premissas da fase aquosa (P-42) e a
+# consistência física dos resultados. Correntes e premissas citadas pelo id.
+fonte = "BOT 2.7.1.2 (FWKO: até 40 % de água no óleo), 2.3.1.1 (óleo tratado, limite superior), Tab. 2.2.2.3 Notas 5 e 11; premissas P-24, P-28, P-29, P-41, P-42"
+
+# Água produzida + água de diluição (componentes do balanço).
+componentes_agua = ["W", "D"]
+reciclo = "C-02"                 # água dos tratadores de volta ao M-01 (BOT 2.7.1.6)
+alimentacao_fwko = "C-03"
+oleo_tratado = "C-21"            # salinidade do óleo tratado (base: volume da emulsão, decisão de 2026-09-25)
+agua_antes_da_diluicao = "C-11"  # água residual do desidratador: sal real × S_W suposto na diluição
+
+# Tolerância relativa das identidades (BSW = min(entrada; especificação), fechamento de água).
+tol_rel = 1e-12
+
+# Premissa P-42: em cada separador, BSW_saída = min(BSW_entrada; especificação), sem água
+# fictícia. No FWKO o modelo impõe a especificação sobre o BSW da CHEGADA (C-01), como no
+# script de referência (BOT 2.7.1.2); nos tratadores, sobre a própria entrada.
+[[separadores]]
+bloco = "SG-001"
+entrada = "C-01"
+oleo = "C-06"
+premissa = "BSW_F"
+
+[[separadores]]
+bloco = "TO-001"
+entrada = "C-10"
+oleo = "C-11"
+premissa = "BSW_pre"
+
+[[separadores]]
+bloco = "TO-002"
+entrada = "C-18"
+oleo = "C-21"
+premissa = "BSW_t"

@@ -55,11 +55,22 @@ def test_layout_original_identico_ao_script(base):
     assert memorial.gerar(*base) == (FIX / "main_ref.tex").read_text(encoding="utf-8")
 
 
-def test_corpo_identico_entre_layouts(base):
+def test_corpo_identico_entre_layouts_salvo_premissas_do_layout(base):
+    """O corpo é comum; só as linhas de premissa restritas a um layout (P-42, `senai`) diferem.
+    O `original` segue o script de referência (paridade byte a byte: test_layout_original_identico_ao_script)."""
     env, ctx = memorial.preparar(*base)
-    corpo = "".join(env.get_template(f"{n}.tex.j2").render(ctx) for n in memorial.CORPO)
-    senai = memorial.gerar(*base, layout="senai")
-    assert senai.endswith(corpo) and memorial.gerar(*base).endswith(corpo)
+
+    def corpo(layout):
+        c = dict(ctx, premissas_memorial=[p for p in ctx["premissas_memorial"]
+                                          if layout in p.get("layouts", memorial.LAYOUTS)])
+        return "".join(env.get_template(f"{n}.tex.j2").render(c) for n in memorial.CORPO)
+
+    senai, original = memorial.gerar(*base, layout="senai"), memorial.gerar(*base)
+    assert senai.endswith(corpo("senai")) and original.endswith(corpo("original"))
+    linhas_original = set(corpo("original").splitlines())
+    so_senai = [x for x in corpo("senai").splitlines() if x not in linhas_original]
+    assert len(so_senai) == 2 and all("P-42" in x for x in so_senai)  # tabela de premissas + rastro
+    assert "P-42" not in original and "Nota~11" in senai
     assert "\\pagestyle{memorial}" in senai and base[0].sha256 in senai
 
 

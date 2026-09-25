@@ -10,10 +10,10 @@
     de: V-001 (C-10)
     para: M-02 (C-11), B-002 (C-12)
 
-  ! FALTA 1 ENTRADA(S), AFETANDO 16 CASO(S) ATIVO(S)
+  ! FALTA 1 ENTRADA(S), AFETANDO 11 CASO(S) ATIVO(S)
   Chave     Unidade  Casos
-  ────────  ───────  ─────
-  dm_water  µm       1–16
+  ────────  ───────  ─────────
+  dm_water  µm       2–3, 8–16
     dm_water · Entrada: Gotícula de água após
     coalescência
     dm_water:
@@ -29,17 +29,14 @@
 
   RECOMENDADAS E DEFAULTS COM FONTE — REVISÃO PENDENTE
   #  Chave      Valor  Unidade  Casos
-  ─  ─────────  ─────  ───────  ─────
-  1  dm_oil       200  µm       1–16
-  2  tr_oil        20  min      1–16
-  3  tr_water      10  min      1–16
-  4  d_step       150  mm       1–16
-  5  sr_min         3  –        1–16
-  6  sr_max         5  –        1–16
-  7  sr_target      4  –        1–16
-    dm_oil · Origem: default · revisão pendente
-    dm_oil · Fonte: Stewart & Arnold (2008)
-    §4.7.3: gotas de óleo de 200 µm
+  ─  ─────────  ─────  ───────  ─────────
+  1  tr_oil        20  min      1–16
+  2  d_step       150  mm       1–16
+  3  sr_min         3  –        1–16
+  4  sr_max         5  –        1–16
+  5  sr_target      4  –        1–16
+  6  dm_oil       200  µm       2–3, 8–16
+  7  tr_water      10  min      2–3, 8–16
     tr_oil · Origem: recomendada · revisão
     pendente
     tr_oil · Fonte: Stewart & Arnold (2008) Tab.
@@ -47,11 +44,6 @@
     superior), ×2 pela nota da tabela para
     emulsão na entrada (fator 2 a 4; adotado o
     menor)
-    tr_water · Origem: recomendada · revisão
-    pendente
-    tr_water · Fonte: Stewart & Arnold (2008)
-    §4.7.4: 'a water retention time of 10 min is
-    recommended for design'
     d_step · Origem: default · revisão pendente
     d_step · Fonte: Stewart & Arnold (2008)
     §4.9.3: 'heads come in outside diameters,
@@ -66,6 +58,14 @@
     pendente
     sr_target · Fonte: centro da banda de
     Stewart & Arnold (2008) §4.9.2
+    dm_oil · Origem: default · revisão pendente
+    dm_oil · Fonte: Stewart & Arnold (2008)
+    §4.7.3: gotas de óleo de 200 µm
+    tr_water · Origem: recomendada · revisão
+    pendente
+    tr_water · Fonte: Stewart & Arnold (2008)
+    §4.7.4: 'a water retention time of 10 min is
+    recommended for design'
   Podem produzir cálculo preliminar; seguem
   destacadas até serem confirmadas.
 

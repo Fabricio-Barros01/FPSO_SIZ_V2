@@ -50,7 +50,8 @@ def test_tag_automatico_pendencia_revisao_exportacao_e_comando(tmp_path):
                        op("tag", "revisar"), op("revisar", "confirmar_todos"),
                        op("tag", "exportar"), str(pasta), "", "0", "0", "0")
     assert rc == 0
-    assert "! FALTA 1 ENTRADA(S), AFETANDO 16 CASO(S) ATIVO(S)" in out and "dm_water" in out
+    # P-42: só os 11 casos com fase aquosa pedem a gotícula após coalescência
+    assert "! FALTA 1 ENTRADA(S), AFETANDO 11 CASO(S) ATIVO(S)" in out and "dm_water" in out
     assert "RECOMENDADAS E DEFAULTS COM FONTE — REVISÃO PENDENTE" in out
     assert "✓ Viável" in out and "valor(es) confirmados com a fonte" in out
     cmd = comandos_repetir(out)
@@ -64,9 +65,14 @@ def test_tag_automatico_pendencia_revisao_exportacao_e_comando(tmp_path):
     j = json.loads(feitos[pasta / "TO-001.json"])
     assert j["status"] == "dimensionado" and not j["preliminar"] and not j["revisoes"]
     assert {v["revisao"] for c in j["casos"] for v in c["valores"].values()} <= {"", "confirmada"}
-    assert j["casos"][0]["valores"]["dm_water"]["origem"] == "usuario"
+    # P-42: o valor vale só nos casos com água (gravado por caso); os sem água ficam não aplicável
+    com_agua = (2, 3, *range(8, 17))
+    dm = {c["num"]: c["valores"]["dm_water"]["origem"] for c in j["casos"]}
+    assert all(dm[n] == "usuario" for n in com_agua) and all(dm[n] == "nao_aplicavel" for n in (1, 4, 5, 6, 7))
     aj = tomllib.loads((pasta / saida_ajustes.NOME).read_text(encoding="utf-8"))
-    assert aj["tag"]["TO-001"]["entradas"] == {"dm_water": 800.0} and aj["tag"]["TO-001"]["revisao"]
+    to = aj["tag"]["TO-001"]
+    assert "entradas" not in to and to["revisao"]
+    assert {int(n): sub["entradas"] for n, sub in to["caso"].items()} == {n: {"dm_water": 800.0} for n in com_agua}
 
 
 def test_tag_manual_parcial_salvar_e_retomar(tmp_path):

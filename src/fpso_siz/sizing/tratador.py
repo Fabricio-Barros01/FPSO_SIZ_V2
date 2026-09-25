@@ -12,7 +12,8 @@ from fpso_siz.core.formato_julia import jl_round
 from fpso_siz.core.trace import Rastro
 from fpso_siz.core.unidades import mm_para_m
 from fpso_siz.sizing.beta import segment_height_fraction
-from fpso_siz.sizing.vasos import MetodoVaso, PhaseLayer, VesselConstraints
+from fpso_siz.sizing.vasos import (NAO_APLICAVEL_SEM_AGUA, SEM_FASE_AQUOSA, MetodoVaso, PhaseLayer,
+                                   VesselConstraints, sem_fase_aquosa)
 
 
 class ElectrostaticTreater(Equipamento):
@@ -40,6 +41,16 @@ class ArnoldElectrostatic(MetodoVaso):
         dm_ref = float(k["untreated_droplet_um"])
         dm_w, dm_o = p["dm_water"], p["dm_oil"]
         tr_o, tr_w = p["tr_oil"], p["tr_water"]
+
+        if sem_fase_aquosa(fu):
+            tr.trace("settling", "P-42", "Qw", NAO_APLICAVEL_SEM_AGUA, fu.q_w, "m³/h")
+            d2_leff = c_ret * (tr_o * fu.q_o) / alpha
+            tr.trace("liquid", "Eq. 4.15b", "d²·Leff", "21000·(tr)oQo/α — sem fase aquosa (P-42)", d2_leff, "mm²·m")
+            if not (math.isfinite(d2_leff) and d2_leff > 0):
+                return (False, "Vazões não informadas ou inválidas: a capacidade de líquido (Eq. 4.15b) não pôde ser "
+                               "avaliada.", tr)
+            return True, VesselConstraints(0.0, d2_leff, math.inf, SEM_FASE_AQUOSA,
+                                           segment_height_fraction(alpha), 0.0), tr
 
         dsg = fu.sg_w - fu.sg_o
         tr.trace("settling", "Eq. 4.16", "ΔSG", "(SG)w − (SG)o", dsg, "–")

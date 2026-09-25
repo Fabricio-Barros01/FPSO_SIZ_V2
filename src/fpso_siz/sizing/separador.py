@@ -13,13 +13,16 @@ Divergências documentadas em relação ao texto publicado (docs/validacao/05-va
    rastro como "Eq. 21*", sem decidir nada;
 4. Lss pela relação do bloco que governa (artigo), não pelo maior dos dois (livro).
 """
+import math
+
 from fpso_siz.core.contrato import Equipamento
 from fpso_siz.core.corrente import field_units
 from fpso_siz.core.formato_julia import jl_round
 from fpso_siz.core.trace import Rastro
 from fpso_siz.sizing.beta import beta_coefficient, water_area_fraction
 from fpso_siz.sizing.capacidade_gas import EQS_GAS_ALVES, gas_capacity_dleff
-from fpso_siz.sizing.vasos import MetodoVaso, VesselConstraints
+from fpso_siz.sizing.vasos import (NAO_APLICAVEL_SEM_AGUA, SEM_FASE_AQUOSA, MetodoVaso, VesselConstraints,
+                                   sem_fase_aquosa)
 
 
 class Separator(Equipamento):
@@ -54,6 +57,12 @@ class StewartArnold(MetodoVaso):
             return False, msg_gas, tr
 
         # ------------------------------------------------ bloco B
+        if sem_fase_aquosa(fu):
+            tr.trace("settling", "P-42", "Qw", NAO_APLICAVEL_SEM_AGUA, fu.q_w, "m³/h")
+            d2_leff = c_eq22 * (tr_o * fu.q_o)
+            tr.trace("liquid", "Eq. 22", "d²·Leff", "C·(tr)oQo — sem fase aquosa (P-42)", d2_leff, "mm²·m")
+            return True, VesselConstraints(d_leff_gas, d2_leff, math.inf, SEM_FASE_AQUOSA,
+                                           beta_coefficient(0.0), 0.0), tr
         dsg = fu.sg_w - fu.sg_o
         tr.trace("settling", "Eq. 16", "ΔSG", "(SG)w − (SG)o", dsg, "–")
         if not dsg > 0:

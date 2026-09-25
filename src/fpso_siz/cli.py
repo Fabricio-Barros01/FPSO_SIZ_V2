@@ -10,6 +10,7 @@ from pathlib import Path
 
 import fpso_siz.sizing  # noqa: F401  (registra os métodos de dimensionamento)
 from fpso_siz import __version__
+from fpso_siz.balanco import indicadores
 from fpso_siz.balanco.auditoria import auditar
 from fpso_siz.balanco.dados import carregar_casos, descritores_premissas, premissas
 from fpso_siz.balanco.modelo import resolver_todos
@@ -21,7 +22,7 @@ from fpso_siz.output.latex.balanco import memorial
 from fpso_siz.output.terminal.comum import alteracoes as _alteracoes
 from fpso_siz.output.terminal.comum import gravar_balanco
 from fpso_siz.output.terminal.estilo import Estilo
-from fpso_siz.output.terminal.relatorio import resumo_dimensionamento
+from fpso_siz.output.terminal.relatorio import resumo_dimensionamento, verificacao_balanco
 from fpso_siz.output.terminal.sessao import Sessao
 from fpso_siz.pfd import ajustes as mod_ajustes
 from fpso_siz.pfd import equipamento as servico
@@ -59,6 +60,8 @@ def cmd_balanco(a):
     linhas.append("auditoria independente (maior |desvio| nos casos):")
     for v in aud:
         linhas.append(f"  {v['id']:<22} {v['max_desvio_abs']:.3e}  {v['unidade']}")
+    linhas.append("verificação física (água, BSW, sal, T do FWKO):")
+    linhas += verificacao_balanco(indicadores.verificacao_fisica(resultados, prem), e)
     linhas.append(f"gravados: {arq_json}, {arq_csv}")
     _mostrar(e, linhas)
     return 1 if nao else 0

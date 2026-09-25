@@ -264,3 +264,84 @@ def sensibilidade(resultados, dados, prem):
 def soma_q(r, sids, c):
     """Σ vazão padrão do componente c num conjunto de correntes."""
     return sum(q(r, s, c) for s in sids)
+
+
+# ------------------------------------------------------------------ verificação física (F10v)
+def _verif():
+    return carregar("verificacao_balanco.toml")
+
+
+def massa_agua(r, sid):
+    """Água (produzida + diluição) na corrente, kg/s."""
+    return sum(r.streams[sid][c] for c in _verif()["componentes_agua"])
+
+
+def bsw(r, sid):
+    """BSW volumétrico na condição padrão (fração); 0 sem líquido."""
+    ww, o = q_agua(r, sid), q(r, sid, "O")
+    return ww / (ww + o) if ww + o > 0 else 0.0
+
+
+def balanco_agua(r):
+    """Água que entra e sai pelas correntes de fronteira do diagrama (kg/s), o reciclo e o
+    resíduo entra − sai. As fronteiras vêm da topologia."""
+    topo = topologia()
+    entra = {s: massa_agua(r, s) for s in topo["global_in"]}
+    sai = {s: massa_agua(r, s) for s in topo["global_out"]}
+    return dict(num=r.num, entra=entra, sai=sai, reciclo=massa_agua(r, _verif()["reciclo"]),
+                residuo=sum(entra.values()) - sum(sai.values()))
+
+
+def sal_real_mgL(r, sid, prem):
+    """Salinidade da água da corrente com o sal de cada componente (S_W, S_D), mg/L."""
+    w, d = q(r, sid, "W"), q(r, sid, "D")
+    return (w * prem["S_W"] + d * prem["S_D"]) / (w + d) if w + d > 0 else 0.0
+
+
+def verificacao_fisica(resultados, prem):
+    """Conferência física do balanço, caso a caso (não altera o resultado):
+
+    - água: fechamento pelas fronteiras e reciclo; casos sem fase aquosa (P-42);
+    - BSW de cada separador = min(BSW de entrada; especificação) (P-24/P-28/P-29, P-42);
+    - FWKO com água na saída de óleo sempre que a chegada tem água (BOT 2.7.1.2);
+    - salinidade do óleo tratado com o sal real de W e D, na base do volume da emulsão,
+      e na do óleo (informativa), contra S_spec;
+    - água de diluição com o sal real da água residual × a calculada com S_W (modelo);
+    - FWKO abaixo de T_FWKO_min (F-07; o reciclo de óleo da Nota 11 não é modelado, P-41);
+    - γ do gás por caso (validade de Standing, P-23: faixa pendente de fonte no acervo)."""
+    v = _verif()
+    tol = v["tol_rel"]
+    agua = [balanco_agua(r) for r in resultados]
+    sem_agua = [a["num"] for a in agua if not sum(a["entra"].values()) > 0]
+    separadores = []
+    for s in v["separadores"]:
+        spec = prem[s["premissa"]]
+        for r in resultados:
+            b_in, b_out = bsw(r, s["entrada"]), bsw(r, s["oleo"])
+            esperado = min(b_in, spec)
+            separadores.append(dict(bloco=s["bloco"], premissa=s["premissa"], num=r.num, entrada=b_in, saida=b_out,
+                                    esperado=esperado, ok=abs(b_out - esperado) <= tol * max(1, spec)))
+    fwko = v["separadores"][0]
+    fwko_seco = [r.num for r in resultados if massa_agua(r, fwko["entrada"]) > 0 and not massa_agua(r, fwko["oleo"]) > 0]
+    oleo, antes = v["oleo_tratado"], v["agua_antes_da_diluicao"]
+    sal, diluicao = [], []
+    for r in resultados:
+        if r.num in sem_agua:
+            continue
+        s_agua = sal_real_mgL(r, oleo, prem)
+        ww, o = q_agua(r, oleo), q(r, oleo, "O")
+        sal.append(dict(num=r.num, emulsao=s_agua * ww / (ww + o), oleo=s_agua * ww / o))
+        w_antes = q_agua(r, antes)
+        s_res = prem["S_spec"] / prem["BSW_t"]
+        real = w_antes * (sal_real_mgL(r, antes, prem) / s_res - 1) / prem["eta_mix"]
+        diluicao.append(dict(num=r.num, modelo=r.gas["Dv"], sal_real=real,
+                             excesso_rel=r.gas["Dv"] / real - 1 if real > 0 else 0.0))
+    return dict(
+        agua=agua, sem_fase_aquosa=sem_agua,
+        maior_residuo_agua=max(abs(a["residuo"]) for a in agua),
+        saidas_agua=[s for s in topologia()["global_out"] if any(a["sai"][s] > 0 for a in agua)],
+        separadores=separadores, bsw_ok=all(x["ok"] for x in separadores), fwko_sem_agua_no_oleo=fwko_seco,
+        sal_oleo=sal, sal_max_emulsao=max((x["emulsao"] for x in sal), default=0.0), limite_sal=prem["S_spec"],
+        diluicao=diluicao, abaixo_T_fwko=casos_abaixo_T_fwko(resultados, prem), t_fwko_min=prem["T_FWKO_min"],
+        gamma_gas={r.num: r.gp["gamma"] for r in resultados},
+    )

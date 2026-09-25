@@ -1,6 +1,7 @@
 # Tabela de premissas do memorial (seção 6) e origem das linhas P-xx da rastreabilidade.
 # Conteúdo de documento (LaTeX). `valor` é uma expressão de template avaliada no contexto do
-# memorial: números vêm das premissas em uso, nunca digitados aqui.
+# memorial: números vêm das premissas em uso, nunca digitados aqui. `layouts` (opcional)
+# restringe a linha a esses layouts; sem ele, a linha vale para todos.
 
 [[linhas]]
 id = 'F-01'
@@ -478,3 +479,13 @@ unidade = '''--'''
 justificativa = '''Não representado no DB (BOT Nota 11 o prevê)'''
 impacto = '''Casos com $T<40$ °C'''
 tipo = 'A VALIDAR'
+
+[[linhas]]
+id = 'P-42'
+parametro = '''Casos sem fase aquosa (BSW nulo): correntes aquosas do FWKO, do TO-001 e do TO-002 nulas; em cada separador $\mathit{BSW}_{\mathrm{out}}=\min(\mathit{BSW}_{\mathrm{in}};\ \mathit{BSW}_{\mathrm{espec}})$ (P-24, P-28, P-29), sem água fictícia'''
+valor = '''--'''
+unidade = '''--'''
+justificativa = '''BOT Tab.~2.2.2.3, Nota~5 (faixa de \textit{water cut}) e Nota~11 (reciclo de óleo para aquecimento); BOT 2.3.1.1 (especificação como limite superior)'''
+impacto = '''Critérios da fase aquosa dos vasos não aplicáveis nesses casos (não governam o envelope); fase aquosa dimensionada pelos casos com água; reciclo de aquecimento é de óleo (P-41)'''
+tipo = 'PREMISSA'
+layouts = ['senai']

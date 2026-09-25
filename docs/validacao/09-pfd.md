@@ -97,7 +97,7 @@ não modelado no líquido. Nenhuma propriedade faltante recebe valor arbitrário
 | P-001 | Aguarda k dos dois fluidos, k da parede e incrustação dos dois lados |
 | P-002/003 | Aguardam k do processo, k da parede, incrustação dos dois lados e as duas temperaturas da utilidade |
 | TO-001/002 | Aguardam tamanho da gotícula de água após coalescência |
-| SG-001 | Entradas completas, envelope inviável com o método/premissas atuais |
+| SG-001 | Entradas completas, envelope inviável com o método/premissas atuais (F10v: agora pelo caso 2, ver `11-verificacao-balanco.md`) |
 | V-001 | Dimensionado: d = 4850 mm; governa BOT 08 |
 | V-002 | Dimensionado: d = 4700 mm; governa BOT 03 |
 
@@ -124,5 +124,10 @@ diagnóstico é preservado, sem declarar um dimensionamento viável artificialme
 - Exportar pela API e pelo comando com os mesmos dados produz os mesmos bytes.
 - O teste do registro de métodos foi isolado: antes ele esvaziava o registro global
   e fazia os testes seguintes dependerem da ordem de execução.
+
+> **Atualização (F10v, 2026-09-25):** com a premissa P-42 (sem fase aquosa), os casos
+> sem água (1, 4–7) não impõem teto de decantação nem pedem entradas aquosas; o teto do
+> SG-001 passou do caso 6 (1634,579 mm) para o caso 2 (4434,5 mm), e o TAG segue
+> inviável. Ver [`11-verificacao-balanco.md`](11-verificacao-balanco.md).
 
 Próxima fase: F10c, sujeita à aprovação prevista em `CLAUDE.md`.

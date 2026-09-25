@@ -231,6 +231,15 @@ estado_colunas = ["Equipamento", "Modo", "Entradas", "Revisões", "Arquivo"]
 # balanço, casos e premissas
 resolvendo = "Resolvendo {n} casos…"
 caso_balanco = "Caso ({min}–{max})"
+caso_sem_agua = "O caso {n} não tem fase aquosa (BSW nulo no BOT, Nota 5): as correntes de água são zero (P-42)."
+# verificação física do balanço (balanco/indicadores.verificacao_fisica; docs/validacao/11)
+agua_balanco = "Água (produzida + diluição): maior |entra − sai| = {residuo} kg/s; sai por {saidas}."
+agua_sem_fase = "Casos sem fase aquosa: {casos} (BSW nulo no BOT, Nota 5) — critérios aquosos não aplicáveis (P-42)."
+bsw_separadores = "BSW de saída = mín(entrada; especificação) em todos os separadores; o FWKO deixa água no óleo sempre que chega água."
+bsw_separadores_falha = "ATENÇÃO: BSW de saída diferente de mín(entrada; especificação) em {n} ponto(s)."
+fwko_seco = "ATENÇÃO: FWKO sem água na saída de óleo com água na chegada nos casos {casos}."
+sal_oleo_tratado = "Sal no óleo tratado (sal real de cada água, base da emulsão): máx. {valor} mg/L; limite {limite} mg/L."
+alerta_t_fwko = "ALERTA: entrada do FWKO abaixo de {t} °C nos casos {casos} (F-07); o reciclo de óleo da Nota 11 não é modelado (P-41)."
 correntes_titulo = "Correntes do caso {n}"
 auditoria_titulo = "Auditoria independente"
 arquivo_casos = "Arquivo de casos (JSON do BOT)"
@@ -289,6 +298,7 @@ metodo = "default"
 usuario = "usuário"
 arquivo = "arquivo"
 lacuna = "lacuna"
+nao_aplicavel = "não aplicável"
 
 [revisao_tela]
 pendente = "revisão pendente"

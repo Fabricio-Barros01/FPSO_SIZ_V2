@@ -24,6 +24,7 @@ from pathlib import Path
 
 import fpso_siz.sizing  # noqa: F401  (registra os métodos de dimensionamento)
 from fpso_siz import __version__
+from fpso_siz.balanco import indicadores
 from fpso_siz.balanco.auditoria import auditar
 from fpso_siz.balanco.dados import carregar_casos, descritores_premissas, premissas
 from fpso_siz.core import registro
@@ -381,12 +382,16 @@ class Sessao:
 
     def _bal_correntes(self, res, aud):
         nums = [r.num for r in res]
-        r = self.perguntar(self.tx["caso_balanco"].format(min=nums[0], max=nums[-1]), nums[0])
+        sem_agua = indicadores.verificacao_fisica(res, self.ctx.prem)["sem_fase_aquosa"]
+        padrao = next((n for n in nums if n not in sem_agua), nums[0])  # um caso com água, se houver
+        r = self.perguntar(self.tx["caso_balanco"].format(min=nums[0], max=nums[-1]), padrao)
         if not r.isdigit() or int(r) not in nums:
             self.aviso(self.tx["caso_invalido"].format(texto=r))
             return
         self.dizer(*rel.titulo(self.tx["correntes_titulo"].format(n=r), self.e, self.colunas),
                    *rel.tabela_correntes_caso(res, int(r), self.e))
+        if int(r) in sem_agua:
+            self.dizer(self.e.fraco("  " + self.tx["caso_sem_agua"].format(n=r)))
 
     def _bal_exportar(self, res, aud):
         prem = self.ctx.prem
@@ -641,7 +646,7 @@ class Sessao:
             if c.num in alvo:
                 v = c.valores.get(chave) or c.insumos.get(chave)
                 anteriores[c.num] = ("lacuna", "", None) if v is None else (
-                    v.origem, v.fonte, None if v.lacuna else v.numero)
+                    v.origem, v.fonte, None if v.lacuna or v.nao_aplicavel else v.numero)
         copia = copy.deepcopy(estado)
         estado.editar(chave, valor, casos, anteriores)
         try:

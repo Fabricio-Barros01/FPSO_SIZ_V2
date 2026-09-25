@@ -21,6 +21,18 @@ sr_min = { tipo = "fonte", fonte = "Stewart & Arnold (2008) cap. 4: comprimento/
 sr_max = { tipo = "fonte", fonte = "Stewart & Arnold (2008) cap. 4: comprimento/diâmetro 'between 3 and 5'" }
 sr_target = { tipo = "fonte", fonte = "centro da banda de Stewart & Arnold (2008)" }
 
+# Premissa P-42 (BOT Tab. 2.2.2.3 Notas 5 e 11; BOT 2.3.1.1 como limite superior): nos casos
+# sem vazão de água (BSW 0 %) e com óleo, os critérios que dependem da fase aquosa não se
+# aplicam. As chaves abaixo, quando seriam lacuna, recomendação ou default do método,
+# viram "não aplicável" nesses casos: não são pedidas nem revisadas. Valores do balanço,
+# das propriedades e do usuário permanecem. O método ignora-as (sizing/vasos.sem_fase_aquosa).
+[stewart_arnold.fase_aquosa]
+vazao = "q_water"
+oleo = "q_oil"
+parametros = ["dm_water", "dm_oil", "tr_water", "rho_water", "mu_water"]
+dispensaveis = ["lacuna", "recomendada", "metodo"]
+fonte = "P-42: sem fase aquosa neste caso (BOT Tab. 2.2.2.3 Notas 5 e 11; 2.3.1.1); critério não aplicável"
+
 [stewart_arnold_2f]
 dm_gas = { tipo = "fonte", fonte = "Stewart & Arnold (2008) §3.7.1: equações de capacidade de gás baseadas em remoção de 140 µm" }
 d_min = { regra = "grade_descritor", limite = "min" }
@@ -38,6 +50,18 @@ d_step = { tipo = "fonte", fonte = "Stewart & Arnold (2008) §4.9.3: 'heads come
 sr_min = { tipo = "fonte", fonte = "Stewart & Arnold (2008) §4.9.2: Lss/d entre 3 e 5" }
 sr_max = { tipo = "fonte", fonte = "Stewart & Arnold (2008) §4.9.2: Lss/d entre 3 e 5" }
 sr_target = { tipo = "fonte", fonte = "centro da banda de Stewart & Arnold (2008) §4.9.2" }
+
+# Premissa P-42 (BOT Tab. 2.2.2.3 Notas 5 e 11; BOT 2.3.1.1 como limite superior): nos casos
+# sem vazão de água (BSW 0 %) e com óleo, os critérios que dependem da fase aquosa não se
+# aplicam. As chaves abaixo, quando seriam lacuna, recomendação ou default do método,
+# viram "não aplicável" nesses casos: não são pedidas nem revisadas. Valores do balanço,
+# das propriedades e do usuário permanecem. O método ignora-as (sizing/vasos.sem_fase_aquosa).
+[arnold_electrostatic.fase_aquosa]
+vazao = "q_water"
+oleo = "q_oil"
+parametros = ["dm_water", "dm_oil", "tr_water", "rho_water", "mu_water"]
+dispensaveis = ["lacuna", "recomendada", "metodo"]
+fonte = "P-42: sem fase aquosa neste caso (BOT Tab. 2.2.2.3 Notas 5 e 11; 2.3.1.1); critério não aplicável"
 
 [arnold_electrostatic.dicas]
 dm_water = "Sem fonte no acervo: a correlação campo elétrico → gotícula coalescida está no volume 'Emulsions and Oil Treating' da série, que não temos. §4.7.2 dimensiona para 500 µm SEM tratamento; com dado de laboratório, use o dado."

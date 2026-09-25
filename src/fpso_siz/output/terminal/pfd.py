@@ -60,7 +60,7 @@ def origem_tela(v):
 
 
 def valor_texto(v):
-    if v.lacuna:
+    if v.lacuna or v.nao_aplicavel:
         return TRAVESSAO
     if v.faixa:
         return f"{sig(v.faixa[0])} – {sig(v.faixa[1])}"

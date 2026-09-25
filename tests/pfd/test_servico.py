@@ -219,15 +219,31 @@ def test_planta_so_manual_nao_resolve_o_balanco(monkeypatch):
 
 
 F10B = __import__("json").loads((FIXTURES / "pfd" / "f10b_resultados.json").read_text(encoding="utf-8"))
+P42_TAGS = {"SG-001", "TO-001", "TO-002"}
+P42_CHAVES = {"dm_water", "dm_oil", "tr_water", "rho_water", "mu_water"}
+
+
+@pytest.fixture
+def plantas_f10b(monkeypatch, planta_base, ajustes_sinteticos):
+    """As plantas com a premissa P-42 (sem fase aquosa) desligada: o código que a F10b tinha."""
+    from fpso_siz.pfd import entradas
+    from fpso_siz.sizing import separador, tratador
+    monkeypatch.setattr(entradas, "_fase_aquosa", lambda metodo, valores: valores)
+    monkeypatch.setattr(separador, "sem_fase_aquosa", lambda fu: False)
+    monkeypatch.setattr(tratador, "sem_fase_aquosa", lambda fu: False)
+    base = planta.dimensionar(planta_base.dados, balanco=planta_base.balanco)
+    return {"sem_ajustes": base,
+            "ajustes_sinteticos": planta.dimensionar(base.dados, ajustes=ajustes_sinteticos, balanco=base.balanco)}
 
 
 @pytest.mark.parametrize("modo", ["sem_ajustes", "ajustes_sinteticos"])
-def test_resultados_iguais_aos_da_f10b(modo, planta_base, planta_ajustada, tmp_path):
-    """Regressão: valores de entrada, lacunas, estados, envelopes e planta.csv iguais aos
-    que a F10b gravou (fixture gerada pelo código da F10b, via git archive)."""
+def test_resultados_iguais_aos_da_f10b(modo, plantas_f10b, tmp_path):
+    """Regressão: sem a P-42, valores de entrada, lacunas, estados, envelopes e planta.csv
+    iguais aos que a F10b gravou (fixture gerada pelo código da F10b, via git archive). O
+    efeito da P-42 é conferido à parte, em test_efeito_da_p42_restrito_a_fase_aquosa."""
     import hashlib
     import json
-    p = planta_base if modo == "sem_ajustes" else planta_ajustada
+    p = plantas_f10b[modo]
     assert F10B["casos_sha256"] == p.dados.sha256
     esperado = F10B[modo]
     for t in p.tags:
@@ -247,3 +263,47 @@ def test_resultados_iguais_aos_da_f10b(modo, planta_base, planta_ajustada, tmp_p
             assert folgas == e["envelope"]["folgas"]
     pfd.gravar(p, tmp_path)
     assert hashlib.sha256((tmp_path / "planta.csv").read_bytes()).hexdigest() == esperado["planta_csv_sha256"]
+
+
+def _num(x):
+    return None if isinstance(x, float) and math.isnan(x) else x
+
+
+def _valor(v):
+    return (v.origem, _num(v.valor), v.faixa, v.fonte, v.revisao, v.anterior)
+
+
+@pytest.mark.parametrize("modo", ["sem_ajustes", "ajustes_sinteticos"])
+def test_efeito_da_p42_restrito_a_fase_aquosa(modo, plantas_f10b, planta_base, planta_ajustada):
+    """P-42 (BOT Tab. 2.2.2.3 Notas 5 e 11; 2.3.1.1): nos casos sem água (1, 4–7), só as entradas
+    dos critérios aquosos do SG-001/TO-001/TO-002 deixam de ser pedidas/revisadas e só o teto do
+    SG-001 muda de caso. Todo o resto é idêntico ao código da F10b."""
+    antes, depois = plantas_f10b[modo], (planta_base if modo == "sem_ajustes" else planta_ajustada)
+    for a, d in zip(antes.tags, depois.tags, strict=True):
+        assert a.tag.tag == d.tag.tag and a.status == d.status
+        sem_agua = {c.num for c in d.entradas.casos if "q_water" in c.valores and c.valores["q_water"].valor == 0}
+        mudou = False
+        for ca, cd in zip(a.entradas.casos, d.entradas.casos, strict=True):
+            assert (ca.num, ca.ativo, set(ca.valores)) == (cd.num, cd.ativo, set(cd.valores))
+            for k, vd in cd.valores.items():
+                if vd.nao_aplicavel:
+                    mudou = True
+                    assert d.tag.tag in P42_TAGS and cd.num in sem_agua and k in P42_CHAVES
+                    assert ca.valores[k].origem in ("lacuna", "recomendada", "metodo") and "P-42" in vd.fonte
+                else:
+                    assert _valor(vd) == _valor(ca.valores[k]), (d.tag.tag, cd.num, k)
+        esperadas = [(l.chave, tuple(n for n in l.casos if not (n in sem_agua and l.chave in P42_CHAVES)))
+                     for l in a.entradas.lacunas]
+        assert [(l.chave, l.casos) for l in d.entradas.lacunas] == [x for x in esperadas if x[1]]
+        ra, rd = a.resultado, d.resultado
+        assert (ra is None) == (rd is None)
+        if rd is None:
+            continue
+        chave = [(r.feasible, _num(r.x), _num(r.y), r.driver_case, list(r.slack)) for r in (ra, rd)]
+        assert chave[0] == chave[1], d.tag.tag
+        if d.tag.tag == "SG-001":
+            assert ra.ceiling_case == "BOT 06 — Mid Life" and rd.ceiling_case == "BOT 02 — Early Life"
+            assert rd.ceiling > ra.ceiling
+        else:
+            assert (ra.message, _num(ra.ceiling), ra.ceiling_case) == (rd.message, _num(rd.ceiling), rd.ceiling_case)
+        assert mudou == (d.tag.tag in P42_TAGS)

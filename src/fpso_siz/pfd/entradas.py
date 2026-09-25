@@ -31,6 +31,7 @@ from fpso_siz.pfd.ajustes import MANUAL, estado_legado
 
 BLOCO = "entradas"
 LACUNA = "lacuna"
+NAO_APLICAVEL = "nao_aplicavel"
 USUARIO = "usuario"
 ARQUIVO = "arquivo"
 # estados de revisão de um valor (o cálculo não depende deles; só o destaque)
@@ -54,6 +55,7 @@ def rotulo_origem(origem):
 class Valor:
     valor: float
     origem: str            # balanco | propriedade | premissa | recomendada | metodo | usuario | arquivo | lacuna
+                           # | nao_aplicavel
     fonte: str = ""
     tipo: str = ""         # só para origem "metodo": fonte | escolha | nao_usado | grade
     pendente: tuple = ()   # lacunas de que o valor depende (chaves do método ou insumos do TAG)
@@ -64,6 +66,11 @@ class Valor:
     @property
     def lacuna(self):
         return self.origem == LACUNA
+
+    @property
+    def nao_aplicavel(self):
+        """Entrada de um critério que não se aplica ao caso (P-42: sem fase aquosa)."""
+        return self.origem == NAO_APLICAVEL
 
     @property
     def numero(self):
@@ -552,6 +559,25 @@ def _avisos_de_faixa(ctx, valores, specs):
                       f"({jl(s.min)}–{jl(s.max)}); origem: {rotulo_origem(v.origem)}")
 
 
+def _fase_aquosa(metodo, valores):
+    """Premissa P-42 (config/pfd/metodos.toml [<método>.fase_aquosa]): num caso sem vazão de
+    água e com óleo, as entradas usadas só pelos critérios da fase aquosa não se aplicam.
+    Lacunas, recomendações e defaults dessas chaves viram "não aplicável" (sem pendência nem
+    revisão); valores do balanço/propriedades e os informados pelo usuário permanecem, e o
+    método não os usa nesse caso (sizing/vasos.sem_fase_aquosa)."""
+    fa = metodos().get(metodo.method_id, {}).get("fase_aquosa")
+    if not fa:
+        return valores
+    agua, oleo = valores[fa["vazao"]], valores[fa["oleo"]]
+    if agua.lacuna or agua.faixa or agua.valor != 0 or oleo.lacuna or oleo.faixa or not oleo.valor > 0:
+        return valores
+    out = dict(valores)
+    for k in fa["parametros"]:
+        if valores[k].origem in fa["dispensaveis"]:
+            out[k] = Valor(math.nan, NAO_APLICAVEL, fa["fonte"])
+    return out
+
+
 def _lacunas(tag, metodo, specs, casos):
     dicas = metodos().get(metodo.method_id, {}).get("dicas", {})
     pendentes, dependentes = {}, {}
@@ -581,6 +607,9 @@ def _auditar(valores, estado, num):
     """Estado de revisão e valor substituído de cada entrada do caso."""
     out = {}
     for k, v in valores.items():
+        if v.nao_aplicavel:
+            out[k] = v
+            continue
         rev = estado.revisoes.get((k, num)) if estado is not None else None
         if rev is not None:
             status = CONFIRMADA if (rev[0] == v.numero and rev[1] == v.fonte) else DESATUALIZADA
@@ -647,7 +676,7 @@ def montar(tag, balanco, dados, prem, ajustes=None, estado=None):
     casos = []
     for r in balanco:
         ctx = _Caso(tag, m, specs, r, dados, prem, estado.ajustes_do_caso(r.num))
-        valores = _auditar({k: ctx.valor(k) for k in specs}, estado, r.num)
+        valores = _auditar(_fase_aquosa(m, {k: ctx.valor(k) for k in specs}), estado, r.num)
         _rastrear(ctx, valores, specs)
         ativo, motivo = _atividade(tag, ctx, valores, specs)
         if ativo:
@@ -672,7 +701,7 @@ def montar_manual(tag, casos, estado, pfd=True):
     for n, nome in casos:
         ctx = _Caso(tag, m, specs, None, None, None, estado.ajustes_do_caso(n), estado.importados_do_caso(n),
                     estado.arquivo)
-        valores = _auditar({k: ctx.valor(k) for k in specs}, estado, n)
+        valores = _auditar(_fase_aquosa(m, {k: ctx.valor(k) for k in specs}), estado, n)
         _rastrear(ctx, valores, specs)
         if n in estado.inativos:
             ativo, motivo = False, estado.inativos[n]

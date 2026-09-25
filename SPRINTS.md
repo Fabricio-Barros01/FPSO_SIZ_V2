@@ -15,7 +15,8 @@ aquela fase).
 ## Estado atual
 
 **FASE ATUAL: F11 — MC por equipamento/TAG ← ATUAL (proposta revisada; aguardando aprovação)**
-**F10c aprovada e entregue em 2026-09-23. Nenhuma implementação da F11 autorizada.**
+**F10c aprovada e entregue em 2026-09-23. F10v (verificação do balanço + premissa P-42)
+aprovada e entregue em 2026-09-25. Nenhuma implementação da F11 autorizada.**
 
 Ordem revista em 2026-09-23, por decisão do usuário: F10 (balanço → equipamentos, em
 F10a/b/c) e F11 (MC por TAG) vêm **antes** de F8 (Pinch) e F9 (Song).
@@ -50,6 +51,13 @@ que gravam os mesmos bytes. Esquemas da planta e do TAG saem da topologia, em Un
 ASCII (`--ascii`), com tela estreita. **783 testes (+2 `-m latex`, +1 `-m julia`),
 cobertura de 96,86 %**; resultados numéricos iguais aos da F10b. Ver
 [`docs/validacao/10-fluxo-tag.md`](docs/validacao/10-fluxo-tag.md).
+
+F10v entregue (fase extra, pedida pelo usuário): verificação física do balanço (a água sai
+por C-05/C-25 e fecha em 1,3e-11 kg/s; os casos 1 e 4–7 não têm água no BOT) e a premissa
+**P-42 — sem fase aquosa**: critérios aquosos "não aplicável" nos casos sem água, sem água
+fictícia. Balanço inalterado (bit a bit). SG-001 segue inviável, agora pelo caso 2 (com
+água). **802 testes (+2 `-m latex`, +1 `-m julia`), cobertura de 96,92 %.** Ver
+[`docs/validacao/11-verificacao-balanco.md`](docs/validacao/11-verificacao-balanco.md).
 
 ---
 
@@ -762,6 +770,46 @@ as entregas F10a/b continuam registradas como histórico.
   `DESPACHO` da sessão. `--mc [--pdf]` entra em `dimensionar --tag` e `pfd`.
 - Relatório de pendências/diagnóstico: `status` aguardando/inviável/inativo e
   `preliminar` já distinguem os casos.
+
+### F10v — Verificação física do balanço e premissa "sem fase aquosa" (P-42) ✅
+
+Fase extra, aprovada em 2026-09-25 (plano "verificação rigorosa"). Pedido: o FPSO "parecia
+não ter água saindo"; revisar premissas e validade numérica. Decisões do usuário: balanço
+só verificado (nenhum número muda); sal do óleo tratado na base do volume da emulsão;
+premissa P-42 — "nenhuma água fictícia; BOT 2.3.1.1 é limite superior (BSW_saída =
+min(BSW_entrada; especificação)); nos casos 1 e 4–7 as correntes aquosas do FWKO, TO-001 e
+TO-002 são nulas e o reciclo (Nota 11) é de óleo; critérios aquosos retornam 'não aplicável
+— sem fase aquosa', sem exceção e sem governar o envelope; a fase aquosa é dimensionada
+pelos casos com água; o FWKO sempre deixa água no óleo; só o TO-002 chega à especificação".
+
+**Entregue (2026-09-25).** Commit: ver `git log` ("F10v: …").
+- Núcleo: `balanco/indicadores.{balanco_agua, verificacao_fisica, bsw, sal_real_mgL}` com
+  `config/verificacao_balanco.toml`; `sizing/vasos.sem_fase_aquosa` (mecanismo
+  `sem_fase_aquosa`), separador e tratador sem bloco de decantação quando Qw = 0 e Qo > 0
+  (capacidades idênticas às da forma geral); `pfd/entradas._fase_aquosa` com
+  `config/pfd/metodos.toml [<método>.fase_aquosa]` e a origem `nao_aplicavel`.
+- Saída: linhas de água/BSW/sal/T do FWKO no resumo do balanço (interativo e
+  `fpso-siz balanco`); "Ver correntes" abre no primeiro caso com água; P-42 na tabela de
+  premissas e no apêndice de rastreabilidade do memorial `senai` (o `original` segue byte a
+  byte o script de referência); `docs/esquemas/README.md` documenta `nao_aplicavel`.
+- Verificação: balanço e oráculo inalterados; fixtures do Julia intactas (nenhuma tem
+  `q_water = 0`); a regressão F10b roda com a P-42 desligada e reproduz a fixture, e
+  `test_efeito_da_p42_restrito_a_fase_aquosa` prova que só SG-001/TO-001/TO-002 mudam, só
+  em `dm_water`/`dm_oil`/`tr_water` dos casos 1 e 4–7, e o teto do SG-001 (caso 6, 1635 mm
+  → caso 2, 4434 mm; continua inviável). **802 testes (+2 `-m latex`, +1 `-m julia`),
+  cobertura de 96,92 %.**
+- Achados documentados (sem mudar número): diluição superdimensionada 0,5–36,7 % (sal real
+  × S_W); FWKO a 35 °C nos casos 5–6 (reciclo de óleo da Nota 11 não modelado, P-41);
+  Standing usado com γ 0,81–1,22 e fonte fora do acervo; cp_W −1 a −2 % frente a Laliberté;
+  gás seco, cp constante, sem calor de flash; resíduo de −2,2e-16 kg/s de gás (1 ulp).
+- Desvio do plano: a fixture `f10b_resultados.json` não foi reescrita (regressão com a P-42
+  desligada + teste do efeito restrito), o que preserva a proveniência da F10b.
+
+**Notas para a F11:** o MC por TAG deve citar a P-42 (texto em `premissas_memorial.toml`) e
+mostrar o mecanismo "não aplicável — sem fase aquosa" nos casos sem água. Propostas em
+aberto, cada uma com aprovação própria: M1 (diluição com o sal real), M2 (reciclo de óleo
+nos casos 5–6), M3 (fração de reciclo da água tratada), fonte de Standing no acervo e a
+premissa que resolva o SG-001 no caso 2.
 
 ### F11 — MC por equipamento/TAG, ligado ao mesmo fluxo (proposta revisada) ← ATUAL
 

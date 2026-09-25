@@ -126,28 +126,28 @@
     4 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
 
   SG-001 — Separador trifásico de água livre (FWKO)
-    revisão pendente: Gotícula de água = 500 µm (default); casos 1–16
-    revisão pendente: Gotícula de óleo = 200 µm (default); casos 1–16
     revisão pendente: Gotícula no gás = 100 µm (default); casos 1–16
+    revisão pendente: Retenção do óleo = 10 min (recomendada); casos 1–16
+    revisão pendente: Passo da grade = 150 mm (default); casos 1–16
     … +6
     Não há equipamento que atenda simultaneamente aos 16 casos. Nenhum diâmetro admissível tem
-    esbeltez na banda 3.0–5.0: abaixo do teto de decantação (1635.0 mm) o SR varia de 287.29 a
+    esbeltez na banda 3.0–5.0: abaixo do teto de decantação (4434.0 mm) o SR varia de 12.56 a
     8558.72. Amplie a grade de diâmetros ou a banda de SR.
     1 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
 
   TO-001 — Desidratador (pré-tratador eletrostático)
-    ! dm_water — Gotícula de água após coalescência [µm]; casos 1–16
-    revisão pendente: Gotícula de óleo na água = 200 µm (default); casos 1–16
+    ! dm_water — Gotícula de água após coalescência [µm]; casos 2–3, 8–16
     revisão pendente: Retenção do óleo = 20 min (recomendada); casos 1–16
-    revisão pendente: Retenção da água = 10 min (recomendada); casos 1–16
+    revisão pendente: Passo da grade = 150 mm (default); casos 1–16
+    revisão pendente: Esbeltez mínima = 3 – (default); casos 1–16
     … +4
     1 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
 
   TO-002 — Dessalinizador (tratador eletrostático)
-    ! dm_water — Gotícula de água após coalescência [µm]; casos 1–16
-    revisão pendente: Gotícula de óleo na água = 200 µm (default); casos 1–16
+    ! dm_water — Gotícula de água após coalescência [µm]; casos 2–3, 8–16
     revisão pendente: Retenção do óleo = 20 min (recomendada); casos 1–16
-    revisão pendente: Retenção da água = 10 min (recomendada); casos 1–16
+    revisão pendente: Passo da grade = 150 mm (default); casos 1–16
+    revisão pendente: Esbeltez mínima = 3 – (default); casos 1–16
     … +4
     1 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
 

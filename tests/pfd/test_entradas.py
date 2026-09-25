@@ -47,8 +47,13 @@ def test_lacunas_exatas(planta_base):
         for l in t.entradas.lacunas:
             assert l.rotulo and l.unidade and l.dica and l.casos
     assert not planta_base.completa
-    assert planta_base.tag("SG-001").status == "inviavel"
-    assert "1635" in planta_base.tag("SG-001").resultado.message
+    # P-42: os casos sem fase aquosa (1, 4–7) não pedem a gotícula de água nem impõem teto;
+    # o SG-001 segue inviável, agora pelo teto do caso 2 (com água)
+    for nome in ("TO-001", "TO-002"):
+        assert planta_base.tag(nome).entradas.lacunas[0].casos == (2, 3, 8, 9, 10, 11, 12, 13, 14, 15, 16)
+    sg = planta_base.tag("SG-001")
+    assert sg.status == "inviavel" and "4434" in sg.resultado.message
+    assert sg.resultado.ceiling_case == "BOT 02 — Early Life"
 
 
 def test_inativos_sem_vazao_e_sem_carga(planta_base):
@@ -71,6 +76,9 @@ def test_todas_entradas_tem_fonte_e_rastro(planta_base, planta_ajustada):
                 for k, v in c.valores.items():
                     if v.lacuna:
                         assert math.isnan(v.valor) and v.pendente
+                    elif v.nao_aplicavel:  # P-42: sem fase aquosa no caso; fonte citada, sem número
+                        assert math.isnan(v.valor) and not v.pendente and "P-42" in v.fonte
+                        assert c.valores["q_water"].valor == 0 and not v.revisao
                     else:
                         assert v.fonte and math.isfinite(v.valor)
                         assert entradas[k].value == v.valor

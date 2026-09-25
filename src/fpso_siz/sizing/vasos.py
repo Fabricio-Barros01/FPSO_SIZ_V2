@@ -50,9 +50,23 @@ def vessel_volume(d_mm, l_m):
     return math.pi * (r * r) / 4 * l_m
 
 
+SEM_FASE_AQUOSA = "sem_fase_aquosa"
+NAO_APLICAVEL_SEM_AGUA = ("não aplicável — sem fase aquosa (P-42): a decantação líquido-líquido não se "
+                          "aplica e o caso não impõe teto; a fase aquosa é dimensionada pelos casos com água")
+
+
+def sem_fase_aquosa(fu):
+    """Premissa P-42 (BOT Tab. 2.2.2.3 Notas 5 e 11; 2.3.1.1): caso sem vazão de água e com
+    óleo. Os critérios que dependem da fase aquosa (decantação líquido-líquido e retenção da
+    água) não se aplicam; não é inviabilidade nem exceção. Zero exato: a água que o balanço
+    não produz não é suposta."""
+    return fu.q_w == 0 and fu.q_o > 0
+
+
 def mechanism_label(m):
     return {"water_in_oil": "água em óleo", "oil_in_water": "óleo em água",
-            "none": "sem teto de decantação"}.get(m, str(m))
+            "none": "sem teto de decantação",
+            SEM_FASE_AQUOSA: "não aplicável — sem fase aquosa"}.get(m, str(m))
 
 
 class MetodoVaso(MetodoTOML):

@@ -69,6 +69,8 @@ def gerar(dados, prem, resultados, layout="original"):
     if layout not in LAYOUTS:
         raise ValueError(f"layout desconhecido: {layout!r} (use {sorted(LAYOUTS)})")
     env, ctx = preparar(dados, prem, resultados)
+    # linha com `layouts` só entra nos layouts citados (o `original` segue o script de referência)
+    ctx["premissas_memorial"] = [p for p in ctx["premissas_memorial"] if layout in p.get("layouts", LAYOUTS)]
     return "".join(env.get_template(f"{nome}.tex.j2").render(ctx) for nome in LAYOUTS[layout] + CORPO)
 
 

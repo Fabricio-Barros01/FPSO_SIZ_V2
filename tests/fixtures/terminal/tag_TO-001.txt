@@ -8,10 +8,10 @@
                     │             │ ── C-12 ──→ B-002
                     └─────────────┘
 
-  ! FALTA 1 ENTRADA(S), AFETANDO 16 CASO(S) ATIVO(S)
+  ! FALTA 1 ENTRADA(S), AFETANDO 11 CASO(S) ATIVO(S)
   Chave     Entrada                             Unidade  Casos
-  ────────  ──────────────────────────────────  ───────  ─────
-  dm_water  Gotícula de água após coalescência  µm       1–16
+  ────────  ──────────────────────────────────  ───────  ─────────
+  dm_water  Gotícula de água após coalescência  µm       2–3, 8–16
     dm_water:
     Faixa do descritor: 50–5000
     Valor: não informado; sem recomendação com fonte disponível.
@@ -20,25 +20,25 @@
     SEM tratamento; com dado de laboratório, use o dado.
 
   RECOMENDADAS E DEFAULTS COM FONTE — REVISÃO PENDENTE
-  #  Chave      Valor  Unidade  Casos  Origem
-  ─  ─────────  ─────  ───────  ─────  ──────────────────────────────
-  1  dm_oil       200  µm       1–16   default · revisão pendente
-  2  tr_oil        20  min      1–16   recomendada · revisão pendente
-  3  tr_water      10  min      1–16   recomendada · revisão pendente
-  4  d_step       150  mm       1–16   default · revisão pendente
-  5  sr_min         3  –        1–16   default · revisão pendente
-  6  sr_max         5  –        1–16   default · revisão pendente
-  7  sr_target      4  –        1–16   default · revisão pendente
-    dm_oil · Fonte: Stewart & Arnold (2008) §4.7.3: gotas de óleo de 200 µm
+  #  Chave      Valor  Unidade  Casos      Origem
+  ─  ─────────  ─────  ───────  ─────────  ──────────────────────────────
+  1  tr_oil        20  min      1–16       recomendada · revisão pendente
+  2  d_step       150  mm       1–16       default · revisão pendente
+  3  sr_min         3  –        1–16       default · revisão pendente
+  4  sr_max         5  –        1–16       default · revisão pendente
+  5  sr_target      4  –        1–16       default · revisão pendente
+  6  dm_oil       200  µm       2–3, 8–16  default · revisão pendente
+  7  tr_water      10  min      2–3, 8–16  recomendada · revisão pendente
     tr_oil · Fonte: Stewart & Arnold (2008) Tab. 4.1: óleo intermediário 7,5–10 min (limite
     superior), ×2 pela nota da tabela para emulsão na entrada (fator 2 a 4; adotado o menor)
-    tr_water · Fonte: Stewart & Arnold (2008) §4.7.4: 'a water retention time of 10 min is
-    recommended for design'
     d_step · Fonte: Stewart & Arnold (2008) §4.9.3: 'heads come in outside diameters, which are
     multiples of 6 in. (150 mm)'
     sr_min · Fonte: Stewart & Arnold (2008) §4.9.2: Lss/d entre 3 e 5
     sr_max · Fonte: Stewart & Arnold (2008) §4.9.2: Lss/d entre 3 e 5
     sr_target · Fonte: centro da banda de Stewart & Arnold (2008) §4.9.2
+    dm_oil · Fonte: Stewart & Arnold (2008) §4.7.3: gotas de óleo de 200 µm
+    tr_water · Fonte: Stewart & Arnold (2008) §4.7.4: 'a water retention time of 10 min is
+    recommended for design'
   Podem produzir cálculo preliminar; seguem destacadas até serem confirmadas.
 
   Dimensionamento pendente; nenhum resultado concluído é apresentado.

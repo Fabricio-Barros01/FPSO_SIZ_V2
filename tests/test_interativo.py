@@ -412,3 +412,15 @@ def test_dimensionar_exemplo_grava_no_contrato_do_julia(tmp_path, capsys):
     j = json.loads((tmp_path / "dimensionamento.json").read_text(encoding="utf-8"))
     assert j["entrada"]["origem"] == "exemplo:alves_komesu" and j["resultado"]["x"] == 6300
     assert (tmp_path / "varredura.csv").read_text(encoding="utf-8").count("\n") > 10
+
+
+def test_balanco_mostra_agua_e_padrao_num_caso_com_agua():
+    """F10v: o resumo diz por onde a água sai e quais casos não têm fase aquosa; "Ver
+    correntes" abre por padrão no primeiro caso com água (Enter), e um caso sem água é
+    identificado como tal (BOT Nota 5, P-42)."""
+    rc, out = rodar(op("principal", "balanco"), op("balanco", "correntes"), "",
+                    op("balanco", "correntes"), "1", "0", "0")
+    assert rc == 0
+    assert "sai por C-05, C-25" in out and "Casos sem fase aquosa: 1, 4, 5, 6, 7" in out
+    assert "Correntes do caso 2" in out  # Enter = padrão: o primeiro caso com água
+    assert "Correntes do caso 1" in out and "O caso 1 não tem fase aquosa" in out

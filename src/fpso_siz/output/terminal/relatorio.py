@@ -86,6 +86,7 @@ def resumo_balanco(resultados, auditoria, dados, prem, descritores, estilo, colu
     else:
         out.append(estilo.fraco("  Premissas: todas no valor de base."))
     out.append(f"  Auditoria independente: {len(auditoria)} verificações recalculadas fora do motor.")
+    out += verificacao_balanco(indicadores.verificacao_fisica(resultados, prem), estilo)
     out += ["", estilo.negrito("  Caso que maximiza cada critério de dimensionamento")]
     rot = cfg()["criticos"]
     linhas = []
@@ -93,6 +94,24 @@ def resumo_balanco(resultados, auditoria, dados, prem, descritores, estilo, colu
         c = rot[k]
         linhas.append([c["equipamento"], c["criterio"], num(mx, c["casas"]), c["unidade"], casos_lista(casos)])
     out += tabela(["Equipamento", "Critério", "Valor", "Unidade", "Caso(s)"], linhas, estilo)
+    return out
+
+
+def verificacao_balanco(v, estilo):
+    """Linhas da verificação física (água, BSW, sal, T do FWKO) a partir do núcleo."""
+    tx = cfg()["textos"]
+    out = ["  " + tx["agua_balanco"].format(residuo=f"{v['maior_residuo_agua']:.1e}", saidas=", ".join(v["saidas_agua"]))]
+    if v["sem_fase_aquosa"]:
+        out.append("  " + tx["agua_sem_fase"].format(casos=casos_lista(v["sem_fase_aquosa"])))
+    out.append("  " + tx["bsw_separadores"] if v["bsw_ok"] else estilo.aviso("  " + tx["bsw_separadores_falha"].format(
+        n=sum(not x["ok"] for x in v["separadores"]))))
+    if v["fwko_sem_agua_no_oleo"]:
+        out.append(estilo.aviso("  " + tx["fwko_seco"].format(casos=casos_lista(v["fwko_sem_agua_no_oleo"]))))
+    if v["sal_oleo"]:
+        out.append("  " + tx["sal_oleo_tratado"].format(valor=num(v["sal_max_emulsao"], 1), limite=num(v["limite_sal"], 0)))
+    if v["abaixo_T_fwko"]:
+        out.append(estilo.aviso("  " + tx["alerta_t_fwko"].format(t=num(v["t_fwko_min"], 0),
+                                                                 casos=casos_lista(v["abaixo_T_fwko"]))))
     return out
 
 
