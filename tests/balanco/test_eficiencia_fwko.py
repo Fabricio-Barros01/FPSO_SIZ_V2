@@ -49,12 +49,15 @@ def test_regressao_bit_a_bit(resultados_ef, dados):
 def test_tabela_confirmada_pelo_usuario(resultados_ef):
     for r in resultados_ef:
         fw = r.fwko
-        if r.num in SEM_AGUA:
-            assert fw["eta_req"] is None and not fw["exigido_acima"]
+        if r.num in SEM_AGUA:  # η nulo, com o estado explícito
+            assert fw["eta"] is None and fw["eta_req"] is None and not fw["exigido_acima"]
+            assert fw["estado"] == "não aplicável — sem fase aquosa"
             assert I.bsw(r, "C-06") == I.bsw(r, "C-21") == 0.0
             continue
         eta, exigido, b06, b21 = TABELA[r.num]
         assert round(100 * fw["eta"], 1) == eta and fw["exigido_acima"] is exigido
+        assert fw["estado"] == ("exigido acima do padrão (BOT 2.7.1.2)" if exigido
+                                else "padrão (o limite do BOT não restringe)")
         assert round(100 * I.bsw(r, "C-06"), 2) == b06 and round(100 * I.bsw(r, "C-21"), 2) == b21
         assert fw["eta"] == max(fw["eta_padrao"], fw["eta_req"])
     r15 = resultados_ef[14]
@@ -71,8 +74,8 @@ def test_eta_req_pelas_correntes_do_caso_15(resultados_ef, prem):
 
 
 def test_split_eficiencia():
-    # sem água: nada a separar; η fica no padrão, sem η_req
-    assert split_eficiencia(100.0, 0.0, 0.85, 0.4, 2.0, 880.0, 8) == (0.0, 0.0, 0.0, 0.85, None)
+    # sem água: nada a separar; η e η_req não se aplicam
+    assert split_eficiencia(100.0, 0.0, 0.85, 0.4, 2.0, 880.0, 8) == (0.0, 0.0, 0.0, None, None)
     # pouca água: η_req < η_padrão (diagnóstico) e vale o padrão
     w_keep, w_rem, oil_w, eta, eta_req = split_eficiencia(100.0, 10.0, 0.85, 0.4, 2.0, 880.0, 8)
     assert eta == 0.85 and eta_req < 0.85 and w_keep + w_rem == pytest.approx(10.0) and w_rem == 8.5

@@ -878,6 +878,12 @@ cálculos". Decisões do usuário:
   56,8 → 52,9 °C no caso 3). Exige decisão de projeto com fonte (entrada mais quente,
   gotícula/retenção, trens em paralelo ou η menor nesses casos).
 - **Números:** **814 testes (+2 `-m latex`, +1 `-m julia`), cobertura de 96,95 %.**
+- **Complemento (terceiro commit da série):**
+  - `balanco.json` no esquema 2: `cargas.Q_H` = P-002 + DWH-001, `cargas.Q_C` = P-003 e um
+    campo por trocador pelo TAG. Os testes de paridade conferem o Q_H antigo no campo do
+    P-002.
+  - Nos casos 1 e 4–7, η do SG-001 = `null` com o estado "não aplicável — sem fase aquosa"
+    no JSON, e "—" na tabela de η por caso do memorial `senai`.
 
 **Notas para a F11:** o MC por TAG deve citar a P-43 e o estado `exigido_acima` do SG-001. A
 regra do FWKO muda as entradas do PFD, por isso o memorial de cada TAG deve dizer qual

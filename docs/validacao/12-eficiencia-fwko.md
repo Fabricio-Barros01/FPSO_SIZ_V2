@@ -82,8 +82,12 @@ As cargas são separadas pela origem do calor, sem somar as quatro:
   aquecedor da água de diluição, supridos pelo meio de aquecimento.
 - **Q_C (resfriamento por utilidade):** Q_P-003, o resfriador de óleo.
 
-No `balanco.json`, `cargas.Q_H` é só o P-002; o DWH-001 é `cargas.Q_D`. O Q_H desta página é
-a soma dos dois.
+O `balanco.json` usa os mesmos termos desde o esquema 2:
+- `cargas.Q_H` = P-002 + DWH-001;
+- `cargas.Q_C` = P-003;
+- um campo por trocador pelo TAG (`P-001` = calor recuperado, `P-002`, `DWH-001`, `P-003`).
+
+No esquema 1, `cargas.Q_H` era só o P-002.
 
 | Caso | Regra | η_A | BSW C-06 | Água no óleo C-06 (kg/s) | Reciclo C-02 (kg/s) | Calor recuperado P-001 (kW) | Q P-002 (kW) | Q DWH-001 (kW) | **Q_H** (kW) | **Q_C** = P-003 (kW) | T C-03 (°C) |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -218,6 +222,9 @@ Enquanto isso, os resultados dos casos 2 e 3 dependentes do SG-001 são prelimin
     η_req < η_padrão é diagnóstico;
   - a tabela de energia mostra o P-001 como calor recuperado e as colunas
     Q_H = P-002 + DWH-001 e Q_C = P-003; os rótulos dos envelopes usam os mesmos termos;
+  - a tabela de η por caso (`tab:etaF`) dá η_req, η_A e o estado; nos casos 1 e 4–7, η e
+    η_req aparecem como "—" e o estado como "não aplicável — sem fase aquosa" (no JSON, η e
+    η_req são `null`);
   - lista os casos exigidos acima do padrão (15 e 16);
   - a tabela de premissas traz a P-43 ("premissa do autor"), e a P-24 aparece como resultado
     (BSW ≤ 40 %);
@@ -235,9 +242,11 @@ Enquanto isso, os resultados dos casos 2 e 3 dependentes do SG-001 são prelimin
   - `balanco/auditoria` (`eficiencia_fwko`);
   - `balanco/indicadores` (sensibilidade na regra dos resultados; verificação física por
     regra);
-  - `balanco/exportacao` (campo `FWKO` por caso).
+  - `balanco/exportacao` (campo `FWKO` por caso; `cargas` do esquema 2 por TAG, com Q_H e
+    Q_C de utilidade).
 - **Configuração:**
   - `premissas.toml` (`eta_F`, P-43);
+  - `saida_balanco.toml` (cargas do `balanco.json`);
   - `constantes.toml [modelo]`;
   - `equacoes_balanco.toml` (`eficiencia_fwko`, `regra`, `memorial_regra`);
   - `auditoria.toml`, `sensibilidade_balanco.toml`, `verificacao_balanco.toml`,

@@ -99,6 +99,10 @@ def test_senai_mostra_a_eficiencia_do_fwko(base):
     assert "apenas diagnóstico" in senai and "Nos casos 15, 16, $\\eta_{\\mathrm{req}}>\\eta_{\\mbox{padrão}}$" in senai
     assert "P-43 & Eficiência padrão de remoção de água livre do SG-001" in senai and "Premissa do autor" in senai
     assert "P-43" not in original and "\\label{eq:bswF}" in original and "eq:etaF" not in original
+    # η por caso: "---" (—) e o estado nos casos sem fase aquosa; o exigido nos casos 15 e 16
+    linhas = {x.split(" & ")[0]: x for x in senai.splitlines() if "(BOT 2.7.1.2)" in x or "sem fase aquosa &" in x}
+    assert linhas["1"].split(" & ")[2:5] == ["---", "---", "não aplicável — sem fase aquosa"]
+    assert linhas["15"].split(" & ")[3:5] == ["0,924", "exigido acima do padrão (BOT 2.7.1.2)"]
 
 
 def test_layout_desconhecido(base):

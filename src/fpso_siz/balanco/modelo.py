@@ -56,7 +56,7 @@ class ResultadoCaso:
     mu: tuple
     T_ref: float
     trace: CalcTrace
-    fwko: dict = field(default_factory=dict)  # regra, η adotado, η_req, η_padrão, exigido_acima
+    fwko: dict = field(default_factory=dict)  # regra, η adotado, η_req, η_padrão, exigido_acima, estado
 
     @property
     def num(self):
@@ -310,9 +310,13 @@ def resolver_caso(caso, dados, prem=None, regra_fwko=None):
     t.reg("viscosidade_oleo", "SG-001", mu[0], T=T03, marcador=mu[1])
     # estado do SG-001: regra usada, η adotado e, na regra de eficiência, se o BSW_F,máx do
     # BOT 2.7.1.2 exigiu η acima do padrão (informação, não exceção)
+    exigido = regra_fwko == EFICIENCIA and eta_req is not None and eta_req > p["eta_F"]
+    textos = carregar("constantes.toml")["modelo"]
+    estado = ("estado_sem_agua" if eta_A is None else "estado_exigido" if exigido
+              else "estado_padrao" if regra_fwko == EFICIENCIA else "estado_referencia")
     fwko = dict(regra=regra_fwko, eta=eta_A, eta_req=eta_req,
                 eta_padrao=p["eta_F"] if regra_fwko == EFICIENCIA else None,
-                exigido_acima=regra_fwko == EFICIENCIA and eta_req is not None and eta_req > p["eta_F"])
+                exigido_acima=exigido, estado=textos[estado])
     return ResultadoCaso(caso=caso, fluid=fl, well=well, api=api, rho=rho, cp=cp, gp=gp, Wv=Wv,
                          BSW01=BSW01, BSW_F=BSW_F, streams=streams, T=temps, P=press, duties=duties,
                          gas=gas, iters=it, residuo_reciclo=diff, VM=VM, mu=mu, T_ref=T_ref, trace=t, fwko=fwko)

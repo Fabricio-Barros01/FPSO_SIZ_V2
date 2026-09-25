@@ -1,0 +1,11 @@
+# balanco.json, esquema 2 — `cargas` de cada caso, em kW.
+# - Q_H: aquecimento por utilidade = Σ Q_in dos blocos da topologia (P-002 + DWH-001);
+# - Q_C: resfriamento por utilidade = Σ Q_out dos blocos da topologia (P-003);
+# - um campo por trocador, identificado pelo TAG: os blocos com Q_in/Q_out e os de calor
+#   recuperado abaixo (troca entre correntes de processo, fora de Q_H e Q_C);
+# - as potências das bombas mantêm as chaves W_* do resultado (blocos com W).
+# No esquema 1, cargas.Q_H era só o P-002 (hoje cargas["P-002"]).
+fonte = "docs/validacao/12-eficiencia-fwko.md (Q_H, Q_C e calor recuperado; decisão do usuário, 2026-09-25)"
+
+[recuperado]
+"P-001" = "Q_pre"   # pré-aquecedor óleo/óleo: calor recuperado

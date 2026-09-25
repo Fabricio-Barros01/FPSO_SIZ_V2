@@ -19,6 +19,13 @@ PARIDADE = ["--regra-fwko", "referencia"]  # regra do FWKO do script de referên
 NOVAS = {"eta_F"}                          # premissas que o script de referência não tem (F10w)
 
 
+def cargas_do_oraculo(cargas):
+    """Esquema 2 → chaves do oráculo: o Q_H antigo (só o P-002) é o campo do P-002; Q_pre, Q_D
+    e Q_C são os campos do P-001, do DWH-001 e do P-003; as potências mantêm as chaves."""
+    tag = {"Q_pre": "P-001", "Q_H": "P-002", "Q_D": "DWH-001", "Q_C": "P-003"}
+    return {**{k: cargas[t] for k, t in tag.items()}, **{k: v for k, v in cargas.items() if k.startswith("W_")}}
+
+
 @pytest.fixture(scope="module")
 def saida(tmp_path_factory):
     d = tmp_path_factory.mktemp("saida")
@@ -35,7 +42,9 @@ def test_padrao_usa_a_eficiencia_do_fwko(tmp_path, capsys):
     fw = {c["num"]: c["FWKO"] for c in j["casos"]}
     assert {f["regra"] for f in fw.values()} == {"eficiencia"}
     assert [n for n, f in fw.items() if f["exigido_acima"]] == [15, 16]
-    assert fw[2]["eta"] == 0.85 and fw[1]["eta_req"] is None
+    assert fw[2]["eta"] == 0.85 and fw[1]["eta"] is None and fw[1]["eta_req"] is None
+    assert fw[1]["estado"] == "não aplicável — sem fase aquosa" and fw[15]["estado"].startswith("exigido acima")
+    assert j["esquema"] == 2 and {"Q_H", "Q_C", "P-001", "P-002", "DWH-001", "P-003"} <= set(j["casos"][1]["cargas"])
     assert "eficiencia_fwko" in {a["id"] for a in j["auditoria"]}
 
 
@@ -52,7 +61,9 @@ def test_json_reproduz_o_oraculo_bit_a_bit(saida):
         assert c["num"] == o["num"] and c["convergiu"]
         assert {k: v["vazao_massica_kg_s"] for k, v in c["correntes"].items()} == o["streams"]
         assert {k: v["T_C"] for k, v in c["correntes"].items()} == o["T"]
-        assert c["cargas"] == o["duties"] and c["gas"] == o["gas"]
+        assert cargas_do_oraculo(c["cargas"]) == o["duties"] and c["gas"] == o["gas"]
+        assert c["cargas"]["Q_H"] == o["duties"]["Q_H"] + o["duties"]["Q_D"]  # utilidade: P-002 + DWH-001
+        assert c["cargas"]["Q_C"] == o["duties"]["Q_C"]                         # utilidade: P-003
         assert c["balancos_bloco"] == o["block_balance"] and c["balanco_global"] == o["global_balance"]
     assert [a["max_desvio_abs"] for a in j["auditoria"]] == [a["max_desvio_abs"] for a in ORACULO["auditoria"]]
 
@@ -82,7 +93,7 @@ def test_premissa_alterada(tmp_path, capsys):
     j = json.loads((tmp_path / "balanco.json").read_text(encoding="utf-8"))
     assert [p["nome"] for p in j["premissas"] if p["alterada"]] == ["BSW_pre"]
     caso = next(c for c in j["casos"] if c["num"] == sens["num"])
-    assert caso["cargas"] == sens["resultado"]["duties"]
+    assert cargas_do_oraculo(caso["cargas"]) == sens["resultado"]["duties"]
 
 
 @pytest.mark.parametrize("args, trecho", [

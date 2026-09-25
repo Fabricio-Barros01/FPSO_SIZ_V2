@@ -41,7 +41,8 @@
     "W_Bo": 283.9369006283073
    },
    "fwko": {
-    "eta": 0.85,
+    "estado": "não aplicável — sem fase aquosa",
+    "eta": null,
     "eta_padrao": 0.85,
     "eta_req": null,
     "exigido_acima": false,
@@ -259,6 +260,7 @@
     "W_Bo": 285.2747819977909
    },
    "fwko": {
+    "estado": "padrão (o limite do BOT não restringe)",
     "eta": 0.85,
     "eta_padrao": 0.85,
     "eta_req": -3.089435771505082,
@@ -477,6 +479,7 @@
     "W_Bo": 285.27475031673004
    },
    "fwko": {
+    "estado": "padrão (o limite do BOT não restringe)",
     "eta": 0.85,
     "eta_padrao": 0.85,
     "eta_req": -3.089437146733056,
@@ -695,7 +698,8 @@
     "W_Bo": 36.904642547123046
    },
    "fwko": {
-    "eta": 0.85,
+    "estado": "não aplicável — sem fase aquosa",
+    "eta": null,
     "eta_padrao": 0.85,
     "eta_req": null,
     "exigido_acima": false,
@@ -913,7 +917,8 @@
     "W_Bo": 48.2538488963294
    },
    "fwko": {
-    "eta": 0.85,
+    "estado": "não aplicável — sem fase aquosa",
+    "eta": null,
     "eta_padrao": 0.85,
     "eta_req": null,
     "exigido_acima": false,
@@ -1131,7 +1136,8 @@
     "W_Bo": 12.400674293154795
    },
    "fwko": {
-    "eta": 0.85,
+    "estado": "não aplicável — sem fase aquosa",
+    "eta": null,
     "eta_padrao": 0.85,
     "eta_req": null,
     "exigido_acima": false,
@@ -1349,7 +1355,8 @@
     "W_Bo": 283.9371658675048
    },
    "fwko": {
-    "eta": 0.85,
+    "estado": "não aplicável — sem fase aquosa",
+    "eta": null,
     "eta_padrao": 0.85,
     "eta_req": null,
     "exigido_acima": false,
@@ -1567,6 +1574,7 @@
     "W_Bo": 189.9484981279454
    },
    "fwko": {
+    "estado": "padrão (o limite do BOT não restringe)",
     "eta": 0.85,
     "eta_padrao": 0.85,
     "eta_req": 0.1845394237148099,
@@ -1785,6 +1793,7 @@
     "W_Bo": 149.16991822372734
    },
    "fwko": {
+    "estado": "padrão (o limite do BOT não restringe)",
     "eta": 0.85,
     "eta_padrao": 0.85,
     "eta_req": 0.5071834902905843,
@@ -2003,6 +2012,7 @@
     "W_Bo": 114.26854249429415
    },
    "fwko": {
+    "estado": "padrão (o limite do BOT não restringe)",
     "eta": 0.85,
     "eta_padrao": 0.85,
     "eta_req": 0.6272630602018305,
@@ -2221,6 +2231,7 @@
     "W_Bo": 78.7243302751791
    },
    "fwko": {
+    "estado": "padrão (o limite do BOT não restringe)",
     "eta": 0.85,
     "eta_padrao": 0.85,
     "eta_req": 0.8138662665228378,
@@ -2439,6 +2450,7 @@
     "W_Bo": 79.74354496526247
    },
    "fwko": {
+    "estado": "padrão (o limite do BOT não restringe)",
     "eta": 0.85,
     "eta_padrao": 0.85,
     "eta_req": 0.8106800204437876,
@@ -2657,6 +2669,7 @@
     "W_Bo": 95.76116329763093
    },
    "fwko": {
+    "estado": "padrão (o limite do BOT não restringe)",
     "eta": 0.85,
     "eta_padrao": 0.85,
     "eta_req": 0.7569009437712415,
@@ -2875,6 +2888,7 @@
     "W_Bo": 95.76080344753962
    },
    "fwko": {
+    "estado": "padrão (o limite do BOT não restringe)",
     "eta": 0.85,
     "eta_padrao": 0.85,
     "eta_req": 0.7569018457194701,
@@ -3093,6 +3107,7 @@
     "W_Bo": 34.6686088758029
    },
    "fwko": {
+    "estado": "exigido acima do padrão (BOT 2.7.1.2)",
     "eta": 0.9243201405808941,
     "eta_padrao": 0.85,
     "eta_req": 0.9243201405808941,
@@ -3311,6 +3326,7 @@
     "W_Bo": 38.59551648398122
    },
    "fwko": {
+    "estado": "exigido acima do padrão (BOT 2.7.1.2)",
     "eta": 0.9154191826842187,
     "eta_padrao": 0.85,
     "eta_req": 0.9154191826842187,

@@ -71,6 +71,11 @@ fonte = "Balanço_Preliminar.py, solve_case / split_water / block_balance"
 #   "referencia": BSW_C06 = mín(F-06; BSW de chegada), a regra do script de referência — modo de
 #                 paridade bit a bit com o oráculo (testes e layout `original` do memorial).
 regra_fwko = "eficiencia"
+# estado do SG-001 em cada caso (balanco.json e memorial)
+estado_sem_agua = "não aplicável — sem fase aquosa"
+estado_padrao = "padrão (o limite do BOT não restringe)"
+estado_exigido = "exigido acima do padrão (BOT 2.7.1.2)"
+estado_referencia = "regra de referência (paridade)"
 fonte = "F10w (docs/validacao/12-eficiencia-fwko.md); regra de referência: Balanço_Preliminar.py, solve_case"
 
 [criterios]

@@ -40,6 +40,15 @@ Nos casos << fwko_exigidos|ids >>, $\eta_{\mathrm{req}}>\eta_{\mbox{padrão}}$: 
 <% else %>
 Em todos os casos com água, $\eta_{\mathrm{req}}<\eta_{\mbox{padrão}}$ (diagnóstico) e vale o padrão.
 <% endif %>
+A Tabela~\ref{tab:etaF} dá $\eta_{\mathrm{req}}$, $\eta_{A}$ e o estado do SG-001 em cada caso; nos casos sem fase aquosa não há água a separar e $\eta$ não se aplica (---).
+{\footnotesize\begin{longtable}{rrrrlr}
+\caption{SG-001 --- eficiência de remoção de água livre por caso (P-43).}\label{tab:etaF}\\\toprule
+Caso & BSW$_{C03}$ [\%] & $\eta_{\mathrm{req}}$ & $\eta_{A}$ & Estado & BSW$_{C06}$ [\%]\\\midrule\endfirsthead
+\toprule Caso & BSW$_{C03}$ & $\eta_{\mathrm{req}}$ & $\eta_{A}$ & Estado & BSW$_{C06}$\\\midrule\endhead
+<% for r in R %>
+<< r.num >> & << (100 * ind.bsw(r, 'C-03'))|br(1) >> & << '---' if r.fwko['eta_req'] is none else r.fwko['eta_req']|br(3) >> & << '---' if r.fwko['eta'] is none else r.fwko['eta']|br(3) >> & << r.fwko['estado'] >> & << (100 * r.BSW_F)|br(2) >>\\
+<% endfor %>
+\bottomrule\end{longtable}}
 No Caso << DEMO >>, $\eta_{\mathrm{req}}=<< RD.fwko['eta_req']|mb(3) >>$ e a eficiência resulta
 \begin{equation}
 \eta_{A,\mbox{SG-001}}=\frac{Q_{A+D,C05}}{Q_{A+D,C03}}=\frac{<< ind.q_agua(RD, 'C-05')|mb >>}{<< ind.q_agua(RD, 'C-03')|mb >>}=<< ind.eta_agua(RD, 'C-05', 'C-03')|mb(4) >>.

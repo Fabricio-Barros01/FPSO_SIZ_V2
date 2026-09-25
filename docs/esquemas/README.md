@@ -5,22 +5,35 @@ Ambos são UTF-8. Os números são floats em `repr` exato, com ponto decimal, e 
 volta dá o mesmo valor bit a bit.
 
 ## `balanco.json`
-Validado por [`balanco.schema.json`](balanco.schema.json) (JSON Schema 2020-12). Conteúdo:
+Validado por [`balanco.schema.json`](balanco.schema.json) (JSON Schema 2020-12). Esquema **2**
+(F10w): `cargas` por TAG e cargas de utilidade. Conteúdo:
 
 - `entrada`: nome e SHA-256 do arquivo de casos (rastreabilidade).
 - `premissas`: cada premissa com id P-xx/F-xx, valor usado, unidade, origem e
   `alterada` (se foi mudada por `--premissa`).
 - `casos[]`: para cada caso, convergência do reciclo (`convergiu`, `iteracoes`,
   `residuo_reciclo`), `BSW_chegada`, `BSW_FWKO` (BSW do óleo que sai do SG-001) e `FWKO`
-  (F10w: `regra` `eficiencia`/`referencia`, `eta` adotado, `eta_req`, `eta_padrao` e
-  `exigido_acima` = o limite de F-06 exigiu η acima da P-43; `null` onde não há água),
+  (F10w: `regra` `eficiencia`/`referencia`, `eta` adotado, `eta_req`, `eta_padrao`,
+  `exigido_acima` = o limite de F-06 exigiu η acima da P-43, e `estado` em texto; nos casos
+  sem água `eta` e `eta_req` são `null` e o estado é "não aplicável — sem fase aquosa"),
   propriedades (`rho`, `cp`, `gas_props`), as 26 `correntes` (T em °C,
-  P em kPa abs, vazão mássica O/W/D/G em kg/s), `cargas` (kW), `gas` (Sm³/d; `Dv` em m³/d),
+  P em kPa abs, vazão mássica O/W/D/G em kg/s), `cargas` (kW; abaixo), `gas` (Sm³/d; `Dv` em m³/d),
   balanços por bloco e global e o `rastro` (CalcTrace: equação, escopo, valor, entradas;
   catálogo em `src/fpso_siz/config/equacoes_balanco.toml`).
 - `auditoria[]`: as verificações independentes, com o maior |desvio| absoluto nos casos
   (catálogo em `src/fpso_siz/config/auditoria.toml`; `eficiencia_fwko` só na regra de
   eficiência).
+
+`cargas` (kW), definido em `config/saida_balanco.toml`:
+- `Q_H`: aquecimento por utilidade = P-002 + DWH-001 (Σ `Q_in` dos blocos da topologia);
+- `Q_C`: resfriamento por utilidade = P-003 (Σ `Q_out`);
+- um campo por trocador, identificado pelo TAG: `P-001` (calor recuperado, troca entre
+  correntes de processo, fora de `Q_H`/`Q_C`), `P-002`, `DWH-001` e `P-003`;
+- as potências das bombas: `W_B1` (B-002), `W_B2` (B-003) e `W_Bo` (B-001).
+
+**Migração do esquema 1:** o `cargas.Q_H` antigo era só o P-002, e hoje é `cargas["P-002"]`.
+`Q_pre`, `Q_D` e o `Q_C` antigo são `P-001`, `DWH-001` e `P-003`. Os valores numéricos não
+mudaram; mudou só a organização.
 
 A regra do FWKO é a de `config/constantes.toml [modelo]` (eficiência, desde a F10w);
 `fpso-siz balanco --regra-fwko referencia` grava o JSON na regra do script de referência,

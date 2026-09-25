@@ -7,7 +7,7 @@ from fpso_siz.balanco.balancos import balanco_global, balancos_por_bloco, topolo
 from fpso_siz.balanco.dados import descritores_premissas
 from fpso_siz.core.configuracao import carregar
 
-ESQUEMA = 1
+ESQUEMA = 2  # 2: cargas com Q_H/Q_C de utilidade e um campo por trocador (TAG)
 
 
 def colunas_correntes():
@@ -40,6 +40,20 @@ def _puro(v):
     return v
 
 
+def cargas(r):
+    """Cargas do caso para o balanco.json (config/saida_balanco.toml): Q_H = Σ Q_in e Q_C =
+    Σ Q_out dos blocos (utilidades), um campo por trocador pelo TAG, na ordem da topologia,
+    e as potências das bombas."""
+    recuperado = carregar("saida_balanco.toml")["recuperado"]
+    blocos = topologia()["blocos"]
+    trocadores = {b["id"]: (r.duties[recuperado[b["id"]]] if b["id"] in recuperado
+                            else sum(r.duties[k] for k in [*b["Q_in"], *b["Q_out"]]))
+                  for b in blocos if b["id"] in recuperado or b["Q_in"] or b["Q_out"]}
+    return {"Q_H": sum(r.duties[k] for b in blocos for k in b["Q_in"]),
+            "Q_C": sum(r.duties[k] for b in blocos for k in b["Q_out"]),
+            **trocadores, **{k: r.duties[k] for b in blocos for k in b["W"]}}
+
+
 def rastro(r):
     return [dict(equacao=p.equacao, escopo=p.escopo, valor=_puro(p.valor), entradas=_puro(p.entradas))
             for p in r.trace]
@@ -61,7 +75,7 @@ def estrutura_balanco(dados, prem, resultados, auditoria):
             "rho": r.rho, "cp": r.cp, "gas_props": r.gp,
             "correntes": {sid: {"T_C": r.T[sid], "P_kPa": r.P[sid], "vazao_massica_kg_s": s}
                           for sid, s in r.streams.items()},
-            "cargas": r.duties, "gas": r.gas,
+            "cargas": cargas(r), "gas": r.gas,
             "balancos_bloco": balancos_por_bloco(r), "balanco_global": balanco_global(r),
             "rastro": rastro(r),
         } for r in resultados],

@@ -24,7 +24,7 @@
     }
   },
   "properties": {
-    "esquema": {"const": 1},
+    "esquema": {"const": 2},
     "gerador": {
       "type": "object", "required": ["pacote", "versao"],
       "properties": {"pacote": {"const": "fpso-siz"}, "versao": {"type": "string"}}
@@ -65,11 +65,12 @@
           "BSW_chegada": {"type": "number", "minimum": 0, "maximum": 1},
           "BSW_FWKO": {"type": "number", "minimum": 0, "maximum": 1},
           "FWKO": {
-            "type": "object", "required": ["regra", "eta", "eta_req", "eta_padrao", "exigido_acima"],
+            "type": "object", "required": ["regra", "eta", "eta_req", "eta_padrao", "exigido_acima", "estado"],
             "additionalProperties": false,
             "properties": {"regra": {"enum": ["eficiencia", "referencia"]},
                            "eta": {"type": ["number", "null"]}, "eta_req": {"type": ["number", "null"]},
-                           "eta_padrao": {"type": ["number", "null"]}, "exigido_acima": {"type": "boolean"}}
+                           "eta_padrao": {"type": ["number", "null"]}, "exigido_acima": {"type": "boolean"},
+                           "estado": {"type": "string"}}
           },
           "rho": {"$ref": "#/$defs/corrente"},
           "cp": {"$ref": "#/$defs/corrente"},
@@ -87,7 +88,8 @@
             }
           },
           "cargas": {
-            "type": "object", "required": ["Q_pre", "Q_H", "Q_D", "Q_C", "W_Bo", "W_B1", "W_B2"],
+            "type": "object",
+            "required": ["Q_H", "Q_C", "P-001", "P-002", "DWH-001", "P-003", "W_B1", "W_B2", "W_Bo"],
             "additionalProperties": {"type": "number"}
           },
           "gas": {
