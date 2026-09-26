@@ -38,7 +38,8 @@ def test_lacunas_exatas(planta_base):
     troca = {"k_tubo", "k_parede", "rf_tubo", "rf_casco"}
     esperadas = {**{t: bombas for t in ("B-001", "B-002", "B-003")},
                  "P-001": troca | {"k_casco"},
-                 **{t: troca | {"t_agua_in", "t_agua_out"} for t in ("P-002", "P-003")},
+                 # P-46: o óleo no casco (k_casco é lacuna); a água nos tubos sai da IAPWS
+                 **{t: troca - {"k_tubo"} | {"k_casco", "t_agua_in", "t_agua_out"} for t in ("P-002", "P-003")},
                  **{t: {"dm_water"} for t in ("TO-001", "TO-002")},
                  **{t: set() for t in ("SG-001", "V-001", "V-002")}}
     for t in planta_base.tags:

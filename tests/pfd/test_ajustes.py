@@ -73,7 +73,8 @@ def test_legado_f10b_equivale_ao_automatico(planta_ajustada, ajustes_sinteticos)
     aj = A.ler(ajustes_sinteticos)
     assert aj.legado and not aj.contexto and {e.modo for e in aj.todos()} == {"automatico"}
     assert all(not e.revisoes for e in aj.todos())
-    p = planta.dimensionar(planta_ajustada.dados, ajustes=aj, balanco=planta_ajustada.contexto.resultados_balanco)
+    p = planta.dimensionar(planta_ajustada.dados, ajustes=aj, balanco=planta_ajustada.contexto.resultados_balanco,
+                           topologia_julia=True)
     for a, b in zip(p.tags, planta_ajustada.tags, strict=True):
         assert (a.status, a.resultado.x, a.resultado.driver_case) == (b.status, b.resultado.x, b.resultado.driver_case)
 

@@ -14,7 +14,7 @@ aquela fase).
 
 ## Estado atual
 
-**FASE ATUAL: resolução dos alarmes de inviabilidade (pré-condição da F15) ← ATUAL; F10x (até F10x.6), F13, F14 e o planejamento da F15 entregues em 2026-09-26. Alarmes do SG-001 (óleo vivo) e das bombas (P-44) explicados; seguem abertos os dos trocadores P-001/P-002/P-003.**
+**FASE ATUAL: resolução dos alarmes de inviabilidade (pré-condição da F15) ← ATUAL; F10x (até F10x.7), F13, F14 e o planejamento da F15 entregues em 2026-09-26. Alarmes do SG-001 (óleo vivo) e das bombas (P-44) explicados; P-002/P-003 abertos (Dittus-Boelter no turndown, após P-45/P-46 e reotimização); P-001 é lacuna metodológica.**
 **F11 (MC por TAG) e F11b (MC do balanço por caso) entregues em 2026-09-26, em sessão autônoma
 autorizada pelo usuário, no branch `fases/f11` (sem merge; integração pelo usuário). Ver
 [`docs/validacao/13-memorial-tag.md`](docs/validacao/13-memorial-tag.md).**
@@ -1019,6 +1019,27 @@ Commits `de962eb` (F10x.1), `04f0139` (F10x.2), `f807387` (F10x.3).
   do Julia. Efeito: B-001 DN 600, B-002 DN 250, B-003 DN 125, os três viáveis. O MC da bomba
   ganha a tabela de operação por caso e a potência máxima (no B-002, 140 kW contra os 14 kW do
   caso governante). Ver [`docs/validacao/17-banda-bombas.md`](docs/validacao/17-banda-bombas.md).
+- F10x.7 (decisões do usuário, 2026-09-26). Justificativa em
+  [`docs/validacao/19-trocadores-premissas.md`](docs/validacao/19-trocadores-premissas.md);
+  números em [`docs/validacao/18-trocadores.md`](docs/validacao/18-trocadores.md).
+  - **P-46:** óleo no casco e água de utilidade nos tubos no P-002 e no P-003 (premissa desses
+    TAGs). A alocação do Julia fica como topologia de paridade (`--topologia-julia`).
+  - **P-45:** velocidade nos tubos dos trocadores. O teto vale em todos os casos e a banda
+    inteira no caso de projeto; no turndown, abaixo do piso, há alerta; Dittus-Boelter é
+    exigido em cada caso.
+  - **Cascos em série/paralelo** como extensões do método, com os limites de 6 m e 2.500 mm
+    mantidos.
+  - **Reotimização discreta** (`pfd/reotimizacao.py`) com diagnóstico de bloqueios por
+    critério e caso, e feixe mais próximo no MC do trocador inviável.
+  - **Resultado:**
+    - P-002: 2 cascos em série e L = 5,29 m, mas segue inviável por Dittus-Boelter no BOT 06.
+    - P-003: casco abaixo de 2.500 mm (sem paralelo); segue inviável por Dittus-Boelter nos
+      BOT 04/05/06 e pelo comprimento.
+    - P-001: lacuna metodológica, sem correlação laminar com fonte.
+  - **P-44b** redocumentada como política conservadora de engenharia (não correlação nem
+    limite superior).
+  - **Potências da bomba separadas** (`derivados_v2`): caso governante, máxima operacional e
+    nominal requerida.
 - Com as propostas: TO-001/TO-002 dimensionam (d = 5.550 mm); bombas e trocadores seguem
   inviáveis — tratados como alarme na F13.
 - **Aceite:** (1) ✓; (2) ✓ (só `proposto` entra); (3) parcial — os TAGs ficam sem lacuna, mas

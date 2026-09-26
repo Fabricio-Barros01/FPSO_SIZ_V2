@@ -64,7 +64,12 @@ com o oráculo do balanço e com as fixtures do Julia segue intacta.
 | X5 | Paridade | regenerar as fixtures; modo óleo morto | **Modo óleo morto** (`--oleo-morto`, `oleo_vivo=False`) para as fixtures do Julia, a regressão F10b e o estudo do alarme da F13. Nenhuma fixture de oráculo foi regenerada; só os snapshots de tela, que mostram o padrão. |
 | X6 | Banda das bombas (P-44) | banda em todos os casos; pelo caso de projeto | **Pelo caso de projeto** (aprovado pelo usuário): o piso só no caso de maior vazão e só em água; o teto em todos. Hook de motor genérico, com default igual ao Julia. |
 | X7 | Transição no turndown (P-44b) | rejeitar; aceitar com f limite superior | **Aceitar**, só no turndown, com o f de Colebrook-White (≥ 64/Re, verificado): é conservador na perda e no NPSH. A confirmar, porque é juízo de engenharia e não correlação. |
-| X8 | Potência da bomba | a do caso governante (Julia); a máxima entre os casos | As **duas** no MC. O resultado segue o motor do Julia; a tabela de operação dá a máxima, que é a que se especifica. |
+| X9 | Alocação no P-002/P-003 (P-46) | óleo no tubo (Julia); óleo no casco | **Óleo no casco** (decisão do usuário), premissa desses dois TAGs. A do Julia fica como topologia de paridade. |
+| X10 | Velocidade no tubo (P-45) | reutilizar a P-44; premissa própria | **Premissa própria**: teto em todos os casos; banda no caso de projeto; alerta (não reprovação) abaixo do piso no turndown; Dittus-Boelter exigido em cada caso. |
+| X11 | Limites de geometria | ampliar; cascos | **Mantidos** (6 m, 2.500 mm). Reotimização discreta primeiro; cascos em série para o comprimento (P-002) e em paralelo para o casco (P-003). |
+| X12 | P-001 | Sieder-Tate; lacuna | **Lacuna metodológica** até haver fonte em `references/`. |
+| X13 | P-44b | "limite superior"; política | **Política conservadora de engenharia**, separada das correlações válidas; não é limite superior demonstrado. |
+| X8 | Potência da bomba | a do caso governante (Julia); a máxima entre os casos | **Três grandezas separadas** (F10x.7): caso governante (o `potencia` do Julia), máxima operacional e nominal requerida (Q, H e ρ máximos e η mínimo, sem margem de acionador), em `derivados_v2` e no cartão. |
 
 
 ## Pendências novas (sem correção nesta fase)

@@ -112,6 +112,9 @@ class EnvelopeResult:
     rows: list
     slack: list
     per_case: list
+    # extensão do V2 (sem par no Julia): grandezas do equipamento que dependem de TODOS os
+    # casos no ponto escolhido (ex.: potência máxima operacional da bomba). Vazio = Julia.
+    derivados_v2: dict = field(default_factory=dict)
 
 
 def infeasible_envelope(message, case_names=(), rows=(), per_case=(), ceiling=math.nan, ceiling_case="",
@@ -223,6 +226,11 @@ class MetodoDimensionamento:
     def envelope_params(self, params):
         """(ok, p_env | mensagem): uma grade e uma banda para N casos (o equipamento é um só)."""
         raise NotImplementedError
+
+    def envelope_derived(self, x, conss, pcs, p_env):
+        """Grandezas do ponto escolhido que dependem de todos os casos (EnvelopeResult.
+        derivados_v2; extensão do V2). Padrão: nenhuma, como no Julia."""
+        return {}
 
     def envelope_case_params(self, conss, p_env):
         """Parâmetros com que cada caso é admitido no envelope (extensão do V2, sem par no

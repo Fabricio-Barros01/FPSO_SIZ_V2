@@ -11,10 +11,7 @@ import pytest
 from fpso_siz.pfd import contrato, investigacao as inv
 from fpso_siz.pfd import equipamento as servico
 from fpso_siz.pfd import memorial as mc
-from fpso_siz.pfd import propostas as mod_propostas
-from fpso_siz.pfd.planta import dimensionar
 
-ARQ = Path(__file__).resolve().parents[2] / "src" / "fpso_siz" / "config" / "pfd" / "pendencias_propostas.toml"
 
 
 # ------------------------------------------------------------------ contrato de propriedades
@@ -32,13 +29,6 @@ def test_contrato_cita_fonte_existente():
 
 
 # ------------------------------------------------------------------ alarmes
-@pytest.fixture(scope="module")
-def planta_propostas(planta_base):
-    ctx = servico.Contexto(planta_base.dados, balanco=planta_base.balanco,
-                           propostas=mod_propostas.carregar(ARQ))
-    return dimensionar(contexto=ctx)
-
-
 @pytest.mark.parametrize("planta", ["planta_base", "planta_oleo_morto", "planta_propostas"])
 def test_todo_tag_inviavel_tem_alarme_anotado(request, planta):
     p = request.getfixturevalue(planta)
@@ -165,35 +155,36 @@ def test_p44_piso_nulo_so_no_oleo_limpo(planta_propostas):
 
 
 def test_p44b_so_no_caso_6_do_b001(planta_propostas):
-    """A zona de transição só aparece no turndown mais profundo (caso 6, ~4 % da vazão de projeto)."""
+    """A política de transição (P-44b) só entra no turndown mais profundo (caso 6, ~4 % da vazão de projeto)."""
     op = mc.documento(planta_propostas.contexto, planta_propostas.tag("B-001"))["calculo"]["series"]["operacao"]
-    assert [o["caso"][:6] for o in op if o["limite_superior"]] == ["BOT 06"]
-    assert all(not o["limite_superior"] for o in op if o["papel"] == "projeto")
+    assert [o["caso"][:6] for o in op if o["politica_transicao"]] == ["BOT 06"]
+    assert all(not o["politica_transicao"] for o in op if o["papel"] == "projeto")
 
 
-# ------------------------------------------------------------------ topologia alternativa (F13.2)
-@pytest.mark.parametrize("ident, nome", [("P-002", "p_002_oleo_casco"), ("P-003", "p_003_oleo_casco")])
-def test_oleo_no_casco_tira_o_impedimento_de_dittus_boelter(planta_propostas, ident, nome):
-    """Com a água de utilidade nos tubos, a faixa de Dittus-Boelter deixa de ser o motivo da
-    recusa; a utilidade nos tubos fecha a mesma carga do balanço que no TAG da planta."""
-    from fpso_siz.pfd.tags import tags, topologia_alternativa
-    ctx = planta_propostas.contexto
-    base = planta_propostas.tag(ident)
-    assert "Dittus-Boelter" in base.resultado.message
-    rt = inv.executar_variante(ctx, ident, inv.variante(nome))
-    assert rt.status == "inviavel" and "Dittus-Boelter" not in rt.resultado.message
-    assert not rt.entradas.lacunas
-    for cb, cv in zip(base.entradas.casos, rt.entradas.casos, strict=True):
+# ------------------------------------------------------------------ topologia (F13.2 → P-46, F10x.7)
+@pytest.mark.parametrize("ident", ["P-002", "P-003"])
+def test_p46_oleo_no_casco_e_a_base_e_o_julia_fica_na_paridade(planta_propostas, ident):
+    """P-46: na planta, o óleo vai no casco e a água nos tubos; a alocação do PFD F1 (óleo no
+    tubo) é a topologia de paridade. As duas fecham a mesma carga do balanço."""
+    from fpso_siz.pfd.tags import tag, topologia_alternativa
+    t = tag(ident)
+    julia = topologia_alternativa(t.topologia_julia)
+    assert t.entradas["m_tubo"]["regra"] == "vazao_utilidade" and julia.entradas["m_casco"]["regra"] == "vazao_utilidade"
+    ctx_j = servico.Contexto(planta_propostas.dados, balanco=planta_propostas.balanco, topologia_julia=True,
+                             propostas=planta_propostas.contexto.propostas)
+    rt_j = servico.executar(ctx_j, servico.estado_inicial(ident))
+    rt = planta_propostas.tag(ident)
+    for cj, cb in zip(rt_j.entradas.casos, rt.entradas.casos, strict=True):
         if cb.ativo:
-            assert math.isclose(cv.valores["m_tubo"].valor, cb.valores["m_casco"].valor, rel_tol=1e-12)
-            assert cv.valores["m_casco"].valor == cb.valores["m_tubo"].valor
-            assert cv.valores["rho_tubo"].origem == "propriedade" and "IAPWS" in cv.valores["rho_tubo"].fonte
-    assert topologia_alternativa(nome).tag == ident
-    assert all(t.nome != topologia_alternativa(nome).nome for t in tags())   # não entra na planta
+            assert math.isclose(cb.valores["m_tubo"].valor, cj.valores["m_casco"].valor, rel_tol=1e-12)
+            assert cb.valores["m_casco"].valor == cj.valores["m_tubo"].valor
+            assert "IAPWS" in cb.valores["rho_tubo"].fonte
+    # as propostas seguem a topologia-base: na do Julia o k do óleo (agora no tubo) fica lacuna
+    assert rt_j.resultado is None and [lac.chave for lac in rt_j.entradas.lacunas] == ["k_tubo"]
 
 
 def test_topologia_de_outro_tag_e_recusada(planta_propostas):
-    v = dict(inv.variante("p_002_oleo_casco"))
+    v = {"rotulo": "teste", "topologia": "p_002_oleo_tubo", "origem": "teste"}
     with pytest.raises(ValueError, match="topologia de P-002"):
         inv.executar_variante(planta_propostas.contexto, "P-003", v)
 

@@ -10,6 +10,7 @@ escolhido (x, y) é idêntico nos cinco.
 """
 import json
 import tomllib
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -31,6 +32,7 @@ VASOS = [("separador-3f", Separator(), StewartArnold(), 1e-13),
 
 def envelope_puro(r):
     d = puro(r)
+    d.pop("derivados_v2")   # extensão do V2 (grandezas de todos os casos), sem par no Julia
     for row in d["rows"]:
         row["tem_presentation"] = row.pop("presentation") is not None
     for pc, orig in zip(d["per_case"], r.per_case):
@@ -56,7 +58,9 @@ def test_envelope_completo(vaso):
 
 def test_cartao_resumo_e_colunas(vaso):
     fx, _, m, rtol, r = vaso
-    assert diferencas([puro(f) for f in m.result_fields(r)], fx["result_fields"], rtol) == []
+    # o cartão do Julia sai quando a extensão do V2 está vazia (ela só acrescenta grandezas)
+    assert diferencas([puro(f) for f in m.result_fields(replace(r, derivados_v2={}))], fx["result_fields"],
+                      rtol) == []
     assert governing_summary(m, r) == fx["governing_summary"]
     assert diferencas([puro(c) for c in m.sweep_columns()], fx["sweep_columns"], 0) == []
     assert [{"key": k, "title": t} for k, t in m.trace_blocks()] == fx["trace_blocks"]

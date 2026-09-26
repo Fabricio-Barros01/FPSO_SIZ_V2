@@ -107,6 +107,9 @@ h_casco = { tipo = "nao_usado", fonte = "só com Bell-Delaware desligado; aqui h
 n_min = { regra = "grade_velocidade", limite = "min" }
 n_max = { regra = "grade_velocidade", limite = "max" }
 n_step = { tipo = "escolha", fonte = "passo da grade do método (5 tubos)" }
+banda_caso_projeto = { tipo = "escolha", fonte = "regra do Julia: banda de velocidade em todos os casos (0); os TAGs da planta adotam a P-45 (1) em [recomendadas]" }
+cascos_serie = { tipo = "escolha", fonte = "um casco (regra do Julia); cascos em série só pela reotimização do TAG (F10x.7)" }
+cascos_paralelo = { tipo = "escolha", fonte = "um casco (regra do Julia); cascos em paralelo só pela reotimização do TAG (F10x.7)" }
 
 [saari_lmtd.dicas]
 k_tubo = "Condutividade térmica do fluido do tubo. Petróleo e emulsão: sem correlação no acervo nem no ChEDL; salmoura: o banco de Magomedov do thermo não tem NaCl."

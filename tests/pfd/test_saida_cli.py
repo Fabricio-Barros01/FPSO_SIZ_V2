@@ -48,7 +48,8 @@ def test_cli_sem_ajustes_e_sem_saida(capsys, monkeypatch, tmp_path):
 def test_cli_exporta_os_mesmos_bytes(planta_ajustada, tmp_path, capsys):
     a, b = tmp_path/"api", tmp_path/"cli"
     pfd.gravar(planta_ajustada, a)
-    assert main(["pfd", "--sem-propostas", "--casos", str(CASOS), "--ajustes", str(AJUSTES), "--saida", str(b)]) == 0
+    assert main(["pfd", "--sem-propostas", "--topologia-julia", "--casos", str(CASOS), "--ajustes", str(AJUSTES),
+                 "--saida", str(b)]) == 0
     assert "gravados:" in capsys.readouterr().out
     assert {p.name: p.read_bytes() for p in a.iterdir()} == {p.name: p.read_bytes() for p in b.iterdir()}
     for caminho in b.glob("*.json"):

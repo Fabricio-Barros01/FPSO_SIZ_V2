@@ -30,8 +30,8 @@ Nenhum TAG inviável: não há alarme a investigar.
 | TAG | Estado | Casos com solução isolados | Casos sem solução isolados | Motivo do motor |
 |---|---|---|---|---|
 | P-001 | inviável (alarme) | — | — | Caso 'BOT 01 — Early Life': O arranjo 1-2 não fecha com estas temperaturas: o fator de correção F sai do domínio da Fig. 4.3. Em contracorrente puro (1 passe) o caso é viável — o cruzamento interno de um segundo passe é … |
-| P-002 | inviável (alarme) | — | BOT 01, BOT 02, BOT 03, BOT 04, BOT 05, BOT 06, BOT 07, BOT 08, BOT 09, BOT 11 | Não há equipamento que atenda simultaneamente aos 10 casos. Na banda de velocidade 1.0–3.0 m/s todos os feixes caem fora da faixa em que Saari declara a correlação de Dittus-Boelter (Eq. 6.23): o Reynolds no tubo vai de … |
-| P-003 | inviável (alarme) | — | BOT 01, BOT 02, BOT 03, BOT 04, BOT 05, BOT 06, BOT 07, BOT 08, BOT 09, BOT 10, BOT 11, BOT 12, BOT 13, BOT 14, BOT 15, BOT 16 | Não há equipamento que atenda simultaneamente aos 16 casos. Na banda de velocidade 1.0–3.0 m/s todos os feixes caem fora da faixa em que Saari declara a correlação de Dittus-Boelter (Eq. 6.23): o Reynolds no tubo vai de … |
+| P-002 | inviável (alarme) | BOT 01 (238), BOT 02 (283), BOT 03 (282), BOT 04 (34), BOT 05 (42), BOT 06 (13), BOT 07 (236), BOT 08 (275), BOT 09 (250), BOT 11 (305) | — | Não há equipamento que atenda simultaneamente aos 10 casos. Há feixes na banda de velocidade 1.0–3.0 m/s, dentro da faixa de Dittus-Boelter, com tubo até 6.0 m e casco até 2500.0 mm (o menor casco dá 677.0 mm). A recusa … |
+| P-003 | inviável (alarme) | — | BOT 01, BOT 02, BOT 03, BOT 04, BOT 05, BOT 06, BOT 07, BOT 08, BOT 09, BOT 10, BOT 11, BOT 12, BOT 13, BOT 14, BOT 15, BOT 16 | Não há equipamento que atenda simultaneamente aos 16 casos. Na banda de velocidade 1.0–3.0 m/s todos os feixes pedem tubo mais longo que o limite de 6.0 m — o mais curto dá 7.33 m. Amplie a grade para mais tubos, aceite … |
 
 ### Variantes executadas (mesmo motor)
 
@@ -39,8 +39,6 @@ Nenhum TAG inviável: não há alarme a investigar.
 |---|---|---|---|
 | P-001 | 1 passe no tubo (contracorrente pura) | limite inferior do descritor passes_tubo (Saari §4.2.1: contracorrente puro, F = 1), sugerido pela própria mensagem do motor | segue inviável: Não há equipamento que atenda simultaneamente aos 10 casos. Na banda de velocidade 1.0–3.0 m/s todos os feixes caem fora da faixa em que Saari declara a correla… |
 | P-001 | emulsão fria no casco, óleo tratado quente nos tubos | prática de alocar o fluido mais viscoso no casco (hipótese do alarme); k e incrustações do P-001 são as mesmas propostas nos dois lados | segue inviável: Caso 'BOT 01 — Early Life': O arranjo 1-2 não fecha com estas temperaturas: o fator de correção F sai do domínio da Fig. 4.3. Em contracorrente puro (1 passe) o… |
-| P-002 | óleo no casco, água quente nos tubos | prática de alocar o fluido mais viscoso no casco (hipótese do alarme); k e incrustações = propostas do P-002 trocadas de lado | segue inviável: Não há equipamento que atenda simultaneamente aos 10 casos. Na banda de velocidade 1.0–3.0 m/s todos os feixes pedem tubo mais longo que o limite de 6.0 m — o m… |
-| P-003 | óleo no casco, água de resfriamento nos tubos | prática de alocar o fluido mais viscoso no casco (hipótese do alarme); k e incrustações = propostas do P-003 trocadas de lado | segue inviável: Não há equipamento que atenda simultaneamente aos 16 casos. Na banda de velocidade todos os feixes pedem casco maior que o limite de 2500.0 mm — o menor deles d… |
 
 ## Estudo da P-44 (banda de velocidade pelo caso de projeto)
 
@@ -69,26 +67,28 @@ Só no modo --oleo-morto: os casos 2 e 3 (Early Life, com água) são inviáveis
 - **modelo**: Um único vaso para todos os casos: com trens em paralelo a vazão por vaso cai e o comprimento exigido também; o teto (razão de vazões, µ, ΔSG) não muda.
 - **numérico**: Conferência numérica: (h_o)max, β e d_max refeitos à mão com os operandos do rastro reproduzem o resultado (teste da conta à mão); β por bisseção idêntico ao Julia.
 
-### P-001 — investigação aberta
+### P-001 — investigação lacuna metodológica
 
-O motor para no caso 1: com 2 passes no tubo o fator F da Fig. 4.3 sai do domínio (cruzamento interno de temperatura no arranjo 1-2).
+Óleo/óleo: sem correlação válida para o óleo em escoamento laminar ou de transição no lado tubo. Decisão do usuário (2026-09-26): não implementar Sieder-Tate nem outra correlação laminar sem referência rastreável em references/. O TAG fica como lacuna metodológica até existir fonte; quando houver, a correlação laminar entra como ramo próprio do método, sem extrapolar Dittus-Boelter.
 
 - **premissa**: Arranjo de 2 passes no tubo (default 'escolha' de Saari Tab. 3.1): com a aproximação de P-32 a troca óleo/óleo é quase simétrica (R ≈ 1) e P alto, fora do alcance de um casco 1-2. Contracorrente pura (1 passe) ou cascos em série resolvem o domínio de F.
-- **modelo**: Resolvido o domínio de F (1 passe), o impedimento seguinte é o mesmo do P-002/P-003: óleo em escoamento laminar/de transição no tubo, fora de Dittus-Boelter. Como os dois lados são óleo, trocar os lados não resolve: com a emulsão no casco e o óleo tratado quente nos tubos, o F segue fora do domínio (2 passes) e, com 1 passe, o Re no tubo fica em 1.661–4.947. Falta correlação laminar no acervo.
+- **modelo**: LACUNA METODOLÓGICA: resolvido o domínio de F (1 passe), o óleo no tubo tem Re de 1.661 a 4.947, fora de Dittus-Boelter (Re ≥ 10⁴). Os dois lados são óleo, e trocar os lados não resolve: com a emulsão no casco e o óleo tratado quente nos tubos, o F segue fora do domínio com 2 passes, e com 1 passe o tubo continua laminar/de transição. Falta, no acervo, correlação laminar do lado tubo com fonte.
 
 ### P-002 — investigação aberta
 
-Todos os casos: o óleo no lado tubo tem Re de ~1.900 a ~5.600 e Pr ~150 com óleo vivo (~1.100 a ~3.400 e Pr ~250 com --oleo-morto), fora da faixa de Dittus-Boelter (Re ≥ 10⁴, Pr ≤ 120) declarada por Saari: a correção de óleo vivo aproxima, mas não resolve.
+Topologia P-46 (óleo no casco, água quente nos tubos), P-45 e reotimização F10x.7 (docs/validacao/18-trocadores.md). Com 2 cascos em série o comprimento cabe em 6 m. O que ainda governa é a faixa de Dittus-Boelter no caso de menor carga (BOT 06, 3,6 % da carga de projeto: v ≈ 0,08 m/s, Re ≈ 4.200 < 10⁴), que a P-45 manda exigir em todos os casos.
 
-- **premissa**: Alocação de fluidos: óleo viscoso no lado tubo. A prática é pôr o fluido mais viscoso no casco, onde Bell-Delaware cobre escoamento laminar (fator Jr), e a água quente de utilidade nos tubos. Variante de topologia (config/pfd/variantes/p_002_oleo_casco.toml): a água nos tubos fica turbulenta e a faixa de Dittus-Boelter deixa de ser o impedimento. O que resta é o comprimento de tubo (o feixe mais curto na banda pede 7,08 m, contra o limite de estoque de 6 m) e a banda de velocidade exigida em todos os casos, com carga que varia entre os casos, como nas bombas antes da P-44.
-- **modelo**: Correlação do lado tubo só turbulenta: não há correlação laminar/de transição (ex.: Sieder–Tate) no acervo; o programa não extrapola.
+- **premissa**: CONFIRMADA e adotada (P-46): a alocação com o óleo viscoso no tubo foi trocada; com a água nos tubos, a faixa de Dittus-Boelter só falha no turndown profundo.
+- **premissa**: Vazão da utilidade proporcional à carga: ṁ = q/(cp·ΔT) com o ΔT da utilidade fixo pelos insumos t_agua_in/t_agua_out em todos os casos. Num turndown de 28× a água de aquecimento fica laminar nos tubos. Manter a circulação da utilidade (ΔT menor no turndown) é outra premissa de operação; sem variante executável, a decidir.
+- **modelo**: Correlação do lado tubo só turbulenta (Dittus-Boelter, Re ≥ 10⁴): sem correlação laminar/de transição com fonte no acervo, o caso de turndown não é calculável.
 
 ### P-003 — investigação aberta
 
-Todos os casos: o óleo no lado tubo tem Re de ~1.300 a ~4.000 e Pr ~150, fora da faixa de Dittus-Boelter declarada por Saari.
+Topologia P-46 (óleo no casco, água de resfriamento nos tubos), P-45 e reotimização F10x.7. O casco NÃO passa de 2.500 mm, então os cascos em paralelo não se aplicam (e reduziriam o Re por casco). O que ainda governa: a faixa de Dittus-Boelter nos casos de baixa carga (BOT 04, 05 e 06) e, no melhor feixe, o comprimento de tubo acima de 6 m.
 
-- **premissa**: Alocação de fluidos: óleo viscoso no lado tubo. A água de resfriamento em circuito fechado (BOT 3.3.2) iria nos tubos, e o óleo no casco (Bell-Delaware com Jr). Variante de topologia (config/pfd/variantes/p_003_oleo_casco.toml): a faixa de Dittus-Boelter deixa de ser o impedimento. O que resta é o casco, que passa do limite de 2.500 mm de chapa enrolada (Saari Tab. 3.1: dividir em cascos em paralelo), e a banda de velocidade exigida em todos os casos.
-- **modelo**: Correlação do lado tubo só turbulenta, como no P-002.
+- **premissa**: CONFIRMADA e adotada (P-46): a alocação com o óleo viscoso no tubo foi trocada.
+- **premissa**: Vazão da utilidade proporcional à carga (ΔT da utilidade fixo pelos insumos): nos casos de baixa carga a água de resfriamento fica laminar nos tubos, como no P-002.
+- **premissa**: Comprimento: a decisão do usuário previu cascos em série só para o P-002. No P-003 o melhor feixe pede tubo acima de 6 m; cascos em série resolveriam esse bloqueio, mas não o de Dittus-Boelter. A decidir.
 
 ### B-001 — investigação explicada
 
@@ -96,7 +96,7 @@ Só sem a P-44 (banda em todos os casos): cada caso tem DN admissível isolado (
 
 - **premissa**: CONFIRMADA (P-44): piso de velocidade de 1 m/s aplicado ao óleo tratado. Pela nota do descritor v_min (Moran 2016), o piso é para líquido com sólidos decantáveis; para líquido limpo o artigo só impõe o teto.
 - **premissa**: CONFIRMADA (P-44): o envelope exigia a banda de velocidade em TODOS os casos de uma única linha. No projeto, a linha é dimensionada pelo caso de maior vazão, e os casos de menor vazão operam com velocidade menor (turndown).
-- **modelo**: No turndown (caso 6, 4 % da vazão de projeto) a linha DN 600 fica na zona de transição laminar-turbulento (Re ≈ 3.460), onde nenhuma correlação de atrito da implementação vale. P-44b: o f de Colebrook-White entra como limite superior (≥ 64/Re), com perda superestimada e NPSH subestimado; a confirmar.
+- **modelo**: No turndown (caso 6, 4 % da vazão de projeto) a linha DN 600 fica na zona de transição laminar-turbulento (Re ≈ 3.460), onde nenhuma correlação de atrito da implementação vale. P-44b: o caso é fechado por POLÍTICA conservadora de engenharia (f de Colebrook-White aceito se não for menor que 64/Re), separada das correlações válidas; não é limite superior demonstrado. A confirmar.
 - **modelo**: Uma bomba só não opera numa faixa de 23×: a vazão mínima contínua é dado do fabricante (fora do acervo). Bombas em paralelo ou recirculação de mínimo fluxo não são modeladas; a especificação sai do caso de projeto.
 
 ### B-002 — investigação explicada

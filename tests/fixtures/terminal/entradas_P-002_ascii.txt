@@ -1,72 +1,77 @@
 
   ENTRADAS . BOT 01 - Early Life
-  Chave                  Valor  Unidade  Origem      Revisao
-  -------------------  -------  -------  ----------  ----------------
-  m_tubo               298,555  kg/s     balanco
-  cp_tubo              1993,99  J/kg.K   balanco
-  t_tubo_in            80,3181  degC     balanco
-  t_tubo_out                90  degC     balanco
-  rho_tubo             889,047  kg/m3    correlacao
-  mu_tubo              4,95063  cP       correlacao
+  Chave                  Valor  Unidade  Origem       Revisao
+  -------------------  -------  -------  -----------  ----------------
+  m_tubo                     -  kg/s     lacuna
+  cp_tubo                    -  J/kg.K   lacuna
+  t_tubo_in                  -  degC     lacuna
+  t_tubo_out                 -  degC     lacuna
+  rho_tubo                   -  kg/m3    lacuna
+  mu_tubo                    -  cP       lacuna
   k_tubo                     -  W/m.K    lacuna
-  m_casco                    -  kg/s     lacuna
-  cp_casco                   -  J/kg.K   lacuna
-  t_casco_in                 -  degC     lacuna
-  mu_casco                   -  cP       lacuna
+  m_casco              298,555  kg/s     balanco
+  cp_casco             1993,99  J/kg.K   balanco
+  t_casco_in           80,3181  degC     balanco
+  mu_casco             4,95063  cP       correlacao
   k_casco                    -  W/m.K    lacuna
   h_casco                  500  W/m2.K   default
-  corte_chicana           0,25  -        default     revisao pendente
-  espacamento_chicana      0,4  -        default     revisao pendente
-  layout_tubos              30  deg      default     revisao pendente
-  pares_veda                 1  -        default     revisao pendente
-  folga_furo_chicana       0,8  mm       default     revisao pendente
-  faixas_divisoras           0  -        default     revisao pendente
-  d_externo              19,05  mm       default     revisao pendente
-  espessura               2,11  mm       default     revisao pendente
+  corte_chicana           0,25  -        default      revisao pendente
+  espacamento_chicana      0,2  -        recomendada  revisao pendente
+  layout_tubos              90  deg      recomendada  revisao pendente
+  pares_veda                 1  -        default      revisao pendente
+  folga_furo_chicana       0,8  mm       default      revisao pendente
+  faixas_divisoras           0  -        default      revisao pendente
+  d_externo              19,05  mm       recomendada  revisao pendente
+  espessura               2,11  mm       default      revisao pendente
   k_parede                   -  W/m.K    lacuna
   rf_tubo                    -  m2.K/W   lacuna
   rf_casco                   -  m2.K/W   lacuna
-  razao_passo             1,25  -        default     revisao pendente
-  passes_tubo                2  -        default     revisao pendente
-  n_min                    648  -        default
-  n_max                   1945  -        default
-  n_step                     5  -        default     revisao pendente
-  v_min                      1  m/s      default     revisao pendente
-  v_max                      3  m/s      default     revisao pendente
-  d_casco_max             2500  mm       default     revisao pendente
-  l_tubo_max                 6  m        default     revisao pendente
+  razao_passo             1,25  -        recomendada  revisao pendente
+  passes_tubo                2  -        recomendada  revisao pendente
+  n_min                      -  -        lacuna
+  n_max                      -  -        lacuna
+  n_step                     5  -        default      revisao pendente
+  v_min                      1  m/s      default      revisao pendente
+  v_max                      3  m/s      default      revisao pendente
+  d_casco_max             2500  mm       default      revisao pendente
+  l_tubo_max                 6  m        default      revisao pendente
+  banda_caso_projeto         1  -        recomendada  revisao pendente
+  cascos_serie               2  -        recomendada  revisao pendente
+  cascos_paralelo            1  -        default      revisao pendente
     m_tubo . Entrada: Vazao massica no tubo
-    m_tubo . Fonte: C-07: m total
+    m_tubo . Fonte: t_agua_in, t_agua_out
     cp_tubo . Entrada: Calor especifico no tubo
-    cp_tubo . Fonte: C-07: C/m (cp do balanco)
+    cp_tubo . Fonte: t_agua_in, t_agua_out
     t_tubo_in . Entrada: Temperatura de entrada no tubo
-    t_tubo_in . Fonte: C-07: T
+    t_tubo_in . Fonte: t_agua_in
     t_tubo_out . Entrada: Temperatura de saida no tubo
-    t_tubo_out . Fonte: C-08: T
+    t_tubo_out . Fonte: t_agua_out
     rho_tubo . Entrada: Densidade no tubo
-    rho_tubo . Fonte: C-07: rho da fase liquido (volumes aditivos)
+    rho_tubo . Fonte: t_agua_in, t_agua_out
     mu_tubo . Entrada: Viscosidade no tubo
-    mu_tubo . Fonte: C-07: mu da fase continua (oleo), sem fase dispersa (oleo vivo, Beggs & Robinson (1975); Rs de
-    C-07)
+    mu_tubo . Fonte: t_agua_in, t_agua_out
     k_tubo . Entrada: Condutividade do fluido do tubo
+    k_tubo . Fonte: t_agua_in, t_agua_out
     m_casco . Entrada: Vazao massica no casco
-    m_casco . Fonte: t_agua_in, t_agua_out
+    m_casco . Fonte: C-07: m total
     cp_casco . Entrada: Calor especifico no casco
-    cp_casco . Fonte: t_agua_in, t_agua_out
+    cp_casco . Fonte: C-07: C/m (cp do balanco)
     t_casco_in . Entrada: Temperatura de entrada no casco
-    t_casco_in . Fonte: t_agua_in
+    t_casco_in . Fonte: C-07: T
     mu_casco . Entrada: Viscosidade no casco
-    mu_casco . Fonte: t_agua_in, t_agua_out
+    mu_casco . Fonte: C-07: mu da fase continua (oleo), sem fase dispersa (oleo vivo, Beggs & Robinson (1975); Rs de
+    C-07)
     k_casco . Entrada: Condutividade do fluido do casco
-    k_casco . Fonte: t_agua_in, t_agua_out
     h_casco . Entrada: Coeficiente de conveccao no casco (se Bell-Delaware desligado)
     h_casco . Fonte: so com Bell-Delaware desligado; aqui h_o e calculado (Branan Eq. 2-18)
     corte_chicana . Entrada: Corte da chicana / diametro do casco
     corte_chicana . Fonte: Saari Tab. 3.1 (p. 21): 'very often 25% of shell inside diameter'
     espacamento_chicana . Entrada: Espacamento de chicana / diametro do casco
-    espacamento_chicana . Fonte: Saari Tab. 3.1 (p. 21): 0,2 a 1,0.Ds; adotado 0,4.Ds
+    espacamento_chicana . Fonte: melhor candidato da reotimizacao discreta F10x.7 (tools/reotimizar_trocadores.py;
+    docs/validacao/18-trocadores.md), dentro da faixa da fonte do descritor (config/pfd/reotimizacao.toml)
     layout_tubos . Entrada: Arranjo do feixe
-    layout_tubos . Fonte: Branan (2012) Tab. 2-6: 30deg triangular
+    layout_tubos . Fonte: melhor candidato da reotimizacao discreta F10x.7 (tools/reotimizar_trocadores.py;
+    docs/validacao/18-trocadores.md), dentro da faixa da fonte do descritor (config/pfd/reotimizacao.toml)
     pares_veda . Entrada: Pares de faixas de vedacao
     pares_veda . Fonte: 1 par (Branan p. 44: regra de bolso de um par a cada ~6 fileiras de tubos)
     folga_furo_chicana . Entrada: Folga furo da chicana - diametro do tubo
@@ -74,20 +79,23 @@
     faixas_divisoras . Entrada: Faixas divisoras de passe paralelas ao escoamento
     faixas_divisoras . Fonte: divisoria de passe perpendicular ao escoamento (nota do metodo)
     d_externo . Entrada: Diametro externo do tubo
-    d_externo . Fonte: Saari Tab. 3.1 (p. 21): tubos tipicos de 12,7 a 25,4 mm; 19,05 mm (3/4 in) dentro da faixa
+    d_externo . Fonte: melhor candidato da reotimizacao discreta F10x.7 (tools/reotimizar_trocadores.py;
+    docs/validacao/18-trocadores.md), dentro da faixa da fonte do descritor (config/pfd/reotimizacao.toml)
     espessura . Entrada: Espessura da parede do tubo
     espessura . Fonte: Branan (2012) p. 38: 'start with 14 BWG' (2,11 mm)
     k_parede . Entrada: Condutividade da parede
     rf_tubo . Entrada: Incrustacao no lado tubo
     rf_casco . Entrada: Incrustacao no lado casco
     razao_passo . Entrada: Passo do feixe / diametro do tubo
-    razao_passo . Fonte: Saari Tab. 3.1 (p. 21): passo de 1,25 a 1,5.d_o; adotado o menor
+    razao_passo . Fonte: melhor candidato da reotimizacao discreta F10x.7 (tools/reotimizar_trocadores.py;
+    docs/validacao/18-trocadores.md), dentro da faixa da fonte do descritor (config/pfd/reotimizacao.toml)
     passes_tubo . Entrada: Passes no lado tubo
-    passes_tubo . Fonte: 2 passes no tubo (Saari Tab. 3.1: ate Ds,i em centenas de mm; fator F da Fig. 4.3)
+    passes_tubo . Fonte: melhor candidato da reotimizacao discreta F10x.7 (tools/reotimizar_trocadores.py;
+    docs/validacao/18-trocadores.md), dentro da faixa da fonte do descritor (config/pfd/reotimizacao.toml)
     n_min . Entrada: Tubos por passe - minimo
-    n_min . Fonte: dominio de busca: banda de velocidade no tubo, n = m/(rho.v.A_i)
+    n_min . Fonte: t_agua_in, t_agua_out
     n_max . Entrada: Tubos por passe - maximo
-    n_max . Fonte: dominio de busca: banda de velocidade no tubo, n = m/(rho.v.A_i)
+    n_max . Fonte: t_agua_in, t_agua_out
     n_step . Entrada: Passo da grade de tubos
     n_step . Fonte: passo da grade do metodo (5 tubos)
     v_min . Entrada: Velocidade minima no tubo
@@ -98,4 +106,14 @@
     d_casco_max . Fonte: Saari Tab. 3.1 (p. 21): casco de chapa enrolada de 300 a 2500 mm
     l_tubo_max . Entrada: Comprimento maximo do tubo
     l_tubo_max . Fonte: Branan (2012) p. 38: tubos de 4 a 20 ft (6,1 m); default do metodo 6 m
+    banda_caso_projeto . Entrada: Banda de velocidade no tubo so no caso de projeto
+    banda_caso_projeto . Fonte: P-45 (decisao do usuario, 2026-09-26; especifica de trocadores): teto de velocidade
+    em todos os casos; banda inteira no caso de projeto (maior vazao volumetrica no tubo); abaixo do piso no
+    turndown, alerta de operabilidade/incrustacao; Dittus-Boelter exigido na faixa em cada caso
+    cascos_serie . Entrada: Cascos em serie
+    cascos_serie . Fonte: cascos em serie para o comprimento de tubo ficar dentro de 6 m (l_tubo_max mantido);
+    melhor candidato da reotimizacao discreta F10x.7 (tools/reotimizar_trocadores.py;
+    docs/validacao/18-trocadores.md), dentro da faixa da fonte do descritor (config/pfd/reotimizacao.toml)
+    cascos_paralelo . Entrada: Cascos em paralelo
+    cascos_paralelo . Fonte: um casco (regra do Julia); cascos em paralelo so pela reotimizacao do TAG (F10x.7)
   ! C-07: viscosidade do oleo limitado a 70 degC (tabela do BOT; P-40)

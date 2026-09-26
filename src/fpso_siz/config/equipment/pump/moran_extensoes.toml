@@ -26,12 +26,14 @@ max      = 1.0
 advanced = true
 note     = "1 = o piso v_min vale só no caso de maior vazão (projeto) e os demais operam abaixo dele (turndown); 0 = a banda inteira em todos os casos (regra do Julia). O teto v_max vale sempre em todos. Moran (2016) dá a banda para dimensionar a linha; não trata de turndown."
 
-# Premissa P-44b (F10x.6; decorre da P-44, a confirmar pelo usuário). Num caso de turndown a
-# linha grande pode deixar o Reynolds na zona de transição (entre reynolds_laminar_max e
-# reynolds_turbulent_min), onde nenhuma correlação vale. O fator de Colebrook-White ali é
-# MAIOR que 64/Re (verificado no teste), e é usado como limite superior: superestima a perda
-# de carga e subestima o NPSH disponível (lado seguro). Só em caso de turndown; o caso de
-# projeto continua exigindo correlação válida. Default 0 = regra do Julia (rejeita).
+# Premissa P-44b (F10x.6, revista na F10x.7; a confirmar pelo usuário). POLÍTICA conservadora
+# de engenharia, não correlação. Num caso de turndown a linha grande pode deixar o Reynolds na
+# zona de transição (entre reynolds_laminar_max e reynolds_turbulent_min), onde nenhuma
+# correlação desta implementação vale. Ali o fator avaliado por Colebrook-White é aceito como
+# estimativa conservadora quando não é menor que 64/Re no mesmo Re; isso tende a superestimar a
+# perda e subestimar o NPSH, mas NÃO é um limite superior demonstrado do f real na transição.
+# Só em caso de turndown; o caso de projeto continua exigindo correlação válida. Default 0 =
+# regra do Julia (rejeita).
 [[parameter]]
 key      = "transicao_turndown"
 label    = "Aceitar a zona de transição nos casos de turndown"
@@ -40,4 +42,4 @@ default  = 0.0
 min      = 0.0
 max      = 1.0
 advanced = true
-note     = "1 = nos casos que não são o de projeto, a zona de transição laminar-turbulento é aceita com o fator de Colebrook-White como limite superior (maior perda, menor NPSH: conservador); 0 = rejeita, como no Julia. Só vale com piso_caso_projeto = 1."
+note     = "1 = nos casos que não são o de projeto, a zona de transição laminar-turbulento é aceita pela política conservadora P-44b (f de Colebrook-White, se não for menor que 64/Re; não é correlação válida nem limite superior demonstrado); 0 = rejeita, como no Julia. Só vale com piso_caso_projeto = 1."

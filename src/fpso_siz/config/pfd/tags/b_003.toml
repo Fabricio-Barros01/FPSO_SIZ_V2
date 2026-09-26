@@ -28,4 +28,4 @@ fonte = "P-44 (aprovada pelo usuário, 2026-09-26): a linha é dimensionada pelo
 
 [recomendadas.transicao_turndown]
 valor = 1.0
-fonte = "P-44b (decorre da P-44; a confirmar): nos casos de turndown, a zona de transição laminar-turbulento é aceita com o fator de Colebrook-White como limite superior (f ≥ 64/Re): perda de carga superestimada e NPSH subestimado, lado seguro. O caso de projeto segue exigindo correlação válida (Moran 2016: Colebrook-White para Re > 4000)"
+fonte = "P-44b — política conservadora de engenharia para a região de transição, separada das correlações fisicamente válidas (a confirmar): na zona de transição laminar-turbulento (Re entre 2.300 e 4.000) nenhuma correlação desta implementação é válida (Moran 2016 declara Colebrook-White só para Re > 4000). Nos casos de turndown, o fator avaliado por Colebrook-White é aceito como estimativa conservadora quando não é menor que 64/Re no mesmo Re; não é correlação válida nem limite superior demonstrado. O caso de projeto segue exigindo correlação válida"

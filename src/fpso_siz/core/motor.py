@@ -159,7 +159,8 @@ def _size_envelope(eq, m, cases, max_corners):
     best = min(admissivel, key=lambda r: m.objective(r.x, r.derivados, p_env))
     slack = [best.y - v for v in best.per_case_y]
     return EnvelopeResult(True, "", best.x, best.y, best.derivados, best.governing, best.driver_case, teto,
-                          names[i_teto], mecan, names, rows, slack, per_case)
+                          names[i_teto], mecan, names, rows, slack, per_case,
+                          m.envelope_derived(best.x, conss, pcs, p_env))
 
 
 def governing_summary(m, r):

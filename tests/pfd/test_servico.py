@@ -56,7 +56,7 @@ def test_planta_e_tag_isolado_delegam_ao_mesmo_servico(monkeypatch, tmp_path):
 def test_paridade_numerica_com_a_f10b(planta_referencia):
     """Mesmos estados, lacunas, inativos e envelopes que a F10b registrou (balanço de referência)."""
     planta_base = planta_referencia
-    ctx = servico.Contexto(planta_base.dados, balanco=planta_base.balanco, oleo_vivo=False)
+    ctx = servico.Contexto(planta_base.dados, balanco=planta_base.balanco, oleo_vivo=False, topologia_julia=True)
     assert {t.tag.tag: t.status for t in planta_base.tags} == {
         "B-001": "aguardando_entrada", "B-002": "aguardando_entrada", "B-003": "aguardando_entrada",
         "P-001": "aguardando_entrada", "P-002": "aguardando_entrada", "P-003": "aguardando_entrada",
@@ -112,7 +112,8 @@ def test_manual_atividade_por_vazao_informada(ctx):
 def test_lacuna_lista_dependentes(ctx):
     rt = servico.executar(ctx, servico.estado_inicial("P-002"))
     t_in = next(l for l in rt.entradas.lacunas if l.chave == "t_agua_in")
-    assert {"m_casco", "cp_casco", "t_casco_in", "mu_casco", "k_casco"} <= set(t_in.dependentes)
+    # P-46: a utilidade vai nos tubos do P-002
+    assert {"m_tubo", "cp_tubo", "t_tubo_in", "rho_tubo", "mu_tubo", "k_tubo"} <= set(t_in.dependentes)
 
 
 def test_revisao_confirmada_desatualizada_e_default_nao_revisavel(ctx):
@@ -225,20 +226,27 @@ P42_TAGS = {"SG-001", "TO-001", "TO-002"}
 P42_CHAVES = {"dm_water", "dm_oil", "tr_water", "rho_water", "mu_water"}
 P44_TAGS = {"B-001", "B-002", "B-003"}
 P44_CHAVES = {"piso_caso_projeto", "transicao_turndown"}   # extensões do V2 (F10x.6)
+P45_TAGS = {"P-001", "P-002", "P-003"}
+P45_CHAVES = {"banda_caso_projeto", "cascos_serie", "cascos_paralelo"}   # extensões do V2 (F10x.7)
+MARCAS_V2 = ("P-44", "P-45", "F10x.7")
 
 
 def _sem_p44(monkeypatch):
-    """Desliga a P-44 (F10x.6): sem os dois descritores de extensão da bomba e sem as
-    recomendações da P-44 nos TAGs de bomba (o código que a F10b tinha)."""
+    """Desliga as extensões F10x.6–F10x.7 (P-44/P-44b das bombas; P-45, cascos em série e
+    paralelo e a reotimização dos trocadores): sem os descritores de extensão e sem as
+    recomendações correspondentes nos TAGs (o código que a F10b tinha). A alocação do PFD F1
+    (P-46 desligada) vem de topologia_julia=True."""
     from fpso_siz.pfd.tags import tags
     from fpso_siz.sizing.bomba import MoranPumpSizing
+    from fpso_siz.sizing.trocador import SaariLMTD
     for t in tags():
         for k, rec in list(t.recomendadas.items()):
-            if "P-44" in rec["fonte"]:
+            if any(m in rec["fonte"] for m in MARCAS_V2):
                 monkeypatch.delitem(t.recomendadas, k)
-    original = MoranPumpSizing.parameters
-    monkeypatch.setattr(MoranPumpSizing, "parameters",
-                        lambda self: [s for s in original(self) if s.key not in P44_CHAVES])
+    for classe, chaves in ((MoranPumpSizing, P44_CHAVES), (SaariLMTD, P45_CHAVES)):
+        original = classe.parameters
+        monkeypatch.setattr(classe, "parameters",
+                            lambda self, o=original, c=chaves: [s for s in o(self) if s.key not in c])
 
 
 @pytest.fixture
@@ -251,10 +259,11 @@ def plantas_f10b(monkeypatch, planta_referencia, ajustes_sinteticos):
     monkeypatch.setattr(separador, "sem_fase_aquosa", lambda fu: False)
     monkeypatch.setattr(tratador, "sem_fase_aquosa", lambda fu: False)
     _sem_p44(monkeypatch)
-    base = planta.dimensionar(planta_referencia.dados, balanco=planta_referencia.balanco, oleo_vivo=False)
+    base = planta.dimensionar(planta_referencia.dados, balanco=planta_referencia.balanco, oleo_vivo=False,
+                              topologia_julia=True)
     return {"sem_ajustes": base,
             "ajustes_sinteticos": planta.dimensionar(base.dados, ajustes=ajustes_sinteticos, balanco=base.balanco,
-                                                     oleo_vivo=False)}
+                                                     oleo_vivo=False, topologia_julia=True)}
 
 
 @pytest.mark.parametrize("modo", ["sem_ajustes", "ajustes_sinteticos"])
@@ -306,13 +315,15 @@ def test_efeito_da_p42_restrito_a_fase_aquosa(modo, plantas_f10b, planta_referen
         assert a.tag.tag == d.tag.tag and a.status == d.status
         sem_agua = {c.num for c in d.entradas.casos if "q_water" in c.valores and c.valores["q_water"].valor == 0}
         mudou = False
-        p44 = d.tag.tag in P44_TAGS
+        p44 = d.tag.tag in P44_TAGS | P45_TAGS
         for ca, cd in zip(a.entradas.casos, d.entradas.casos, strict=True):
-            extras = P44_CHAVES if p44 else set()
+            extras = P44_CHAVES if d.tag.tag in P44_TAGS else P45_CHAVES if d.tag.tag in P45_TAGS else set()
             assert (ca.num, ca.ativo, set(ca.valores) | extras) == (cd.num, cd.ativo, set(cd.valores))
             for k, vd in cd.valores.items():
-                if p44 and "P-44" in vd.fonte:
-                    assert vd.origem == "recomendada" and (k in P44_CHAVES or (d.tag.tag, k) == ("B-001", "v_min"))
+                if p44 and any(m in vd.fonte for m in MARCAS_V2):
+                    assert vd.origem == "recomendada" or k in extras
+                elif p44 and k in extras:
+                    assert vd.origem == "metodo"
                 elif vd.nao_aplicavel:
                     mudou = True
                     assert d.tag.tag in P42_TAGS and cd.num in sem_agua and k in P42_CHAVES

@@ -54,9 +54,13 @@ def _hidraulica(c, dn_mm):
                 h_atrito=hf_suc + hf_rec, h_total=c.h_est + hf_suc + hf_rec, npsh=c.npsh_estatico - hf_suc)
 
 
-def _limite_superior(hid, k):
-    """P-44b: na zona de transição o f de Colebrook-White é aceito se for limite superior do
-    laminar (f ≥ 64/Re): a perda de carga fica superestimada e o NPSH, subestimado."""
+def _politica_transicao(hid, k):
+    """P-44b — POLÍTICA conservadora de engenharia, não correlação: na zona de transição
+    laminar-turbulento nenhuma correlação desta implementação é válida (Moran 2016 declara
+    Colebrook-White só para Re > 4000). Num caso de turndown, o f avaliado por Colebrook-White
+    é aceito como estimativa conservadora quando não é menor que o de Hagen-Poiseuille (64/Re)
+    no mesmo Re, o que tende a superestimar a perda e subestimar o NPSH. Não é limite superior
+    demonstrado do f real na transição."""
     return hid["regime"] == "transicao" and hid["f"] >= float(k["laminar_coefficient"]) / hid["re"]
 
 
@@ -141,7 +145,7 @@ class MoranPumpSizing(MetodoTOML):
     def case_admissible(self, dn, c, p):
         hid = _hidraulica(c, dn)
         return p["v_min"] <= hid["v"] <= p["v_max"] and hid["npsh"] >= c.npsh_exigido and \
-            (hid["confiavel"] or (p.get("aceita_transicao", 0.0) and _limite_superior(hid, c.k)))
+            (hid["confiavel"] or (p.get("aceita_transicao", 0.0) and _politica_transicao(hid, c.k)))
 
     def admissible(self, dn, der_, p):
         return True
@@ -163,7 +167,7 @@ class MoranPumpSizing(MetodoTOML):
     def envelope_case_params(self, conss, p_env):
         """P-44 (piso_caso_projeto): o piso v_min só no caso de projeto, o de maior vazão
         volumétrica; os demais casos, na mesma linha, só com o teto (turndown). P-44b
-        (transicao_turndown): no turndown, a zona de transição com f limite superior."""
+        (transicao_turndown): no turndown, a zona de transição pela política conservadora."""
         if not p_env.get("piso_caso_projeto", 0.0) or not conss:
             return super().envelope_case_params(conss, p_env)
         projeto = self.caso_projeto(conss)
@@ -216,10 +220,30 @@ class MoranPumpSizing(MetodoTOML):
             pontos.append((cons.q_m3h * f, hid["h_total"] if hid["confiavel"] else math.nan))
         return pontos
 
+    def envelope_derived(self, dn, conss, pcs, p_env):
+        """As três potências de eixo, separadas (extensão do V2; o `potencia` dos derivados é a
+        do caso governante, como no Julia):
+        - caso governante: a do caso que exige a maior carga H;
+        - máxima operacional: a maior entre os casos, cada um no seu (Q, H, ρ, η);
+        - nominal requerida: no ponto nominal (Q máximo, H máximo, ρ máximo e η mínimo entre
+          os casos), sem margem de acionador (margem é dado de norma ou fabricante, fora do
+          acervo)."""
+        if not conss:
+            return {}
+        op = self.operacao_por_caso(conss, dn, pcs)
+        governante = max(range(len(op)), key=lambda i: op[i]["h"])
+        nominal = dict(q=max(c.q_m3h for c in conss), h=max(o["h"] for o in op), rho=max(c.rho for c in conss),
+                       rendimento=min(c.rendimento for c in conss))
+        return {"potencia_caso_governante": op[governante]["potencia"],
+                "potencia_max_operacional": max(o["potencia"] for o in op),
+                "potencia_nominal": potencia_hidraulica_kw(nominal["rho"], nominal["q"], nominal["h"],
+                                                           nominal["rendimento"], conss[0].g),
+                "q_nominal": nominal["q"], "h_nominal": nominal["h"], "caso_projeto": float(self.caso_projeto(conss))}
+
     def operacao_por_caso(self, conss, dn, pcs):
         """Operação de cada caso na linha escolhida (mesma hidráulica do dimensionamento):
         papel do caso (projeto/turndown pela P-44), v, Re, regime, f, H, folga de NPSH, potência
-        e se o f é o limite superior da zona de transição (P-44b)."""
+        e se o atrito veio da política conservadora de transição (P-44b)."""
         projeto = self.caso_projeto(conss) if conss else -1
         out = []
         for i, (c, pc) in enumerate(zip(conss, pcs)):
@@ -227,8 +251,8 @@ class MoranPumpSizing(MetodoTOML):
             out.append(dict(papel="projeto" if i == projeto else "turndown", q=c.q_m3h, v=h["v"], re=h["re"],
                             regime=h["regime"], f=h["f"], h=h["h_total"], folga_npsh=h["npsh"] - c.npsh_exigido,
                             potencia=potencia_hidraulica_kw(c.rho, c.q_m3h, h["h_total"], c.rendimento, c.g),
-                            limite_superior=not h["confiavel"] and bool(pc.get("aceita_transicao", 0.0))
-                            and _limite_superior(h, c.k)))
+                            politica_transicao=not h["confiavel"] and bool(pc.get("aceita_transicao", 0.0))
+                            and _politica_transicao(h, c.k)))
         return out
 
     def npsh_exigido(self, cons):
@@ -250,6 +274,7 @@ class MoranPumpSizing(MetodoTOML):
             return v if tem else "—"
 
         ok = "neutro" if not tem else ("ok" if getattr(r, "ok", True) else "erro")
+        v2 = getattr(r, "derivados_v2", {}) or {}
         folga = der(r, "folga_npsh")
         st_npsh = "neutro" if not tem or not math.isfinite(folga) else ("ok" if folga >= 0 else "erro")
         return [
@@ -262,7 +287,10 @@ class MoranPumpSizing(MetodoTOML):
             ResultField("Fator de atrito f", der(r, "f"), digits=4),
             ResultField("NPSH disponível", der(r, "npsh"), unit="m"),
             ResultField("Folga de NPSH", folga, unit="m", status=st_npsh),
-            ResultField("Potência de eixo", der(r, "potencia"), unit="kW"),
+            *([ResultField("Potência de eixo", der(r, "potencia"), unit="kW")] if not v2 else [
+                ResultField("Potência no caso governante", v2["potencia_caso_governante"], unit="kW"),
+                ResultField("Potência máxima operacional", v2["potencia_max_operacional"], unit="kW"),
+                ResultField("Potência nominal requerida", v2["potencia_nominal"], unit="kW", highlight=True)]),
             ResultField("Parcela governante", txt(self.governing_label(r.governing))),
             ResultField("Caso governante", txt(driver_case(r))),
         ]

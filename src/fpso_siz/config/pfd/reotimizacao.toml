@@ -1,0 +1,44 @@
+# F10x.7 — reotimização discreta dos trocadores P-002 e P-003 (decisão do usuário, 2026-09-26):
+# "primeiro tente reotimizar número de tubos, passes, diâmetro, pitch e demais variáveis
+# disponíveis; se ainda exigir comprimento superior a 6 m, cascos em série (P-002); se o casco
+# continuar acima de 2.500 mm, cascos em paralelo (P-003)". Os limites l_tubo_max (6 m) e
+# d_casco_max (2.500 mm) NÃO são alterados.
+#
+# A busca (pfd/reotimizacao.py) avalia cada combinação da grade pelo mesmo serviço por TAG (o
+# número de tubos por passe é varrido pelo próprio método). Viável: menor área total. Nenhum
+# viável: o candidato com menos bloqueios (critério, caso) e, entre eles, a menor área. A
+# divisão em cascos só é tentada se o bloqueio que a justifica (`gatilho`) estiver no melhor
+# candidato, até `n_cascos_max`, que é limite da BUSCA, não valor de projeto.
+# Cada lista da grade é um subconjunto da faixa que a fonte do descritor declara.
+
+[grade.d_externo]
+valores = [12.7, 19.05, 25.4]
+fonte = "Saari Tab. 3.1 (p. 21): tubos típicos de 12,7 a 25,4 mm; 19,05 mm (3/4 in) o mais comum (nota do descritor)"
+
+[grade.passes_tubo]
+valores = [1.0, 2.0]
+fonte = "os dois arranjos com fórmula em Saari: 1 (contracorrente, §4.2.1) e 2 (1-2, Fig. 4.3)"
+
+[grade.razao_passo]
+valores = [1.25, 1.5]
+fonte = "Saari Tab. 3.1 (p. 21): passo de 1,25 a 1,5·d_o (extremos)"
+
+[grade.layout_tubos]
+valores = [30.0, 90.0]
+fonte = "Branan (2012) Tab. 2-6: 30° (triangular, o mais compacto) e 90° (quadrado, o que permite limpeza mecânica externa, relevante com óleo no casco)"
+
+[grade.espacamento_chicana]
+valores = [0.2, 0.4, 0.6, 1.0]
+fonte = "Saari Tab. 3.1 (p. 21): espaçamento de chicana de 0,2 a 1,0·Ds (extremos, o default 0,4 e um intermediário)"
+
+[tags."P-002"]
+premissas = { banda_caso_projeto = 1.0 }
+divisao = "cascos_serie"
+gatilho = "comprimento"
+n_cascos_max = 3
+
+[tags."P-003"]
+premissas = { banda_caso_projeto = 1.0 }
+divisao = "cascos_paralelo"
+gatilho = "casco"
+n_cascos_max = 3
