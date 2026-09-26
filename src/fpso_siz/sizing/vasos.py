@@ -100,7 +100,8 @@ class MetodoVaso(MetodoTOML):
         envelope. Só as duas parcelas de Lss são avaliadas aqui (as expressões de
         `lss_from`), e as capacidades em d, como em `per_constraint`."""
         cand = self.lss_candidatos(d_mm, leff, k)
-        dleff = next(e.value for e in reversed(tr.entries) if e.block == "gas" and e.var == "d·Leff")
+        # sem bloco de gás (tratador cheio de líquido) a capacidade de gás é zero, como em sizing_constraints
+        dleff = next((e.value for e in reversed(tr.entries) if e.block == "gas" and e.var == "d·Leff"), 0.0)
         d2leff = next(e.value for e in reversed(tr.entries) if e.block == "liquid" and e.var == "d²·Leff")
         return dict(d=d_mm, d_m=mm_para_m(d_mm), dleff_gas=dleff, d2leff_liq=d2leff, leff_gas=dleff / d_mm,
                     leff_liq=d2leff / (d_mm * d_mm), leff=leff, fator=float(k["lss_liquid_factor"]),

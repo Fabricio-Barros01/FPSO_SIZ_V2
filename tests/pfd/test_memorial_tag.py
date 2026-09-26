@@ -239,3 +239,43 @@ def test_sg001_pdf_mostra_a_inviabilidade(planta_base, tmp_path):
     assert _normal("não atende") in texto and "3.612mm" in texto and "5.600mm" in texto
     assert (tmp_path / "MC-SEN-SEP-EQP-001-0_teto.csv").exists()
     assert (tmp_path / "MC-SEN-SEP-EQP-001-0_minimo.csv").exists()
+
+
+# ------------------------------------------------------------------ F11.4 — aguardando entrada
+AGUARDANDO = ["TO-001", "TO-002", "P-001", "P-002", "P-003", "B-001", "B-002", "B-003"]
+
+
+@pytest.mark.parametrize("ident", AGUARDANDO)
+def test_aguardando_entrada_tem_lacunas_do_pfd_e_metodologia(planta_base, docs, ident):
+    from fpso_siz.output.pfd import estrutura_tag
+
+    rt, d = docs[ident]
+    assert rt.status == "aguardando_entrada" and d["calculo"] is None
+    js = estrutura_tag(planta_base.contexto, rt)
+    assert [(l["chave"], l["casos"]) for l in d["lacunas"]] == [(l["chave"], l["casos"]) for l in js["lacunas"]]
+    assert d["pendencias"]["lacunas"] == [l["chave"] for l in js["lacunas"]]
+    assert d["conteudo"]["metodologia"]
+    _, tpl = saida_mc.contexto(planta_base.contexto, rt, DATA, GIT)
+    assert tpl["status"] == "aguardando" and all("@" not in m["latex"] for m in tpl["metodologia"])
+
+
+def test_mc_com_ajustes_sinteticos_cobre_todos_os_metodos(planta_ajustada):
+    """Com as entradas sintéticas dos testes os 11 TAGs dimensionam: o MC de cada método sai
+    do mesmo gerador (métodos sem substituição declarada mostram o rastro do caso)."""
+    ctx = planta_ajustada.contexto
+    for rt in planta_ajustada.tags:
+        d = mc.documento(ctx, rt)
+        c = d["calculo"]
+        assert c["viavel"] and c["rastro"] and c["resultados"]
+        if c["selecao"]:
+            s = c["selecao"]
+            assert s["lss"] in (s["lss_gas"], s["lss_liq"]) or s["lss"] == max(s["lss_gas"], s["lss_liq"])
+        saida_mc.gerar(ctx, rt, DATA, GIT)
+
+
+@pytest.mark.latex
+@pytest.mark.skipif(not compilacao.disponivel(), reason="latexmk ausente")
+@pytest.mark.parametrize("ident", ["SG-001", "TO-001", "P-001", "B-001"])
+def test_mc_com_ajustes_sinteticos_compila(planta_ajustada, tmp_path, ident):
+    rt = planta_ajustada.tag(ident)
+    assert compilacao.compilar(saida_mc.gravar(planta_ajustada.contexto, rt, tmp_path, data=DATA, git=GIT)).exists()

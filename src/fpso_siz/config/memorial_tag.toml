@@ -340,6 +340,46 @@ substituicao = '@coef@\cdot\left[@tr_o@\cdot @q_o@+@tr_w@\cdot @q_w@\right]'
 unidades = { tr_o = "min", q_o = "m^3/h", tr_w = "min", q_w = "m^3/h" }
 conversao = { funcao = "liquido", campo = 1.42, fonte = "S\\&A (2008), forma de campo (Units.liquid\\_capacity\\_coefficient)", nota = "o coeficiente usado é o derivado da forma de campo; o 4{,}12$\\times10^4$ impresso por Alves \\& Komesu é erro tipográfico" }
 
+[[metodos.stewart_arnold.equacoes]]
+id = "leff"
+titulo = "Comprimento efetivo exigido no diâmetro escolhido"
+fonte = "Máximo das capacidades de gás e de líquido em $d$ (envelope sobre os casos)"
+fonte_dados = "selecao"
+metrico = 'L_{eff}=\max\left[\frac{(dL_{eff})_g}{d},\ \frac{(d^2L_{eff})_l}{d^2}\right]'
+substituicao = '\max\left[\frac{@dleff_gas@}{@d@},\ \frac{@d2leff_liq@}{(@d@)^2}\right]=\max\left[@leff_gas@;\ @leff_liq@\right]'
+resultado = "leff"
+unidades = { dleff_gas = "mm·m", d2leff_liq = "mm^2·m", d = "mm", leff_gas = "m", leff_liq = "m" }
+
+[[metodos.stewart_arnold.equacoes]]
+id = "lss"
+titulo = "Comprimento entre costuras"
+fonte = "Alves \\& Komesu (2025) Eq.~15 (gás governa) e Eq.~23 (líquido governa): a regra do bloco que governa"
+fonte_dados = "selecao"
+metrico = 'L_{ss}=L_{eff}+d\ \text{(gás)}\quad\text{ou}\quad L_{ss}=f\,L_{eff}\ \text{(líquido)}'
+substituicao = '@leff@+@d_m@=@lss_gas@;\quad @fator@\cdot @leff@=@lss_liq@;\quad L_{ss}'
+resultado = "lss"
+unidades = { leff = "m", d_m = "m", lss_gas = "m", lss_liq = "m" }
+
+[[metodos.stewart_arnold.equacoes]]
+id = "sr"
+titulo = "Esbeltez"
+fonte = "Alves \\& Komesu (2025) Eq.~24"
+fonte_dados = "selecao"
+metrico = 'SR=\frac{L_{ss}}{d}'
+substituicao = '\frac{@lss@}{@d_m@}'
+resultado = "sr"
+unidades = { lss = "m", d_m = "m" }
+
+[[metodos.stewart_arnold.equacoes]]
+id = "volume"
+titulo = "Volume do casco entre costuras"
+fonte = "Geometria do cilindro (sem tampos)"
+fonte_dados = "selecao"
+metrico = 'V=\frac{\pi\,d^2\,L_{ss}}{4}'
+substituicao = '\frac{\pi\,(@d_m@)^2\cdot @lss@}{4}'
+resultado = "volume"
+unidades = { d_m = "m", lss = "m" }
+
 # ------------------------------------------------------------------ métodos sem cálculo ainda
 # (TAGs aguardando entrada): metodologia declarada, sem substituição numérica.
 [metodos.arnold_electrostatic]

@@ -206,7 +206,14 @@ $i$ & $C_D^{(i)}$ & $V_t$ (m/s) & $Re$ & $f(Re)$ & $C_D^{(i+1)}$\\\midrule\endhe
 <% endif %>
 <% endfor %>
 <% elif calc %>
-Sem passo a passo para este método nesta versão.
+Caso: \textbf{<< calc.caso_governante|tx >>}. Este método ainda não tem substituição numérica declarada; segue o rastro do caso, na ordem de avaliação (equação, fórmula e resultado).
+
+{\footnotesize\begin{longtable}{L{1.6cm}L{2.6cm}L{6.4cm}rl}\toprule
+Equação & Grandeza & Fórmula & Resultado & Unidade\\\midrule\endhead
+<% for x in calc.rastro %>
+<< x.eq|tx >> & << x.var|tx >> & << x.formula|tx >> & << x.valor|sigt >> & << x.unidade|unid >>\\
+<% endfor %>
+\bottomrule\end{longtable}}
 <% else %>
 \aguarda. As seções de cálculo (6 a 9) ficam pendentes até que as entradas da seção 4 sejam informadas<% if not doc.casos|selectattr('ativo')|list %> ou algum caso fique ativo<% endif %>.
 <% endif %>
@@ -229,7 +236,7 @@ Caso<% for c in calc.tabela.colunas %> & << c >><% endfor %> & \makecell[r]{<< c
 \begin{axis}[width=0.95\textwidth, height=6.5cm, ybar stacked, bar width=6pt, xlabel={caso}, ylabel={<< calc.exigencia[0]|tx >> (<< calc.exigencia[1]|unid >>)}, xtick=data, legend style={font=\footnotesize, at={(0.5,-0.2)}, anchor=north, legend columns=3}, unbounded coords=discard]
 <% for g in csv['governantes'] %>
 \addplot table[col sep=comma, x=caso, y=y_<< g >>]{<< csv['casos'] >>};
-\addlegendentry{<< doc.calculo.series.rotulos_capacidades.get(g, g)|tx >>}
+\addlegendentry{<< doc.calculo.series.rotulos_governantes.get(g, g)|tx >>}
 <% endfor %>
 \end{axis}
 \end{tikzpicture}

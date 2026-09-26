@@ -305,6 +305,8 @@ def series(rt, p_env):
                                    teto=pc.ceiling if math.isfinite(pc.ceiling) else math.nan))
         out["casos"] = linhas
         out["x_casos"] = x
+        out["rotulos_governantes"] = {g: m.governing_label(g) for g in dict.fromkeys(li["governante"] for li in linhas)
+                                      if g}
     return out
 
 
@@ -344,7 +346,10 @@ def documento(ctx, rt):
     x = x_referencia(rt, p_env)
     sel = selecao(rt, i)
     doc["calculo"] = dict(caso_governante=r.case_names[i], indice_governante=i, viavel=r.feasible,
-                          equacoes=equacoes(rt, i, sel), iteracoes=iteracoes(rt, i, "gas"), selecao=sel,
+                          equacoes=equacoes(rt, i, sel),
+                          rastro=[dict(bloco=x.block, eq=x.eq, var=x.var, formula=x.formula, valor=x.value,
+                                       unidade=x.unit) for x in r.per_case[i].trace],
+                          iteracoes=iteracoes(rt, i, "gas"), selecao=sel,
                           banda=m.banda_memorial(p_env) if p_env and hasattr(m, "banda_memorial") else None,
                           tabela=tabela_casos(rt, x), criterios=criterios(rt, x), diagnostico=diagnostico(rt, x),
                           resultados=resultados(rt), series=series(rt, p_env), x_referencia=x,
