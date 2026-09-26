@@ -92,6 +92,8 @@ def _premissas(doc, prem):
         if (not cat or valor == "--") and p["descritores"]:
             valor = "; ".join(f"{formatacao.sigt(d['valor'])} {formatacao.unid(d['unidade'])}"
                               for d in p["descritores"] if isinstance(d["valor"], (int, float)))
+        if re.match(r"(eq\.|Tab\.|Seç)", valor):   # remissão ao memorial do balanço, não a este
+            valor = f"{cfg()['textos']['remissao_balanco']} {valor}"
         tipo = cat["tipo"].lower() if cat else TIPO_FONTE[p["id"][:2]]
         out.append(dict(id=p["id"], texto=texto, valor=valor or "--", tipo=tipo,
                         justificativa=cat.get("justificativa", "") if cat else ""))

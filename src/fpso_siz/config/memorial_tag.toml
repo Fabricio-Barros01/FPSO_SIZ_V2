@@ -51,6 +51,9 @@ estado_dimensionado = "dimensionado"
 estado_inviavel = "inviável --- diagnóstico, sem dimensões selecionadas"
 estado_aguardando_entrada = "aguardando entrada --- seções de cálculo pendentes"
 estado_inativo = "inativo em todos os casos"
+remissao_balanco = "MC-SEN-SEP-COO-001,"
+modo_automatico = "automático (balanço preliminar e propriedades)"
+modo_manual = "manual (entradas do usuário e defaults com fonte)"
 preliminar = "Resultado preliminar: há recomendações ou defaults com fonte ainda não confirmados pelo usuário (seção 10)."
 
 # ------------------------------------------------------------------ conteúdo por método

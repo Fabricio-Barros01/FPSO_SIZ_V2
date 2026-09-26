@@ -139,3 +139,51 @@ def test_pdf_compila_e_iguala_o_json(planta_base, tmp_path, ident):
                 assert _normal(formatacao.texto_sig(campo["valor"])) in texto, campo
     for lac in js["lacunas"]:
         assert _normal(lac["chave"]) in texto
+
+
+# ------------------------------------------------------------------ F11.2 — V-001
+def test_v001_caso_governante_e_resultado(docs):
+    rt, d = docs["V-001"]
+    c = d["calculo"]
+    assert c["caso_governante"] == "BOT 03 — Early Life Blend" == rt.resultado.driver_case
+    assert c["viavel"] and c["selecao"]["d"] == rt.resultado.x == 4700.0
+    assert c["selecao"]["leff"] == rt.resultado.y
+    assert [e["id"] for e in c["equacoes"]] == ["cd", "vt", "re", "k", "gas", "liquido", "leff", "lss", "sr", "volume"]
+    assert all(x["atende"] for x in c["criterios"])
+
+
+def test_v001_conta_a_mao_reproduz_o_rastro(docs):
+    """O passo a passo refeito à mão, só com os operandos impressos no MC (valores
+    completos), dá o resultado do rastro."""
+    _, d = docs["V-001"]
+    eq = {e["id"]: e for e in d["calculo"]["equacoes"]}
+    o = eq["cd"]["operandos"]
+    assert o["cd_entrada"] + o["relaxacao"] * (o["a"] / o["re"] + o["b"] / math.sqrt(o["re"]) + o["c"]
+                                               - o["cd_entrada"]) == eq["cd"]["resultado"]
+    o = eq["vt"]["operandos"]
+    assert o["coef"] * math.sqrt(((o["rho_l"] - o["rho_g"]) / o["rho_g"]) * (o["dm"] / o["cd"])) == eq["vt"]["resultado"]
+    o = eq["re"]["operandos"]
+    assert o["coef"] * o["rho_g"] * o["dm"] * o["vt"] / o["mu_g"] == eq["re"]["resultado"]
+    o = eq["k"]["operandos"]
+    assert math.sqrt((o["rho_g"] / (o["rho_l"] - o["rho_g"])) * (o["cd"] / o["dm"])) == eq["k"]["resultado"]
+    o = eq["gas"]["operandos"]
+    assert o["coef"] * (o["t_k"] * o["z"] * o["q_g"] / o["p_kpa"]) * o["k"] == eq["gas"]["resultado"]
+    o = eq["liquido"]["operandos"]
+    assert o["coef"] * o["tr"] * o["q_l"] == eq["liquido"]["resultado"]
+    s = d["calculo"]["selecao"]
+    assert s["dleff_gas"] == eq["gas"]["resultado"] and s["d2leff_liq"] == eq["liquido"]["resultado"]
+    assert max(s["dleff_gas"] / s["d"], s["d2leff_liq"] / (s["d"] * s["d"])) == s["leff"]
+    assert max(s["leff"] + s["d"] / 1000, s["fator"] * s["leff"]) == s["lss"]
+    assert s["lss"] / (s["d"] / 1000) == s["sr"]
+    assert math.isclose(math.pi * (s["d"] / 1000) ** 2 * s["lss"] / 4, s["volume"], rel_tol=1e-15)
+    # números do cartão em 4 algarismos (o que o leitor confere no PDF)
+    assert [formatacao.texto_sig(s[k]) for k in ("leff", "lss", "sr", "volume")] == ["11,74", "16,44", "3,499", "285,3"]
+
+
+def test_v001_constantes_de_campo_convertidas(docs):
+    _, d = docs["V-001"]
+    conv = {e["id"]: e["conversao"] for e in d["calculo"]["equacoes"] if e["conversao"]}
+    assert set(conv) == {"vt", "gas", "liquido"}
+    assert math.isclose(conv["vt"]["convertido"], 0.0119 * 0.3048)
+    assert math.isclose(conv["liquido"]["convertido"], 42406.573, rel_tol=1e-8)
+    assert abs(conv["liquido"]["desvio"]) < 1e-3 < abs(conv["gas"]["desvio"])   # 0,08 % × 0,86 %
