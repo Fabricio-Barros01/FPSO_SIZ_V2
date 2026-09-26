@@ -14,7 +14,10 @@ aquela fase).
 
 ## Estado atual
 
-**FASE ATUAL: F11 — MC por equipamento/TAG ← ATUAL (proposta revisada; aguardando aprovação)**
+**FASE ATUAL: F10x — pendências de entrada com os valores propostos ← ATUAL (registrada; aguardando aprovação)**
+**F11 (MC por TAG) e F11b (MC do balanço por caso) entregues em 2026-09-26, em sessão autônoma
+autorizada pelo usuário, no branch `fases/f11` (sem merge; integração pelo usuário). Ver
+[`docs/validacao/13-memorial-tag.md`](docs/validacao/13-memorial-tag.md).**
 **F10c aprovada e entregue em 2026-09-23. F10v (verificação do balanço + premissa P-42) e
 F10w (eficiência do FWKO, P-43) aprovadas e entregues em 2026-09-25. Nenhuma implementação
 da F11 autorizada.**
@@ -889,7 +892,7 @@ cálculos". Decisões do usuário:
 regra do FWKO muda as entradas do PFD, por isso o memorial de cada TAG deve dizer qual
 regra de balanço usou.
 
-### F11 — MC por equipamento/TAG, ligado ao mesmo fluxo (proposta revisada) ← ATUAL
+### F11 — MC por equipamento/TAG, ligado ao mesmo fluxo ✅
 
 **Preparação (2026-09-26; implementação ainda não iniciada):** diagnóstico no branch
 `fases/f11`, base `73f7ca3`; 814 testes + 2 de compilação (`original`/`senai`) + 1 de
@@ -932,6 +935,81 @@ resultado. LaTeX e dados devem reproduzir bytes sob contexto fixado. PDF exige t
 toolchain e metadados determinísticos fixados na F11 antes de prometer igualdade binária.
 Testes `-m latex` compilam os documentos; cobertura ≥ 90 % no núcleo e arquiteturas verdes.
 Pinch/Song recebem seus memoriais quando seus métodos forem portados nas fases seguintes.
+
+**Entregue (2026-09-26, sessão autônoma; execução autorizada no pedido, decisões em
+[`docs/validacao/f11-decisoes.md`](docs/validacao/f11-decisoes.md)).** Commits F11.1–F11.5
+(`edf8fff`, `032c42b`, `ebc99b2`, `4435f17`, `012515a`); retomada em
+[`f11-checkpoint.md`](docs/validacao/f11-checkpoint.md).
+- Núcleo: `Rastro.operandos`/`Rastro.iteracoes` (operandos capturados na avaliação, fora de
+  `entries`: projeção e fixtures do Julia inalteradas); `pfd/memorial.py` (as dez seções do
+  MC como dados); hooks de vaso `selecao_memorial`, `lss_candidatos`, `bordas_banda`;
+  constantes de campo de S&A convertidas em `core/unidades.py`.
+- `config/memorial_tag.toml`: numeração fixa pela sequência de processo (SG-001 001 … P-003
+  011, `MC-SEN-SEP-EQP-NNN-0`, Rev. 0), conteúdo por método (objetivo, referências,
+  hipóteses, equações com `@operando@`, colunas, gráficos).
+- `output/latex/tag`: A4/SENAI, 4 algarismos significativos (regra declarada), pgfplots
+  lendo CSV gravados pelo mesmo comando (diagrama d × Leff com capacidades, banda de SR,
+  ponto escolhido/teto/menor d na banda; critério governante por caso; teto por caso), JSON
+  do documento.
+- V-001/V-002 com passo a passo completo (caso 3); SG-001 com diagnóstico (teto 3.612 mm no
+  caso 2 × menor d na banda 5.600 mm); TO/P/B "aguardando entrada" com as lacunas do `pfd`.
+- `dimensionar --tag X --mc [--pdf] [--data]`, `pfd --mc [--pdf]` → `<saida>/mc/<número>/`
+  (isolado = lote, byte a byte); ações no menu do TAG e da planta no modo interativo.
+- `tools/comparar_memorial.py` corrigido (IDÊNTICO).
+- **872 testes (+33 `-m latex`), cobertura 96,72 % global (ramos) e 98,66 % no núcleo**
+  (5 testes pulados na nuvem: acervo `references/` ausente). Paridade: memorial original
+  byte a byte, fixtures do Julia (bit a bit/≤1e-13) e regressão da eficiência intactos. O
+  `-m julia` (regeneração) não rodou na nuvem (repositório Julia inacessível).
+
+### F11b — MC do balanço por caso (MC_Caso01 … MC_Caso16) ✅
+
+Pedido na mesma sessão autônoma. **Entregue (2026-09-26)**, commit `87bd36b`.
+`memorial --caso N|lista|todos` e `memorial --casos todos` → `MC_CasoNN` (anexo
+`MC-SEN-SEP-COO-CNN-0`) nos layouts `original` e `senai` (padrão: os dois). Folha de rosto
+com commit, regra do FWKO, premissas diferentes do padrão e data; "—" nas grandezas da fase
+aquosa dos casos 1 e 4–7 (P-42). Ação no menu do balanço iterando os casos. Isolado × lote:
+`.tex` byte a byte e texto do PDF iguais; os 32 PDFs compilam.
+
+### F10x — Preenchimento das pendências de entrada com os valores propostos (registrada, não executada) ← ATUAL
+Carregar os valores do `pendencias_propostas.toml` do usuário (em `docs/propostas/`, com
+`status = "proposto"`) como entradas dos TAGs aguardando entrada (TO: gotícula após
+coalescência; P: condutividades, incrustações, temperaturas da utilidade; B: arranjo,
+singularidades, NPSHr e margem), cada um com a fonte citável ou marcado "valor usual — sem
+fonte rastreável", sem alterar o balanço. **O arquivo não foi anexado nesta sessão** (não há
+`docs/propostas/`); nenhum valor foi carregado.
+**Aceite:** (1) cada valor carregado tem origem `usuario`/`arquivo` e fonte (ou a marca "sem
+fonte rastreável") no JSON, no terminal e no MC; (2) só valores com `status` promovido pelo
+usuário entram no cálculo (teste que prova que `proposto` é recusado); (3) os 11 TAGs
+dimensionam ou ficam inviáveis com diagnóstico, sem lacuna; (4) o MC de TO, P e B passa a ter
+passo a passo (equações declaradas em `memorial_tag.toml`) e os gráficos de trocador (T × Q,
+parcelas de U) e de bomba (curva do sistema, NPSHd × NPSHr por caso); (5) balanço, oráculo e
+fixtures do Julia inalterados; cobertura ≥ 90 % no núcleo.
+
+### F13 — Contrato de propriedades + estudo do SG-001 (registrada, não executada)
+Formalizar o contrato das propriedades de fluido consumidas pelos métodos (unidade, condição,
+correlação, faixa de validade e fonte, por grandeza) e estudar as alternativas para a
+inviabilidade do SG-001 (entrada mais quente, gotícula/retenção, trens em paralelo, η menor
+nos casos 2 e 3), cada uma com fonte.
+**Aceite:** (1) um descritor de propriedade por grandeza, testado contra `pfd/fluidos.py`, sem
+mudar número; (2) estudo em `docs/validacao/` com a tabela de alternativas × teto × menor d na
+banda, para os 16 casos, gerado pelo mesmo motor; (3) nenhuma premissa nova entra no cálculo
+padrão sem aprovação do usuário; (4) o MC do SG-001 cita o estudo.
+
+### F14 — Termodinâmica preliminar com `thermo` e `iapws` (registrada, não executada)
+Flash e propriedades de óleo vivo/gás dissolvido (Bo, Rs, calor de flash) por `thermo`
+(ChEDL, só via `pfd/_chedl.py`) e água/vapor por `iapws`, em camada a jusante do balanço.
+**Aceite:** (1) `iapws` atrás de uma porta única, com teste de arquitetura; (2) comparação
+com o balanço preliminar (gás seco, cp constante) caso a caso em `docs/validacao/`, sem mudar
+o balanço nem a paridade; (3) cada propriedade no rastro com a fonte e a faixa de validade;
+(4) cobertura ≥ 90 % no núcleo.
+
+### F15 — Otimização com `pymoo` (só planejamento)
+Planejar a otimização multiobjetivo do módulo (volume dos vasos, cargas térmicas, área dos
+trocadores) sobre o motor de envelope, com `pymoo`.
+**Aceite do planejamento:** documento em `docs/decisoes/` com variáveis de decisão (e de onde
+vêm os limites), objetivos, restrições (as do contrato de dimensionamento, como estado),
+algoritmo (NSGA-II/III) justificado, a porta única para `pymoo` e o critério de validação;
+nenhuma dependência nova instalada sem aprovação.
 
 ### F12 — Portabilidade (Java/C) e distribuição
 Baseline medido com Nuitka/PyInstaller (tamanho, startup, deps) no Linux e passos para
