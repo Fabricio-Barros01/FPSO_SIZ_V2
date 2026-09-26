@@ -60,20 +60,26 @@ class StewartArnold(MetodoVaso):
         if sem_fase_aquosa(fu):
             tr.trace("settling", "P-42", "Qw", NAO_APLICAVEL_SEM_AGUA, fu.q_w, "m³/h")
             d2_leff = c_eq22 * (tr_o * fu.q_o)
+            tr.anotar("liquid", "d²·Leff", coef=c_eq22, tr_o=tr_o, q_o=fu.q_o, tr_w=tr_w, q_w=fu.q_w)
             tr.trace("liquid", "Eq. 22", "d²·Leff", "C·(tr)oQo — sem fase aquosa (P-42)", d2_leff, "mm²·m")
             return True, VesselConstraints(d_leff_gas, d2_leff, math.inf, SEM_FASE_AQUOSA,
                                            beta_coefficient(0.0), 0.0), tr
         dsg = fu.sg_w - fu.sg_o
+        tr.anotar("settling", "ΔSG", sg_w=fu.sg_w, sg_o=fu.sg_o, rho_w=fu.rho_w, rho_o=fu.rho_o)
         tr.trace("settling", "Eq. 16", "ΔSG", "(SG)w − (SG)o", dsg, "–")
         if not dsg > 0:
             return (False, f"Densidade do óleo ≥ densidade da água (ΔSG = {jl_round(dsg, 4)}): não há separação "
                            "gravitacional líquido-líquido.", tr)
         ho_max = c_eq17 * tr_o * dsg * (dm_water * dm_water) / fu.mu_o
         hw_max = c_eq17 * dsg * tr_w * (dm_oil * dm_oil) / fu.mu_w
+        tr.anotar("settling", "(h_o)max", coef=c_eq17, tr_o=tr_o, dsg=dsg, dm=dm_water, mu_o=fu.mu_o)
+        tr.anotar("settling", "(h_w)max", coef=c_eq17, tr_w=tr_w, dsg=dsg, dm=dm_oil, mu_w=fu.mu_w)
         tr.trace("settling", "Eq. 17", "(h_o)max", "0,033·(tr)o·ΔSG·dm²/µo", ho_max, "mm")
         tr.trace("settling", "Eq. 20", "(h_w)max", "0,033·ΔSG·(tr)w·dm²/µw", hw_max, "mm")
         awa = water_area_fraction(fu.q_o, fu.q_w, tr_o, tr_w)
         beta = beta_coefficient(awa)
+        tr.anotar("settling", "Aw/A", q_o=fu.q_o, q_w=fu.q_w, tr_o=tr_o, tr_w=tr_w)
+        tr.anotar("settling", "β", aw_a=awa)
         tr.trace("settling", "Eq. 18", "Aw/A", "0,5·Qw(tr)w/((tr)oQo+(tr)wQw)", awa, "–")
         tr.trace("settling", "Fig. 3", "β", "0,5 − h_w/d (segmento circular, vaso meio cheio)", beta, "–")
         if not beta > 0:
@@ -81,6 +87,8 @@ class StewartArnold(MetodoVaso):
                            "não sobra altura para a camada de óleo.", tr)
         d_max_wio = ho_max / beta
         d_max_oiw = hw_max / beta
+        tr.anotar("settling", "d_max (água em óleo)", h=ho_max, beta=beta)
+        tr.anotar("settling", "d_max (óleo em água)", h=hw_max, beta=beta)
         tr.trace("settling", "Eq. 19", "d_max (água em óleo)", "(h_o)max/β", d_max_wio, "mm")
         tr.trace("settling", "Eq. 21", "d_max (óleo em água)", "(h_w)max/β", d_max_oiw, "mm")
         denom_geom = 0.5 - beta
@@ -92,5 +100,6 @@ class StewartArnold(MetodoVaso):
 
         # ------------------------------------------------ bloco C
         d2_leff = c_eq22 * (tr_o * fu.q_o + tr_w * fu.q_w)
+        tr.anotar("liquid", "d²·Leff", coef=c_eq22, tr_o=tr_o, q_o=fu.q_o, tr_w=tr_w, q_w=fu.q_w)
         tr.trace("liquid", "Eq. 22", "d²·Leff", "C·((tr)oQo + (tr)wQw)", d2_leff, "mm²·m")
         return True, VesselConstraints(d_leff_gas, d2_leff, d_max, mechanism, beta, awa), tr

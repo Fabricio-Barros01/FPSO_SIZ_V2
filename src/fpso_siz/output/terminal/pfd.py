@@ -302,7 +302,7 @@ def bloco_resultado(rt, estilo, colunas):
                                                         colunas)]
     if e.avisos():
         out += quebrar(estilo.t(tx["avisos_n"].format(n=len(e.avisos()))), colunas)
-    out += [estilo.fraco(x) for x in quebrar(estilo.t(tx["memorial_indisponivel"]), colunas)]
+    out += [estilo.fraco(x) for x in quebrar(estilo.t(tx["memorial_disponivel"]), colunas)]
     return out
 
 

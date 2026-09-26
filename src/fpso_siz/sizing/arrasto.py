@@ -15,6 +15,11 @@ def _k():
     return carregar("equipment/comum/stewart_arnold.toml")["arrasto"]
 
 
+def constantes_arrasto():
+    """Coeficientes das Eq. 3.6–3.7b (TOML), para o rastro documental."""
+    return _k()
+
+
 def terminal_velocity(rho_l, rho_g, dm, cd):
     """Eq. (11): V_t [m/s]; densidades em kg/m³, dm em µm."""
     return _k()["coef_vt"] * math.sqrt(((rho_l - rho_g) / rho_g) * (dm / cd))
@@ -45,7 +50,9 @@ class Arrasto:
     converged: bool
 
 
-def converge_drag(rho_l, rho_g, dm, mu_g, cd0=None, relax=None, tol=None, maxiter=None):
+def converge_drag(rho_l, rho_g, dm, mu_g, cd0=None, relax=None, tol=None, maxiter=None, historico=None):
+    """C_D por substituição sucessiva sub-relaxada. `historico` (lista), se dado, recebe
+    cada iteração com os valores efetivamente usados (memorial; não altera o laço)."""
     k = _k()
     relax = k["relaxacao"] if relax is None else relax
     cd = float(k["cd_c"] if cd0 is None else cd0)
@@ -62,6 +69,9 @@ def converge_drag(rho_l, rho_g, dm, mu_g, cd0=None, relax=None, tol=None, maxite
             break
         cd_new = drag_coefficient(re)
         cd_next = cd + relax * (cd_new - cd)
+        if historico is not None:
+            historico.append(dict(iteracao=i, cd_entrada=cd, vt=vt, re=re, cd_calculado=cd_new,
+                                  cd_saida=cd_next, erro=abs(cd_next - cd), limite=tol * max(abs(cd), 1.0)))
         if abs(cd_next - cd) <= tol * max(abs(cd), 1.0):
             cd = cd_next
             vt = terminal_velocity(rho_l, rho_g, dm, cd)

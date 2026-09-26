@@ -76,4 +76,5 @@
 
   Resultado preliminar: 9 recomendação(ões)/default(s) sem revisão (ver Revisar).
   1 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
-  Memorial de cálculo do equipamento: previsto na F11; ainda não disponível.
+  Memorial de cálculo (MC) do TAG: ação "Gerar memorial de cálculo" no menu, ou --mc [--pdf] no
+  comando.

@@ -77,6 +77,48 @@ class MetodoVaso(MetodoTOML):
         """Lss [m]: Eq. 15 (gás governa: Leff + d) ou Eq. 23 (líquido: f·Leff)."""
         return leff + mm_para_m(d_mm) if gov == "gas" else float(k["lss_liquid_factor"]) * leff
 
+    # Regra de Lss: a do bloco que governa (artigo) ou a maior das duas (livro, §3.8.4).
+    lss_pela_maior = False
+
+    def lss_candidatos(self, d_mm, leff, k):
+        """As duas regras de Lss [m] no ponto (memorial: o leitor vê as duas parcelas;
+        `lss_from` escolhe entre elas)."""
+        return {"gas": leff + mm_para_m(d_mm), "liquid": float(k["lss_liquid_factor"]) * leff}
+
+    def leff_de_esbeltez(self, d_mm, sr, gov, k):
+        """Leff [m] em que a esbeltez vale `sr` no diâmetro d (inversa de `lss_from`): a
+        borda da banda de esbeltez no diagrama d × Leff do memorial."""
+        d = mm_para_m(d_mm)
+        pela_gas, pela_liquido = sr * d - d, sr * d / float(k["lss_liquid_factor"])
+        if self.lss_pela_maior:
+            return min(pela_gas, pela_liquido)
+        return pela_gas if gov == "gas" else pela_liquido
+
+    def selecao_memorial(self, d_mm, leff, derivados, tr, k):
+        """Operandos do ponto escolhido para o passo a passo do memorial: d·Leff [mm·m] e
+        d²·Leff [mm²·m] do rastro do caso governante `tr`; o resto vem do ponto do
+        envelope. Só as duas parcelas de Lss são avaliadas aqui (as expressões de
+        `lss_from`), e as capacidades em d, como em `per_constraint`."""
+        cand = self.lss_candidatos(d_mm, leff, k)
+        # sem bloco de gás (tratador cheio de líquido) a capacidade de gás é zero, como em sizing_constraints
+        dleff = next((e.value for e in reversed(tr.entries) if e.block == "gas" and e.var == "d·Leff"), 0.0)
+        d2leff = next(e.value for e in reversed(tr.entries) if e.block == "liquid" and e.var == "d²·Leff")
+        return dict(d=d_mm, d_m=mm_para_m(d_mm), dleff_gas=dleff, d2leff_liq=d2leff, leff_gas=dleff / d_mm,
+                    leff_liq=d2leff / (d_mm * d_mm), leff=leff, fator=float(k["lss_liquid_factor"]),
+                    lss_gas=cand["gas"], lss_liq=cand["liquid"], lss=derivados["lss"], sr=derivados["sr"],
+                    volume=derivados["volume"])
+
+    def banda_memorial(self, p):
+        """(mín, máx, alvo) da banda de esbeltez nos parâmetros do envelope."""
+        return dict(sr_min=p["sr_min"], sr_max=p["sr_max"], sr_target=p["sr_target"])
+
+    def bordas_banda(self, d_mm, gov, p, k):
+        """Leff [m] nas bordas da banda de esbeltez em d (diagrama d × Leff)."""
+        return (self.leff_de_esbeltez(d_mm, p["sr_min"], gov, k), self.leff_de_esbeltez(d_mm, p["sr_max"], gov, k))
+
+    def rotulo_mecanismo(self, mecanismo):
+        return mechanism_label(mecanismo)
+
     def cross_section(self, c):
         """Vaso meio cheio: 3 faixas com interface líquido-líquido, 2 sem; metade de cima é gás."""
         if math.isnan(c.beta):

@@ -1,0 +1,19 @@
+% --- MC por TAG (F11): gráficos lidos de CSV e caracteres do rastro em texto
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.16, /pgf/number format/.cd, use comma, 1000 sep={.}}
+\usetikzlibrary{pgfplots.fillbetween}
+\usepackage{newunicodechar}
+\newunicodechar{ρ}{\ensuremath{\rho}}\newunicodechar{μ}{\ensuremath{\mu}}\newunicodechar{Δ}{\ensuremath{\Delta}}
+\newunicodechar{β}{\ensuremath{\beta}}\newunicodechar{α}{\ensuremath{\alpha}}\newunicodechar{ε}{\ensuremath{\varepsilon}}
+\newunicodechar{θ}{\ensuremath{\theta}}\newunicodechar{Σ}{\ensuremath{\Sigma}}\newunicodechar{δ}{\ensuremath{\delta}}
+\newunicodechar{η}{\ensuremath{\eta}}\newunicodechar{ω}{\ensuremath{\omega}}\newunicodechar{π}{\ensuremath{\pi}}
+\newunicodechar{−}{\ensuremath{-}}\newunicodechar{→}{\ensuremath{\to}}\newunicodechar{←}{\ensuremath{\leftarrow}}
+\newunicodechar{↔}{\ensuremath{\leftrightarrow}}\newunicodechar{⟺}{\ensuremath{\Leftrightarrow}}
+\newunicodechar{√}{\ensuremath{\surd}}\newunicodechar{≤}{\ensuremath{\leq}}\newunicodechar{≥}{\ensuremath{\geq}}
+\newunicodechar{≈}{\ensuremath{\approx}}\newunicodechar{≠}{\ensuremath{\neq}}\newunicodechar{∈}{\ensuremath{\in}}
+\newunicodechar{ṁ}{\ensuremath{\dot m}}\newunicodechar{•}{\textbullet}
+\newunicodechar{₀}{\ensuremath{_0}}\newunicodechar{₁}{\ensuremath{_1}}\newunicodechar{₂}{\ensuremath{_2}}
+\newunicodechar{⁴}{\ensuremath{^4}}\newunicodechar{⁵}{\ensuremath{^5}}\newunicodechar{⁶}{\ensuremath{^6}}
+\newunicodechar{⁻}{\ensuremath{^-}}
+\newcommand{\atende}[1]{\ifnum#1=1 \textcolor{green!45!black}{\textbf{atende}}\else\textcolor{red!70!black}{\textbf{não atende}}\fi}
+\newcommand{\aguarda}{\textcolor{orange!80!black}{\textbf{aguardando entrada}}}

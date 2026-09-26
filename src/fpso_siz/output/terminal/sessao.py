@@ -33,6 +33,8 @@ from fpso_siz.output import ajustes as saida_ajustes
 from fpso_siz.output import pfd as saida_pfd
 from fpso_siz.output.latex import compilacao
 from fpso_siz.output.latex.balanco import memorial
+from fpso_siz.output.latex.caso import memorial as memorial_caso
+from fpso_siz.output.latex.tag import memorial as memorial_tag
 from fpso_siz.output.terminal import pfd as tela
 from fpso_siz.output.terminal import relatorio as rel
 from fpso_siz.output.terminal.cabecalho import cabecalho
@@ -57,12 +59,13 @@ DESPACHO = {
     "tag": {"pendencias": "_tag_pendencias", "revisar": "_tag_revisar", "entradas": "_tag_entradas",
             "editar": "_tag_editar", "restaurar": "_tag_restaurar", "atividade": "_tag_atividade",
             "rastro": "_tag_rastro", "varredura": "_tag_varredura", "exportar": "_tag_exportar",
-            "modo": "_tag_modo", "associar": "_tag_associar"},
+            "memorial": "_tag_memorial", "modo": "_tag_modo", "associar": "_tag_associar"},
     "planta": {"abrir": "_planta_abrir", "pendencias": "_planta_pendencias", "filtro": "_planta_filtro",
-               "exportar": "_planta_exportar"},
+               "exportar": "_planta_exportar", "memoriais": "_planta_memoriais"},
     "revisar": {"confirmar": "_rev_confirmar", "confirmar_todos": "_rev_confirmar_todos", "editar": "_rev_editar"},
     "escopo": {"todos": None, "escolher": None},
-    "balanco": {"auditoria": "_bal_auditoria", "correntes": "_bal_correntes", "exportar": "_bal_exportar"},
+    "balanco": {"auditoria": "_bal_auditoria", "correntes": "_bal_correntes", "exportar": "_bal_exportar",
+                "memorial_caso": "_bal_memorial_caso"},
     "casos": {"trocar": "_pedir_casos"},
     "ajustes": {"abrir": "_aj_abrir", "salvar": "_aj_salvar", "ver": "_aj_ver", "descartar": "_aj_descartar"},
     "reconciliar": {"adotar_arquivo": None, "adotar_sessao": None},
@@ -423,6 +426,33 @@ class Sessao:
                 except compilacao.ErroCompilacao as e:
                     self.aviso(self.tx["pdf_falhou"].format(erro=e))
         self.repetir(cmds, gravados)
+
+    def _bal_memorial_caso(self, res, aud):
+        """Um MC_CasoNN por caso escolhido (itera o registro de casos do arquivo), pelo mesmo
+        gerador de `memorial --caso`."""
+        nums = [r.num for r in res]
+        texto = self.perguntar(self.tx["casos_memorial_prompt"].format(min=nums[0], max=nums[-1]), memorial_caso.TODOS)
+        try:
+            escolhidos = memorial_caso.selecionar(texto, nums)
+        except ValueError as e:
+            self.aviso(self.tx["erro"].format(erro=e))
+            return
+        opcoes = [*memorial_caso.LAYOUTS, "ambos"]
+        layout = self.perguntar(self.tx["layouts_caso_prompt"].format(layouts="/".join(opcoes)), opcoes[-1])
+        if layout not in opcoes:
+            self.aviso(self.tx["layout_invalido"].format(texto=layout))
+            return
+        pasta = Path(self.perguntar(self.tx["pasta_prompt"], str(Path(self.cfg["pasta_padrao"]) / "memorial"))).expanduser()
+        pdf = self._mc_pdf()
+        if pdf:
+            self.dizer("  " + self.tx["compilando"])
+        layouts = memorial_caso.LAYOUTS if layout == opcoes[-1] else (layout,)
+        gravados, erros = memorial_caso.exportar_lote(self.dados, self.ctx.prem, res, escolhidos, pasta, layouts, pdf=pdf)
+        for erro in erros:
+            self.aviso(self.tx["pdf_falhou"].format(erro=erro))
+        cmd = comando("memorial", casos=str(self.caminho_casos), caso=texto, saida=str(pasta), layout=layout,
+                      premissa=self._args_premissa(), pdf=pdf)
+        self.repetir([cmd], gravados)
 
     # ------------------------------------------------------------------ equipamentos / TAGs
     def _estado_detalhe(self, ident):
@@ -867,6 +897,32 @@ class Sessao:
         self.repetir([cmd], gravados)
         return False
 
+    def _mc_pdf(self):
+        return self.perguntar(self.tx["mc_pdf_prompt"], "n").strip().lower() in ("s", "sim", "y")
+
+    def _mc_gravar(self, resultados, pasta, pdf):
+        if pdf:
+            self.dizer("  " + self.tx["compilando"])
+        gravados, erros = memorial_tag.exportar_lote(self.ctx, resultados, pasta, pdf=pdf)
+        for erro in erros:
+            self.aviso(self.tx["pdf_falhou"].format(erro=erro))
+        return gravados
+
+    def _tag_memorial(self, estado, rt):
+        """MC do TAG pelo mesmo gerador de `dimensionar --tag … --mc`."""
+        pasta, arq = self._destino(str(Path(self.cfg["pasta_padrao"]) / estado.id))
+        pdf = self._mc_pdf()
+        gravados = saida_pfd.gravar_tag(self.ctx, rt, pasta) + self._mc_gravar([rt], pasta, pdf)
+        gravados.append(self._gravar_ajustes(arq))
+        if estado.avulso:
+            cmd = comando("dimensionar", avulso=estado.id, ajustes=str(arq), saida=str(pasta), mc=True, pdf=pdf)
+        else:
+            cmd = comando("dimensionar", tag=estado.id, casos=str(self.caminho_casos),
+                          **{"auto-balanco": estado.modo == mod_ajustes.AUTOMATICO}, ajustes=str(arq),
+                          saida=str(pasta), premissa=self._args_premissa(), mc=True, pdf=pdf)
+        self.repetir([cmd], gravados)
+        return False
+
     def _tag_modo(self, estado, rt):
         t = servico.descritor(estado)
         novo = self._preenchimento(estado.id, t.nome, estado.equipamento, estado.metodo, atual=estado,
@@ -949,6 +1005,15 @@ class Sessao:
         gravados = saida_pfd.gravar(p, pasta) + [self._gravar_ajustes(arq)]
         cmd = comando("pfd", casos=str(self.caminho_casos), ajustes=str(arq), saida=str(pasta),
                       premissa=self._args_premissa())
+        self.repetir([cmd], gravados)
+        return False
+
+    def _planta_memoriais(self, p):
+        pasta, arq = self._destino(str(Path(self.cfg["pasta_padrao"]) / self.cfg["pasta_planta"]))
+        pdf = self._mc_pdf()
+        gravados = saida_pfd.gravar(p, pasta) + self._mc_gravar(p.tags, pasta, pdf) + [self._gravar_ajustes(arq)]
+        cmd = comando("pfd", casos=str(self.caminho_casos), ajustes=str(arq), saida=str(pasta),
+                      premissa=self._args_premissa(), mc=True, pdf=pdf)
         self.repetir([cmd], gravados)
         return False
 

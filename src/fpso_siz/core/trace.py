@@ -57,10 +57,20 @@ class TraceEntry:
 
 
 class Rastro:
-    __slots__ = ("entries",)
+    """Entradas em ordem de avaliação. `operandos` e `iteracoes` são o complemento
+    documental (F11): os valores que cada equação consumiu, capturados no momento da
+    avaliação, e o histórico dos laços. Ficam fora de `entries`, de modo que a projeção
+    do rastro (JSON, fixtures do Julia) não muda."""
+    __slots__ = ("entries", "operandos", "iteracoes")
 
     def __init__(self):
         self.entries = []
+        self.operandos = {}   # (bloco, var) → {nome: valor}
+        self.iteracoes = {}   # bloco → [{campo: valor}, ...]
+
+    def anotar(self, block, var, **operandos):
+        """Operandos da equação que produz `var` no bloco (mesmo valor, sem recálculo)."""
+        self.operandos[(block, var)] = operandos
 
     def trace(self, block, eq, var, formula, value, unit):
         """Anota e devolve `value` (uso em linha, como `trace!` do Julia)."""

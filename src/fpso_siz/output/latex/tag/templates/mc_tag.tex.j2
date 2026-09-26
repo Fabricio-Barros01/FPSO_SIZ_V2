@@ -1,0 +1,364 @@
+<% include "00_preambulo_senai.tex.j2" %>
+<# ------------------------------------------------------------ folha de rosto (padrão SENAI) #>
+\thispagestyle{folhaderosto}
+
+\vspace*{5mm}
+
+\setlength{\extrarowheight}{4.0pt}
+
+\hspace*{-15.2pt}%
+\hspace*{-5mm}%
+\begin{tabularx}{\dimexpr\FrameWidth-0pt\relax}{|M{18mm}|X|}
+    \hline
+    \multicolumn{2}{|c|}{\textbf{ÍNDICE DE REVISÕES}} \tabularnewline \hline
+    \textbf{REV.}
+    &
+    \centering \textbf{DESCRIÇÃO E/OU FOLHAS ATINGIDAS}
+    \arraybackslash
+    \tabularnewline \hline
+    \DocRevisao
+    &
+    \DocDescricaoRevisao
+    \vspace{21.35cm}
+    \tabularnewline \hline
+\end{tabularx}
+
+\clearpage
+\section*{Identificação do documento}
+\small\begin{tabular}{lL{11.5cm}}\toprule
+Documento & << meta['numero'] >> (<< meta['numero_nota']|tx >>)\\
+TAG & << ident['tag'] >> --- << ident['nome']|tx >>\\
+Equipamento / método & << ident['equipamento']|tx >> / << ident['metodo']|tx >>\\
+Estado & \textbf{<< textos['estado_' ~ ident['status']] >>}\\
+Preenchimento & << textos['modo_' ~ ident['modo']] >>\\
+Regra do FWKO no balanço & <% if ident['regra_fwko'] == 'eficiencia' %><< textos['regra_eficiencia'] >><% elif ident['regra_fwko'] %><< textos['regra_referencia'] >><% else %><< textos['regra_manual'] >><% endif %>\\
+<% if dados %>
+Arquivo de casos & \texttt{<< dados.origem|tx >>}\\
+SHA-256 do arquivo & \texttt{\scriptsize << dados.sha256 >>}\\
+<% endif %>
+Programa & \texttt{fpso-siz} << versao >><% if commit %>, commit \texttt{<< commit >>}<% if sujo %> (com alterações locais)<% endif %><% endif %>\\
+Propriedades & <% for k, v in versoes.items() %>\texttt{<< k|tx >>} << v|tx >><% if not loop.last %>, <% endif %><% endfor %>\\
+Revisão & << meta['revisao'] >> --- emissão preliminar\\
+Data de geração & << meta['data'] >>\\ \bottomrule\end{tabular}\normalsize
+
+\medskip
+{\footnotesize Todos os valores numéricos deste memorial saem do rastro do dimensionamento do TAG
+(serviço por TAG do \texttt{fpso-siz}), o mesmo que alimenta o terminal, o JSON e o CSV. << regra >>\par}
+<% if ident['preliminar'] %>
+
+{\footnotesize\textbf{<< textos['preliminar'] >>}\par}
+<% endif %>
+\tableofcontents\clearpage
+
+<# ------------------------------------------------------------ 1 #>
+\section{Objetivo e escopo}
+<< doc.conteudo.objetivo >>
+
+<< doc.conteudo.escopo >>
+
+\subsection{Identificação do TAG e casos}
+O TAG << ident['tag'] >> ocupa o bloco << ident['bloco'] >> do diagrama de blocos<% if ident['condicao'] %>, na condição (temperatura e pressão) da corrente << ident['condicao'] >><% endif %>.
+<% set ativos = doc.casos|selectattr('ativo')|list %>
+<% set inativos = doc.casos|rejectattr('ativo')|list %>
+Casos ativos: << ativos|length >> de << doc.casos|length >>.
+<% if inativos %>
+
+\begin{longtable}{lL{11cm}}\toprule
+Caso inativo & Motivo\\\midrule\endhead
+<% for c in inativos %>
+<< c.nome|tx >> & << c.motivo|tx >>\\
+<% endfor %>
+\bottomrule\end{longtable}
+<% endif %>
+
+<# ------------------------------------------------------------ 2 #>
+\section{Referências}
+\begin{enumerate}
+<% for r in doc.conteudo.referencias %>
+\item << r >>
+<% endfor %>
+<% if ident['referencia'] %>
+\item Referência do método no programa: << ident['referencia']|tx >>
+<% endif %>
+\end{enumerate}
+
+<# ------------------------------------------------------------ 3 #>
+\section{Premissas}
+Premissas do balanço citadas no rastro deste TAG (código P-xx/F-xx do memorial do balanço) e hipóteses de cálculo do método.
+
+\begin{longtable}{lL{7.4cm}L{2.4cm}L{2.6cm}}\toprule
+Código & Premissa & Valor & Tipo de fonte\\\midrule\endhead
+<% for p in prem %>
+<< p.id >> & << p.texto >> & << p.valor >> & << p.tipo >>\\
+<% endfor %>
+\bottomrule\end{longtable}
+<% if ident['fwko_exigidos'] %>
+{\small Na regra de eficiência (P-43), $\eta_{\mathrm{req}}>\eta_{\text{padrão}}$ nos casos << ident['fwko_exigidos']|ids >> (estado \texttt{exigido\_acima} do balanço).\par}
+<% endif %>
+
+\subsection{Hipóteses de cálculo}
+\begin{enumerate}
+<% for h in doc.conteudo.hipoteses %>
+\item[H-<< loop.index >>] << h >>
+<% endfor %>
+\end{enumerate}
+
+<# ------------------------------------------------------------ 4 #>
+\section{Dados de entrada}
+Valores dos casos ativos, agrupados quando iguais; a origem segue a precedência do serviço por TAG (usuário > regra do TAG > recomendada > default do método com fonte > lacuna).
+
+\subsection{Entradas comuns aos casos ativos}
+{\footnotesize\begin{longtable}{L{3.6cm}R{2.1cm}L{1.3cm}L{1.9cm}L{6.4cm}}\toprule
+Entrada & Valor & Unidade & Origem & Fonte\\\midrule\endhead
+<% for e in entradas.comuns %>
+<< e.rotulo|tx >> & <% if e.origem == 'lacuna' %>\aguarda<% else %><< valor_entrada(e.valor) >><% endif %> & << e.unidade|unid >> & << e.rotulo_origem|tx >><% if e.revisao in ('pendente', 'desatualizada') %> (revisão << e.revisao >>)<% endif %> & << (e.fonte or textos['sem_fonte'])|tx >>\\
+<% endfor %>
+\bottomrule\end{longtable}}
+<% if entradas.blocos %>
+
+\subsection{Entradas que variam por caso}
+{\footnotesize\begin{longtable}{lL{3.6cm}L{1.3cm}L{9cm}}\toprule
+Coluna & Entrada & Unidade & Origem: fonte\\\midrule\endhead
+<% for l in entradas.legenda %>
+\texttt{<< l.chave|tx >>} & << l.rotulo|tx >> & << l.unidade|unid >> & <% for o, f in l.fontes %><< o|tx >>: << (f or textos['sem_fonte'])|tx >><% if not loop.last %>; <% endif %><% endfor %>\\
+<% endfor %>
+\bottomrule\end{longtable}}
+<% for bl in entradas.blocos %>
+
+{\footnotesize\begin{longtable}{L{3.4cm}<% for c in bl.chaves %>r<% endfor %>}\toprule
+Caso<% for c in bl.chaves %> & \texttt{<< c|tx >>}<% endfor %>\\
+<% for u in bl.unidades %> & << u|unid >><% endfor %>\\\midrule\endhead
+<% for li in bl.linhas %>
+<< li.caso|tx >><% for v in li.valores %> & <% if v is none %>--<% elif v.origem == 'lacuna' %>\aguarda<% else %><< valor_entrada(v.valor) >><% endif %><% endfor %>\\
+<% endfor %>
+\bottomrule\end{longtable}}
+<% endfor %>
+<% endif %>
+<% if doc.lacunas %>
+
+\subsection{Entradas que faltam}
+O TAG fica aguardando entrada até que estas grandezas sejam informadas. Nenhum valor é suposto (regra das fontes).
+
+{\footnotesize\begin{longtable}{L{3.6cm}L{1.3cm}L{2.2cm}L{6.2cm}L{1.9cm}}\toprule
+Entrada & Unidade & Faixa aceita & Origem esperada & Casos\\\midrule\endhead
+<% for l in doc.lacunas %>
+<< l.rotulo|tx >> (\texttt{<< l.chave|tx >>}) & << l.unidade|unid >> & <% if l.faixa %><< l.faixa[0]|sigt >> -- << l.faixa[1]|sigt >><% else %>--<% endif %> & << l.origem_esperada|tx >><% if l.dependentes %> Depende dela: << l.dependentes|join(', ')|tx >>.<% endif %> & << l.casos|ids >>\\
+<% endfor %>
+\bottomrule\end{longtable}}
+<% endif %>
+
+<# ------------------------------------------------------------ 5 #>
+\section{Metodologia}
+<% if eqs %>
+Equações na forma métrica publicada (a que o programa avalia), com a forma de campo original e a constante de campo convertida pelas funções exatas de \texttt{core/unidades.py}.
+
+<% for e in eqs %>
+\subsection{<< e.titulo >>}
+Fonte: << e.fonte >>.
+\begin{equation}\label{eq:<< e.id >>}
+<< e.metrico_tex >>
+\end{equation}
+<% if e.campo_tex %>
+Forma original (unidades de campo): $<< e.campo_tex >>$.
+<% endif %>
+<% if e.conv_tex %>
+A constante de campo << e.conversao.campo|mbn >>, convertida, vale $<< e.conv_tex.convertido >>$; o coeficiente métrico publicado, usado no cálculo, é << e.conversao.publicado|mbn >> (desvio de $<< e.conv_tex.desvio >>\,\%$<% if e.conversao.nota %>; << e.conversao.nota >><% endif %>).
+<% endif %>
+
+<% endfor %>
+<% elif metodologia %>
+Equações do método (nenhuma foi avaliada: o TAG está << textos['aguardando'] >>).
+
+<% for m in metodologia %>
+\subsection{<< m.titulo >>}
+Fonte: << m.fonte >>.
+\begin{equation}
+<< m.latex >>
+\end{equation}
+<% endfor %>
+<% endif %>
+
+<# ------------------------------------------------------------ 6 #>
+<% set calc = doc.calculo %>
+\section{Passo a passo do caso governante}
+<% if eqs %>
+Caso do passo a passo: \textbf{<< calc.caso_governante|tx >>}<% if calc.viavel %>, o que governa o ponto escolhido do envelope<% else %>, o que impõe o teto de decantação (sem ponto escolhido: diagnóstico)<% endif %>. Cada linha mostra a equação, a substituição com os valores completos do rastro (exibidos com 4 algarismos) e o resultado.
+
+<% if calc.iteracoes %>
+<% set ult = calc.iteracoes[-1] %>
+\paragraph{Iteração de $C_D$.} << calc.iteracoes|length >> iterações a partir de $C_D^{(0)}=<< doc.calculo.equacoes[0].operandos.cd0|mbn >>$, com $\omega=<< doc.calculo.equacoes[0].operandos.relaxacao|mbn >>$; critério $|C_D^{(i+1)}-C_D^{(i)}|\le<< doc.calculo.equacoes[0].operandos.tolerancia|sig >>\max(|C_D^{(i)}|;1)$. Últimas iterações:
+
+{\footnotesize\begin{longtable}{rrrrrr}\toprule
+$i$ & $C_D^{(i)}$ & $V_t$ (m/s) & $Re$ & $f(Re)$ & $C_D^{(i+1)}$\\\midrule\endhead
+<% for it in calc.iteracoes[-3:] %>
+<< it.iteracao >> & << it.cd_entrada|sigt >> & << it.vt|sigt >> & << it.re|sigt >> & << it.cd_calculado|sigt >> & << it.cd_saida|sigt >>\\
+<% endfor %>
+\bottomrule\end{longtable}}
+<% endif %>
+
+<% for e in eqs %>
+\paragraph{<< e.titulo >> (Eq.~\ref{eq:<< e.id >>}).}
+\begin{align*}
+<< e.subst_tex >> &= << e.resultado|sig >>\,\text{<< e.unidade|unid >>}
+\end{align*}
+<% if e.rastro %>
+{\footnotesize Rastro: << e.rastro.eq|tx >>, \texttt{<< e.rastro.var|tx >>}.\par}
+<% endif %>
+<% endfor %>
+<% elif calc %>
+Caso: \textbf{<< calc.caso_governante|tx >>}. Este método ainda não tem substituição numérica declarada; segue o rastro do caso, na ordem de avaliação (equação, fórmula e resultado).
+
+{\footnotesize\begin{longtable}{L{1.6cm}L{2.6cm}L{6.4cm}rl}\toprule
+Equação & Grandeza & Fórmula & Resultado & Unidade\\\midrule\endhead
+<% for x in calc.rastro %>
+<< x.eq|tx >> & << x.var|tx >> & << x.formula|tx >> & << x.valor|sigt >> & << x.unidade|unid >>\\
+<% endfor %>
+\bottomrule\end{longtable}}
+<% else %>
+\aguarda. As seções de cálculo (6 a 9) ficam pendentes até que as entradas da seção 4 sejam informadas<% if not doc.casos|selectattr('ativo')|list %> ou algum caso fique ativo<% endif %>.
+<% endif %>
+
+<# ------------------------------------------------------------ 7 #>
+\section{Demais casos}
+<% if calc %>
+Resultados intermediários de cada caso (rastro do caso) e exigência em << calc.eixo|tx >> = << calc.x_referencia|sigt >> << calc.unidade_eixo|unid >> <% if calc.viavel %>(ponto escolhido)<% else %>(menor diâmetro da grade com a esbeltez na banda)<% endif %>.
+
+{\scriptsize\begin{longtable}{L{2.7cm}<% for c in calc.tabela.colunas %>r<% endfor %>r<% if calc.viavel %>r<% endif %>L{1.8cm}r}\toprule
+Caso<% for c in calc.tabela.colunas %> & << c >><% endfor %> & \makecell[r]{<< calc.exigencia[0]|tx >>\\(<< calc.exigencia[1]|unid >>)}<% if calc.viavel %> & \makecell[r]{folga\\(<< calc.exigencia[1]|unid >>)}<% endif %> & Governa & Teto (mm)\\\midrule\endhead
+<% for l in calc.tabela.linhas %>
+<< l.caso|tx >><% for v in l.valores %> & << v|sigt >><% endfor %> & << l.y|sigt >><% if calc.viavel %> & << l.folga|sigt >><% endif %> & << (l.governante or '--')|tx >> & <% if l.teto is not none %><< l.teto|sigt >><% else %>--<% endif %>\\
+<% endfor %>
+\bottomrule\end{longtable}}
+<% if csv.get('casos') %>
+
+\begin{figure}[H]\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.95\textwidth, height=6.5cm, ybar stacked, bar width=6pt, xlabel={caso}, ylabel={<< calc.exigencia[0]|tx >> (<< calc.exigencia[1]|unid >>)}, xtick=data, legend style={font=\footnotesize, at={(0.5,-0.2)}, anchor=north, legend columns=3}, unbounded coords=discard]
+<% for g in csv['governantes'] %>
+\addplot table[col sep=comma, x=caso, y=y_<< g >>]{<< csv['casos'] >>};
+\addlegendentry{<< doc.calculo.series.rotulos_governantes.get(g, g)|tx >>}
+<% endfor %>
+\end{axis}
+\end{tikzpicture}
+\caption{Critério governante por caso em << calc.eixo|tx >> = << calc.x_referencia|sigt >> << calc.unidade_eixo|unid >>.}
+\end{figure}
+<% if not calc.viavel %>
+
+\begin{figure}[H]\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.95\textwidth, height=6cm, scaled y ticks=false, xlabel={caso}, ylabel={diâmetro (mm)}, xtick=data, legend style={font=\footnotesize, at={(0.5,-0.2)}, anchor=north, legend columns=3}, unbounded coords=jump]
+\addplot[only marks, mark=square*, red!70!black] table[col sep=comma, x=caso, y=teto]{<< csv['casos'] >>};
+\addlegendentry{teto de decantação do caso}
+\addplot[thick, dashed, blue] table[col sep=comma, x=caso, y=x_ref]{<< csv['casos'] >>};
+\addlegendentry{menor $d$ na banda de esbeltez}
+\end{axis}
+\end{tikzpicture}
+\caption{Teto de decantação por caso frente ao menor diâmetro com a esbeltez na banda.}
+\end{figure}
+<% endif %>
+<% endif %>
+<% else %>
+\aguarda.
+<% endif %>
+
+<# ------------------------------------------------------------ 8 #>
+\section{Verificação de critérios}
+<% if calc %>
+\begin{longtable}{L{8cm}rl}\toprule
+Critério & Valor & Resultado\\\midrule\endhead
+<% for c in calc.criterios %>
+<< c.criterio|tx >> & <% if c.valor is not none %><< c.valor|sigt >> << c.unidade|unid >><% else %>--<% endif %> & \atende{<< 1 if c.atende else 0 >>}\\
+<% endfor %>
+\bottomrule\end{longtable}
+<% if calc.diagnostico %>
+
+\subsection{Diagnóstico}
+<< calc.diagnostico.mensagem|tx >>
+
+Teto de decantação: << calc.diagnostico.teto|sigt >> mm, imposto pelo caso << calc.diagnostico.caso_teto|tx >> (<< calc.diagnostico.mecanismo|tx >>). Menor diâmetro da grade com a esbeltez na banda: <% if calc.diagnostico.x_min_banda is not none %><< calc.diagnostico.x_min_banda|sigt >> mm<% else %>nenhum na grade<% endif %>. Como o menor diâmetro que atende à esbeltez está acima do teto, não há interseção entre as regiões admissíveis (Figura~\ref{fig:diagrama}).
+<% endif %>
+<% else %>
+\aguarda.
+<% endif %>
+
+<# ------------------------------------------------------------ 9 #>
+\section{Resultados finais e folha de dados}
+<% if calc %>
+\begin{longtable}{L{7cm}rl}\toprule
+Campo & Valor & Unidade\\\midrule\endhead
+<% for f in calc.resultados %>
+<< f.rotulo|tx >> & <% if f.valor is string %><< f.valor|tx >><% else %><< f.valor|sigt >><% endif %> & << f.unidade|unid >>\\
+<% endfor %>
+\bottomrule\end{longtable}
+<% if csv.get('diagrama') %>
+
+\begin{figure}[H]\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.95\textwidth, height=9cm, ymode=log, scaled x ticks=false, xlabel={$d$ (mm)}, ylabel={$L_{eff}$ (m)}, legend style={font=\footnotesize, at={(0.5,-0.2)}, anchor=north, legend columns=3}, unbounded coords=jump]
+\addplot[name path=bmin, draw=none, forget plot] table[col sep=comma, x=x, y=banda_min]{<< csv['diagrama'] >>};
+\addplot[name path=bmax, draw=none, forget plot] table[col sep=comma, x=x, y=banda_max]{<< csv['diagrama'] >>};
+\addplot[green!30, opacity=0.6] fill between[of=bmin and bmax];
+\addlegendentry{banda de esbeltez}
+<% for chave, rot in doc.calculo.series.rotulos_capacidades.items() %>
+\addplot[thick, <% if loop.index == 1 %>blue<% else %>orange!80!black<% endif %>] table[col sep=comma, x=x, y=cap_<< chave >>]{<< csv['diagrama'] >>};
+\addlegendentry{<< rot|tx >>}
+<% endfor %>
+\addplot[thin, black, dashed] table[col sep=comma, x=x, y=y]{<< csv['diagrama'] >>};
+\addlegendentry{exigência envelopada}
+<% if csv.get('teto') %>
+\addplot[very thick, red!70!black] table[col sep=comma, x=x, y=y]{<< csv['teto'] >>};
+\addlegendentry{teto de decantação}
+<% endif %>
+<% if csv.get('minimo') %>
+\addplot[only marks, mark=diamond*, mark size=3.5pt, blue!70!black] table[col sep=comma, x=x, y=y]{<< csv['minimo'] >>};
+\addlegendentry{menor $d$ com a esbeltez na banda}
+<% endif %>
+<% if csv.get('ponto') %>
+\addplot[only marks, mark=*, mark size=3pt, red] table[col sep=comma, x=x, y=y]{<< csv['ponto'] >>};
+\addlegendentry{ponto escolhido}
+<% endif %>
+\end{axis}
+\end{tikzpicture}
+\caption{Diagrama $d\times L_{eff}$: capacidades envelopadas sobre os casos, banda de esbeltez << calc.banda.sr_min|mbn >>--<< calc.banda.sr_max|mbn >><% if csv.get('ponto') %> e ponto escolhido<% endif %><% if csv.get('teto') %>; à direita do teto não há decantação<% endif %>.}\label{fig:diagrama}
+\end{figure}
+<% endif %>
+<% else %>
+\aguarda.
+<% endif %>
+
+<# ------------------------------------------------------------ 10 #>
+\section{Pendências e valores sem fonte}
+<% set pd = doc.pendencias %>
+<% if pd.lacunas %>
+\paragraph{Entradas faltantes.} << pd.lacunas|join(', ')|tx >> (seção 4).
+<% endif %>
+<% if pd.revisoes %>
+\paragraph{Recomendações e defaults não confirmados.} Usados no cálculo preliminar; seguem destacados até a confirmação do usuário.
+
+{\footnotesize\begin{longtable}{L{2.6cm}R{2cm}L{1.6cm}L{7.4cm}L{1.6cm}}\toprule
+Entrada & Valor & Origem & Fonte & Casos\\\midrule\endhead
+<% for r in pd.revisoes %>
+\texttt{<< r.chave|tx >>} & << valor_entrada(r.valor) >> & << r.origem|tx >> & << r.fonte|tx >> & << r.casos|ids >>\\
+<% endfor %>
+\bottomrule\end{longtable}}
+<% endif %>
+<% if pd.sem_fonte %>
+\paragraph{Valores sem fonte rastreável.} <% for s in pd.sem_fonte %>\texttt{<< s.chave|tx >>} (casos << s.casos|ids >>)<% if not loop.last %>; <% endif %><% endfor %>.
+<% endif %>
+<% if pd.avisos %>
+\paragraph{Avisos de propriedades e faixas.}
+\begin{itemize}
+<% for a in pd.avisos %>
+\item << a.texto|tx >> (casos << a.casos|ids >>)
+<% endfor %>
+\end{itemize}
+<% endif %>
+\paragraph{Limitações da modelagem.}
+\begin{itemize}
+<% for l in pd.limitacoes %>
+\item << l|tx >>
+<% endfor %>
+\end{itemize}
+\paragraph{Regra de apresentação.} << regra >>
+
+\end{document}

@@ -113,7 +113,7 @@ def test_premissas_tem_id_unidade_e_descricao():
         assert "valor" in e or "chave_casos" in e or nome == "carry", nome
 
 
-INTERFACE = ["cli.py", "output/dimensionamento.py", "output/pfd.py", "output/ajustes.py",
+INTERFACE = ["cli.py", "output/dimensionamento.py", "output/pfd.py", "output/ajustes.py", "output/latex/tag/memorial.py",
              *sorted(p.relative_to(PACOTE).as_posix() for p in (PACOTE / "output" / "terminal").glob("*.py"))]
 
 
