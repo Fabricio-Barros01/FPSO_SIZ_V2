@@ -14,7 +14,7 @@ aquela fase).
 
 ## Estado atual
 
-**FASE ATUAL: resolução dos alarmes de inviabilidade (pré-condição da F15) ← ATUAL; F10x (até F10x.5, óleo vivo), F13, F14 e o planejamento da F15 entregues em 2026-09-26. Alarme do SG-001 explicado pela viscosidade de óleo vivo; seguem abertos os de trocadores e bombas.**
+**FASE ATUAL: resolução dos alarmes de inviabilidade (pré-condição da F15) ← ATUAL; F10x (até F10x.6), F13, F14 e o planejamento da F15 entregues em 2026-09-26. Alarmes do SG-001 (óleo vivo) e das bombas (P-44) explicados; seguem abertos os dos trocadores P-001/P-002/P-003.**
 **F11 (MC por TAG) e F11b (MC do balanço por caso) entregues em 2026-09-26, em sessão autônoma
 autorizada pelo usuário, no branch `fases/f11` (sem merge; integração pelo usuário). Ver
 [`docs/validacao/13-memorial-tag.md`](docs/validacao/13-memorial-tag.md).**
@@ -1011,6 +1011,14 @@ Commits `de962eb` (F10x.1), `04f0139` (F10x.2), `f807387` (F10x.3).
   continua fora de Dittus-Boelter). Os demais TAGs não mudam (correntes desgaseificadas).
   Justificativa e tabelas em [`docs/validacao/16-oleo-vivo.md`](docs/validacao/16-oleo-vivo.md).
   A correlação está fora do acervo local (a conferir).
+- F10x.6 (aprovada pelo usuário: "a proposta da bomba pode prosseguir como aprovada"): **P-44**,
+  banda de velocidade das bombas pelo caso de projeto (maior vazão). O piso vale só nele, e só
+  em água (o B-001, de óleo limpo, tem piso nulo); o teto vale em todos os casos. A **P-44b**
+  (a confirmar) aceita, nos casos de turndown, a zona de transição com o f de Colebrook-White
+  como limite superior. Hook genérico `envelope_case_params` no motor; os defaults são a regra
+  do Julia. Efeito: B-001 DN 600, B-002 DN 250, B-003 DN 125, os três viáveis. O MC da bomba
+  ganha a tabela de operação por caso e a potência máxima (no B-002, 140 kW contra os 14 kW do
+  caso governante). Ver [`docs/validacao/17-banda-bombas.md`](docs/validacao/17-banda-bombas.md).
 - Com as propostas: TO-001/TO-002 dimensionam (d = 5.550 mm); bombas e trocadores seguem
   inviáveis — tratados como alarme na F13.
 - **Aceite:** (1) ✓; (2) ✓ (só `proposto` entra); (3) parcial — os TAGs ficam sem lacuna, mas
@@ -1044,6 +1052,19 @@ anotação e investigação.
   mesmo limite). Bombas: faixa de vazão de 10–23× entre casos numa linha só; B-002 casos 15–16
   no vão da série de DN para a banda 1–1,5 m/s.
 - BOT versionado em `docs/bot/` (a pedido do usuário) e conferido nos itens citados.
+- **F13.2 (2026-09-26): trocadores com outra alocação de fluidos.** Variantes de topologia
+  executáveis (`config/pfd/variantes/*.toml`, `pfd/tags.topologia_alternativa`,
+  `equipamento.preparar_tag`) que não entram na planta. Também entraram a regra
+  `densidade_utilidade` e o ΔT de processo por corrente em `vazao_utilidade`. Com o óleo no
+  casco e a água nos tubos, P-002 e P-003 deixam de ser recusados pela faixa de Dittus-Boelter.
+  O que resta:
+  - P-002: tubo de 7,08 m contra o limite de estoque de 6 m;
+  - P-003: casco acima de 2.500 mm, o que pede cascos em paralelo;
+  - nos dois: a banda de velocidade exigida em todos os casos (turndown, como nas bombas antes
+    da P-44);
+  - P-001 (óleo/óleo): segue sem correlação laminar no tubo.
+
+  O padrão não mudou: a alocação é decisão do usuário.
 - **Aceite:** (1) ✓; (2) estudo em `docs/validacao/14-alarmes.md` gerado pelo motor ✓; (3) ✓
   nenhuma premissa nova no padrão; (4) o MC do SG-001 cita a investigação ✓.
 

@@ -151,6 +151,11 @@ def preparar(ctx, estado):
     if (estado.equipamento, estado.metodo) != (t.equipamento, t.metodo):
         raise ValueError(f"{t.tag}: o estado usa {estado.equipamento}/{estado.metodo}, mas o TAG é "
                          f"dimensionado por {t.equipamento}/{t.metodo}")
+    return preparar_tag(ctx, t, estado)
+
+
+def preparar_tag(ctx, t, estado):
+    """preparar com o descritor `t` dado (o do catálogo, ou uma topologia alternativa de estudo)."""
     if estado.modo == MANUAL:
         return montar_manual(t, ctx.casos(), estado, propostas=ctx.propostas)
     return montar(t, ctx.balanco, ctx.dados, ctx.prem, estado=estado, propostas=ctx.propostas,

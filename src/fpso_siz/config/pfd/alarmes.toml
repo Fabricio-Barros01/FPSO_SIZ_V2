@@ -29,7 +29,7 @@ estado = "aberta"
 resumo = "O motor para no caso 1: com 2 passes no tubo o fator F da Fig. 4.3 sai do domínio (cruzamento interno de temperatura no arranjo 1-2)."
 hipoteses = [
     { classe = "premissa", texto = "Arranjo de 2 passes no tubo (default 'escolha' de Saari Tab. 3.1): com a aproximação de P-32 a troca óleo/óleo é quase simétrica (R ≈ 1) e P alto, fora do alcance de um casco 1-2. Contracorrente pura (1 passe) ou cascos em série resolvem o domínio de F.", variantes = ["passes_1"] },
-    { classe = "modelo", texto = "Resolvido o domínio de F (1 passe), o impedimento seguinte é o mesmo do P-002/P-003: óleo em escoamento laminar/de transição no tubo, fora de Dittus-Boelter. Como os dois lados são óleo, trocar os lados não resolve: falta correlação laminar no acervo." },
+    { classe = "modelo", texto = "Resolvido o domínio de F (1 passe), o impedimento seguinte é o mesmo do P-002/P-003: óleo em escoamento laminar/de transição no tubo, fora de Dittus-Boelter. Como os dois lados são óleo, trocar os lados não resolve: com a emulsão no casco e o óleo tratado quente nos tubos, o F segue fora do domínio (2 passes) e, com 1 passe, o Re no tubo fica em 1.661–4.947. Falta correlação laminar no acervo.", variantes = ["p_001_emulsao_casco"] },
 ]
 
 [[alarme]]
@@ -37,7 +37,7 @@ tag = "P-002"
 estado = "aberta"
 resumo = "Todos os casos: o óleo no lado tubo tem Re de ~1.900 a ~5.600 e Pr ~150 com óleo vivo (~1.100 a ~3.400 e Pr ~250 com --oleo-morto), fora da faixa de Dittus-Boelter (Re ≥ 10⁴, Pr ≤ 120) declarada por Saari: a correção de óleo vivo aproxima, mas não resolve."
 hipoteses = [
-    { classe = "premissa", texto = "Alocação de fluidos: óleo viscoso no lado tubo. A prática é pôr o fluido mais viscoso no casco, onde Bell-Delaware cobre escoamento laminar (fator Jr); a água quente de utilidade iria nos tubos. A troca de lados é mudança de topologia do TAG (sem variante executável neste modelo)." },
+    { classe = "premissa", texto = "Alocação de fluidos: óleo viscoso no lado tubo. A prática é pôr o fluido mais viscoso no casco, onde Bell-Delaware cobre escoamento laminar (fator Jr), e a água quente de utilidade nos tubos. Variante de topologia (config/pfd/variantes/p_002_oleo_casco.toml): a água nos tubos fica turbulenta e a faixa de Dittus-Boelter deixa de ser o impedimento. O que resta é o comprimento de tubo (o feixe mais curto na banda pede 7,08 m, contra o limite de estoque de 6 m) e a banda de velocidade exigida em todos os casos, com carga que varia entre os casos, como nas bombas antes da P-44.", variantes = ["p_002_oleo_casco"] },
     { classe = "modelo", texto = "Correlação do lado tubo só turbulenta: não há correlação laminar/de transição (ex.: Sieder–Tate) no acervo; o programa não extrapola." },
 ]
 
@@ -46,35 +46,36 @@ tag = "P-003"
 estado = "aberta"
 resumo = "Todos os casos: o óleo no lado tubo tem Re de ~1.300 a ~4.000 e Pr ~150, fora da faixa de Dittus-Boelter declarada por Saari."
 hipoteses = [
-    { classe = "premissa", texto = "Alocação de fluidos: óleo viscoso no lado tubo; a água de resfriamento em circuito fechado (BOT 3.3.2) iria nos tubos e o óleo no casco (Bell-Delaware com Jr). Mudança de topologia do TAG, sem variante executável neste modelo." },
+    { classe = "premissa", texto = "Alocação de fluidos: óleo viscoso no lado tubo. A água de resfriamento em circuito fechado (BOT 3.3.2) iria nos tubos, e o óleo no casco (Bell-Delaware com Jr). Variante de topologia (config/pfd/variantes/p_003_oleo_casco.toml): a faixa de Dittus-Boelter deixa de ser o impedimento. O que resta é o casco, que passa do limite de 2.500 mm de chapa enrolada (Saari Tab. 3.1: dividir em cascos em paralelo), e a banda de velocidade exigida em todos os casos.", variantes = ["p_003_oleo_casco"] },
     { classe = "modelo", texto = "Correlação do lado tubo só turbulenta, como no P-002." },
 ]
 
 [[alarme]]
 tag = "B-001"
-estado = "aberta"
-resumo = "Cada caso tem DN admissível isolado (125 a 600 mm), mas as faixas não se cruzam: a vazão de óleo varia cerca de 23× entre os casos."
+estado = "explicada"
+resumo = "Só sem a P-44 (banda em todos os casos): cada caso tem DN admissível isolado (125 a 600 mm), mas as faixas não se cruzam, porque a vazão de óleo varia cerca de 23× entre os casos. Com a P-44 (padrão) a linha é dimensionada pelo caso de maior vazão: DN 600 (docs/validacao/17-banda-bombas.md)."
 hipoteses = [
-    { classe = "premissa", texto = "Piso de velocidade de 1 m/s aplicado ao óleo tratado: pela nota do descritor v_min (Moran 2016) o piso é para líquido com sólidos decantáveis; para líquido limpo o artigo só impõe o teto.", variantes = ["vmin_0"] },
-    { classe = "premissa", texto = "Envelope exige a banda de velocidade em TODOS os casos de uma única linha; no projeto, a linha é dimensionada pelo caso de maior vazão e os de menor vazão operam com velocidade menor (ou com bombas em paralelo/recirculação de mínimo fluxo)." },
-    { classe = "modelo", texto = "Na variante sem piso, o caso 6 (baixa vazão, óleo mais frio e viscoso) cai na transição laminar-turbulento nos DN grandes, onde nenhuma correlação de atrito da implementação vale (Colebrook só para Re > 4000; 64/Re só até 2000)." },
+    { classe = "premissa", texto = "CONFIRMADA (P-44): piso de velocidade de 1 m/s aplicado ao óleo tratado. Pela nota do descritor v_min (Moran 2016), o piso é para líquido com sólidos decantáveis; para líquido limpo o artigo só impõe o teto.", variantes = ["vmin_0"] },
+    { classe = "premissa", texto = "CONFIRMADA (P-44): o envelope exigia a banda de velocidade em TODOS os casos de uma única linha. No projeto, a linha é dimensionada pelo caso de maior vazão, e os casos de menor vazão operam com velocidade menor (turndown)." },
+    { classe = "modelo", texto = "No turndown (caso 6, 4 % da vazão de projeto) a linha DN 600 fica na zona de transição laminar-turbulento (Re ≈ 3.460), onde nenhuma correlação de atrito da implementação vale. P-44b: o f de Colebrook-White entra como limite superior (≥ 64/Re), com perda superestimada e NPSH subestimado; a confirmar." },
+    { classe = "modelo", texto = "Uma bomba só não opera numa faixa de 23×: a vazão mínima contínua é dado do fabricante (fora do acervo). Bombas em paralelo ou recirculação de mínimo fluxo não são modeladas; a especificação sai do caso de projeto." },
 ]
 
 [[alarme]]
 tag = "B-002"
-estado = "aberta"
-resumo = "Casos 15 e 16 inviáveis isolados: entre DN 150 (≈1,7 m/s) e DN 200 (≈1,0 m/s) a banda de 1,0–1,5 m/s cai no vão da série; nos demais a vazão varia cerca de 10×."
+estado = "explicada"
+resumo = "Só sem a P-44: nos casos 15 e 16 a banda de 1,0–1,5 m/s cai no vão da série, entre DN 150 (≈1,7 m/s) e DN 200 (≈1,0 m/s), e nos demais a vazão varia cerca de 10×. Com a P-44 (padrão), a linha é dimensionada pelo caso de maior vazão (caso 11): DN 250."
 hipoteses = [
-    { classe = "premissa", texto = "Banda de velocidade 1–1,5 m/s (Moran 2016) mais estreita que o salto de área entre DN consecutivos da série (200/150 → 1,78×): há vazões sem DN na banda. Numérico só na aparência: é a combinação banda × série." },
-    { classe = "premissa", texto = "Banda aplicada a todos os casos de uma única linha, como no B-001." },
+    { classe = "premissa", texto = "Banda de velocidade 1–1,5 m/s (Moran 2016) mais estreita que o salto de área entre DN consecutivos da série (200/150 → 1,78×): há vazões sem DN na banda. É numérico só na aparência: vem da combinação banda × série. Com a P-44 a banda só vale no caso de projeto, e ele tem DN na banda." },
+    { classe = "premissa", texto = "CONFIRMADA (P-44): banda aplicada a todos os casos de uma única linha, como no B-001. O piso é mantido no caso de projeto (água produzida pode levar sólidos decantáveis)." },
 ]
 
 [[alarme]]
 tag = "B-003"
-estado = "aberta"
-resumo = "Cada caso tem DN admissível isolado (40 a 125 mm), mas as faixas não se cruzam: a vazão de água varia entre os casos."
+estado = "explicada"
+resumo = "Só sem a P-44: cada caso tem DN admissível isolado (40 a 125 mm), mas as faixas não se cruzam, porque a vazão de água varia cerca de 8× entre os casos. Com a P-44 (padrão): DN 125, pelo caso 3."
 hipoteses = [
-    { classe = "premissa", texto = "Banda de velocidade aplicada a todos os casos de uma única linha (turndown), como no B-001." },
+    { classe = "premissa", texto = "CONFIRMADA (P-44): banda de velocidade aplicada a todos os casos de uma única linha (turndown), como no B-001." },
 ]
 
 # ------------------------------------------------------------------ variantes
@@ -112,3 +113,29 @@ origem = "limite inferior do descritor passes_tubo (Saari §4.2.1: contracorrent
 rotulo = "sem piso de velocidade (líquido limpo)"
 geral = { v_min = 0.0 }
 origem = "nota do descritor v_min em equipment/pump/moran.toml (Moran 2016: piso só para líquido com sólidos decantáveis)"
+
+[variantes.sem_p44]
+rotulo = "banda de velocidade em todos os casos (sem a P-44; regra do Julia)"
+geral = { piso_caso_projeto = 0.0, transicao_turndown = 0.0, v_min = 1.0 }
+origem = "defaults do método de Moran (2016) e regra do Julia: estudo do estado anterior à P-44"
+
+# Topologias alternativas (config/pfd/variantes/): outra alocação das correntes no mesmo
+# trocador. Os valores de `geral` são os PROPOSTOS do próprio TAG (pendencias_propostas.toml)
+# trocados de lado junto com os fluidos: k do óleo 0,13 W/m·K e incrustação do óleo 0,00035
+# m²K/W no casco; incrustação da água de utilidade 0,00018 m²K/W nos tubos.
+[variantes.p_002_oleo_casco]
+rotulo = "óleo no casco, água quente nos tubos"
+topologia = "p_002_oleo_casco"
+geral = { k_casco = 0.13, rf_casco = 0.00035, rf_tubo = 0.00018 }
+origem = "prática de alocar o fluido mais viscoso no casco (hipótese do alarme); k e incrustações = propostas do P-002 trocadas de lado"
+
+[variantes.p_003_oleo_casco]
+rotulo = "óleo no casco, água de resfriamento nos tubos"
+topologia = "p_003_oleo_casco"
+geral = { k_casco = 0.13, rf_casco = 0.00035, rf_tubo = 0.00018 }
+origem = "prática de alocar o fluido mais viscoso no casco (hipótese do alarme); k e incrustações = propostas do P-003 trocadas de lado"
+
+[variantes.p_001_emulsao_casco]
+rotulo = "emulsão fria no casco, óleo tratado quente nos tubos"
+topologia = "p_001_emulsao_casco"
+origem = "prática de alocar o fluido mais viscoso no casco (hipótese do alarme); k e incrustações do P-001 são as mesmas propostas nos dois lados"

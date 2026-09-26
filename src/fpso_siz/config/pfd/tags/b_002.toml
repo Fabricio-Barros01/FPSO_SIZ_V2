@@ -21,3 +21,11 @@ rendimento = { regra = "premissa", nome = "eta_pump" }
 
 [inativo_se]
 vazao_nula = "q_oil"
+
+[recomendadas.piso_caso_projeto]
+valor = 1.0
+fonte = "P-44 (aprovada pelo usuário, 2026-09-26): a linha é dimensionada pelo caso de maior vazão; o piso de velocidade vale só nele e os casos de menor vazão operam abaixo dele (turndown); o teto vale em todos"
+
+[recomendadas.transicao_turndown]
+valor = 1.0
+fonte = "P-44b (decorre da P-44; a confirmar): nos casos de turndown, a zona de transição laminar-turbulento é aceita com o fator de Colebrook-White como limite superior (f ≥ 64/Re): perda de carga superestimada e NPSH subestimado, lado seguro. O caso de projeto segue exigindo correlação válida (Moran 2016: Colebrook-White para Re > 4000)"

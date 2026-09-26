@@ -224,6 +224,12 @@ class MetodoDimensionamento:
         """(ok, p_env | mensagem): uma grade e uma banda para N casos (o equipamento é um só)."""
         raise NotImplementedError
 
+    def envelope_case_params(self, conss, p_env):
+        """Parâmetros com que cada caso é admitido no envelope (extensão do V2, sem par no
+        Julia). Padrão: os do envelope para todos os casos, que é a regra do Julia. Um método
+        pode relaxar um critério nos casos que não são o de projeto."""
+        return [p_env] * len(conss)
+
     def selection_message(self, rows, ceiling, p, mechanism="none"):
         raise NotImplementedError
 

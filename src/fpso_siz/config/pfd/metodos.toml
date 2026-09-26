@@ -70,6 +70,8 @@ dm_water = "Sem fonte no acervo: a correlação campo elétrico → gotícula co
 rugosidade = { tipo = "fonte", fonte = "Branan (2012) Tab. 1-5, p. 10: aço novo, 0,000045 m" }
 v_min = { tipo = "fonte", fonte = "Moran (2016): 'water-like fluids with settleable solids: >1, <1.5 m/sec'" }
 v_max = { tipo = "fonte", fonte = "Moran (2016): 'pumped water-like fluids: <1.5 m/sec'" }
+piso_caso_projeto = { tipo = "escolha", fonte = "regra do Julia: a banda de velocidade vale em todos os casos (0); os TAGs de bomba da planta adotam a P-44 (1) em [recomendadas]" }
+transicao_turndown = { tipo = "escolha", fonte = "regra do Julia: a zona de transição é rejeitada (0); os TAGs de bomba da planta adotam a P-44b (1) em [recomendadas]" }
 dn_min = { regra = "grade_descritor", limite = "min" }
 dn_max = { regra = "grade_descritor", limite = "max" }
 antoine_a = { tipo = "nao_usado", fonte = "Moran (2016) Tab. 3 (água); não entra no cálculo: Pv informada" }

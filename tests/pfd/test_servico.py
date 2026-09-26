@@ -223,6 +223,22 @@ def test_planta_so_manual_nao_resolve_o_balanco(monkeypatch):
 F10B = __import__("json").loads((FIXTURES / "pfd" / "f10b_resultados.json").read_text(encoding="utf-8"))
 P42_TAGS = {"SG-001", "TO-001", "TO-002"}
 P42_CHAVES = {"dm_water", "dm_oil", "tr_water", "rho_water", "mu_water"}
+P44_TAGS = {"B-001", "B-002", "B-003"}
+P44_CHAVES = {"piso_caso_projeto", "transicao_turndown"}   # extensões do V2 (F10x.6)
+
+
+def _sem_p44(monkeypatch):
+    """Desliga a P-44 (F10x.6): sem os dois descritores de extensão da bomba e sem as
+    recomendações da P-44 nos TAGs de bomba (o código que a F10b tinha)."""
+    from fpso_siz.pfd.tags import tags
+    from fpso_siz.sizing.bomba import MoranPumpSizing
+    for t in tags():
+        for k, rec in list(t.recomendadas.items()):
+            if "P-44" in rec["fonte"]:
+                monkeypatch.delitem(t.recomendadas, k)
+    original = MoranPumpSizing.parameters
+    monkeypatch.setattr(MoranPumpSizing, "parameters",
+                        lambda self: [s for s in original(self) if s.key not in P44_CHAVES])
 
 
 @pytest.fixture
@@ -234,6 +250,7 @@ def plantas_f10b(monkeypatch, planta_referencia, ajustes_sinteticos):
     monkeypatch.setattr(entradas, "_fase_aquosa", lambda metodo, valores: valores)
     monkeypatch.setattr(separador, "sem_fase_aquosa", lambda fu: False)
     monkeypatch.setattr(tratador, "sem_fase_aquosa", lambda fu: False)
+    _sem_p44(monkeypatch)
     base = planta.dimensionar(planta_referencia.dados, balanco=planta_referencia.balanco, oleo_vivo=False)
     return {"sem_ajustes": base,
             "ajustes_sinteticos": planta.dimensionar(base.dados, ajustes=ajustes_sinteticos, balanco=base.balanco,
@@ -242,7 +259,7 @@ def plantas_f10b(monkeypatch, planta_referencia, ajustes_sinteticos):
 
 @pytest.mark.parametrize("modo", ["sem_ajustes", "ajustes_sinteticos"])
 def test_resultados_iguais_aos_da_f10b(modo, plantas_f10b, tmp_path):
-    """Regressão: sem a P-42, valores de entrada, lacunas, estados, envelopes e planta.csv
+    """Regressão: sem a P-42 e sem a P-44, valores de entrada, lacunas, estados, envelopes e planta.csv
     iguais aos que a F10b gravou (fixture gerada pelo código da F10b, via git archive). O
     efeito da P-42 é conferido à parte, em test_efeito_da_p42_restrito_a_fase_aquosa."""
     import hashlib
@@ -281,17 +298,22 @@ def _valor(v):
 def test_efeito_da_p42_restrito_a_fase_aquosa(modo, plantas_f10b, planta_referencia, planta_referencia_ajustada):
     """P-42 (BOT Tab. 2.2.2.3 Notas 5 e 11; 2.3.1.1): nos casos sem água (1, 4–7), só as entradas
     dos critérios aquosos do SG-001/TO-001/TO-002 deixam de ser pedidas/revisadas e só o teto do
-    SG-001 muda de caso. Todo o resto é idêntico ao código da F10b."""
+    SG-001 muda de caso. P-44 (F10x.6): só as bombas ganham as recomendações da banda por caso
+    de projeto (e o B-001, o piso nulo do óleo limpo). Todo o resto é idêntico ao código da F10b."""
     antes = plantas_f10b[modo]
     depois = planta_referencia if modo == "sem_ajustes" else planta_referencia_ajustada
     for a, d in zip(antes.tags, depois.tags, strict=True):
         assert a.tag.tag == d.tag.tag and a.status == d.status
         sem_agua = {c.num for c in d.entradas.casos if "q_water" in c.valores and c.valores["q_water"].valor == 0}
         mudou = False
+        p44 = d.tag.tag in P44_TAGS
         for ca, cd in zip(a.entradas.casos, d.entradas.casos, strict=True):
-            assert (ca.num, ca.ativo, set(ca.valores)) == (cd.num, cd.ativo, set(cd.valores))
+            extras = P44_CHAVES if p44 else set()
+            assert (ca.num, ca.ativo, set(ca.valores) | extras) == (cd.num, cd.ativo, set(cd.valores))
             for k, vd in cd.valores.items():
-                if vd.nao_aplicavel:
+                if p44 and "P-44" in vd.fonte:
+                    assert vd.origem == "recomendada" and (k in P44_CHAVES or (d.tag.tag, k) == ("B-001", "v_min"))
+                elif vd.nao_aplicavel:
                     mudou = True
                     assert d.tag.tag in P42_TAGS and cd.num in sem_agua and k in P42_CHAVES
                     assert ca.valores[k].origem in ("lacuna", "recomendada", "metodo") and "P-42" in vd.fonte
@@ -304,6 +326,8 @@ def test_efeito_da_p42_restrito_a_fase_aquosa(modo, plantas_f10b, planta_referen
         assert (ra is None) == (rd is None)
         if rd is None:
             continue
+        if p44:
+            continue    # efeito da P-44 conferido em test_p44_*
         chave = [(r.feasible, _num(r.x), _num(r.y), r.driver_case, list(r.slack)) for r in (ra, rd)]
         assert chave[0] == chave[1], d.tag.tag
         if d.tag.tag == "SG-001":

@@ -46,8 +46,9 @@
     ! npsh_requerido - NPSH requerido pela bomba [m]; casos 1-16
     ! npsh_margem - Margem sobre o NPSH requerido [m]; casos 1-16
     revisao pendente: Rugosidade absoluta ? = 0,045 mm (default); casos 1-16
-    revisao pendente: Velocidade minima = 1 m/s (default); casos 1-16
+    revisao pendente: Velocidade minima = 0 m/s (recomendada); casos 1-16
     revisao pendente: Velocidade maxima = 1,5 m/s (default); casos 1-16
+    ... +2
     8 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
 
   B-002 - Bomba de agua produzida do desidratador
@@ -62,6 +63,7 @@
     revisao pendente: Rugosidade absoluta ? = 0,045 mm (default); casos 2-3, 8-16
     revisao pendente: Velocidade minima = 1 m/s (default); casos 2-3, 8-16
     revisao pendente: Velocidade maxima = 1,5 m/s (default); casos 2-3, 8-16
+    ... +2
     Casos inativos: 1, 4-7
     2 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
 
@@ -77,6 +79,7 @@
     revisao pendente: Rugosidade absoluta ? = 0,045 mm (default); casos 2-3, 8-16
     revisao pendente: Velocidade minima = 1 m/s (default); casos 2-3, 8-16
     revisao pendente: Velocidade maxima = 1,5 m/s (default); casos 2-3, 8-16
+    ... +2
     Casos inativos: 1, 4-7
     8 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
 

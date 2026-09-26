@@ -76,6 +76,21 @@ def conferencia_sg001(morto, vivo):
             "premissa da viscosidade explica o alarme (docs/validacao/16-oleo-vivo.md).", ""]
 
 
+def estudo_p44(ctx, planta):
+    """Bombas com e sem a P-44 (variante sem_p44: banda em todos os casos, regra do Julia)."""
+    out = ["## Estudo da P-44 (banda de velocidade pelo caso de projeto)", "",
+           "| TAG | Com a P-44 (padrão) | Sem a P-44 (variante `sem_p44`) |", "|---|---|---|"]
+    v = inv.variante("sem_p44")
+    for rt in planta.tags:
+        if rt.tag.metodo != "moran" or rt.resultado is None:
+            continue
+        sem = inv.executar_variante(ctx, rt.tag.tag, v).resultado
+        com = rt.resultado
+        txt = [f"DN {f(r.x)} mm, H {f(r.y, 1)} m" if r.feasible else f"inviável: {r.message[:160]}…" for r in (com, sem)]
+        out.append(f"| {rt.tag.tag} | {txt[0]} | {txt[1]} |")
+    return out + [""]
+
+
 def hipoteses():
     out = ["## Hipóteses registradas (config/pfd/alarmes.toml)", ""]
     classes = inv.cfg()["classes"]
@@ -102,6 +117,7 @@ def gerar():
     linhas += secao_planta("Planta com óleo morto (--oleo-morto), sem propostas", ctxm, pm)
     linhas += secao_planta("Planta sem propostas (catálogo com fonte; óleo vivo)", ctx0, p0)
     linhas += secao_planta("Planta com as propostas (pendencias_propostas.toml, status proposto; óleo vivo)", ctx1, p1)
+    linhas += estudo_p44(ctx1, p1)
     linhas += conferencia_sg001(pm, p0)
     linhas += hipoteses()
     return "\n".join(linhas) + "\n"

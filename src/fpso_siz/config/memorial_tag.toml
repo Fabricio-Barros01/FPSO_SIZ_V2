@@ -100,6 +100,9 @@ funcao = "Bomba de água produzida do desidratador: recalca a água separada no 
 hipoteses = [
     "A água sai do vaso no ponto de bolha: a pressão de vapor é a pressão do vaso (Branan, Ex.~5-2), e o NPSH disponível é a coluna estática menos a perda na sucção.",
     "Casos sem fase aquosa (1 e 4--7) ficam inativos neste TAG.",
+    "Água produzida pode levar sólidos decantáveis: o piso de velocidade de Moran (2016) é mantido no caso de projeto.",
+    "Banda de velocidade pela P-44: a linha é dimensionada pelo caso de maior vazão (caso de projeto), onde vale a banda de Moran (2016); nos demais casos (turndown) só o teto. Na zona de transição laminar-turbulento dos casos de turndown o fator de Colebrook-White entra como limite superior (P-44b, a confirmar).",
+    "Turndown: a razão entre a maior e a menor vazão da linha é grande; a vazão mínima contínua da bomba (dado do fabricante) não está no acervo, e a operação dos casos de menor vazão pode exigir bombas em paralelo ou recirculação de mínimo fluxo (não modelado).",
 ]
 [tags."V-002"]
 funcao = "Desgaseificador 2: recebe o óleo do desidratador somado à água de diluição (C-16, do M-02) a @P:P_D2@ (P-19) e separa o gás (C-17, ao 1º estágio da VRU) do líquido que segue ao dessalinizador (C-18)."
@@ -117,12 +120,17 @@ funcao = "Bomba de água produzida do dessalinizador: recalca a água separada n
 hipoteses = [
     "A água sai do vaso no ponto de bolha: a pressão de vapor é a pressão do vaso (Branan, Ex.~5-2).",
     "Casos sem fase aquosa (1 e 4--7) ficam inativos neste TAG.",
+    "Água produzida pode levar sólidos decantáveis: o piso de velocidade de Moran (2016) é mantido no caso de projeto.",
+    "Banda de velocidade pela P-44: a linha é dimensionada pelo caso de maior vazão (caso de projeto), onde vale a banda de Moran (2016); nos demais casos (turndown) só o teto. Na zona de transição laminar-turbulento dos casos de turndown o fator de Colebrook-White entra como limite superior (P-44b, a confirmar).",
+    "Turndown: a razão entre a maior e a menor vazão da linha é grande; a vazão mínima contínua da bomba (dado do fabricante) não está no acervo, e a operação dos casos de menor vazão pode exigir bombas em paralelo ou recirculação de mínimo fluxo (não modelado).",
 ]
 [tags."B-001"]
 funcao = "Bomba de transferência de óleo: recalca o óleo tratado do dessalinizador (C-21, a @P:P_D2@) a @P:P_pump_oil@ (P-20) para o lado casco do pré-aquecedor P-001 (C-22)."
 hipoteses = [
     "O óleo sai do vaso no ponto de bolha: a pressão de vapor é a pressão do vaso (Branan, Ex.~5-2).",
-    "O piso de velocidade do default de Moran (2016) é, segundo a nota do próprio descritor, para líquido com sólidos decantáveis; para óleo tratado (líquido limpo) o artigo só impõe o teto. O default não foi alterado: é decisão do usuário (ver pendências).",
+    "O piso de velocidade de Moran (2016) é, segundo a nota do próprio descritor, para líquido com sólidos decantáveis; para óleo tratado (líquido limpo) o artigo só impõe o teto: piso nulo neste TAG (P-44, recomendação a revisar).",
+    "Banda de velocidade pela P-44: a linha é dimensionada pelo caso de maior vazão (caso de projeto), onde vale a banda de Moran (2016); nos demais casos (turndown) só o teto. Na zona de transição laminar-turbulento dos casos de turndown o fator de Colebrook-White entra como limite superior (P-44b, a confirmar).",
+    "Turndown: a razão entre a maior e a menor vazão da linha é grande; a vazão mínima contínua da bomba (dado do fabricante) não está no acervo, e a operação dos casos de menor vazão pode exigir bombas em paralelo ou recirculação de mínimo fluxo (não modelado).",
 ]
 [tags."P-003"]
 funcao = "Resfriador de óleo: resfria o óleo tratado que sai do pré-aquecedor (C-23, lado tubo) à temperatura de armazenamento de @P:T_store@ (C-24, F-08/BOT 2.7.1.10) com água de resfriamento no lado casco; a carga é a $\\dot Q_C$ do balanço."
