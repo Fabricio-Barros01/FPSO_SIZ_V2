@@ -39,6 +39,8 @@ Nenhum TAG inviável: não há alarme a investigar.
 |---|---|---|---|
 | P-001 | 1 passe no tubo (contracorrente pura) | limite inferior do descritor passes_tubo (Saari §4.2.1: contracorrente puro, F = 1), sugerido pela própria mensagem do motor | segue inviável: Não há equipamento que atenda simultaneamente aos 10 casos. Na banda de velocidade 1.0–3.0 m/s todos os feixes caem fora da faixa em que Saari declara a correla… |
 | P-001 | emulsão fria no casco, óleo tratado quente nos tubos | prática de alocar o fluido mais viscoso no casco (hipótese do alarme); k e incrustações do P-001 são as mesmas propostas nos dois lados | segue inviável: Caso 'BOT 01 — Early Life': O arranjo 1-2 não fecha com estas temperaturas: o fator de correção F sai do domínio da Fig. 4.3. Em contracorrente puro (1 passe) o… |
+| P-002 | circulação fixa da utilidade (vazão do caso de projeto em todos os casos) | hipótese de operação declarada pelo usuário (2026-09-26) como estudo: a bomba da utilidade mantém a vazão do caso de projeto (P-45) e o ΔT varia com a carga; a vazão vem do próprio caso de projeto e a temperatura de saída é resolvida, não suposta | viável, x = 330 |
+| P-003 | circulação fixa da utilidade (vazão do caso de projeto em todos os casos) | hipótese de operação declarada pelo usuário (2026-09-26) como estudo: a bomba da utilidade mantém a vazão do caso de projeto (P-45) e o ΔT varia com a carga; a vazão vem do próprio caso de projeto e a temperatura de saída é resolvida, não suposta | segue inviável: Não há equipamento que atenda simultaneamente aos 16 casos. Na banda de velocidade 1.0–3.0 m/s todos os feixes pedem tubo mais longo que o limite de 6.0 m — o m… |
 
 ## Estudo da P-44 (banda de velocidade pelo caso de projeto)
 
@@ -79,7 +81,7 @@ Só no modo --oleo-morto: os casos 2 e 3 (Early Life, com água) são inviáveis
 Topologia P-46 (óleo no casco, água quente nos tubos), P-45 e reotimização F10x.7 (docs/validacao/18-trocadores.md). Com 2 cascos em série o comprimento cabe em 6 m. O que ainda governa é a faixa de Dittus-Boelter no caso de menor carga (BOT 06, 3,6 % da carga de projeto: v ≈ 0,08 m/s, Re ≈ 4.200 < 10⁴), que a P-45 manda exigir em todos os casos.
 
 - **premissa**: CONFIRMADA e adotada (P-46): a alocação com o óleo viscoso no tubo foi trocada; com a água nos tubos, a faixa de Dittus-Boelter só falha no turndown profundo.
-- **premissa**: Vazão da utilidade proporcional à carga: ṁ = q/(cp·ΔT) com o ΔT da utilidade fixo pelos insumos t_agua_in/t_agua_out em todos os casos. Num turndown de 28× a água de aquecimento fica laminar nos tubos. Manter a circulação da utilidade (ΔT menor no turndown) é outra premissa de operação; sem variante executável, a decidir.
+- **premissa**: Vazão da utilidade proporcional à carga: ṁ = q/(cp·ΔT) com o ΔT da utilidade fixo pelos insumos t_agua_in/t_agua_out em todos os casos. Num turndown de 28× a água de aquecimento fica laminar nos tubos. Manter a circulação da utilidade (ΔT menor no turndown) é outra premissa de operação, agora com variante executável (estudo, não adoção).
 - **modelo**: Correlação do lado tubo só turbulenta (Dittus-Boelter, Re ≥ 10⁴): o caso de turndown (BOT 06, Re ≈ 4.200) cai na faixa de transição coberta pela eq. 2-12 do Branan (p. 41) e pela eq. 6.27 de Saari (p. 69). A fonte existe; falta o exemplo numérico do caso-ouro e a implementação. A própria fonte declara a região de transição imprevisível e recomenda evitá-la (docs/validacao/20-correlacao-tubo-laminar.md).
 
 ### P-003 — investigação aberta
@@ -87,7 +89,7 @@ Topologia P-46 (óleo no casco, água quente nos tubos), P-45 e reotimização F
 Topologia P-46 (óleo no casco, água de resfriamento nos tubos), P-45 e reotimização F10x.7. O casco NÃO passa de 2.500 mm, então os cascos em paralelo não se aplicam (e reduziriam o Re por casco). O que ainda governa: a faixa de Dittus-Boelter nos casos de baixa carga (BOT 04, 05 e 06) e, no melhor feixe, o comprimento de tubo acima de 6 m.
 
 - **premissa**: CONFIRMADA e adotada (P-46): a alocação com o óleo viscoso no tubo foi trocada.
-- **premissa**: Vazão da utilidade proporcional à carga (ΔT da utilidade fixo pelos insumos): nos casos de baixa carga a água de resfriamento fica laminar nos tubos, como no P-002. A faixa é coberta pelas eq. 2-10 e 2-12 do Branan (pp. 40-41), pendente de exemplo numérico e implementação.
+- **premissa**: Vazão da utilidade proporcional à carga (ΔT da utilidade fixo pelos insumos): nos casos de baixa carga a água de resfriamento fica laminar nos tubos, como no P-002. A faixa é coberta pelas eq. 2-10 e 2-12 do Branan (pp. 40-41), pendente de exemplo numérico e implementação. Manter a circulação da utilidade é estudo executável.
 - **premissa**: Comprimento: a decisão do usuário previu cascos em série só para o P-002. No P-003 o melhor feixe pede tubo acima de 6 m; cascos em série resolveriam esse bloqueio, mas não o de Dittus-Boelter. A decidir.
 
 ### B-001 — investigação explicada

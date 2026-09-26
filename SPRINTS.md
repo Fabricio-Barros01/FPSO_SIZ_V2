@@ -42,12 +42,41 @@ inviabilidade com mensagem) e uma errata aparente de sinal na eq. 6.27 de Saari.
 `docs/validacao/20-correlacao-tubo-laminar.md`; `14-alarmes.md` regenerado do catálogo.
 O usuário autorizou subir Serth & Lestina e a planilha do Branan para fechar o caso-ouro.
 
-Próximas etapas autorizadas: executar apenas estudos de circulação fixa e cascos em
-série; fechar testes e PR. Padrões dos TAGs, P-44b, alertas P-45 e valores `proposto`
+**Etapa 2 — estudos isolados (circulação fixa e cascos em série):** ambos declarados como
+ESTUDO; o cálculo padrão, as recomendações dos TAGs e a política de divisão em cascos não
+mudaram.
+
+- `pfd/circulacao.py` + `config/pfd/circulacao.toml` + duas variantes em `config/pfd/alarmes.toml`:
+  a utilidade mantém a vazão do **caso de projeto** (critério da P-45, medido na
+  configuração-base completa) em todos os casos, e a temperatura de saída de cada caso é
+  **resolvida** por bisseção sobre o mesmo fechamento de energia do cálculo padrão
+  (ṁ_fixa = q/(cp(T̄)·|ΔT|)), com cp, ρ, μ e k da água reavaliados na temperatura média
+  resultante. A saída resolvida entra no próprio insumo `t_agua_out`, e as entradas são
+  preparadas **outra vez** — é aí que a grade de tubos por passe consome a vazão fixa e a
+  densidade reavaliada. Só há critério numérico no TOML; nenhum valor físico suposto. Falha
+  física ou de convergência volta como inviabilidade com mensagem; caso inativo continua
+  inativo.
+- `pfd/reotimizacao.buscar` ganhou dois argumentos **opcionais** de estudo (`politica_estudo`,
+  `variante`), com as chamadas de produção idênticas — é assim que o P-003 foi perguntado com a
+  política de cascos em série que a decisão original previu só para o P-002.
+- Condição dos estudos: as **duas aproximações terminais** de cada caso ativo são conferidas
+  contra o ΔT_app da **P-32**, lendo o rastro que o método já emitiu (invariante 3). A regra
+  padrão do método continua sem impô-la.
+
+**Resultado (`tools/estudo_circulacao.py` → `docs/validacao/21-circulacao-cascos.md`):** com a
+circulação mantida, **P-002 e P-003 passam a ter solução**, e com um casco só — o bloqueio de
+Dittus-Boelter no turndown desaparece porque o Reynolds deixa de cair com a carga. Com a
+circulação original, os cascos em série resolvem o **comprimento** nos dois TAGs, mas não a faixa
+de Dittus-Boelter (BOT 06 no P-002; BOT 04, 05 e 06 no P-003). **Achado:** com a circulação fixa
+a vazão volumétrica fica praticamente igual em todos os casos e o critério da P-45 **degenera**
+dentro do método (passa a rotular como projeto o caso de maior temperatura de retorno) — mais uma
+razão para a variante não ser promovida a padrão sem decisão do usuário.
+
+Próxima etapa autorizada: fechar testes e PR. Padrões dos TAGs, P-44b, alertas P-45 e valores `proposto`
 continuam sujeitos à decisão do usuário. O usuário autorizou o `pymoo` (F15) e a F8 aplicada
 ao pré-aquecedor pós-SG (óleo tratado antes do cargo tank × óleo vivo da saída do SG).
 
-**FASE ATUAL: resolução dos alarmes de inviabilidade (pré-condição da F15) ← ATUAL; F10x (até F10x.7), F13, F14 e o planejamento da F15 entregues em 2026-09-26. Alarmes do SG-001 (óleo vivo) e das bombas (P-44) explicados; P-002/P-003 abertos (Dittus-Boelter no turndown, após P-45/P-46 e reotimização); P-001 é lacuna metodológica.**
+**FASE ATUAL: resolução dos alarmes de inviabilidade ← ATUAL; F8 (Pinch de Kemp, com a aplicação ao pré-aquecedor) e F15 (otimização com pymoo, como estudo) implementadas em 2026-09-26; F10x (até F10x.7), F13 e F14 entregues em 2026-09-26. Alarmes do SG-001 (óleo vivo) e das bombas (P-44) explicados; P-002/P-003 abertos (Dittus-Boelter no turndown, após P-45/P-46 e reotimização); P-001 é lacuna metodológica.**
 **F11 (MC por TAG) e F11b (MC do balanço por caso) entregues em 2026-09-26, em sessão autônoma
 autorizada pelo usuário, no branch `fases/f11` (sem merge; integração pelo usuário). Ver
 [`docs/validacao/13-memorial-tag.md`](docs/validacao/13-memorial-tag.md).**
@@ -1194,7 +1223,56 @@ relatório gerado `docs/validacao/15-termodinamica.md` (`tools/termodinamica_pre
 - **Aceite:** (1) porta única (teste de arquitetura existente, `_chedl.py`) ✓; (2) comparação
   caso a caso sem mudar balanço/paridade ✓; (3) fontes no relatório ✓; (4) cobertura ✓.
 
-### F15 — Otimização com `pymoo` (só planejamento) ✅ (planejamento)
+### F15 — Otimização com `pymoo` ✅ implementada (2026-09-26), como ESTUDO
+**Dependência autorizada pelo usuário em 2026-09-26**; `pymoo` 0.6.2 (Apache-2.0) fixado no
+`uv.lock`.
+
+**A pré-condição do 0003 — nenhum alarme aberto — NÃO está satisfeita**: P-001, P-002 e P-003
+seguem em alarme (falta a correlação laminar/de transição, cuja fonte já existe mas ainda não tem
+exemplo numérico). O usuário autorizou implementar mesmo assim; por isso **toda rodada é estudo e
+nenhum ponto da frente é recomendação de projeto**, e o relatório abre com esse aviso.
+
+Entregue:
+- `fpso_siz/_otim.py` — **porta única do `pymoo`**, com import preguiçoso e teste de arquitetura
+  (a regra do `pfd/_chedl.py`). Não importa nem `numpy`: as fronteiras entram como listas, porque
+  `numpy` está reservado à porta `_num.py` pela invariante 1 e isso mantém a camada mapeável no
+  port a C/Java. NSGA-II até três objetivos, NSGA-III (Das-Dennis) a partir de quatro.
+- `pfd/otimizacao.py` — **avaliador puro**, que não conhece `pymoo`:
+  `avaliar(dados, x) → (objetivos, restrições, estados)`, decodificando o vetor nas alterações
+  declaradas (premissa do balanço, entrada de um TAG, divisão da vazão em trens) e chamando o
+  **mesmo serviço por TAG** de sempre. Inviabilidade continua estado e vira violação (g > 0);
+  lacuna e caso inativo **não** são violação de projeto (são dado).
+- `config/pfd/otimizacao.toml` — variáveis, objetivos, restrições, subproblemas e parâmetros do
+  algoritmo, cada um com a origem do limite. O código não nomeia variável nem objetivo.
+  Valor apenas `proposto` não é variável de decisão (há teste).
+- `tools/otimizar.py` → `docs/validacao/23-otimizacao.md` + frente em JSON/CSV.
+
+**Critérios de validação do 0003 (`tests/pfd/test_otimizacao.py`, marcador `otim`):**
+1. o avaliador reproduz o ponto do projeto atual — mesmos estados por TAG que o `pfd` publica;
+2. a frente do NSGA-II não é dominada pela varredura exaustiva da mesma grade (subproblema do
+   SG-001: η × número de trens);
+3. mesma semente → mesma frente;
+4. o dimensionamento padrão não muda ao avaliar pontos fora do projeto.
+
+**Resultado das rodadas:** no **problema completo** não há indivíduo viável — com os alarmes dos
+trocadores abertos, todo ponto tem pelo menos um TAG inviável. **Isso é o resultado**, e é
+exatamente a razão da pré-condição do 0003: otimizar ali seria otimizar um erro. A rodada segue
+útil como diagnóstico, porque a violação mostra qual TAG barra cada ponto e quanto falta. No
+**subproblema do SG-001** a frente existe e é conferida contra a grade; ela degenera num ponto
+só, porque os dois objetivos melhoram na mesma direção (mais trens reduzem o volume por vaso, e
+η maior reduz a carga de aquecimento) — não há troca a mostrar, e dizer isso é mais honesto que
+exibir uma curva inexistente.
+
+**Achado novo da rodada, para decisão do usuário:** a otimização encontrou uma **fronteira de
+viabilidade dentro da faixa que a fonte declara admissível**. Com η_padrão ≳ 0,8995 — dentro da
+faixa de 80–90 % declarada pelo usuário para a P-43 — o **B-002 fica inviável**: com mais água
+livre removida, a vazão de água produzida do caso de projeto cai no vão da série comercial de DN,
+entre DN 150 e DN 200, que é o mesmo efeito já documentado em `docs/validacao/17-banda-bombas.md`.
+O ótimo do subproblema fica, portanto, encostado nessa fronteira (η ≈ 0,899), e não no limite
+superior da faixa. A otimização **não** escolhe entre ampliar a série de DN, aceitar velocidade
+fora da banda ou limitar η: isso é decisão de projeto, e fica registrada como pendência.
+
+### F15 — planejamento ✅ (o documento de decisão)
 **Entregue (2026-09-26):** `docs/decisoes/0003-otimizacao-pymoo.md` — variáveis com limites de
 origem declarada, objetivos, restrições como estado, NSGA-II/III, porta única `_otim.py`,
 critério de validação; **pré-condição: nenhum alarme aberto** (docs/validacao/14-alarmes.md).
