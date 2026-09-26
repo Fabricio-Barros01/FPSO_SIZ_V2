@@ -305,6 +305,7 @@ usuario = "usuário"
 arquivo = "arquivo"
 lacuna = "lacuna"
 nao_aplicavel = "não aplicável"
+proposta = "PROPOSTA a confirmar"
 
 [revisao_tela]
 pendente = "revisão pendente"

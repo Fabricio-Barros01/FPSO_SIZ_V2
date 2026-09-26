@@ -1,0 +1,402 @@
+# Valores PROPOSTOS para as entradas sem fonte técnica rastreável (F10x).
+#
+# Gerado a partir do inventário das lacunas do código (`fpso-siz pfd` sem ajustes): as 43
+# entradas que o catálogo deixa sem valor, em 8 TAGs, porque não há fonte no acervo, no BOT
+# nem em norma citável. NÃO são dados validados. Cada item:
+#   - status = "proposto": só este status entra pelo mecanismo de propostas;
+#   - origem = "proposta do usuário …": valor inicial escolhido pelo autor para o fluxo rodar;
+#   - justificativa: raciocínio físico do valor inicial (sem referência bibliográfica,
+#     normativa ou do BOT atribuída ao número).
+# Precedência: só preenche LACUNA (usuário > regra do TAG > recomendada > default com fonte >
+# proposta > lacuna). Uso: `fpso-siz pfd --casos … --propostas docs/propostas/pendencias_propostas.toml`.
+# Para validar um valor, confirme-o no modo interativo (vira entrada do usuário nos ajustes)
+# e retire-o daqui.
+
+esquema = 1
+
+[[proposta]]
+tag = "B-001"
+chave = "h_geometrica"
+valor = 5.0
+unidade = "m"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Desnível entre a sucção e o bocal de chegada no mesmo convés de processo do topside; da ordem de um pavimento de módulo. Muda pouco a carga: nestas bombas a parcela de pressão (P_rec − P_suc)/(ρg) domina."
+
+[[proposta]]
+tag = "B-002"
+chave = "h_geometrica"
+valor = 5.0
+unidade = "m"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Desnível entre a sucção e o bocal de chegada no mesmo convés de processo do topside; da ordem de um pavimento de módulo. Muda pouco a carga: nestas bombas a parcela de pressão (P_rec − P_suc)/(ρg) domina."
+
+[[proposta]]
+tag = "B-003"
+chave = "h_geometrica"
+valor = 5.0
+unidade = "m"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Desnível entre a sucção e o bocal de chegada no mesmo convés de processo do topside; da ordem de um pavimento de módulo. Muda pouco a carga: nestas bombas a parcela de pressão (P_rec − P_suc)/(ρg) domina."
+
+[[proposta]]
+tag = "B-001"
+chave = "h_sucao"
+valor = 5.0
+unidade = "m"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Nível mínimo de líquido no vaso de sucção acima da linha de centro da bomba. O líquido chega no ponto de bolha (Pv = P do vaso), então o NPSH disponível é só esta coluna menos a perda na sucção; 5 m deixa folga sobre NPSHr + margem propostos."
+
+[[proposta]]
+tag = "B-002"
+chave = "h_sucao"
+valor = 5.0
+unidade = "m"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Nível mínimo de líquido no vaso de sucção acima da linha de centro da bomba. O líquido chega no ponto de bolha (Pv = P do vaso), então o NPSH disponível é só esta coluna menos a perda na sucção; 5 m deixa folga sobre NPSHr + margem propostos."
+
+[[proposta]]
+tag = "B-003"
+chave = "h_sucao"
+valor = 5.0
+unidade = "m"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Nível mínimo de líquido no vaso de sucção acima da linha de centro da bomba. O líquido chega no ponto de bolha (Pv = P do vaso), então o NPSH disponível é só esta coluna menos a perda na sucção; 5 m deixa folga sobre NPSHr + margem propostos."
+
+[[proposta]]
+tag = "B-001"
+chave = "l_sucao"
+valor = 10.0
+unidade = "m"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Linha de sucção curta, bomba ao lado do vaso no mesmo módulo (prática para líquido no ponto de bolha)."
+
+[[proposta]]
+tag = "B-002"
+chave = "l_sucao"
+valor = 10.0
+unidade = "m"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Linha de sucção curta, bomba ao lado do vaso no mesmo módulo (prática para líquido no ponto de bolha)."
+
+[[proposta]]
+tag = "B-003"
+chave = "l_sucao"
+valor = 10.0
+unidade = "m"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Linha de sucção curta, bomba ao lado do vaso no mesmo módulo (prática para líquido no ponto de bolha)."
+
+[[proposta]]
+tag = "B-001"
+chave = "k_sucao"
+valor = 2.0
+unidade = "–"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Σk estimado para entrada do vaso, uma válvula de bloqueio, filtro temporário e duas curvas; conferir peça a peça na Tab. 1 de Moran (2016), citada no código, quando o isométrico existir."
+
+[[proposta]]
+tag = "B-002"
+chave = "k_sucao"
+valor = 2.0
+unidade = "–"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Σk estimado para entrada do vaso, uma válvula de bloqueio, filtro temporário e duas curvas; conferir peça a peça na Tab. 1 de Moran (2016), citada no código, quando o isométrico existir."
+
+[[proposta]]
+tag = "B-003"
+chave = "k_sucao"
+valor = 2.0
+unidade = "–"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Σk estimado para entrada do vaso, uma válvula de bloqueio, filtro temporário e duas curvas; conferir peça a peça na Tab. 1 de Moran (2016), citada no código, quando o isométrico existir."
+
+[[proposta]]
+tag = "B-001"
+chave = "l_recalque"
+valor = 60.0
+unidade = "m"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Trajeto de recalque dentro do topside até o equipamento de destino (P-001 ou M-03), dimensão típica de um módulo de FPSO."
+
+[[proposta]]
+tag = "B-002"
+chave = "l_recalque"
+valor = 60.0
+unidade = "m"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Trajeto de recalque dentro do topside até o equipamento de destino (P-001 ou M-03), dimensão típica de um módulo de FPSO."
+
+[[proposta]]
+tag = "B-003"
+chave = "l_recalque"
+valor = 60.0
+unidade = "m"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Trajeto de recalque dentro do topside até o equipamento de destino (P-001 ou M-03), dimensão típica de um módulo de FPSO."
+
+[[proposta]]
+tag = "B-001"
+chave = "k_recalque"
+valor = 10.0
+unidade = "–"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Σk estimado para válvula de retenção, válvula de controle aberta, bloqueios e curvas do recalque; a confirmar com a lista de peças."
+
+[[proposta]]
+tag = "B-002"
+chave = "k_recalque"
+valor = 10.0
+unidade = "–"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Σk estimado para válvula de retenção, válvula de controle aberta, bloqueios e curvas do recalque; a confirmar com a lista de peças."
+
+[[proposta]]
+tag = "B-003"
+chave = "k_recalque"
+valor = 10.0
+unidade = "–"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Σk estimado para válvula de retenção, válvula de controle aberta, bloqueios e curvas do recalque; a confirmar com a lista de peças."
+
+[[proposta]]
+tag = "B-001"
+chave = "npsh_requerido"
+valor = 3.0
+unidade = "m"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "NPSHr inicial para bomba centrífuga de processo desta faixa de vazão, até existir a curva do fabricante (o código indica a curva do fabricante como origem)."
+
+[[proposta]]
+tag = "B-002"
+chave = "npsh_requerido"
+valor = 3.0
+unidade = "m"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "NPSHr inicial para bomba centrífuga de processo desta faixa de vazão, até existir a curva do fabricante (o código indica a curva do fabricante como origem)."
+
+[[proposta]]
+tag = "B-003"
+chave = "npsh_requerido"
+valor = 3.0
+unidade = "m"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "NPSHr inicial para bomba centrífuga de processo desta faixa de vazão, até existir a curva do fabricante (o código indica a curva do fabricante como origem)."
+
+[[proposta]]
+tag = "B-001"
+chave = "npsh_margem"
+valor = 1.0
+unidade = "m"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Folga sobre o NPSHr para operação; Moran (2016) não fixa valor (dica do código); critério do projeto a confirmar."
+
+[[proposta]]
+tag = "B-002"
+chave = "npsh_margem"
+valor = 1.0
+unidade = "m"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Folga sobre o NPSHr para operação; Moran (2016) não fixa valor (dica do código); critério do projeto a confirmar."
+
+[[proposta]]
+tag = "B-003"
+chave = "npsh_margem"
+valor = 1.0
+unidade = "m"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Folga sobre o NPSHr para operação; Moran (2016) não fixa valor (dica do código); critério do projeto a confirmar."
+
+[[proposta]]
+tag = "P-001"
+chave = "k_tubo"
+valor = 0.13
+unidade = "W/m·K"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Lado tubo com óleo ou emulsão de fase contínua óleo; adota-se a condutividade de óleo cru líquido, a menor dos componentes. É conservador: k menor dá h_i menor e área maior. Sem correlação de emulsão no acervo nem no ChEDL (dica do código)."
+
+[[proposta]]
+tag = "P-002"
+chave = "k_tubo"
+valor = 0.13
+unidade = "W/m·K"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Lado tubo com óleo ou emulsão de fase contínua óleo; adota-se a condutividade de óleo cru líquido, a menor dos componentes. É conservador: k menor dá h_i menor e área maior. Sem correlação de emulsão no acervo nem no ChEDL (dica do código)."
+
+[[proposta]]
+tag = "P-003"
+chave = "k_tubo"
+valor = 0.13
+unidade = "W/m·K"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Lado tubo com óleo ou emulsão de fase contínua óleo; adota-se a condutividade de óleo cru líquido, a menor dos componentes. É conservador: k menor dá h_i menor e área maior. Sem correlação de emulsão no acervo nem no ChEDL (dica do código)."
+
+[[proposta]]
+tag = "P-001"
+chave = "k_casco"
+valor = 0.13
+unidade = "W/m·K"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Lado casco do P-001 com óleo tratado (C-22); mesma proposta do óleo do lado tubo."
+
+[[proposta]]
+tag = "P-001"
+chave = "k_parede"
+valor = 45.0
+unidade = "W/m·K"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Tubo de aço-carbono, material usual segundo o próprio código (Saari §3); condutividade de aço-carbono na faixa de 80–100 °C, a conferir numa tabela de materiais."
+
+[[proposta]]
+tag = "P-002"
+chave = "k_parede"
+valor = 45.0
+unidade = "W/m·K"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Tubo de aço-carbono, material usual segundo o próprio código (Saari §3); condutividade de aço-carbono na faixa de 80–100 °C, a conferir numa tabela de materiais."
+
+[[proposta]]
+tag = "P-003"
+chave = "k_parede"
+valor = 45.0
+unidade = "W/m·K"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Tubo de aço-carbono, material usual segundo o próprio código (Saari §3); condutividade de aço-carbono na faixa de 80–100 °C, a conferir numa tabela de materiais."
+
+[[proposta]]
+tag = "P-001"
+chave = "rf_tubo"
+valor = 0.00035
+unidade = "m²·K/W"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Incrustação de serviço com óleo cru ou emulsão; a Tab. 8.1 de Saari citada no código não tem petróleo. Valor conservador da ordem das incrustações de óleo, a confirmar."
+
+[[proposta]]
+tag = "P-002"
+chave = "rf_tubo"
+valor = 0.00035
+unidade = "m²·K/W"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Incrustação de serviço com óleo cru ou emulsão; a Tab. 8.1 de Saari citada no código não tem petróleo. Valor conservador da ordem das incrustações de óleo, a confirmar."
+
+[[proposta]]
+tag = "P-003"
+chave = "rf_tubo"
+valor = 0.00035
+unidade = "m²·K/W"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Incrustação de serviço com óleo cru ou emulsão; a Tab. 8.1 de Saari citada no código não tem petróleo. Valor conservador da ordem das incrustações de óleo, a confirmar."
+
+[[proposta]]
+tag = "P-001"
+chave = "rf_casco"
+valor = 0.00035
+unidade = "m²·K/W"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Lado casco do P-001 com óleo tratado: mesma proposta do lado tubo."
+
+[[proposta]]
+tag = "P-002"
+chave = "rf_casco"
+valor = 0.00018
+unidade = "m²·K/W"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Lado casco com água de utilidade em circuito fechado tratado (aquecimento no P-002, resfriamento no P-003): incrustação menor que a do óleo; conferir na Tab. 8.1 de Saari citada no código."
+
+[[proposta]]
+tag = "P-003"
+chave = "rf_casco"
+valor = 0.00018
+unidade = "m²·K/W"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Lado casco com água de utilidade em circuito fechado tratado (aquecimento no P-002, resfriamento no P-003): incrustação menor que a do óleo; conferir na Tab. 8.1 de Saari citada no código."
+
+[[proposta]]
+tag = "P-002"
+chave = "t_agua_in"
+valor = 110.0
+unidade = "°C"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Suprimento do meio de aquecimento abaixo do máximo de 120 °C do BOT 2.7.1.4 (limite já no código) e 20 K acima da saída de óleo de 90 °C (T_trat, F-05)."
+
+[[proposta]]
+tag = "P-002"
+chave = "t_agua_out"
+valor = 95.0
+unidade = "°C"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Retorno do meio de aquecimento: com 110 °C na entrada, ΔT de 15 K na utilidade. Na ponta fria, 95 °C contra óleo de entrada ≤ 80,4 °C dá aproximação ≥ 14 K, acima da aproximação mínima de 10 K da P-32."
+
+[[proposta]]
+tag = "P-003"
+chave = "t_agua_in"
+valor = 30.0
+unidade = "°C"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Água de resfriamento em circuito fechado resfriado por água do mar, em clima tropical; 10 K abaixo da saída de óleo de 40 °C (F-08), igual à aproximação mínima de 10 K da P-32."
+
+[[proposta]]
+tag = "P-003"
+chave = "t_agua_out"
+valor = 35.0
+unidade = "°C"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Retorno da água de resfriamento com ΔT de 5 K; fica 10 K abaixo da menor entrada de óleo no P-003 (45 °C, casos 5 e 6), sem cruzamento de temperatura."
+
+[[proposta]]
+tag = "TO-001"
+chave = "dm_water"
+valor = 1000.0
+unidade = "µm"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Sem correlação campo elétrico → gotícula no acervo (dica do código). Adota-se 1000 µm, a premissa do autor já registrada no descritor do método (nota de dm_water em equipment/treater/electrostatic.toml): 2× os 500 µm que S&A §4.7.2 usa sem tratamento, isto é, ganho de 4× na decantação. Com 500 µm (sem crédito do campo) o tratador não teria razão de ser; a confirmar com dado de laboratório."
+
+[[proposta]]
+tag = "TO-002"
+chave = "dm_water"
+valor = 1000.0
+unidade = "µm"
+status = "proposto"
+origem = "proposta do usuário (autor do TCC)"
+justificativa = "Sem correlação campo elétrico → gotícula no acervo (dica do código). Adota-se 1000 µm, a premissa do autor já registrada no descritor do método (nota de dm_water em equipment/treater/electrostatic.toml): 2× os 500 µm que S&A §4.7.2 usa sem tratamento, isto é, ganho de 4× na decantação. Com 500 µm (sem crédito do campo) o tratador não teria razão de ser; a confirmar com dado de laboratório."

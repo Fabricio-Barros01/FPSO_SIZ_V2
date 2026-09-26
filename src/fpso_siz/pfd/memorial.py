@@ -82,7 +82,8 @@ def identificacao(ctx, rt):
     return dict(tag=t.tag, nome=t.nome, bloco=t.bloco, condicao=t.condicao, equipamento=e.equipamento.label,
                 metodo=m.label, metodo_id=m.method_id, referencia=getattr(m, "method_reference", lambda: "")(),
                 sequencia=seq, numero=num, revisao=cfg()["revisao"], status=rt.status, modo=e.modo,
-                preliminar=e.preliminar, regra_fwko=regra, fwko_exigidos=exigidos, avulso=e.avulso)
+                preliminar=e.preliminar, regra_fwko=regra, fwko_exigidos=exigidos, avulso=e.avulso,
+                propostas=dict(arquivo=ctx.propostas.arquivo, sha256=ctx.propostas.sha256) if ctx.propostas else None)
 
 
 def casos(rt):
@@ -327,16 +328,21 @@ def _series_do_metodo(rt, graf, p_env):
     """Gráficos próprios de trocador (perfil T × Q, parcelas de 1/U) e de bomba (curva do
     sistema, NPSH por caso), no ponto escolhido e no caso governante, pelos hooks do método."""
     r, m = rt.resultado, rt.entradas.metodo
-    if not r.feasible or not {"perfil_tq", "resistencias", "curva_sistema", "npsh"} & set(graf):
+    if not {"perfil_tq", "resistencias", "curva_sistema", "npsh"} & set(graf):
         return {}
     cons = restricoes(rt)
     i = indice_governante(r)
+    if cons[i][1] is None:   # inviável já na preparação do caso: o primeiro caso que prepara
+        i = next((j for j, (_, cj) in enumerate(cons) if cj is not None), i)
     entrada, c = cons[i]
-    out = {}
+    out = {"caso_metodo": rt.entradas.case_set().expand()[i][0]}
+    # o perfil T × Q só depende do balanço térmico do caso: sai também no inviável
     if "perfil_tq" in graf and hasattr(m, "perfil_tq") and c is not None:
         perfil = m.perfil_tq(entrada, c)
         out["perfil_tq"] = [dict(q_kw=w_para_kw(q), t_tubo=tt, t_casco=tc)
                             for (q, tt), (_, tc) in zip(perfil["tubo"], perfil["casco"])]
+    if not r.feasible:
+        return out
     if "resistencias" in graf and hasattr(m, "parcelas_u") and c is not None:
         parcelas, u = m.parcelas_u(r.x, c)
         rot = conteudo_metodo(m).get("rotulos_resistencias", {})
@@ -365,7 +371,23 @@ def pendencias(rt):
                                origem=rotulo_origem(v.origem), estado=v.estado, casos=list(v.casos))
                           for v in e.revisoes()],
                 lacunas=[lac.chave for lac in e.lacunas], avisos=[dict(texto=a, casos=n) for a, n in e.avisos()],
-                sem_fonte=sem_fonte, limitacoes=limitacoes())
+                sem_fonte=sem_fonte, limitacoes=limitacoes(), propostas=propostas_usadas(rt))
+
+
+def propostas_usadas(rt):
+    """Valores propostos pelo usuário que entraram no cálculo (origem `proposta`), por
+    entrada, com os casos: separados dos valores com fonte e dos calculados."""
+    grupos = {}
+    for c in rt.entradas.casos:
+        if not c.ativo:
+            continue
+        for k, v in (*c.valores.items(), *c.insumos.items()):
+            if v.proposta:
+                grupos.setdefault((k, v.valor, v.fonte), []).append(c.num)
+    specs, ins = rt.entradas.specs, rt.entradas.tag.insumos
+    return [dict(chave=k, rotulo=specs[k].label if k in specs else ins[k]["rotulo"],
+                 unidade=specs[k].unit if k in specs else ins[k]["unidade"], valor=v, fonte=f, casos=nums)
+            for (k, v, f), nums in grupos.items()]
 
 
 def _sem_fonte(e):
@@ -390,6 +412,16 @@ def documento(ctx, rt):
     if r is None:
         return doc
     p_env = _parametros_envelope(m, rt.entradas)
+    if not r.per_case:
+        # o motor parou na preparação de um caso (ex.: cruzamento de temperatura): só diagnóstico
+        doc["calculo"] = dict(caso_governante="", indice_governante=None, viavel=False, equacoes=[], rastro=[],
+                              iteracoes=[], selecao=None, banda=None, tabela=dict(colunas=[], linhas=[]),
+                              criterios=criterios(rt, None), diagnostico=diagnostico(rt, None),
+                              resultados=resultados(rt), series=_series_do_metodo(rt, conteudo_metodo(m).get(
+                                  "graficos", []), p_env), x_referencia=None,
+                              eixo=m.sweep_axis(p_env).label if p_env else "",
+                              unidade_eixo=m.sweep_axis(p_env).unit if p_env else "", exigencia=m.requirement_spec())
+        return doc
     i = indice_governante(r)
     x = x_referencia(rt, p_env)
     sel = selecao(rt, i)

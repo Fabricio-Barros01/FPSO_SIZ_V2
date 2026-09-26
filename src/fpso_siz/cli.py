@@ -28,6 +28,7 @@ from fpso_siz.output.terminal.relatorio import resumo_dimensionamento, verificac
 from fpso_siz.output.terminal.sessao import Sessao
 from fpso_siz.pfd import ajustes as mod_ajustes
 from fpso_siz.pfd import equipamento as servico
+from fpso_siz.pfd import propostas as mod_propostas
 
 AMBOS = "ambos"
 COLUNAS = 79  # largura dos resumos fora do modo interativo (saída pode ser arquivo)
@@ -165,7 +166,8 @@ def _dimensionar_equipamento(a):
         if a.casos is None:
             raise ValueError("--tag exige --casos (o JSON do BOT que identifica o contexto)")
         t = tag(a.tag)
-        ctx = servico.Contexto(carregar_casos(a.casos), alteracoes=_alteracoes(a.premissa))
+        ctx = servico.Contexto(carregar_casos(a.casos), alteracoes=_alteracoes(a.premissa),
+                               propostas=_propostas(a))
         estado = _estado_do_tag(a, t, aj)
         _verificar_contexto(aj, ctx, [estado])
     else:
@@ -173,7 +175,7 @@ def _dimensionar_equipamento(a):
             raise ValueError("--avulso exige --ajustes (o arquivo onde o avulso foi salvo)")
         if a.avulso not in aj.avulsos:
             raise ValueError(f"avulso {a.avulso!r} não está em {a.ajustes}; salvos: {sorted(aj.avulsos) or '—'}")
-        ctx = servico.Contexto(None)
+        ctx = servico.Contexto(None, propostas=_propostas(a))
         estado = aj.avulsos[a.avulso]
         _verificar_contexto(aj, ctx, [], bot=False)
     rt = servico.executar(ctx, estado)
@@ -234,7 +236,7 @@ def cmd_dimensionar(a):
 
 
 def cmd_interativo(a):
-    return Sessao(casos=a.casos, ajustes=a.ajustes, ascii=a.ascii).rodar()
+    return Sessao(casos=a.casos, ajustes=a.ajustes, ascii=a.ascii, propostas=a.propostas).rodar()
 
 
 def cmd_pfd(a):
@@ -242,7 +244,7 @@ def cmd_pfd(a):
     from fpso_siz.output.terminal.pfd import resumo
     from fpso_siz.pfd.planta import dimensionar
 
-    ctx = servico.Contexto(carregar_casos(a.casos), alteracoes=_alteracoes(a.premissa))
+    ctx = servico.Contexto(carregar_casos(a.casos), alteracoes=_alteracoes(a.premissa), propostas=_propostas(a))
     aj = _ler_ajustes(a.ajustes)
     _verificar_contexto(aj, ctx, aj.todos())
     _validar_mc(a)
@@ -257,6 +259,17 @@ def cmd_pfd(a):
             gravados += arqs
         _mostrar(e, ["gravados: " + ", ".join(str(p) for p in gravados)])
     return _codigo_mc(erros, 0 if planta.completa else 1)
+
+
+def _propostas(a):
+    """pendencias_propostas.toml (--propostas): valores propostos para as lacunas."""
+    return mod_propostas.carregar(a.propostas) if getattr(a, "propostas", None) else None
+
+
+def _opcao_propostas(sub):
+    sub.add_argument("--propostas", type=Path,
+                     help="pendencias_propostas.toml: valores PROPOSTOS (status = \"proposto\") para as entradas sem "
+                          "fonte; só preenchem lacunas e ficam marcados como proposta a confirmar")
 
 
 def _opcoes_mc(sub):
@@ -326,6 +339,7 @@ def main(argv=None):
     d.add_argument("--metodo", help="id do método (padrão: o primeiro registrado para o equipamento)")
     d.add_argument("--saida", type=Path, help="pasta de saída (JSON + CSV); sem ela, só o resumo")
     _opcoes_mc(d)
+    _opcao_propostas(d)
     d.add_argument("--ascii", action="store_true", help="texto só em ASCII (setas, bordas, acentos)")
     d.set_defaults(func=cmd_dimensionar)
 
@@ -335,6 +349,7 @@ def main(argv=None):
     f.add_argument("--saida", type=Path, help="pasta de saída (JSON + CSV por TAG e planta.csv)")
     f.add_argument("--premissa", action="append", default=[], metavar="NOME=VALOR")
     _opcoes_mc(f)
+    _opcao_propostas(f)
     f.add_argument("--ascii", action="store_true", help="texto só em ASCII (setas, bordas, acentos)")
     f.set_defaults(func=cmd_pfd)
 
@@ -342,6 +357,7 @@ def main(argv=None):
     i.add_argument("--casos", type=Path, help="arquivo de casos do balanço (JSON do BOT)")
     i.add_argument("--ajustes", type=Path, help="arquivo de ajustes a retomar")
     i.add_argument("--ascii", action="store_true", help="texto só em ASCII (setas, bordas, acentos)")
+    _opcao_propostas(i)
     i.set_defaults(func=cmd_interativo)
 
     a = ap.parse_args(argv)

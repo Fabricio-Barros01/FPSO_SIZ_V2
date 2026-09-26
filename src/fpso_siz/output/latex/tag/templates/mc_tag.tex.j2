@@ -38,6 +38,9 @@ SHA-256 do arquivo & \texttt{\scriptsize << dados.sha256 >>}\\
 <% endif %>
 Programa & \texttt{fpso-siz} << versao >><% if commit %>, commit \texttt{<< commit >>}<% if sujo %> (com alterações locais)<% endif %><% endif %>\\
 Propriedades & <% for k, v in versoes.items() %>\texttt{<< k|tx >>} << v|tx >><% if not loop.last %>, <% endif %><% endfor %>\\
+<% if ident['propostas'] %>
+Valores propostos & \textbf{\texttt{<< ident['propostas']['arquivo']|tx >>}} (SHA-256 \texttt{\scriptsize << ident['propostas']['sha256'][:16] >>…}): entradas sem fonte preenchidas com valores PROPOSTOS pelo usuário, a confirmar (seção 10)\\
+<% endif %>
 Revisão & << meta['revisao'] >> --- emissão preliminar\\
 Data de geração & << meta['data'] >>\\ \bottomrule\end{tabular}\normalsize
 
@@ -205,6 +208,8 @@ $i$ & $C_D^{(i)}$ & $V_t$ (m/s) & $Re$ & $f(Re)$ & $C_D^{(i+1)}$\\\midrule\endhe
 {\footnotesize Rastro: << e.rastro.eq|tx >>, \texttt{<< e.rastro.var|tx >>}.\par}
 <% endif %>
 <% endfor %>
+<% elif calc and not calc.rastro %>
+O dimensionamento parou na preparação dos casos, antes do envelope; o motivo está no diagnóstico da seção 8.
 <% elif calc %>
 Caso: \textbf{<< calc.caso_governante|tx >>}. Este método ainda não tem substituição numérica declarada; segue o rastro do caso, na ordem de avaliação (equação, fórmula e resultado).
 
@@ -220,8 +225,10 @@ Equação & Grandeza & Fórmula & Resultado & Unidade\\\midrule\endhead
 
 <# ------------------------------------------------------------ 7 #>
 \section{Demais casos}
-<% if calc %>
-Resultados intermediários de cada caso (rastro do caso) e exigência em << calc.eixo|tx >> = << calc.x_referencia|sigt >> << calc.unidade_eixo|unid >> <% if calc.viavel %>(ponto escolhido)<% else %>(menor diâmetro da grade com a esbeltez na banda)<% endif %>.
+<% if calc and not calc.tabela.linhas %>
+Sem resultados por caso: ver o diagnóstico da seção 8.
+<% elif calc %>
+Resultados intermediários de cada caso (rastro do caso) e exigência em << calc.eixo|tx >> = << calc.x_referencia|sigt >> << calc.unidade_eixo|unid >> <% if calc.viavel %>(ponto escolhido)<% elif calc.banda %>(menor diâmetro da grade com a esbeltez na banda)<% else %>(primeiro ponto da grade)<% endif %>.
 
 {\scriptsize\begin{longtable}{L{2.7cm}<% for c in calc.tabela.colunas %>r<% endfor %>r<% if calc.viavel %>r<% endif %>L{1.8cm}r}\toprule
 Caso<% for c in calc.tabela.colunas %> & << c >><% endfor %> & \makecell[r]{<< calc.exigencia[0]|tx >>\\(<< calc.exigencia[1]|unid >>)}<% if calc.viavel %> & \makecell[r]{folga\\(<< calc.exigencia[1]|unid >>)}<% endif %> & Governa & Teto (mm)\\\midrule\endhead
@@ -274,8 +281,10 @@ Critério & Valor & Resultado\\\midrule\endhead
 
 \subsection{Diagnóstico}
 << calc.diagnostico.mensagem|tx >>
+<% if calc.diagnostico.teto is not none %>
 
 Teto de decantação: << calc.diagnostico.teto|sigt >> mm, imposto pelo caso << calc.diagnostico.caso_teto|tx >> (<< calc.diagnostico.mecanismo|tx >>). Menor diâmetro da grade com a esbeltez na banda: <% if calc.diagnostico.x_min_banda is not none %><< calc.diagnostico.x_min_banda|sigt >> mm<% else %>nenhum na grade<% endif %>. Como o menor diâmetro que atende à esbeltez está acima do teto, não há interseção entre as regiões admissíveis (Figura~\ref{fig:diagrama}).
+<% endif %>
 <% endif %>
 <% else %>
 \aguarda.
@@ -334,7 +343,7 @@ Campo & Valor & Unidade\\\midrule\endhead
 \addlegendentry{lado casco (contracorrente)}
 \end{axis}
 \end{tikzpicture}
-\caption{Perfil $T\times Q$ do caso << calc.caso_governante|tx >>, entre as temperaturas terminais (cp constante: perfis lineares; no arranjo 1-2 o perfil interno não é o de contracorrente puro, corrigido por $F$).}
+\caption{Perfil $T\times Q$ do caso << sm.caso_metodo|tx >>, entre as temperaturas terminais (cp constante: perfis lineares; no arranjo 1-2 o perfil interno não é o de contracorrente puro, corrigido por $F$).}
 \end{figure}
 <% endif %>
 <% if csv.get('resistencias') %>
@@ -385,6 +394,16 @@ Campo & Valor & Unidade\\\midrule\endhead
 <# ------------------------------------------------------------ 10 #>
 \section{Pendências e valores sem fonte}
 <% set pd = doc.pendencias %>
+<% if pd.propostas %>
+\paragraph{Valores PROPOSTOS pelo usuário, a confirmar.} Entradas sem fonte técnica rastreável (lacunas do catálogo) preenchidas pelo arquivo de propostas (\texttt{status = "proposto"}). Não são dados validados nem calculados pelo modelo; todo resultado que depende deles é preliminar até a confirmação.
+
+{\footnotesize\begin{longtable}{L{3.4cm}R{1.6cm}L{1.3cm}L{7.2cm}L{1.6cm}}\toprule
+Entrada & Valor & Unidade & Origem e justificativa & Casos\\\midrule\endhead
+<% for x in pd.propostas %>
+<< x.rotulo|tx >> (\texttt{<< x.chave|tx >>}) & << x.valor|sigt >> & << x.unidade|unid >> & << x.fonte|tx >> & << x.casos|ids >>\\
+<% endfor %>
+\bottomrule\end{longtable}}
+<% endif %>
 <% if pd.lacunas %>
 \paragraph{Entradas faltantes.} << pd.lacunas|join(', ')|tx >> (seção 4).
 <% endif %>

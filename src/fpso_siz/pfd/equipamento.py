@@ -22,6 +22,7 @@ from fpso_siz.core.motor import size_envelope
 from fpso_siz.pfd import fluidos
 from fpso_siz.pfd.ajustes import AUTOMATICO, MANUAL, EstadoTAG, canonico_estado, contexto_de
 from fpso_siz.pfd.entradas import cfg, especificacoes, montar, montar_manual
+from fpso_siz.pfd.propostas import NENHUMA, conferir_casos
 from fpso_siz.pfd.tags import avulso, tag, tags
 
 AGUARDANDO = "aguardando_entrada"
@@ -57,8 +58,12 @@ class ResultadoTAG:
 class Contexto:
     """Dados compartilhados por todos os TAGs de uma execução ou sessão."""
 
-    def __init__(self, dados, prem=None, alteracoes=None, balanco=None):
+    def __init__(self, dados, prem=None, alteracoes=None, balanco=None, propostas=None):
         self.dados = dados
+        # valores propostos para as lacunas (pfd/propostas.py); vazio = nenhum arquivo carregado
+        self.propostas = propostas if propostas is not None else NENHUMA
+        if self.propostas and dados is not None:
+            conferir_casos(self.propostas, [c["num"] for c in dados.casos])
         base = premissas(dados)
         if prem is None:
             prem = premissas(dados, **(alteracoes or {}))
@@ -144,8 +149,8 @@ def preparar(ctx, estado):
         raise ValueError(f"{t.tag}: o estado usa {estado.equipamento}/{estado.metodo}, mas o TAG é "
                          f"dimensionado por {t.equipamento}/{t.metodo}")
     if estado.modo == MANUAL:
-        return montar_manual(t, ctx.casos(), estado)
-    return montar(t, ctx.balanco, ctx.dados, ctx.prem, estado=estado)
+        return montar_manual(t, ctx.casos(), estado, propostas=ctx.propostas)
+    return montar(t, ctx.balanco, ctx.dados, ctx.prem, estado=estado, propostas=ctx.propostas)
 
 
 def dimensionar(entradas, estado=None):

@@ -30,7 +30,7 @@ sr_target = { tipo = "fonte", fonte = "centro da banda de Stewart & Arnold (2008
 vazao = "q_water"
 oleo = "q_oil"
 parametros = ["dm_water", "dm_oil", "tr_water", "rho_water", "mu_water"]
-dispensaveis = ["lacuna", "recomendada", "metodo"]
+dispensaveis = ["lacuna", "recomendada", "metodo", "proposta"]
 fonte = "P-42: sem fase aquosa neste caso (BOT Tab. 2.2.2.3 Notas 5 e 11; 2.3.1.1); critério não aplicável"
 
 [stewart_arnold_2f]
@@ -60,7 +60,7 @@ sr_target = { tipo = "fonte", fonte = "centro da banda de Stewart & Arnold (2008
 vazao = "q_water"
 oleo = "q_oil"
 parametros = ["dm_water", "dm_oil", "tr_water", "rho_water", "mu_water"]
-dispensaveis = ["lacuna", "recomendada", "metodo"]
+dispensaveis = ["lacuna", "recomendada", "metodo", "proposta"]
 fonte = "P-42: sem fase aquosa neste caso (BOT Tab. 2.2.2.3 Notas 5 e 11; 2.3.1.1); critério não aplicável"
 
 [arnold_electrostatic.dicas]
