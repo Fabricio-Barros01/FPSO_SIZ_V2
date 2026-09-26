@@ -14,7 +14,7 @@ aquela fase).
 
 ## Estado atual
 
-**FASE ATUAL: F10x — pendências de entrada com os valores propostos ← ATUAL (registrada; aguardando aprovação)**
+**FASE ATUAL: F14 — termodinâmica preliminar ← ATUAL (F10x e F13 entregues em 2026-09-26)**
 **F11 (MC por TAG) e F11b (MC do balanço por caso) entregues em 2026-09-26, em sessão autônoma
 autorizada pelo usuário, no branch `fases/f11` (sem merge; integração pelo usuário). Ver
 [`docs/validacao/13-memorial-tag.md`](docs/validacao/13-memorial-tag.md).**
@@ -970,7 +970,7 @@ com commit, regra do FWKO, premissas diferentes do padrão e data; "—" nas gra
 aquosa dos casos 1 e 4–7 (P-42). Ação no menu do balanço iterando os casos. Isolado × lote:
 `.tex` byte a byte e texto do PDF iguais; os 32 PDFs compilam.
 
-### F10x — Preenchimento das pendências de entrada com os valores propostos (registrada, não executada) ← ATUAL
+### F10x — Preenchimento das pendências de entrada com os valores propostos ✅
 Carregar os valores do `pendencias_propostas.toml` do usuário (em `docs/propostas/`, com
 `status = "proposto"`) como entradas dos TAGs aguardando entrada (TO: gotícula após
 coalescência; P: condutividades, incrustações, temperaturas da utilidade; B: arranjo,
@@ -985,7 +985,25 @@ passo a passo (equações declaradas em `memorial_tag.toml`) e os gráficos de t
 parcelas de U) e de bomba (curva do sistema, NPSHd × NPSHr por caso); (5) balanço, oráculo e
 fixtures do Julia inalterados; cobertura ≥ 90 % no núcleo.
 
-### F13 — Contrato de propriedades + estudo do SG-001 (registrada, não executada)
+**Entregue (2026-09-26, aprovada pelo usuário: "continue com as fases por etapas").**
+Commits `de962eb` (F10x.1), `04f0139` (F10x.2), `f807387` (F10x.3).
+- F10x.1: gráficos de trocador (perfil T × Q, parcelas de 1/U) e de bomba (curva do sistema,
+  NPSH disponível × requerido por caso), pelos hooks do método (mesma física).
+- F10x.2: `docs/propostas/pendencias_propostas.toml` com as 43 lacunas do inventário, todas
+  `status = "proposto"`, origem "proposta do usuário" e justificativa física, sem referência
+  atribuída ao número; carga validada (`pfd/propostas.py`: esquema, campos, tipo, unidade,
+  faixa, limite, status, duplicidade, casos); origem própria `proposta` (revisão pendente),
+  separada dos valores com fonte e dos calculados; `--propostas` em `dimensionar`, `pfd` e
+  `interativo`; tabela "Valores PROPOSTOS, a confirmar" no MC. Sem `--propostas` nada muda.
+- F10x.3: MC próprio de cada TAG (função no processo, correntes do bloco com T e P, hipóteses do
+  TAG; premissas no texto vêm de P[...]); sem texto de vaso em bomba e trocador.
+- Com as propostas: TO-001/TO-002 dimensionam (d = 5.550 mm); bombas e trocadores seguem
+  inviáveis — tratados como alarme na F13.
+- **Aceite:** (1) ✓; (2) ✓ (só `proposto` entra); (3) parcial — os TAGs ficam sem lacuna, mas
+  bombas/trocadores/SG-001 inviáveis (alarmes F13); (4) gráficos ✓, passo a passo com
+  substituição só nos vasos (bomba/trocador: rastro em tabela); (5) ✓; cobertura ✓.
+
+### F13 — Contrato de propriedades + alarmes de inviabilidade (estudo do SG-001) ✅
 Formalizar o contrato das propriedades de fluido consumidas pelos métodos (unidade, condição,
 correlação, faixa de validade e fonte, por grandeza) e estudar as alternativas para a
 inviabilidade do SG-001 (entrada mais quente, gotícula/retenção, trens em paralelo, η menor
@@ -995,7 +1013,27 @@ mudar número; (2) estudo em `docs/validacao/` com a tabela de alternativas × t
 banda, para os 16 casos, gerado pelo mesmo motor; (3) nenhuma premissa nova entra no cálculo
 padrão sem aprovação do usuário; (4) o MC do SG-001 cita o estudo.
 
-### F14 — Termodinâmica preliminar com `thermo` e `iapws` (registrada, não executada)
+**Entregue (2026-09-26).** Diretriz do usuário: a unidade do BOT é um projeto básico real;
+TAG sem equipamento que atenda é **alarme** de erro de premissa, numérico ou de modelo, com
+anotação e investigação.
+- `config/pfd/contrato_propriedades.toml` + `pfd/contrato.py`: um descritor por grandeza de
+  fluido (regra, unidade, condição, função, fonte, validade), conferido contra o código.
+- `config/pfd/alarmes.toml` + `pfd/investigacao.py`: hipóteses por TAG inviável e variantes
+  executáveis pelo mesmo motor (η 0,80/0,90 da faixa do usuário, trens em paralelo, 1 passe,
+  sem piso de velocidade), sem mudar o cálculo padrão; seção ALARME no MC; estado "inviável —
+  ALARME" no terminal; relatório gerado `docs/validacao/14-alarmes.md`
+  (`tools/investigar_alarmes.py`).
+- Achados: SG-001 inviável só nos casos 2 e 3; conta do teto refeita do rastro sem erro numérico;
+  nenhuma variante rastreável resolve (3 trens: SR no teto 6,8 > 5) → premissas suspeitas
+  (viscosidade de óleo morto; critério de 500 µm aplicado ao FWKO). Trocadores: óleo laminar no
+  tubo, fora de Dittus-Boelter (falta correlação laminar no acervo; P-001 com 1 passe chega ao
+  mesmo limite). Bombas: faixa de vazão de 10–23× entre casos numa linha só; B-002 casos 15–16
+  no vão da série de DN para a banda 1–1,5 m/s.
+- BOT versionado em `docs/bot/` (a pedido do usuário) e conferido nos itens citados.
+- **Aceite:** (1) ✓; (2) estudo em `docs/validacao/14-alarmes.md` gerado pelo motor ✓; (3) ✓
+  nenhuma premissa nova no padrão; (4) o MC do SG-001 cita a investigação ✓.
+
+### F14 — Termodinâmica preliminar com `thermo` e `iapws` ← ATUAL
 Flash e propriedades de óleo vivo/gás dissolvido (Bo, Rs, calor de flash) por `thermo`
 (ChEDL, só via `pfd/_chedl.py`) e água/vapor por `iapws`, em camada a jusante do balanço.
 **Aceite:** (1) `iapws` atrás de uma porta única, com teste de arquitetura; (2) comparação

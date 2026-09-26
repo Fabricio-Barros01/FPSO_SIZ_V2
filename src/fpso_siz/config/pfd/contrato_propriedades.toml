@@ -1,0 +1,78 @@
+# Contrato das propriedades de fluido consumidas pelos métodos (F13).
+#
+# Um descritor por grandeza: a regra do TAG que a produz (pfd/entradas.REGRAS), a unidade
+# entregue ao método, a condição em que é avaliada, a função de pfd/fluidos.py, a fonte (a
+# chave de fluidos.toml que cita a referência) e a validade. Não muda número: só declara o
+# que o código já faz; pfd/contrato.py confere o contrato contra o código (teste).
+
+[densidade_gas]
+regra = "densidade_gas"
+unidade = "kg/m³"
+condicao = "T e P da corrente de gás do TAG"
+funcao = "gas"
+fonte = ["gas.fonte_eos", "gas.fonte_z"]
+validade = "fase vapor da EOS de Peng-Robinson com a composição do balanço (gás seco)"
+
+[compressibilidade_gas]
+regra = "compressibilidade_gas"
+unidade = "–"
+condicao = "T e P da corrente de gás do TAG"
+funcao = "gas"
+fonte = ["gas.fonte_eos"]
+validade = "fase vapor da EOS de Peng-Robinson; kij do banco ChemSep"
+
+[viscosidade_gas]
+regra = "viscosidade_gas"
+unidade = "cP"
+condicao = "T da corrente de gás (regra de gás diluído, sem correção de pressão)"
+funcao = "gas"
+fonte = ["gas.fonte_transporte"]
+validade = "gás diluído (Brokaw); a pressão do vaso não corrige a viscosidade"
+
+[densidade_fase]
+regra = "densidade_fase"
+unidade = "kg/m³"
+condicao = "óleo na condição padrão; fase aquosa na T e P do TAG"
+funcao = "oleo"
+fonte = ["oleo.fonte_densidade", "salmoura.fonte", "agua.fonte_densidade"]
+validade = "óleo morto sem correção por T e Bo; salmoura nas faixas do banco de Laliberté (Min T, Max T, Max w)"
+
+[viscosidade_fase]
+regra = "viscosidade_fase"
+unidade = "cP"
+condicao = "T do TAG (média das correntes indicadas na regra)"
+funcao = "emulsao"
+fonte = ["oleo.fonte_viscosidade", "salmoura.fonte", "emulsao.fonte"]
+validade = "óleo morto: interpolação log-linear do BOT, limitada a 70 °C (P-40); emulsão pela correlação de Zanker nas faixas da mesma página"
+
+[pressao_vapor_saturado]
+regra = "pressao_vapor_saturado"
+unidade = "kPa"
+condicao = "líquido que sai do vaso a montante no ponto de bolha"
+funcao = "pressao_vapor_saturado"
+fonte = ["vapor.fonte"]
+validade = "Pv = P do vaso; vale para líquido em equilíbrio com o gás no vaso de sucção"
+
+[cp_utilidade]
+regra = "cp_utilidade"
+unidade = "J/kg·K"
+condicao = "temperatura média da utilidade (entrada e saída)"
+funcao = "agua_saturada"
+fonte = ["agua.fonte_densidade"]
+validade = "água pura como líquido saturado; pressão do circuito não informada"
+
+[viscosidade_utilidade]
+regra = "viscosidade_utilidade"
+unidade = "cP"
+condicao = "temperatura média da utilidade"
+funcao = "agua_saturada"
+fonte = ["agua.fonte_viscosidade"]
+validade = "água pura como líquido saturado"
+
+[condutividade_utilidade]
+regra = "condutividade_utilidade"
+unidade = "W/m·K"
+condicao = "temperatura média da utilidade"
+funcao = "agua_saturada"
+fonte = ["agua.fonte_condutividade"]
+validade = "água pura como líquido saturado"

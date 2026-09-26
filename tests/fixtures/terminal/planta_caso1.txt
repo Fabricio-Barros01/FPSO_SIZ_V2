@@ -32,7 +32,7 @@
   P-001   aguardando entrada            10  —                     —
   P-002   aguardando entrada            10  —                     —
   P-003   aguardando entrada            16  —                     —
-  SG-001  inviável                      16  —                     —
+  SG-001  inviável — ALARME             16  —                     —
   TO-001  aguardando entrada            16  —                     —
   TO-002  aguardando entrada            16  —                     —
   V-001   dimensionado                  16  Diâmetro d: 4.700 mm  BOT 03 — Early Life Blend

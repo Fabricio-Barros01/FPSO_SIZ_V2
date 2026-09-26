@@ -308,6 +308,23 @@ Teto de decantação: << calc.diagnostico.teto|sigt >> mm, imposto pelo caso << 
 \aguarda.
 <% endif %>
 
+<% if doc.alarme %>
+
+\subsection{ALARME --- resultado inviável num projeto básico real}
+\textcolor{red!70!black}{\textbf{Nenhum equipamento atende aos casos.}} A unidade do BOT é um projeto básico de caso real: este resultado é tratado como alarme de possível erro de premissa, numérico ou de modelo, e não como conclusão de projeto. Estado da investigação: \textbf{<< doc.alarme.estado|tx >>}.
+<% if doc.alarme.resumo %>
+
+<< doc.alarme.resumo|tx >>
+<% endif %>
+
+{\footnotesize\begin{longtable}{L{1.7cm}L{14.3cm}}\toprule
+Classe & Hipótese e resultado da variante (mesmo motor)\\\midrule\endhead
+<% for h in doc.alarme.hipoteses %>
+<< h.classe|tx >> & << h.texto|tx >><% for v in h.variantes %>\newline\textbf{Variante ``<< v.rotulo|tx >>''} (<< v.origem|tx >>): <% if v.viavel %>\textcolor{green!45!black}{viável}, << calc.eixo|tx >> = << v.x|sigt >> << calc.unidade_eixo|unid >><% else %>\textcolor{red!70!black}{segue inviável}<% if v.teto is not none %> (teto << v.teto|sigt >> mm, caso << v.caso_teto|tx >>)<% endif %><% endif %>.<% endfor %>\\
+<% endfor %>
+\bottomrule\end{longtable}}
+<% endif %>
+
 <# ------------------------------------------------------------ 9 #>
 \section{Resultados finais e folha de dados}
 <% if calc %>

@@ -350,3 +350,17 @@ def test_premissas_no_texto_vem_de_p(planta_base):
     assert f"a {formatacao.mbn(ctx.prem['P_pump_oil'])}~kPa (P-20)" in tex
     _, tex = saida_mc.gerar(ctx, planta_base.tag("TO-002"), DATA, GIT)
     assert f"BSW de {formatacao.mbn(ctx.prem['BSW_t'] * 100)}\\,\\%" in tex
+
+
+def test_caracteres_do_mc_tem_cobertura_no_preambulo(planta_ajustada, planta_base):
+    """Todo caractere fora do Latin-1 que o MC escreve tem mapeamento no preâmbulo
+    (newunicodechar): um texto novo com símbolo sem cobertura quebraria a compilação."""
+    from importlib.resources import files
+
+    pre = files("fpso_siz.output.latex.tag").joinpath("templates", "preambulo_extra.tex").read_text(encoding="utf-8")
+    cobertos = set(re.findall(r"\\newunicodechar\{(.)\}", pre)) | set("—–’‘“”…")
+    for planta in (planta_base, planta_ajustada):
+        for rt in planta.tags:
+            _, tex = saida_mc.gerar(planta.contexto, rt, DATA, GIT)
+            fora = {ch for ch in tex if ord(ch) > 0xFF} - cobertos
+            assert not fora, (rt.tag.tag, sorted(fora))

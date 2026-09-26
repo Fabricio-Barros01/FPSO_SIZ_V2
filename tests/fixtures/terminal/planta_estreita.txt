@@ -40,7 +40,7 @@
   P-001   aguardando entrada
   P-002   aguardando entrada
   P-003   aguardando entrada
-  SG-001  inviável
+  SG-001  inviável — ALARME
   TO-001  aguardando entrada
   TO-002  aguardando entrada
   V-001   dimensionado

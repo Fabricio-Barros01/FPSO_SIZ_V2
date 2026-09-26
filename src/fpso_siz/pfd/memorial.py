@@ -282,6 +282,30 @@ def diagnostico(rt, x):
                 mecanismo=getattr(m, "rotulo_mecanismo", str)(r.ceiling_mechanism), x_min_banda=x)
 
 
+def alarme(ctx, rt):
+    """Alarme do TAG inviável (config/pfd/alarmes.toml) com o resultado de cada variante
+    registrada, pelo mesmo serviço; None se o TAG não está inviável."""
+    from fpso_siz.pfd import investigacao
+
+    if rt.status != INVIAVEL or rt.entradas.avulso:
+        return None
+    reg = investigacao.registro(rt.tag.tag)
+    if reg is None:
+        return dict(registrado=False, estado="sem investigação anotada", resumo="", hipoteses=[])
+    classes = investigacao.cfg()["classes"]
+    hipoteses = []
+    for h in reg["hipoteses"]:
+        vs = []
+        for nome in h.get("variantes", []):
+            v = investigacao.variante(nome)
+            r = investigacao.executar_variante(ctx, rt.tag.tag, v, rt.estado).resultado
+            vs.append(dict(nome=nome, rotulo=v["rotulo"], origem=v["origem"], viavel=r.feasible,
+                           x=r.x if r.feasible else None, teto=r.ceiling if math.isfinite(r.ceiling) else None,
+                           caso_teto=r.ceiling_case, mensagem=r.message))
+        hipoteses.append(dict(classe=classes[h["classe"]], texto=h["texto"], variantes=vs))
+    return dict(registrado=True, estado=reg["estado"], resumo=reg["resumo"], hipoteses=hipoteses)
+
+
 def resultados(rt):
     r, m = rt.resultado, rt.entradas.metodo
     campos = m.result_fields(r)
@@ -432,7 +456,7 @@ def documento(ctx, rt):
     """As dez seções do MC do TAG, como dados (números em precisão total)."""
     ident = identificacao(ctx, rt)
     m = rt.entradas.metodo
-    doc = dict(identificacao=ident, conteudo=conteudo_metodo(m), conteudo_tag=cfg().get("tags", {}).get(rt.tag.tag, {}),
+    doc = dict(identificacao=ident, alarme=alarme(ctx, rt), conteudo=conteudo_metodo(m), conteudo_tag=cfg().get("tags", {}).get(rt.tag.tag, {}),
                correntes=correntes(ctx, rt), casos=casos(rt), entradas=entradas(rt),
                lacunas=lacunas(rt), premissas=premissas(ctx, rt, ident), pendencias=pendencias(rt),
                calculo=None)

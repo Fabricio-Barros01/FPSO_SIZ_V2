@@ -275,7 +275,7 @@ ate_logo = "Até logo."
 [pfd.estados]
 aguardando_entrada = "aguardando entrada"
 dimensionado = "dimensionado"
-inviavel = "inviável"
+inviavel = "inviável — ALARME"
 inativo = "inativo"
 # marcador de cada estado no desenho da planta (e o de bloco sem dimensionamento)
 [pfd.marcadores]
