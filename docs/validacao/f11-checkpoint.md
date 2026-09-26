@@ -6,5 +6,12 @@ Branch: `fases/f11` (base `73f7ca3`). Decisões: [`f11-decisoes.md`](f11-decisoe
 | Passo | Commit | Suíte | Cobertura (global ramos / núcleo linhas) | Estado |
 |---|---|---|---|---|
 | F11.1 infraestrutura | `edf8fff` | 832 passed, 5 skipped; 13 `-m latex` | 96,72 % / 98,61 % | concluído |
+| F11.2 MC do V-001 | `032c42b` | 835 passed, 5 skipped | 96,72 % / 98,61 % | concluído |
+| F11.3 V-002 e SG-001 | `ebc99b2` | 838 passed, 5 skipped; 14 `-m latex` | — | concluído |
+| F11.4 aguardando entrada | `4435f17` | 848 passed, 5 skipped; 19 `-m latex` | 96,78 % / 98,66 % | concluído |
+| F11.5 lote, CLI e interativo | `012515a` | 858 passed, 5 skipped; 19 `-m latex` | 96,87 % / 98,66 % | concluído |
 
-**Próximo passo:** F11.2 — MC completo do V-001 (caso governante 3) com teste da conta à mão.
+**Push:** o remoto recusou o push nesta sessão (HTTP 403, sem acesso do app GitHub); os
+commits estão só no clone local da nuvem até o acesso ser restabelecido.
+
+**Próximo passo:** F11b — `memorial --caso N` / `--casos todos` (MC_Caso01 … MC_Caso16), dois layouts.
