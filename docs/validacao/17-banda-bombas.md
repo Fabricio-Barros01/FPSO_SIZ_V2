@@ -20,12 +20,16 @@ abaixo do piso, e nenhum DN atende a todos.
 - **Piso só para água:** Moran (2016) dá o piso de 1 m/s para "water-like fluids with
   settleable solids". O B-001 (óleo tratado, líquido limpo) recebe `v_min = 0`. O B-002 e o
   B-003 (água produzida, que pode levar sólidos) mantêm o piso no caso de projeto.
-- **P-44b** (`transicao_turndown = 1`, **a confirmar**): num caso de turndown a linha larga
-  pode ficar na zona de transição laminar-turbulento (Re entre 2.300 e 4.000), onde nenhuma
-  correlação da implementação vale. Ali o fator de Colebrook-White é aceito como **limite
-  superior**:
-  - o teste verifica f ≥ 64/Re em toda a zona, para tubo liso e rugoso;
-  - a perda de carga fica superestimada e o NPSH disponível, subestimado (lado seguro);
+- **P-44b** (`transicao_turndown = 1`, **a confirmar**; revista na F10x.7): num caso de
+  turndown a linha larga pode ficar na zona de transição laminar-turbulento (Re entre 2.300 e
+  4.000), onde **nenhuma correlação da implementação é válida** (Moran 2016 declara
+  Colebrook-White só para Re > 4000). O caso é fechado por uma **política conservadora de
+  engenharia**, separada das correlações fisicamente válidas:
+  - o fator avaliado por Colebrook-White é aceito se não for menor que 64/Re no mesmo Re (o
+    teste verifica isso em toda a zona, para tubo liso e rugoso);
+  - isso tende a superestimar a perda e a subestimar o NPSH, mas **não é um limite superior
+    demonstrado** do f real na transição, nem uma correlação válida ali;
+  - o MC marca o caso (regime com asterisco) e diz que o valor vem da política;
   - o caso de projeto continua exigindo correlação válida.
 
 ## Implementação
@@ -51,17 +55,29 @@ abaixo do piso, e nenhum DN atende a todos.
 | B-003 | 3 (46 m³/h, v = 1,05 m/s) | 8,2 | 125 | 252,2 | 45 | 45 |
 
 - Só o caso 6 do B-001 (52 m³/h, 4 % da vazão de projeto, Re ≈ 3.460 em DN 600) usa a P-44b.
-- A **potência de eixo do resultado** é a do caso que governa a carga, que é a regra do motor
-  do Julia. No B-002 esse caso é de baixa vazão (18 m³/h), e a potência a especificar é a maior
-  entre os casos. O MC agora mostra as duas (tabela "Operação de cada caso").
+- **Potências separadas (F10x.7).** O campo `potencia` do motor é, como no Julia, a do caso
+  que governa a carga. O envelope ganhou `derivados_v2` (hook `envelope_derived`), com três
+  grandezas distintas, e o cartão do resultado as mostra com nomes próprios:
+
+  | TAG | No caso governante (kW) | Máxima operacional (kW) | Nominal requerida (kW) | Ponto nominal |
+  |---|---|---|---|---|
+  | B-001 | 310,1 | 310,2 | 311,5 | 1.198 m³/h, 75,1 m |
+  | B-002 | 13,7 | 140,3 | 143,3 | 180 m³/h, 183,4 m |
+  | B-003 | 45,2 | 45,2 | 45,6 | 46,3 m³/h, 252,2 m |
+
+  - **Máxima operacional:** a maior entre os casos, cada um no seu (Q, H, ρ, η).
+  - **Nominal requerida:** no ponto nominal (Q máx., H máx., ρ máx. e η mín. entre os casos),
+    sem margem de acionador. A margem é dado de norma ou fabricante, fora do acervo.
+  - O cartão do Julia (`Potência de eixo`) continua reproduzível com `derivados_v2` vazio
+    (teste de paridade).
 
 ## Limitações (no MC de cada bomba)
 
 - Uma bomba não opera numa faixa de 23×. A vazão mínima contínua é dado do fabricante (fora do
   acervo), e os casos de menor vazão podem exigir bombas em paralelo ou recirculação de mínimo
   fluxo. Isso não é modelado.
-- A P-44b é juízo de engenharia (limite superior), não correlação de transição. Fica a
-  confirmar.
+- A P-44b é política conservadora de engenharia, não correlação de transição nem limite
+  superior demonstrado. Fica a confirmar.
 
 ## Paridade
 

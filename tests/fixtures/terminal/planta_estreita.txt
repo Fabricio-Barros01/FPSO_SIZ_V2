@@ -168,14 +168,14 @@
     casos 1–9, 11
     revisão pendente: Arranjo do feixe = 30
     ° (default); casos 1–9, 11
-    … +12
+    … +15
     Casos inativos: 10, 12–16
     7 aviso(s) de propriedades/faixas;
     detalhe no JSON do TAG e no rastro.
 
   P-002 — Aquecedor de óleo
-    ! k_tubo — Condutividade do fluido do
-    tubo [W/m·K]; casos 1–9, 11
+    ! k_casco — Condutividade do fluido do
+    casco [W/m·K]; casos 1–9, 11
     ! k_parede — Condutividade da parede
     [W/m·K]; casos 1–9, 11
     ! rf_tubo — Incrustação no lado tubo
@@ -192,18 +192,18 @@
     diâmetro do casco = 0,25 – (default);
     casos 1–9, 11
     revisão pendente: Espaçamento de chicana
-    / diâmetro do casco = 0,4 – (default);
-    casos 1–9, 11
-    revisão pendente: Arranjo do feixe = 30
-    ° (default); casos 1–9, 11
-    … +12
+    / diâmetro do casco = 0,2 –
+    (recomendada); casos 1–9, 11
+    revisão pendente: Arranjo do feixe = 90
+    ° (recomendada); casos 1–9, 11
+    … +15
     Casos inativos: 10, 12–16
     1 aviso(s) de propriedades/faixas;
     detalhe no JSON do TAG e no rastro.
 
   P-003 — Resfriador de óleo
-    ! k_tubo — Condutividade do fluido do
-    tubo [W/m·K]; casos 1–16
+    ! k_casco — Condutividade do fluido do
+    casco [W/m·K]; casos 1–16
     ! k_parede — Condutividade da parede
     [W/m·K]; casos 1–16
     ! rf_tubo — Incrustação no lado tubo
@@ -220,11 +220,11 @@
     diâmetro do casco = 0,25 – (default);
     casos 1–16
     revisão pendente: Espaçamento de chicana
-    / diâmetro do casco = 0,4 – (default);
-    casos 1–16
-    revisão pendente: Arranjo do feixe = 30
-    ° (default); casos 1–16
-    … +12
+    / diâmetro do casco = 0,2 –
+    (recomendada); casos 1–16
+    revisão pendente: Arranjo do feixe = 90
+    ° (recomendada); casos 1–16
+    … +15
     4 aviso(s) de propriedades/faixas;
     detalhe no JSON do TAG e no rastro.
 

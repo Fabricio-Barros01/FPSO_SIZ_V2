@@ -1,0 +1,42 @@
+# Extensões do V2 ao método de Saari (NÃO existem no Julia; o saari_lmtd.toml é cópia literal).
+# Com os defaults, a física é exatamente a do Julia: um casco, banda de velocidade em todos os casos.
+
+# Premissa P-45 (F10x.7; decisão do usuário em 2026-09-26), específica de trocadores:
+# - o teto v_max vale em TODOS os casos;
+# - a banda inteira (v_min ≤ v ≤ v_max) vale no caso de PROJETO, o de maior vazão volumétrica
+#   no tubo (para a utilidade, é o de maior carga térmica: ṁ = q/(cp·ΔT));
+# - nos casos de turndown, v < v_min NÃO reprova: vira alerta de operabilidade/incrustação
+#   (Saari Tab. 3.1: abaixo de ~1 m/s o tubo incrusta);
+# - a correlação térmica (Dittus-Boelter) continua exigida dentro da faixa em CADA caso.
+[[parameter]]
+key      = "banda_caso_projeto"
+label    = "Banda de velocidade no tubo só no caso de projeto"
+unit     = "–"
+default  = 0.0
+min      = 0.0
+max      = 1.0
+advanced = true
+note     = "1 = P-45: banda inteira no caso de maior vazão volumétrica no tubo; nos demais só o teto, com alerta de operabilidade/incrustação abaixo de v_min; a faixa de Dittus-Boelter segue exigida em todos os casos. 0 = banda em todos os casos (regra do Julia)."
+
+# Cascos em série e em paralelo (F10x.7). Saari Tab. 3.1: acima de 2500 mm de casco o serviço
+# é dividido em cascos em paralelo; tubo de estoque vai a 6 m (l_tubo_max), e o comprimento
+# excedente vira cascos em série.
+[[parameter]]
+key      = "cascos_serie"
+label    = "Cascos em série"
+unit     = "–"
+default  = 1.0
+min      = 1.0
+max      = 10.0
+advanced = true
+note     = "N cascos iguais em série: cada um recebe as vazões inteiras e 1/N do U·A exigido (comprimento por casco = L/N). O fator F é o do arranjo 1-2 calculado com as temperaturas terminais do conjunto, que é conservador: com mais cascos em série o arranjo se aproxima da contracorrente e o F real é maior."
+
+[[parameter]]
+key      = "cascos_paralelo"
+label    = "Cascos em paralelo"
+unit     = "–"
+default  = 1.0
+min      = 1.0
+max      = 10.0
+advanced = true
+note     = "N cascos iguais em paralelo: cada um recebe 1/N das vazões dos dois lados e 1/N da carga térmica, com as mesmas temperaturas terminais. Saari Tab. 3.1: casco de chapa enrolada vai a 2500 mm; acima disso o serviço é dividido em cascos em paralelo."

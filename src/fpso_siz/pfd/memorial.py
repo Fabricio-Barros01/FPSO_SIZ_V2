@@ -393,6 +393,7 @@ def _series_do_metodo(rt, graf, p_env):
         out["perfil_tq"] = [dict(q_kw=w_para_kw(q), t_tubo=tt, t_casco=tc)
                             for (q, tt), (_, tc) in zip(perfil["tubo"], perfil["casco"])]
     if not r.feasible:
+        out.update(_feixe_mais_proximo(rt, p_env))
         return out
     if "resistencias" in graf and hasattr(m, "parcelas_u") and c is not None:
         parcelas, u = m.parcelas_u(r.x, c)
@@ -417,8 +418,44 @@ def _series_do_metodo(rt, graf, p_env):
         nomes = [n for n, _ in rt.entradas.case_set().expand()]
         op = m.operacao_por_caso(conss, r.x, m.envelope_case_params(conss, p_env))
         out["operacao"] = [dict(caso=n, **o) for n, o in zip(nomes, op)]
-        out["potencia_max"] = max(o["potencia"] for o in op)
+        out["tipo_operacao"] = m.method_id
+        out["v2"] = dict(r.derivados_v2)
     return out
+
+
+def melhor_feixe(rt, p_env, fator_area=1.0):
+    """Diagnóstico de um envelope inviável pelo hook `bloqueios` do método: (bloqueios, área
+    do feixe × fator, linha do envelope) da linha com menos bloqueios (critério, caso) e, entre
+    elas, a de menor área. None se o método não diagnostica ou algum caso não prepara."""
+    r, m = rt.resultado, rt.entradas.metodo
+    if r is None or not r.rows or p_env is None or not hasattr(m, "bloqueios"):
+        return None
+    conss = [c for _, c in restricoes(rt)]
+    if any(c is None for c in conss):
+        return None
+    pcs = m.envelope_case_params(conss, p_env)
+    linhas = [(tuple(sorted(set(m.bloqueios(row.x, conss, pcs, p_env)))), row.derivados.get("area", math.inf) * fator_area,
+               row) for row in r.rows]
+    return min(linhas, key=lambda t: (len(t[0]), t[1]))
+
+
+def _feixe_mais_proximo(rt, p_env):
+    """MC do trocador inviável: o feixe mais próximo de atender, com os bloqueios por critério e
+    caso e a operação de cada caso nele (mesma física)."""
+    melhor = melhor_feixe(rt, p_env)
+    if melhor is None:
+        return {}
+    bloqueios, _, row = melhor
+    m = rt.entradas.metodo
+    conss = [c for _, c in restricoes(rt)]
+    nomes = [n for n, _ in rt.entradas.case_set().expand()]
+    rot = cfg()["bloqueios"]
+    op = m.operacao_por_caso(conss, row.x, m.envelope_case_params(conss, p_env))
+    return {"feixe_proximo": dict(x=row.x, l=row.y, d_shell=row.derivados.get("d_shell", math.nan),
+                                  bloqueios=[dict(criterio=rot.get(c, c), caso=nomes[i] if i >= 0 else "")
+                                             for c, i in bloqueios]),
+            "operacao": [dict(caso=n, **o) for n, o in zip(nomes, op)], "tipo_operacao": m.method_id,
+            "v2": dict(m.envelope_derived(row.x, conss, m.envelope_case_params(conss, p_env), p_env))}
 
 
 def pendencias(rt, oleo_vivo=True):

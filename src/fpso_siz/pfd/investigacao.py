@@ -61,7 +61,7 @@ def executar_variante(ctx, ident, v, estado=None):
     mesmas propostas)."""
     if v.get("premissas"):
         ctx = servico.Contexto(ctx.dados, alteracoes={**ctx.alteracoes, **v["premissas"]}, propostas=ctx.propostas,
-                               oleo_vivo=ctx.oleo_vivo)
+                               oleo_vivo=ctx.oleo_vivo, topologia_julia=ctx.topologia_julia)
     base = copy.deepcopy(estado) if estado is not None else servico.estado_inicial(ident)
     for chave, valor in v.get("geral", {}).items():
         base.editar(chave, float(valor), None, {})

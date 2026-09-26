@@ -6,7 +6,7 @@ import math
 from fpso_siz.core.casos import Case, CaseSet
 from fpso_siz.core.motor import size_envelope
 from fpso_siz.sizing import CentrifugalPump, MoranPumpSizing
-from fpso_siz.sizing.bomba import _hidraulica, _limite_superior
+from fpso_siz.sizing.bomba import _hidraulica, _politica_transicao
 from fpso_siz.sizing.hidraulica import darcy_friction
 
 M, EQ = MoranPumpSizing(), CentrifugalPump()
@@ -56,8 +56,10 @@ def test_parametros_por_caso_so_relaxam_o_piso_fora_do_projeto():
     assert M.envelope_case_params(conss, p_julia) == [p_julia] * 3
 
 
-def test_colebrook_e_limite_superior_na_transicao():
-    """Em toda a zona de transição o f de Colebrook-White (tubo liso e rugoso) é maior que 64/Re."""
+def test_politica_de_transicao_exige_f_nao_menor_que_o_laminar():
+    """P-44b é política conservadora, não correlação: na zona de transição o f de
+    Colebrook-White só é aceito se não for menor que 64/Re no mesmo Re (verificado aqui para
+    tubo liso e rugoso); o regime segue marcado como não confiável."""
     lam, turb = float(K["reynolds_laminar_max"]), float(K["reynolds_turbulent_min"])
     n = 10
     for i in range(1, n):
@@ -65,8 +67,8 @@ def test_colebrook_e_limite_superior_na_transicao():
         for rel in (0.0, 1e-4, 1e-2):
             f, regime, confiavel = darcy_friction(re, rel, K)
             assert regime == "transicao" and not confiavel and f >= K["laminar_coefficient"] / re
-            assert _limite_superior(dict(regime=regime, f=f, re=re), K)
-    assert not _limite_superior(dict(regime="laminar", f=0.03, re=2000.0), K)
+            assert _politica_transicao(dict(regime=regime, f=f, re=re), K)
+    assert not _politica_transicao(dict(regime="laminar", f=0.03, re=2000.0), K)
 
 
 def test_turndown_na_transicao_so_com_p44b():
@@ -90,6 +92,6 @@ def test_operacao_por_caso():
     ok, p_env = M.envelope_params([_p(piso_caso_projeto=1.0, transicao_turndown=1.0)] * 3)
     op = M.operacao_por_caso(conss, r.x, M.envelope_case_params(conss, p_env))
     assert [o["papel"] for o in op] == ["projeto", "turndown", "turndown"]
-    assert [o["limite_superior"] for o in op] == [False, False, True]
+    assert [o["politica_transicao"] for o in op] == [False, False, True]
     assert all(math.isclose(o["h"], _hidraulica(c, r.x)["h_total"]) for o, c in zip(op, conss))
     assert max(o["potencia"] for o in op) == op[0]["potencia"]

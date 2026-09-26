@@ -529,11 +529,13 @@ def r_grade_descritor(ctx, alvo, limite):
 
 def r_grade_velocidade(ctx, alvo, limite):
     """Grade de tubos por passe que a banda de velocidade admite: n = ṁ/(ρ·v·A_i), com v_max
-    no início e v_min no fim (a velocidade no tubo cai com n)."""
+    no início e v_min no fim (a velocidade no tubo cai com n). Com cascos em paralelo, ṁ é a
+    vazão de um casco."""
     d_i = mm_para_m(ctx.num("d_externo") - 2 * ctx.num("espessura"))
     area = math.pi * d_i * d_i / 4
     v = ctx.num("v_max") if limite == "min" else ctx.num("v_min")
-    n = ctx.num("m_tubo") / (ctx.num("rho_tubo") * v * area)
+    m = ctx.num("m_tubo") / (ctx.num("cascos_paralelo") if "cascos_paralelo" in ctx.specs else 1)
+    n = m / (ctx.num("rho_tubo") * v * area)
     n = max(1, math.floor(n)) if limite == "min" else math.ceil(n)
     return Valor(float(n), "metodo", "domínio de busca: banda de velocidade no tubo, n = ṁ/(ρ·v·A_i)", "grade")
 

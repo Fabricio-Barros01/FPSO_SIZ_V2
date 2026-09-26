@@ -109,7 +109,8 @@ def casos_de(texto, validos):
 
 class Sessao:
     def __init__(self, casos=None, entrada=input, saida=None, estilo=None, colunas=None, agora=datetime.now,
-                 ajustes=None, ascii=False, propostas=None, oleo_vivo=True):
+                 ajustes=None, ascii=False, propostas=None, oleo_vivo=True,
+                 topologia_julia=False):
         self.saida = saida if saida is not None else sys.stdout
         self.entrada = entrada
         self.e = estilo if estilo is not None else Estilo.para(self.saida, ascii=ascii)
@@ -134,6 +135,7 @@ class Sessao:
                            mod_propostas.carregar(propostas) if propostas is not None else mod_propostas.padrao())
         # viscosidade do óleo vivo (Beggs & Robinson) por padrão; False = óleo morto do BOT
         self.oleo_vivo = oleo_vivo
+        self.topologia_julia = topologia_julia   # alocação do PFD F1 (paridade), sem a P-46
 
     # ------------------------------------------------------------------ E/S
     def dizer(self, *linhas):
@@ -195,7 +197,7 @@ class Sessao:
         dependia do anterior — balanço, propriedades, resultados — fica para trás)."""
         if self._ctx is None:
             self._ctx = servico.Contexto(self.dados, alteracoes=self.alt, propostas=self._propostas,
-                                         oleo_vivo=self.oleo_vivo)
+                                         oleo_vivo=self.oleo_vivo, topologia_julia=self.topologia_julia)
         return self._ctx
 
     def _arg_propostas(self):
@@ -203,7 +205,8 @@ class Sessao:
         return str(self.caminho_propostas) if self.caminho_propostas is not None else None
 
     def _flag_sem_propostas(self):
-        return {"sem-propostas": self._sem_propostas, "oleo-morto": not self.oleo_vivo}
+        return {"sem-propostas": self._sem_propostas, "oleo-morto": not self.oleo_vivo,
+                "topologia-julia": self.topologia_julia}
 
     def _invalidar(self):
         self._ctx = None

@@ -46,6 +46,16 @@ tipo_dimensionado = "MEMORIAL DE CÁLCULO -- EQUIPAMENTO"
 tipo_diagnostico = "MEMORIAL DE CÁLCULO -- DIAGNÓSTICO"
 tipo_aguardando = "MEMORIAL DE CÁLCULO -- AGUARDANDO ENTRADA"
 
+# Critérios do diagnóstico do feixe (hook `bloqueios` do trocador; F10x.7)
+[bloqueios]
+comprimento = "comprimento de tubo acima de l_tubo_max"
+casco = "diâmetro do casco acima de d_casco_max"
+dittus_boelter = "fora da faixa de validade de Dittus-Boelter"
+v_max = "velocidade no tubo acima de v_max"
+v_min = "velocidade no tubo abaixo de v_min"
+v_min_projeto = "velocidade abaixo de v_min no caso de projeto"
+calculo = "o cálculo do feixe não fecha"
+
 [textos]
 aguardando = "aguardando entrada"
 sem_fonte = "valor sem fonte rastreável"
@@ -77,12 +87,17 @@ funcao = "Pré-aquecedor óleo/óleo: recupera o calor do óleo tratado quente (
 hipoteses = [
     "Troca só de calor sensível entre correntes de processo, com a aproximação mínima de @P:dT_app@ da P-32 no balanço.",
     "Casos sem carga de pré-aquecimento no balanço (10 e 12--16) ficam inativos neste TAG.",
+    "Lacuna metodológica (decisão do usuário): o óleo no tubo escoa em regime laminar ou de transição, fora de Dittus-Boelter, e não há correlação laminar com fonte no acervo; nenhuma correlação sem referência rastreável é usada. Quando houver fonte, ela entra como ramo próprio do método.",
+    "Velocidade no tubo pela P-45: o teto vale em todos os casos; a banda inteira, no caso de projeto (maior vazão volumétrica no tubo); abaixo do piso no turndown há alerta de operabilidade/incrustação, não reprovação; a faixa de Dittus-Boelter é exigida em cada caso.",
 ]
 [tags."P-002"]
-funcao = "Aquecedor de óleo: leva a emulsão pré-aquecida (C-07, lado tubo) à temperatura mínima de tratamento (C-08, @P:T_trat@, F-05/BOT 2.7.1.4) com água quente de utilidade no lado casco; a carga é a $\\dot Q_{\\mbox{P-002}}$ do balanço."
+funcao = "Aquecedor de óleo: leva a emulsão pré-aquecida (C-07, lado casco) à temperatura mínima de tratamento (C-08, @P:T_trat@, F-05/BOT 2.7.1.4) com água quente de utilidade nos tubos; a carga é a $\\dot Q_{\\mbox{P-002}}$ do balanço."
 hipoteses = [
     "Meio de aquecimento: água pura como líquido saturado na temperatura média da utilidade, com o suprimento limitado pelo BOT 2.7.1.4 (limite declarado no TAG).",
     "Casos em que o óleo já chega à temperatura de tratamento (10 e 12--16) não têm carga e ficam inativos.",
+    "Topologia P-46 (premissa de projeto deste TAG): o óleo, mais viscoso, no casco (Bell-Delaware cobre o laminar, fator Jr); a água de utilidade nos tubos (Dittus-Boelter).",
+    "Velocidade no tubo pela P-45: o teto vale em todos os casos; a banda inteira, no caso de projeto (maior vazão volumétrica no tubo); abaixo do piso no turndown há alerta de operabilidade/incrustação, não reprovação; a faixa de Dittus-Boelter é exigida em cada caso.",
+    "Geometria e número de cascos pela reotimização discreta F10x.7 (docs/validacao/18-trocadores.md), com o comprimento de tubo limitado a 6 m (cascos em série) e o casco a 2.500 mm. A vazão da utilidade acompanha a carga de cada caso (ΔT da utilidade fixo).",
 ]
 [tags."V-001"]
 funcao = "Desgaseificador 1: recebe a emulsão aquecida (C-08) a @P:P_D1@ (P-18) e separa o gás liberado (C-09, ao 2º estágio da VRU) do líquido que segue ao desidratador (C-10)."
@@ -101,7 +116,7 @@ hipoteses = [
     "A água sai do vaso no ponto de bolha: a pressão de vapor é a pressão do vaso (Branan, Ex.~5-2), e o NPSH disponível é a coluna estática menos a perda na sucção.",
     "Casos sem fase aquosa (1 e 4--7) ficam inativos neste TAG.",
     "Água produzida pode levar sólidos decantáveis: o piso de velocidade de Moran (2016) é mantido no caso de projeto.",
-    "Banda de velocidade pela P-44: a linha é dimensionada pelo caso de maior vazão (caso de projeto), onde vale a banda de Moran (2016); nos demais casos (turndown) só o teto. Na zona de transição laminar-turbulento dos casos de turndown o fator de Colebrook-White entra como limite superior (P-44b, a confirmar).",
+    "Banda de velocidade pela P-44: a linha é dimensionada pelo caso de maior vazão (caso de projeto), onde vale a banda de Moran (2016); nos demais casos (turndown) só o teto. Na zona de transição laminar-turbulento dos casos de turndown nenhuma correlação de atrito é válida: o fator de Colebrook-White entra por política conservadora de engenharia (P-44b, a confirmar), não como correlação válida nem como limite superior demonstrado.",
     "Turndown: a razão entre a maior e a menor vazão da linha é grande; a vazão mínima contínua da bomba (dado do fabricante) não está no acervo, e a operação dos casos de menor vazão pode exigir bombas em paralelo ou recirculação de mínimo fluxo (não modelado).",
 ]
 [tags."V-002"]
@@ -121,7 +136,7 @@ hipoteses = [
     "A água sai do vaso no ponto de bolha: a pressão de vapor é a pressão do vaso (Branan, Ex.~5-2).",
     "Casos sem fase aquosa (1 e 4--7) ficam inativos neste TAG.",
     "Água produzida pode levar sólidos decantáveis: o piso de velocidade de Moran (2016) é mantido no caso de projeto.",
-    "Banda de velocidade pela P-44: a linha é dimensionada pelo caso de maior vazão (caso de projeto), onde vale a banda de Moran (2016); nos demais casos (turndown) só o teto. Na zona de transição laminar-turbulento dos casos de turndown o fator de Colebrook-White entra como limite superior (P-44b, a confirmar).",
+    "Banda de velocidade pela P-44: a linha é dimensionada pelo caso de maior vazão (caso de projeto), onde vale a banda de Moran (2016); nos demais casos (turndown) só o teto. Na zona de transição laminar-turbulento dos casos de turndown nenhuma correlação de atrito é válida: o fator de Colebrook-White entra por política conservadora de engenharia (P-44b, a confirmar), não como correlação válida nem como limite superior demonstrado.",
     "Turndown: a razão entre a maior e a menor vazão da linha é grande; a vazão mínima contínua da bomba (dado do fabricante) não está no acervo, e a operação dos casos de menor vazão pode exigir bombas em paralelo ou recirculação de mínimo fluxo (não modelado).",
 ]
 [tags."B-001"]
@@ -129,13 +144,16 @@ funcao = "Bomba de transferência de óleo: recalca o óleo tratado do dessalini
 hipoteses = [
     "O óleo sai do vaso no ponto de bolha: a pressão de vapor é a pressão do vaso (Branan, Ex.~5-2).",
     "O piso de velocidade de Moran (2016) é, segundo a nota do próprio descritor, para líquido com sólidos decantáveis; para óleo tratado (líquido limpo) o artigo só impõe o teto: piso nulo neste TAG (P-44, recomendação a revisar).",
-    "Banda de velocidade pela P-44: a linha é dimensionada pelo caso de maior vazão (caso de projeto), onde vale a banda de Moran (2016); nos demais casos (turndown) só o teto. Na zona de transição laminar-turbulento dos casos de turndown o fator de Colebrook-White entra como limite superior (P-44b, a confirmar).",
+    "Banda de velocidade pela P-44: a linha é dimensionada pelo caso de maior vazão (caso de projeto), onde vale a banda de Moran (2016); nos demais casos (turndown) só o teto. Na zona de transição laminar-turbulento dos casos de turndown nenhuma correlação de atrito é válida: o fator de Colebrook-White entra por política conservadora de engenharia (P-44b, a confirmar), não como correlação válida nem como limite superior demonstrado.",
     "Turndown: a razão entre a maior e a menor vazão da linha é grande; a vazão mínima contínua da bomba (dado do fabricante) não está no acervo, e a operação dos casos de menor vazão pode exigir bombas em paralelo ou recirculação de mínimo fluxo (não modelado).",
 ]
 [tags."P-003"]
-funcao = "Resfriador de óleo: resfria o óleo tratado que sai do pré-aquecedor (C-23, lado tubo) à temperatura de armazenamento de @P:T_store@ (C-24, F-08/BOT 2.7.1.10) com água de resfriamento no lado casco; a carga é a $\\dot Q_C$ do balanço."
+funcao = "Resfriador de óleo: resfria o óleo tratado que sai do pré-aquecedor (C-23, lado casco) à temperatura de armazenamento de @P:T_store@ (C-24, F-08/BOT 2.7.1.10) com água de resfriamento nos tubos; a carga é a $\\dot Q_C$ do balanço."
 hipoteses = [
     "Meio de resfriamento: água pura como líquido saturado na temperatura média da utilidade; pressão do circuito não informada.",
+    "Topologia P-46 (premissa de projeto deste TAG): o óleo no casco, a água de resfriamento nos tubos.",
+    "Velocidade no tubo pela P-45: o teto vale em todos os casos; a banda inteira, no caso de projeto (maior vazão volumétrica no tubo); abaixo do piso no turndown há alerta de operabilidade/incrustação, não reprovação; a faixa de Dittus-Boelter é exigida em cada caso.",
+    "Geometria pela reotimização discreta F10x.7 (docs/validacao/18-trocadores.md); casco limitado a 2.500 mm (cascos em paralelo se excedido) e tubo a 6 m.",
 ]
 
 # ------------------------------------------------------------------ conteúdo por método

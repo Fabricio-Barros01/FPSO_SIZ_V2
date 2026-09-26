@@ -23,7 +23,7 @@ from fpso_siz.pfd import fluidos
 from fpso_siz.pfd.ajustes import AUTOMATICO, MANUAL, EstadoTAG, canonico_estado, contexto_de
 from fpso_siz.pfd.entradas import cfg, especificacoes, montar, montar_manual
 from fpso_siz.pfd.propostas import NENHUMA, conferir_casos
-from fpso_siz.pfd.tags import avulso, tag, tags
+from fpso_siz.pfd.tags import avulso, tag, tags, topologia_alternativa
 
 AGUARDANDO = "aguardando_entrada"
 DIMENSIONADO = "dimensionado"
@@ -58,8 +58,12 @@ class ResultadoTAG:
 class Contexto:
     """Dados compartilhados por todos os TAGs de uma execução ou sessão."""
 
-    def __init__(self, dados, prem=None, alteracoes=None, balanco=None, propostas=None, oleo_vivo=True):
+    def __init__(self, dados, prem=None, alteracoes=None, balanco=None, propostas=None, oleo_vivo=True,
+                 topologia_julia=False):
         self.dados = dados
+        # alocação de correntes: a do projeto (padrão; P-46 no P-002/P-003) ou a do PFD F1 do
+        # Julia (paridade das fixtures e da regressão F10b)
+        self.topologia_julia = topologia_julia
         # viscosidade do óleo: vivo (Beggs & Robinson sobre o óleo morto do BOT, padrão) ou só
         # morto (o modo das fases F10b–F13 e das fixtures do PFD F1 do Julia)
         self.oleo_vivo = oleo_vivo
@@ -148,6 +152,8 @@ def preparar(ctx, estado):
         casos = [(i, n) for i, n in enumerate(estado.nomes_casos, 1)]
         return montar_manual(descritor(estado), casos, estado, pfd=False)
     t = tag(estado.id)
+    if ctx.topologia_julia and t.topologia_julia:
+        t = topologia_alternativa(t.topologia_julia)
     if (estado.equipamento, estado.metodo) != (t.equipamento, t.metodo):
         raise ValueError(f"{t.tag}: o estado usa {estado.equipamento}/{estado.metodo}, mas o TAG é "
                          f"dimensionado por {t.equipamento}/{t.metodo}")

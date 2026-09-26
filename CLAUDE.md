@@ -92,7 +92,8 @@ uv run fpso-siz dimensionar --tag V-001 --casos design_cases_bot.json --auto-bal
     [--ajustes ajustes_pfd.toml] [--saida saida/tag]
 uv run fpso-siz pfd --casos design_cases_bot.json [--ajustes ajustes_pfd.toml] [--saida saida/pfd]
     # propostas (config/pfd/pendencias_propostas.toml) e óleo vivo por padrão;
-    # --sem-propostas / --oleo-morto voltam ao modo das fixtures (F10b, Julia)
+    # --sem-propostas / --oleo-morto / --topologia-julia voltam ao modo das fixtures (F10b, Julia)
+uv run python tools/reotimizar_trocadores.py   # reotimização discreta P-002/P-003 (F10x.7; lenta)
 uv run fpso-siz pfd --casos design_cases_bot.json --saida saida/pfd --mc [--pdf]   # MC de cada TAG (F11)
 uv run fpso-siz dimensionar --tag V-001 --casos design_cases_bot.json --auto-balanco --saida saida/tag --mc [--pdf]
 uv run fpso-siz memorial --casos todos [--layout original|senai|ambos] [--pdf]    # MC_Caso01…16 (F11b)

@@ -1,38 +1,71 @@
-# P-002 — Aquecedor de óleo. Convenção do PFD F1 do Julia: processo no TUBO (C-07 → C-08); no
-# CASCO, a utilidade — água quente (meio de aquecimento), água pura de circuito fechado (BOT 2.7.3.7.16: 'All heaters shall use hot water (as heating medium) or electrical resistors').
-# As temperaturas da utilidade não estão no balanço nem no acervo: são LACUNAS (insumos). Com
-# elas, a vazão da utilidade fecha o balanço de energia com a carga Q_H do balanço,
-# ṁ = Q/(cp·ΔT), e as propriedades da água saem da IAPWS na temperatura média.
+# P-002 — Aquecedor de óleo. Premissa de projeto P-46 (decisão do usuário em 2026-09-26; específica do
+# P-002 e do P-003, não regra geral de trocadores): o óleo (C-07 → C-08), o fluido mais
+# viscoso, vai no CASCO, onde Bell-Delaware cobre o escoamento laminar (fator Jr, Branan
+# Eq. 2-29), e a água quente (meio de aquecimento) — água pura de circuito fechado (BOT 2.7.3.7.16: 'All heaters shall use hot water (as heating medium) or electrical resistors') — vai nos TUBOS,
+# turbulenta (Dittus-Boelter). Estudo que a motivou: F13.2 (docs/validacao/14-alarmes.md).
+# A alocação do PFD F1 do Julia (óleo no tubo) está em variantes/p_002_oleo_tubo.toml e é a
+# usada no modo de paridade (topologia_julia). As temperaturas da utilidade são insumos; com
+# elas a vazão da utilidade fecha a carga Q_H do balanço, ṁ = q/(cp·ΔT), e as propriedades
+# da água saem da IAPWS na temperatura média.
 tag = "P-002"
 nome = "Aquecedor de óleo"
+topologia_julia = "p_002_oleo_tubo"
 equipamento = "exchanger"
 metodo = "saari_lmtd"
 bloco = "P-002"
 
 [entradas]
-m_tubo = { regra = "vazao_massica", corrente = "C-07" }
-cp_tubo = { regra = "cp_corrente", corrente = "C-07" }
-t_tubo_in = { regra = "temperatura", corrente = "C-07" }
-t_tubo_out = { regra = "temperatura", corrente = "C-08" }
-rho_tubo = { regra = "densidade_fase", corrente = "C-07", fase = "liquido", t = ["C-07", "C-08"] }
-mu_tubo = { regra = "viscosidade_fase", corrente = "C-07", fase = "liquido", continua = "oleo", t = ["C-07", "C-08"] }
-m_casco = { regra = "vazao_utilidade", carga = "Q_H", entrada = "t_agua_in", saida = "t_agua_out" }
-cp_casco = { regra = "cp_utilidade", entrada = "t_agua_in", saida = "t_agua_out" }
-t_casco_in = { regra = "insumo", chave = "t_agua_in" }
-mu_casco = { regra = "viscosidade_utilidade", entrada = "t_agua_in", saida = "t_agua_out" }
-k_casco = { regra = "condutividade_utilidade", entrada = "t_agua_in", saida = "t_agua_out" }
+m_tubo = { regra = "vazao_utilidade", carga = "Q_H", entrada = "t_agua_in", saida = "t_agua_out", processo = ["C-07", "C-08"] }
+cp_tubo = { regra = "cp_utilidade", entrada = "t_agua_in", saida = "t_agua_out" }
+t_tubo_in = { regra = "insumo", chave = "t_agua_in" }
+t_tubo_out = { regra = "insumo", chave = "t_agua_out" }
+rho_tubo = { regra = "densidade_utilidade", entrada = "t_agua_in", saida = "t_agua_out" }
+mu_tubo = { regra = "viscosidade_utilidade", entrada = "t_agua_in", saida = "t_agua_out" }
+k_tubo = { regra = "condutividade_utilidade", entrada = "t_agua_in", saida = "t_agua_out" }
+m_casco = { regra = "vazao_massica", corrente = "C-07" }
+cp_casco = { regra = "cp_corrente", corrente = "C-07" }
+t_casco_in = { regra = "temperatura", corrente = "C-07" }
+mu_casco = { regra = "viscosidade_fase", corrente = "C-07", fase = "liquido", continua = "oleo", t = ["C-07", "C-08"] }
 
 [insumos.t_agua_in]
 rotulo = "Temperatura de entrada da água quente (meio de aquecimento)"
 unidade = "°C"
-dica = "Temperatura de suprimento da utilidade no casco: dado do sistema de utilidades, sem fonte no acervo."
+dica = "Temperatura de suprimento da utilidade: dado do sistema de utilidades, sem fonte no acervo."
 limite_max = 120.0
 fonte_limite = "BOT 2.7.1.4: 'For oil treatment, the maximum heating medium temperature shall be 120°C'"
 
 [insumos.t_agua_out]
 rotulo = "Temperatura de saída da água quente (meio de aquecimento)"
 unidade = "°C"
-dica = "Temperatura de retorno da utilidade: com a de entrada e a carga Q_H do balanço, fixa a vazão da utilidade."
+dica = "Temperatura de retorno da utilidade."
 
 [inativo_se]
 carga_nula = "Q_H"
+
+[recomendadas.banda_caso_projeto]
+valor = 1.0
+fonte = "P-45 (decisão do usuário, 2026-09-26; específica de trocadores): teto de velocidade em todos os casos; banda inteira no caso de projeto (maior vazão volumétrica no tubo); abaixo do piso no turndown, alerta de operabilidade/incrustação; Dittus-Boelter exigido na faixa em cada caso"
+
+[recomendadas.cascos_serie]
+valor = 2.0
+fonte = "cascos em série para o comprimento de tubo ficar dentro de 6 m (l_tubo_max mantido); melhor candidato da reotimização discreta F10x.7 (tools/reotimizar_trocadores.py; docs/validacao/18-trocadores.md), dentro da faixa da fonte do descritor (config/pfd/reotimizacao.toml)"
+
+[recomendadas.d_externo]
+valor = 19.05
+fonte = "melhor candidato da reotimização discreta F10x.7 (tools/reotimizar_trocadores.py; docs/validacao/18-trocadores.md), dentro da faixa da fonte do descritor (config/pfd/reotimizacao.toml)"
+
+[recomendadas.passes_tubo]
+valor = 2.0
+fonte = "melhor candidato da reotimização discreta F10x.7 (tools/reotimizar_trocadores.py; docs/validacao/18-trocadores.md), dentro da faixa da fonte do descritor (config/pfd/reotimizacao.toml)"
+
+[recomendadas.razao_passo]
+valor = 1.25
+fonte = "melhor candidato da reotimização discreta F10x.7 (tools/reotimizar_trocadores.py; docs/validacao/18-trocadores.md), dentro da faixa da fonte do descritor (config/pfd/reotimizacao.toml)"
+
+[recomendadas.layout_tubos]
+valor = 90.0
+fonte = "melhor candidato da reotimização discreta F10x.7 (tools/reotimizar_trocadores.py; docs/validacao/18-trocadores.md), dentro da faixa da fonte do descritor (config/pfd/reotimizacao.toml)"
+
+[recomendadas.espacamento_chicana]
+valor = 0.2
+fonte = "melhor candidato da reotimização discreta F10x.7 (tools/reotimizar_trocadores.py; docs/validacao/18-trocadores.md), dentro da faixa da fonte do descritor (config/pfd/reotimizacao.toml)"

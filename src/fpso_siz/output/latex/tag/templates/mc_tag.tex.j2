@@ -422,16 +422,38 @@ Campo & Valor & Unidade\\\midrule\endhead
 \caption{NPSH disponível × requerido com margem, por caso, no DN escolhido.}
 \end{figure}
 <% endif %>
-<% if sm.get('operacao') %>
+<% if sm.get('operacao') and sm.tipo_operacao == 'moran' %>
 
-\paragraph{Operação de cada caso na linha escolhida.} Mesma hidráulica do dimensionamento, no DN escolhido. O caso de \emph{projeto} é o de maior vazão: nele vale a banda de velocidade; nos casos de \emph{turndown} vale só o teto (P-44). Regime marcado com * = zona de transição, com o fator de Colebrook-White como limite superior (P-44b). A potência de eixo a especificar é a maior entre os casos: << sm.potencia_max|sigt >> kW.
+\paragraph{Operação de cada caso na linha escolhida.} Mesma hidráulica do dimensionamento, no DN escolhido. O caso de \emph{projeto} é o de maior vazão: nele vale a banda de velocidade; nos casos de \emph{turndown} vale só o teto (P-44). Regime marcado com * = zona de transição laminar-turbulento, onde nenhuma correlação de atrito desta implementação é válida: o fator foi estimado por Colebrook-White como \emph{política conservadora de engenharia} (P-44b), não como correlação válida nem limite superior demonstrado. Potências de eixo: no caso governante << sm.v2.potencia_caso_governante|sigt >> kW; máxima operacional << sm.v2.potencia_max_operacional|sigt >> kW; nominal requerida (ponto nominal $Q$ = << sm.v2.q_nominal|sigt >> m³/h, $H$ = << sm.v2.h_nominal|sigt >> m, sem margem de acionador) << sm.v2.potencia_nominal|sigt >> kW.
 
 {\footnotesize\begin{longtable}{L{2.6cm}L{1.4cm}R{1.4cm}R{1.2cm}R{1.4cm}L{1.6cm}R{1.2cm}R{1.4cm}R{1.4cm}}\toprule
 Caso & Papel & $Q$ (m³/h) & $v$ (m/s) & Re & Regime & $H$ (m) & folga NPSH (m) & $P$ (kW)\\\midrule\endhead
 <% for o in sm.operacao %>
-<< o.caso|tx >> & << o.papel >> & << o.q|sigt >> & << o.v|sigt >> & << o.re|sigt >> & << o.regime|tx >><% if o.limite_superior %>*<% endif %> & << o.h|sigt >> & << o.folga_npsh|sigt >> & << o.potencia|sigt >>\\
+<< o.caso|tx >> & << o.papel >> & << o.q|sigt >> & << o.v|sigt >> & << o.re|sigt >> & << o.regime|tx >><% if o.politica_transicao %>*<% endif %> & << o.h|sigt >> & << o.folga_npsh|sigt >> & << o.potencia|sigt >>\\
 <% endfor %>
 \bottomrule\end{longtable}}
+<% endif %>
+<% if sm.get('operacao') and sm.tipo_operacao == 'saari_lmtd' %>
+
+<% if sm.get('feixe_proximo') %>
+\paragraph{Feixe mais próximo de atender (diagnóstico).} Nenhum feixe da grade atende a todos os critérios. O mais próximo tem << sm.feixe_proximo.x|sigt >> tubos por passe, comprimento exigido de << sm.feixe_proximo.l|sigt >> m por casco e casco de << sm.feixe_proximo.d_shell|sigt >> mm; ele é recusado por:
+\begin{itemize}
+<% for b in sm.feixe_proximo.bloqueios %>
+\item << b.criterio|tx >><% if b.caso %> (caso << b.caso|tx >>)<% endif %>;
+<% endfor %>
+\end{itemize}
+<% else %>
+\paragraph{Operação de cada caso no feixe escolhido.}
+<% endif %>
+Mesma física do dimensionamento. O caso de \emph{projeto} é o de maior vazão volumétrica no tubo: nele vale a banda inteira de velocidade; nos de \emph{turndown}, só o teto, e velocidade abaixo do piso é alerta de operabilidade/incrustação, não reprovação (P-45). A faixa de validade de Dittus-Boelter é exigida em todos os casos.<% if sm.v2.get('cascos_serie', 1) > 1 or sm.v2.get('cascos_paralelo', 1) > 1 %> Conjunto: << sm.v2.cascos_serie|sigt >> casco(s) em série × << sm.v2.cascos_paralelo|sigt >> em paralelo; área por casco << sm.v2.area_por_casco|sigt >> m², total << sm.v2.area_total|sigt >> m².<% endif %>
+
+{\footnotesize\begin{longtable}{L{3.0cm}L{1.4cm}R{1.4cm}R{1.2cm}R{1.4cm}L{1.6cm}R{1.4cm}R{1.4cm}R{1.4cm}}\toprule
+Caso & Papel & $q$ (kW) & $v$ (m/s) & Re & Dittus-Boelter & $h_i$ (W/m²K) & $h_o$ (W/m²K) & $L$ (m)\\\midrule\endhead
+<% for o in sm.operacao %>
+<< o.caso|tx >> & << o.papel >><% if o.abaixo_v_min and o.papel == 'turndown' %>$^\dagger$<% endif %> & << (o.q / 1000)|sigt >> & << o.v|sigt >> & << o.re|sigt >> & <% if o.nu_valido %>válida<% else %>\textbf{fora}<% endif %> & << o.h_i|sigt >> & << o.h_o|sigt >> & << o.l|sigt >>\\
+<% endfor %>
+\bottomrule\end{longtable}}
+{\footnotesize $^\dagger$ turndown abaixo do piso de velocidade: alerta de operabilidade/incrustação (Saari Tab.~3.1).}
 <% endif %>
 <% else %>
 \aguarda.

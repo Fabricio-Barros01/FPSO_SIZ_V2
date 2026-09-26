@@ -243,21 +243,21 @@ justificativa = "Lado tubo com óleo ou emulsão de fase contínua óleo; adota-
 
 [[proposta]]
 tag = "P-002"
-chave = "k_tubo"
+chave = "k_casco"
 valor = 0.13
 unidade = "W/m·K"
 status = "proposto"
 origem = "proposta do usuário (autor do TCC)"
-justificativa = "Lado tubo com óleo ou emulsão de fase contínua óleo; adota-se a condutividade de óleo cru líquido, a menor dos componentes. É conservador: k menor dá h_i menor e área maior. Sem correlação de emulsão no acervo nem no ChEDL (dica do código)."
+justificativa = "Óleo ou emulsão de fase contínua óleo no lado CASCO (topologia P-46); adota-se a condutividade de óleo cru líquido, a menor dos componentes. É conservador: k menor dá h_o menor e área maior. Sem correlação de emulsão no acervo nem no ChEDL (dica do código)."
 
 [[proposta]]
 tag = "P-003"
-chave = "k_tubo"
+chave = "k_casco"
 valor = 0.13
 unidade = "W/m·K"
 status = "proposto"
 origem = "proposta do usuário (autor do TCC)"
-justificativa = "Lado tubo com óleo ou emulsão de fase contínua óleo; adota-se a condutividade de óleo cru líquido, a menor dos componentes. É conservador: k menor dá h_i menor e área maior. Sem correlação de emulsão no acervo nem no ChEDL (dica do código)."
+justificativa = "Óleo ou emulsão de fase contínua óleo no lado CASCO (topologia P-46); adota-se a condutividade de óleo cru líquido, a menor dos componentes. É conservador: k menor dá h_o menor e área maior. Sem correlação de emulsão no acervo nem no ChEDL (dica do código)."
 
 [[proposta]]
 tag = "P-001"
@@ -307,20 +307,20 @@ justificativa = "Incrustação de serviço com óleo cru ou emulsão; a Tab. 8.1
 [[proposta]]
 tag = "P-002"
 chave = "rf_tubo"
-valor = 0.00035
+valor = 0.00018
 unidade = "m²·K/W"
 status = "proposto"
 origem = "proposta do usuário (autor do TCC)"
-justificativa = "Incrustação de serviço com óleo cru ou emulsão; a Tab. 8.1 de Saari citada no código não tem petróleo. Valor conservador da ordem das incrustações de óleo, a confirmar."
+justificativa = "Lado TUBO com água de utilidade em circuito fechado tratado (topologia P-46): 0,00018 m²K/W é o valor de água de resfriamento tratada da nota do descritor rf_tubo (Saari cap. 8); conferir na Tab. 8.1 citada no código."
 
 [[proposta]]
 tag = "P-003"
 chave = "rf_tubo"
-valor = 0.00035
+valor = 0.00018
 unidade = "m²·K/W"
 status = "proposto"
 origem = "proposta do usuário (autor do TCC)"
-justificativa = "Incrustação de serviço com óleo cru ou emulsão; a Tab. 8.1 de Saari citada no código não tem petróleo. Valor conservador da ordem das incrustações de óleo, a confirmar."
+justificativa = "Lado TUBO com água de utilidade em circuito fechado tratado (topologia P-46): 0,00018 m²K/W é o valor de água de resfriamento tratada da nota do descritor rf_tubo (Saari cap. 8); conferir na Tab. 8.1 citada no código."
 
 [[proposta]]
 tag = "P-001"
@@ -334,20 +334,20 @@ justificativa = "Lado casco do P-001 com óleo tratado: mesma proposta do lado t
 [[proposta]]
 tag = "P-002"
 chave = "rf_casco"
-valor = 0.00018
+valor = 0.00035
 unidade = "m²·K/W"
 status = "proposto"
 origem = "proposta do usuário (autor do TCC)"
-justificativa = "Lado casco com água de utilidade em circuito fechado tratado (aquecimento no P-002, resfriamento no P-003): incrustação menor que a do óleo; conferir na Tab. 8.1 de Saari citada no código."
+justificativa = "Lado CASCO com óleo cru ou emulsão (topologia P-46); a Tab. 8.1 de Saari citada no código não tem petróleo. Valor conservador da ordem das incrustações de óleo (0,00035 m²K/W, nota do descritor rf_casco: óleo leve), a confirmar."
 
 [[proposta]]
 tag = "P-003"
 chave = "rf_casco"
-valor = 0.00018
+valor = 0.00035
 unidade = "m²·K/W"
 status = "proposto"
 origem = "proposta do usuário (autor do TCC)"
-justificativa = "Lado casco com água de utilidade em circuito fechado tratado (aquecimento no P-002, resfriamento no P-003): incrustação menor que a do óleo; conferir na Tab. 8.1 de Saari citada no código."
+justificativa = "Lado CASCO com óleo cru ou emulsão (topologia P-46); a Tab. 8.1 de Saari citada no código não tem petróleo. Valor conservador da ordem das incrustações de óleo (0,00035 m²K/W, nota do descritor rf_casco: óleo leve), a confirmar."
 
 [[proposta]]
 tag = "P-002"

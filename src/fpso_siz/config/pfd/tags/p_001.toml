@@ -23,3 +23,7 @@ mu_casco = { regra = "viscosidade_fase", corrente = "C-22", fase = "liquido", co
 
 [inativo_se]
 carga_nula = "Q_pre"
+
+[recomendadas.banda_caso_projeto]
+valor = 1.0
+fonte = "P-45 (decisão do usuário, 2026-09-26; específica de trocadores): teto de velocidade em todos os casos; banda inteira no caso de projeto (maior vazão volumétrica no tubo); abaixo do piso no turndown, alerta de operabilidade/incrustação; Dittus-Boelter exigido na faixa em cada caso"

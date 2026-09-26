@@ -7,7 +7,7 @@ Dittus-Boelter (case_admissible); o conjunto, pelos tetos de casco e de comprime
 Escolhe-se o feixe de MENOR área.
 """
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from fpso_siz.core.configuracao import carregar
 from fpso_siz.core.contrato import Equipamento, ResultField, SweepAxis, SweepColumn, der
@@ -151,6 +151,8 @@ class ExchangerConstraints:
     bd_ativo: bool
     kbd: dict
     k: dict
+    n_serie: int = 1       # extensões do V2 (F10x.7): cascos iguais em série e em paralelo
+    n_paralelo: int = 1
 
 
 VAZIO = dict(v=math.inf, re=math.nan, h_i=math.nan, h_o=math.nan, u=math.nan, area=math.inf, l=math.inf, n_total=0.0,
@@ -223,6 +225,7 @@ class SaariLMTD(MetodoTOML):
     method_id = "saari_lmtd"
     config = "equipment/exchanger/saari_lmtd.toml"
     rotulo_padrao = "Saari — LMTD com fator F"
+    config_extensoes = "equipment/exchanger/saari_extensoes.toml"
 
     def applies_to(self):
         return ShellTubeExchanger()
@@ -241,6 +244,11 @@ class SaariLMTD(MetodoTOML):
 
     def sizing_constraints(self, e, p, k):
         tr = Rastro()
+        n_par = max(round(p.get("cascos_paralelo", 1.0)), 1)
+        n_ser = max(round(p.get("cascos_serie", 1.0)), 1)
+        if n_par > 1:   # cada casco em paralelo: 1/N das vazões dos dois lados, mesmas temperaturas
+            e = replace(e, m_tubo=e.m_tubo / n_par, m_casco=e.m_casco / n_par)
+            tr.trace("balanco", "Tab. 3.1", "cascos em paralelo", "vazões por casco = total/N", float(n_par), "–")
         c_tubo = e.m_tubo * e.cp_tubo
         c_casco = e.m_casco * e.cp_casco
         if not (math.isfinite(c_tubo) and c_tubo > 0):
@@ -285,6 +293,9 @@ class SaariLMTD(MetodoTOML):
                  "correção do arranjo 1-2" if passes == 2 else "contracorrente puro: F = 1", fator, "–")
         ua = abs(q) / (fator * dtlm)
         tr.trace("balanco", "Eq. 4.9", "U·A", "q/(F·ΔT_lm)", ua, "W/K")
+        if n_ser > 1:   # N cascos iguais em série: cada um com 1/N do U·A (F do conjunto, conservador)
+            ua = ua / n_ser
+            tr.trace("balanco", "—", "U·A por casco", "U·A/N (cascos em série)", ua, "W/K")
         d_o = mm_para_m(p["d_externo"])
         d_i = d_o - 2 * mm_para_m(p["espessura"])
         if not d_i > 0:
@@ -317,7 +328,7 @@ class SaariLMTD(MetodoTOML):
             passes, p["h_casco"], p["rf_tubo"], p["rf_casco"], p["k_parede"], math.pi * (d_i * d_i) / 4,
             p["razao_passo"] * d_o, area_celula, e.m_casco, e.cp_casco, e.mu_casco, e.k_casco, layout,
             p["corte_chicana"], p["espacamento_chicana"], p["pares_veda"], mm_para_m(p["folga_furo_chicana"]),
-            p["faixas_divisoras"], bd_ativo, kbd, dict(k))
+            p["faixas_divisoras"], bd_ativo, kbd, dict(k), n_ser, n_par)
         return True, cons, tr
 
     def sweep_axis(self, p):
@@ -362,7 +373,78 @@ class SaariLMTD(MetodoTOML):
         return True, dict(n_min=min(p["n_min"] for p in params), n_max=max(p["n_max"] for p in params),
                           n_step=min(p["n_step"] for p in params), v_min=v_min, v_max=v_max,
                           d_casco_max=min(p["d_casco_max"] for p in params),
-                          l_tubo_max=min(p["l_tubo_max"] for p in params))
+                          l_tubo_max=min(p["l_tubo_max"] for p in params),
+                          banda_caso_projeto=max(p.get("banda_caso_projeto", 0.0) for p in params))
+
+    # --- extensões do V2 (F10x.7)
+    def caso_projeto(self, conss):
+        """Caso de projeto do feixe (P-45): o de maior vazão volumétrica no tubo."""
+        return max(range(len(conss)), key=lambda i: conss[i].m_tubo / conss[i].rho_tubo)
+
+    def envelope_case_params(self, conss, p_env):
+        """P-45: banda inteira no caso de projeto; nos de turndown só o teto (a velocidade abaixo
+        do piso vira alerta em envelope_derived). A faixa de Dittus-Boelter continua exigida em
+        todos os casos (case_admissible)."""
+        if not p_env.get("banda_caso_projeto", 0.0) or not conss:
+            return super().envelope_case_params(conss, p_env)
+        projeto = self.caso_projeto(conss)
+        turndown = {**p_env, "v_min": 0.0}
+        return [p_env if i == projeto else turndown for i in range(len(conss))]
+
+    def operacao_por_caso(self, conss, n, pcs):
+        """Cada caso no feixe escolhido (mesma física): papel (projeto/turndown pela P-45), v, Re,
+        Dittus-Boelter válido, h_i, h_o, U, comprimento exigido e alerta de v abaixo do piso."""
+        projeto = self.caso_projeto(conss) if conss else -1
+        v_min = max((pc["v_min"] for pc in pcs), default=0.0)
+        out = []
+        for i, c in enumerate(conss):
+            t = _tubo(c, n)
+            out.append(dict(papel="projeto" if i == projeto else "turndown", v=t["v"], re=t["re"],
+                            nu_valido=bool(t["nu_valido"]), h_i=t["h_i"], h_o=t["h_o"], u=t["u"], l=t["l"], q=c.q,
+                            abaixo_v_min=t["v"] < v_min))
+        return out
+
+    def bloqueios(self, n, conss, pcs, p_env):
+        """Critérios que reprovam o feixe com n tubos por passe (diagnóstico da reotimização,
+        F10x.7), na ordem do dimensionamento: [(critério, índice do caso ou -1)]. Vazio = o
+        feixe atende a todos os casos e aos tetos de geometria."""
+        out = []
+        ls = []
+        for i, (c, pc) in enumerate(zip(conss, pcs)):
+            t = _tubo(c, n)
+            ls.append(t["l"])
+            if not t["ok"]:
+                out.append(("calculo", i))
+                continue
+            if t["v"] > pc["v_max"]:
+                out.append(("v_max", i))
+            if t["v"] < pc["v_min"]:
+                out.append(("v_min_projeto" if pc["v_min"] > 0 and p_env.get("banda_caso_projeto", 0.0) else "v_min", i))
+            if not t["nu_valido"]:
+                out.append(("dittus_boelter", i))
+        d_shell = m_para_mm(_tubo(conss[0], n)["d_shell"]) if conss else math.inf
+        l_max = max((x for x in ls if math.isfinite(x)), default=math.inf)
+        if l_max > p_env["l_tubo_max"]:
+            out.append(("comprimento", -1))
+        if d_shell > p_env["d_casco_max"]:
+            out.append(("casco", -1))
+        return out
+
+    def envelope_derived(self, n, conss, pcs, p_env):
+        """Conjunto de cascos no ponto escolhido: número em série e em paralelo, área por casco e
+        total, caso de projeto e alertas de operabilidade/incrustação (P-45)."""
+        if not conss:
+            return {}
+        c0 = conss[0]
+        if c0.n_serie == 1 and c0.n_paralelo == 1 and not p_env.get("banda_caso_projeto", 0.0):
+            return {}
+        op = self.operacao_por_caso(conss, n, pcs)
+        l_max = max(o["l"] for o in op)
+        area_casco = n * c0.passes * math.pi * c0.d_o * l_max
+        alertas = [i for i, o in enumerate(op) if o["papel"] == "turndown" and o["abaixo_v_min"]]
+        return {"cascos_serie": float(c0.n_serie), "cascos_paralelo": float(c0.n_paralelo),
+                "area_por_casco": area_casco, "area_total": area_casco * c0.n_serie * c0.n_paralelo,
+                "caso_projeto": float(self.caso_projeto(conss)), "casos_abaixo_v_min": [float(i) for i in alertas]}
 
     def selection_message(self, rows, teto, p, mechanism="none"):
         if not rows:
@@ -396,6 +478,10 @@ class SaariLMTD(MetodoTOML):
                     f"{jl(p['l_tubo_max'])} m — o mais curto dá {jl_round(menor_l, 2)} m. Amplie a grade para mais "
                     "tubos, aceite tubo mais longo, ou melhore o coeficiente do casco.")
         menor = min(r.derivados.get("d_shell", math.inf) for r in curto)
+        if not menor > p["d_casco_max"]:   # V2: a recusa veio de outro caso (Julia não chega aqui num caso só)
+            return (f"Há feixes na banda de velocidade {banda}, dentro da faixa de Dittus-Boelter, com tubo até "
+                    f"{jl(p['l_tubo_max'])} m e casco até {jl(p['d_casco_max'])} mm (o menor casco dá "
+                    f"{jl_round(menor, 0)} mm). A recusa não veio deste caso.")
         return (f"Na banda de velocidade todos os feixes pedem casco maior que o limite de {jl(p['d_casco_max'])} mm — "
                 f"o menor deles dá {jl_round(menor, 0)} mm. Use tubo de menor diâmetro, passo mais apertado, ou divida o "
                 "serviço em dois cascos em paralelo.")
