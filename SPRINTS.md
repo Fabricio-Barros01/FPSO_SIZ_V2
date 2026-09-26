@@ -14,6 +14,25 @@ aquela fase).
 
 ## Estado atual
 
+### Retomada dos alarmes — etapas 0–3 (2026-09-26)
+
+Plano revisado aprovado pelo usuário: branch `fases/f11-alarmes` a partir de
+`origin/main` (`e7ce6a6`), PR para revisão sem merge. WIP `59e0bf1` preservado em
+`backup-local-f11`, sem reaplicação (já reorganizado na F11, decisões R1–R3).
+Arquivos locais não rastreados preservados.
+
+**Etapa 0 — ambiente e verificação local:** 20 testes do oráculo/memorial aprovados
+(incluindo o acervo); 1 teste de regeneração Julia aprovado, byte a byte, numa cópia
+temporária. A primeira tentativa Julia falhou ao escrever o cache protegido em
+`~/.julia`; `JULIA_DEPOT_PATH` temporário resolveu, sem alterar ferramentas ou fixtures.
+`poppler-utils` incluído no devShell; comandos de ambiente documentados no CLAUDE.md.
+Validação completa desta etapa: em execução.
+
+Próximas etapas autorizadas: documentar fontes do P-001, mantendo pendente o ramo até
+haver exemplo numérico da fonte; executar apenas estudos de circulação fixa e cascos em
+série; fechar testes e PR. Padrões dos TAGs, P-44b, alertas P-45 e valores `proposto`
+continuam sujeitos à decisão do usuário.
+
 **FASE ATUAL: resolução dos alarmes de inviabilidade (pré-condição da F15) ← ATUAL; F10x (até F10x.7), F13, F14 e o planejamento da F15 entregues em 2026-09-26. Alarmes do SG-001 (óleo vivo) e das bombas (P-44) explicados; P-002/P-003 abertos (Dittus-Boelter no turndown, após P-45/P-46 e reotimização); P-001 é lacuna metodológica.**
 **F11 (MC por TAG) e F11b (MC do balanço por caso) entregues em 2026-09-26, em sessão autônoma
 autorizada pelo usuário, no branch `fases/f11` (sem merge; integração pelo usuário). Ver

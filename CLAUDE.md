@@ -74,6 +74,13 @@ numpy/scipy só via `fpso_siz/_num.py`, para manter o port a C/Java mapeável; j
 `fpso_siz/pfd/_chedl.py`, com import preguiçoso. **Regra das fontes:** correlação ou valor
 sem fonte citável (acervo `references/` ou referência da docstring do ChEDL) é lacuna de
 entrada, nunca número suposto. No NixOS, os testes precisam do `LD_LIBRARY_PATH` do flake.
+Entre pelo devShell (`nix develop`, ou direnv): ele também fornece `pdftotext`
+(`poppler-utils`), necessário para comparar o texto dos PDFs nos testes LaTeX.
+Se o cache Julia do usuário não for gravável, use um depot temporário no comando:
+`JULIA_DEPOT_PATH="$(mktemp -d)/depot:" uv run pytest -m julia`.
+O teste Julia regenera arquivos no diretório de fixtures: para preservar os originais,
+execute-o numa cópia temporária do projeto, mantendo o repositório Julia somente leitura
+como irmão dessa cópia. Compare os bytes regenerados; não atualize fixtures para passar.
 
 ## Comandos
 ```

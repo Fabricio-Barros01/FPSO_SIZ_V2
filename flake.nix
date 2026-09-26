@@ -29,6 +29,7 @@
           buildInputs = [
             pkgs.python313
             pkgs.uv
+            pkgs.poppler-utils  # pdftotext: comparação do conteúdo dos memoriais PDF
           ];
 
           LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath libs;
