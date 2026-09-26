@@ -52,6 +52,12 @@ def planta(ctx):
 
 
 @pytest.fixture(scope="module")
+def planta_morto():
+    """--oleo-morto: o SG-001 inviável (alarme) para a tela desse estado."""
+    return mod_planta.dimensionar(contexto=servico.Contexto(carregar_casos(CASOS), oleo_vivo=False))
+
+
+@pytest.fixture(scope="module")
 def inativo(ctx):
     """B-001 com vazão zero informada em todos os casos: TAG inteiro inativo."""
     e = servico.estado_inicial("B-001")
@@ -87,10 +93,12 @@ def test_snapshot_planta(planta, nome, estilo, colunas, caso):
                if "━" not in li and "=" not in li[:3])
 
 
-@pytest.mark.parametrize("ident, estado", [("TO-001", "aguardando_entrada"), ("V-001", "dimensionado"),
-                                          ("SG-001", "inviavel")])
+@pytest.mark.parametrize("ident, estado, qual", [("TO-001", "aguardando_entrada", "planta"),
+                                                 ("V-001", "dimensionado", "planta"),
+                                                 ("SG-001", "inviavel", "planta_morto")])
 @pytest.mark.parametrize("variante, estilo, colunas", [("", UNI, 100), ("_ascii", ASC, 100), ("_estreita", UNI, 52)])
-def test_snapshot_tag_nos_estados(planta, ident, estado, variante, estilo, colunas):
+def test_snapshot_tag_nos_estados(request, ident, estado, qual, variante, estilo, colunas):
+    planta = request.getfixturevalue(qual)
     rt = planta.tag(ident)
     assert rt.status == estado
     confere(f"tag_{ident}{variante}", tela.tela_tag(planta.contexto, rt, estilo, colunas))
@@ -278,4 +286,4 @@ def test_tela_de_estado_dos_ajustes(ctx):
 def test_sessao_ascii_e_estreita_sem_quebrar():
     rc, out, s = rodar(op("principal", "planta"), "0", "0", colunas=60, unicode=False)
     assert rc == 0 and all(ord(c) < 128 for c in out)
-    assert "[SG-001  X]" in out and "-> [" in out
+    assert "[SG-001  D]" in out and "-> [" in out

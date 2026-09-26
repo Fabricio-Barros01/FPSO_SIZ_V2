@@ -47,12 +47,18 @@ def test_lacunas_exatas(planta_base):
         for l in t.entradas.lacunas:
             assert l.rotulo and l.unidade and l.dica and l.casos
     assert not planta_base.completa
-    # P-42: os casos sem fase aquosa (1, 4–7) não pedem a gotícula de água nem impõem teto;
-    # o SG-001 segue inviável, pelo teto do caso 2 (com água). Com a eficiência do FWKO (F10w)
-    # o reciclo é menor, a entrada do FWKO mais fria e o teto cai de 4434 para 3612 mm
+    # P-42: os casos sem fase aquosa (1, 4–7) não pedem a gotícula de água nem impõem teto
     for nome in ("TO-001", "TO-002"):
         assert planta_base.tag(nome).entradas.lacunas[0].casos == (2, 3, 8, 9, 10, 11, 12, 13, 14, 15, 16)
+    # com óleo vivo (padrão) o SG-001 tem solução; o teto segue no caso 2 (com água)
     sg = planta_base.tag("SG-001")
+    assert sg.status == "dimensionado" and sg.resultado.ceiling_case == "BOT 02 — Early Life"
+
+
+def test_oleo_morto_mantem_o_teto_da_f10w(planta_oleo_morto):
+    """--oleo-morto: com a eficiência do FWKO (F10w) o reciclo é menor, a entrada do FWKO mais
+    fria e o teto cai de 4434 para 3612 mm; o SG-001 fica inviável pelo caso 2."""
+    sg = planta_oleo_morto.tag("SG-001")
     assert sg.status == "inviavel" and "3612" in sg.resultado.message
     assert sg.resultado.ceiling_case == "BOT 02 — Early Life"
 

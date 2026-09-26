@@ -91,6 +91,8 @@ uv run fpso-siz dimensionar --exemplo alves_komesu [--saida saida/]      # contr
 uv run fpso-siz dimensionar --tag V-001 --casos design_cases_bot.json --auto-balanco \
     [--ajustes ajustes_pfd.toml] [--saida saida/tag]
 uv run fpso-siz pfd --casos design_cases_bot.json [--ajustes ajustes_pfd.toml] [--saida saida/pfd]
+    # propostas (config/pfd/pendencias_propostas.toml) e óleo vivo por padrão;
+    # --sem-propostas / --oleo-morto voltam ao modo das fixtures (F10b, Julia)
 uv run fpso-siz pfd --casos design_cases_bot.json --saida saida/pfd --mc [--pdf]   # MC de cada TAG (F11)
 uv run fpso-siz dimensionar --tag V-001 --casos design_cases_bot.json --auto-balanco --saida saida/tag --mc [--pdf]
 uv run fpso-siz memorial --casos todos [--layout original|senai|ambos] [--pdf]    # MC_Caso01…16 (F11b)

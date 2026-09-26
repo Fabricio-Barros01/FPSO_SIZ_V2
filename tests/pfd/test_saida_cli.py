@@ -12,15 +12,16 @@ CASOS = FIXTURES / "python_ref" / "design_cases_bot.json"
 AJUSTES = FIXTURES / "pfd" / "ajustes_sinteticos.toml"
 
 
-def test_exportacao_estrita_com_lacunas_e_inviabilidade(planta_base, tmp_path):
-    arquivos = pfd.gravar(planta_base, tmp_path)
+def test_exportacao_estrita_com_lacunas_e_inviabilidade(planta_oleo_morto, tmp_path):
+    """Óleo morto (--oleo-morto): a planta tem os três estados, inclusive o SG-001 inviável."""
+    arquivos = pfd.gravar(planta_oleo_morto, tmp_path)
     assert len(arquivos) == 23  # JSON + CSV de varredura por TAG, e planta.csv
-    for t in planta_base.tags:
+    for t in planta_oleo_morto.tags:
         texto = (tmp_path / f"{t.tag.tag}.json").read_text(encoding="utf-8")
         obj = json.loads(texto, parse_constant=lambda x: pytest.fail(f"JSON não estrito: {x}"))
         assert obj["schema_version"] == 2 and obj["modo"] == "automatico" and not obj["avulso"]
         assert obj["status"] == t.status and obj["preliminar"] == bool(obj["revisoes"])
-        assert obj["proveniencia"]["sha256"] == planta_base.dados.sha256
+        assert obj["proveniencia"]["sha256"] == planta_oleo_morto.dados.sha256
         assert len(obj["casos"]) == 16 and obj["limitacoes"]
         for c in obj["casos"]:
             assert all(v["valor"] is None for v in c["valores"].values() if v["origem"] == "lacuna")
@@ -37,7 +38,7 @@ def test_exportacao_estrita_com_lacunas_e_inviabilidade(planta_base, tmp_path):
 
 def test_cli_sem_ajustes_e_sem_saida(capsys, monkeypatch, tmp_path):
     monkeypatch.chdir(tmp_path)
-    assert main(["pfd", "--sem-propostas", "--casos", str(CASOS)]) == 1
+    assert main(["pfd", "--sem-propostas", "--oleo-morto", "--casos", str(CASOS)]) == 1
     out = capsys.readouterr().out
     assert "aguardando entrada" in out and "t_agua_out" in out and "inviável" in out
     assert "revisão pendente" in out and "M-01" in out and "[SG-001  X]" in out

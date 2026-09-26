@@ -56,7 +56,7 @@ def test_planta_e_tag_isolado_delegam_ao_mesmo_servico(monkeypatch, tmp_path):
 def test_paridade_numerica_com_a_f10b(planta_referencia):
     """Mesmos estados, lacunas, inativos e envelopes que a F10b registrou (balanço de referência)."""
     planta_base = planta_referencia
-    ctx = servico.Contexto(planta_base.dados, balanco=planta_base.balanco)
+    ctx = servico.Contexto(planta_base.dados, balanco=planta_base.balanco, oleo_vivo=False)
     assert {t.tag.tag: t.status for t in planta_base.tags} == {
         "B-001": "aguardando_entrada", "B-002": "aguardando_entrada", "B-003": "aguardando_entrada",
         "P-001": "aguardando_entrada", "P-002": "aguardando_entrada", "P-003": "aguardando_entrada",
@@ -234,9 +234,10 @@ def plantas_f10b(monkeypatch, planta_referencia, ajustes_sinteticos):
     monkeypatch.setattr(entradas, "_fase_aquosa", lambda metodo, valores: valores)
     monkeypatch.setattr(separador, "sem_fase_aquosa", lambda fu: False)
     monkeypatch.setattr(tratador, "sem_fase_aquosa", lambda fu: False)
-    base = planta.dimensionar(planta_referencia.dados, balanco=planta_referencia.balanco)
+    base = planta.dimensionar(planta_referencia.dados, balanco=planta_referencia.balanco, oleo_vivo=False)
     return {"sem_ajustes": base,
-            "ajustes_sinteticos": planta.dimensionar(base.dados, ajustes=ajustes_sinteticos, balanco=base.balanco)}
+            "ajustes_sinteticos": planta.dimensionar(base.dados, ajustes=ajustes_sinteticos, balanco=base.balanco,
+                                                     oleo_vivo=False)}
 
 
 @pytest.mark.parametrize("modo", ["sem_ajustes", "ajustes_sinteticos"])

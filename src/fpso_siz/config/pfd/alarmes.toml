@@ -13,10 +13,10 @@ classes = { premissa = "premissa", numerico = "numérico", modelo = "modelo" }
 
 [[alarme]]
 tag = "SG-001"
-estado = "aberta"
-resumo = "Só os casos 2 e 3 (Early Life, com água) são inviáveis isolados: o teto de decantação (água em óleo) fica abaixo do menor diâmetro com a esbeltez na banda."
+estado = "explicada"
+resumo = "Só no modo --oleo-morto: os casos 2 e 3 (Early Life, com água) são inviáveis isolados, porque o teto de decantação (água em óleo) fica abaixo do menor diâmetro com a esbeltez na banda. Com a viscosidade de óleo vivo (padrão) o vaso é viável (docs/validacao/16-oleo-vivo.md)."
 hipoteses = [
-    { classe = "premissa", texto = "Viscosidade de óleo MORTO (BOT Tab. 2.2.1.2, P-40) usada para o óleo vivo do FWKO: o gás dissolvido reduz a viscosidade, e (h_o)max ∝ 1/µ_o. O teto está subestimado na direção conservadora. Correção de óleo vivo sem fonte no acervo (limitação declarada)." },
+    { classe = "premissa", texto = "CONFIRMADA: a viscosidade de óleo MORTO (BOT Tab. 2.2.1.2, P-40) usada para o óleo vivo do FWKO. O gás dissolvido na saída de óleo (Rs de C-06) reduz µ_o cerca de 40 % pela correlação de Beggs & Robinson (1975), e (h_o)max ∝ 1/µ_o: o teto dos casos 2 e 3 sobe e o vaso passa a ter solução. A correlação está fora do acervo local (a conferir) e não substitui um PVT medido." },
     { classe = "premissa", texto = "Critério de decantação de gotículas de água de 500 µm no óleo (S&A §4.7.2) aplicado ao FWKO, cuja saída de óleo pode levar até o BSW de F-06 (BOT 2.7.1.2): o FWKO remove água livre, não especifica o óleo. O critério pode ser mais restritivo que a função do vaso." },
     { classe = "premissa", texto = "Eficiência de água livre P-43 (premissa do autor, faixa de 80–90 % declarada pelo usuário): muda o reciclo quente e a temperatura de entrada do FWKO, logo µ_o e o teto.", variantes = ["eta_80", "eta_90"] },
     { classe = "modelo", texto = "Um único vaso para todos os casos: com trens em paralelo a vazão por vaso cai e o comprimento exigido também; o teto (razão de vazões, µ, ΔSG) não muda.", variantes = ["trens_2", "trens_3"] },
@@ -35,7 +35,7 @@ hipoteses = [
 [[alarme]]
 tag = "P-002"
 estado = "aberta"
-resumo = "Todos os casos: o óleo no lado tubo tem Re de ~1.100 a ~3.400 e Pr ~250, fora da faixa de Dittus-Boelter (Re ≥ 10⁴, Pr ≤ 120) declarada por Saari."
+resumo = "Todos os casos: o óleo no lado tubo tem Re de ~1.900 a ~5.600 e Pr ~150 com óleo vivo (~1.100 a ~3.400 e Pr ~250 com --oleo-morto), fora da faixa de Dittus-Boelter (Re ≥ 10⁴, Pr ≤ 120) declarada por Saari: a correção de óleo vivo aproxima, mas não resolve."
 hipoteses = [
     { classe = "premissa", texto = "Alocação de fluidos: óleo viscoso no lado tubo. A prática é pôr o fluido mais viscoso no casco, onde Bell-Delaware cobre escoamento laminar (fator Jr); a água quente de utilidade iria nos tubos. A troca de lados é mudança de topologia do TAG (sem variante executável neste modelo)." },
     { classe = "modelo", texto = "Correlação do lado tubo só turbulenta: não há correlação laminar/de transição (ex.: Sieder–Tate) no acervo; o programa não extrapola." },

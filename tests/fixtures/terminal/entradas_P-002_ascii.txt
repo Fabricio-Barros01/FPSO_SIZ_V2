@@ -7,7 +7,7 @@
   t_tubo_in            80,3181  degC     balanco
   t_tubo_out                90  degC     balanco
   rho_tubo             889,047  kg/m3    correlacao
-  mu_tubo                  7,9  cP       correlacao
+  mu_tubo              4,95063  cP       correlacao
   k_tubo                     -  W/m.K    lacuna
   m_casco                    -  kg/s     lacuna
   cp_casco                   -  J/kg.K   lacuna
@@ -46,7 +46,8 @@
     rho_tubo . Entrada: Densidade no tubo
     rho_tubo . Fonte: C-07: rho da fase liquido (volumes aditivos)
     mu_tubo . Entrada: Viscosidade no tubo
-    mu_tubo . Fonte: C-07: mu da fase continua (oleo), sem fase dispersa
+    mu_tubo . Fonte: C-07: mu da fase continua (oleo), sem fase dispersa (oleo vivo, Beggs & Robinson (1975); Rs de
+    C-07)
     k_tubo . Entrada: Condutividade do fluido do tubo
     m_casco . Entrada: Vazao massica no casco
     m_casco . Fonte: t_agua_in, t_agua_out

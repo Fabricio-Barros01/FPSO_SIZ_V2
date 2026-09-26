@@ -193,7 +193,7 @@ Desvio do balanço: de 0,43 % a 11,28 %.
 ## Lacunas de caracterização (não calculadas: sem fonte)
 
 - **Tc, Pc e ω do pseudo-componente C20+/C20++** — sem flash do fluido de poço pela EOS: gás liberado, Rs e Bo continuam de Standing (balanço), sem calor de flash nos desgaseificadores. Motivo: o BOT dá só MW e densidade do C20+; as correlações de petróleo do ChEDL (ex.: Twu 1985) exigem o ponto de ebulição normal.
-- **viscosidade de óleo vivo** — vasos e trocadores seguem com a viscosidade de óleo morto (P-40); é uma das hipóteses do alarme do SG-001. Motivo: sem correlação de óleo vivo no acervo nem no ChEDL.
+- **viscosidade de óleo vivo pela EOS** — a viscosidade de óleo vivo vem da correlação de Beggs & Robinson (1975) sobre o óleo morto do BOT, com o Rs de Standing (docs/validacao/16-oleo-vivo.md), e não de um flash com o fluido caracterizado. Motivo: sem correlação de óleo vivo no acervo local nem no ChEDL; a correlação publicada está fora do acervo (a conferir).
 - **condutividade térmica do óleo e da salmoura** — k do lado óleo dos trocadores segue como entrada (proposta). Motivo: sem correlação de petróleo no ChEDL; o banco de Magomedov do thermo não tem NaCl.
 
 ## Leitura

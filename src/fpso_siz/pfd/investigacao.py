@@ -59,7 +59,8 @@ def executar_variante(ctx, ident, v, estado=None):
     é tocado: premissas alteradas criam outro contexto (com o mesmo arquivo de casos e as
     mesmas propostas)."""
     if v.get("premissas"):
-        ctx = servico.Contexto(ctx.dados, alteracoes={**ctx.alteracoes, **v["premissas"]}, propostas=ctx.propostas)
+        ctx = servico.Contexto(ctx.dados, alteracoes={**ctx.alteracoes, **v["premissas"]}, propostas=ctx.propostas,
+                               oleo_vivo=ctx.oleo_vivo)
     base = copy.deepcopy(estado) if estado is not None else servico.estado_inicial(ident)
     for chave, valor in v.get("geral", {}).items():
         base.editar(chave, float(valor), None, {})

@@ -160,3 +160,66 @@ def test_pressao_de_vapor_do_liquido_saturado():
     tr = Rastro()
     assert fluidos.pressao_vapor_saturado(700.0, tr) == 700.0
     assert tr.entries[0].eq == fluidos.cfg()["vapor"]["rotulo"]
+
+
+# ------------------------------------------------------------------ óleo vivo (Beggs & Robinson)
+def test_oleo_vivo_e_a_forma_da_correlacao():
+    """μ_o = A·μ_od^B, A = a(Rs+b)^c, B = d(Rs+e)^f, com os coeficientes de fluidos.toml."""
+    c = fluidos.cfg()["oleo_vivo"]
+    for rs in (30.0, 64.3, 500.0):
+        mu, avisos = fluidos.oleo_vivo(13.28, rs, 27.5, 60.0)
+        assert mu == c["a"] * (rs + c["b"]) ** c["c"] * 13.28 ** (c["d"] * (rs + c["e"]) ** c["f"])
+        assert not avisos
+
+
+def test_oleo_vivo_reduz_mu_com_o_gas_dissolvido():
+    mus = [fluidos.oleo_vivo(13.28, rs, 27.5, 60.0)[0] for rs in (20.0, 60.0, 200.0, 1000.0)]
+    assert all(a > b for a, b in zip(mus, mus[1:])) and mus[0] < 13.28
+
+
+def test_oleo_vivo_sem_gas_ou_abaixo_da_faixa_e_o_oleo_morto():
+    """Abaixo da faixa de Rs a correlação não é extrapolada: com os coeficientes arredondados,
+    A(0)·μ^B(0) > μ (óleo vivo mais viscoso que o morto, sem sentido físico)."""
+    c = fluidos.cfg()["oleo_vivo"]
+    assert c["a"] * c["b"] ** c["c"] * 13.28 ** (c["d"] * c["e"] ** c["f"]) > 13.28
+    for rs in (0.0, -0.0, -1e-12, 1e-9, 0.4):
+        assert fluidos.oleo_vivo(13.28, rs, 27.5, 60.0) == (13.28, [])
+
+
+def test_oleo_vivo_avisa_fora_da_faixa_de_dados():
+    c = fluidos.cfg()["oleo_vivo"]
+    mu, av = fluidos.oleo_vivo(13.28, c["faixa_rs_scf_stb"][0] / 2, 27.5, 60.0)
+    assert mu == 13.28 and len(av) == 1 and "óleo morto" in av[0]
+    _, av = fluidos.oleo_vivo(13.28, c["faixa_rs_scf_stb"][1] * 2, c["faixa_api"][0] - 1, 0.0)
+    assert len(av) == 3
+
+
+def test_oleo_vivo_no_rastro():
+    tr = Rastro()
+    p = pocos()[next(iter(pocos()))]
+    o = fluidos.oleo(p, 900.0, 60.0, tr, rs_scf_stb=64.3)
+    nomes = [e.var for e in tr.entries]
+    assert nomes[:3] == ["μ_od", "Rs", "μ_o"]
+    mu_od = tr.entries[0].value
+    assert o.mu == fluidos.oleo_vivo(mu_od, 64.3, p.api, 60.0)[0] < mu_od
+    tr_baixo = Rastro()
+    assert fluidos.oleo(p, 900.0, 60.0, tr_baixo, rs_scf_stb=0.0).mu == tr_baixo.entries[0].value
+    assert [e.var for e in tr_baixo.entries][:2] == ["μ_od", "μ_o"]
+    tr_morto = Rastro()
+    assert fluidos.oleo(p, 900.0, 60.0, tr_morto).mu == mu_od and tr_morto.entries[0].var == "μ_o"
+
+
+def test_sg001_usa_o_rs_da_saida_de_oleo(planta_base, planta_oleo_morto):
+    """No SG-001, μ_o vivo = Beggs & Robinson sobre o μ do óleo morto do mesmo caso, com o Rs
+    (Q_G/Q_O padrão) da corrente de óleo que sai do vaso (C-06)."""
+    from types import SimpleNamespace
+
+    from fpso_siz.pfd import entradas
+    vivo, morto = planta_base.tag("SG-001"), planta_oleo_morto.tag("SG-001")
+    for r, cv, cm in zip(planta_base.balanco, vivo.entradas.casos, morto.entradas.casos, strict=True):
+        rs = entradas._rs(SimpleNamespace(r=r), "C-06")
+        api = pocos()[poco_do_fluido(planta_base.dados, r.fluid)].api
+        mu_od = cm.valores["mu_oil"].valor
+        assert rs > 0 and cv.valores["mu_oil"].valor == fluidos.oleo_vivo(mu_od, rs, api, 0.0)[0] < mu_od
+        assert "Beggs & Robinson" in cv.valores["mu_oil"].fonte and "Rs de C-06" in cv.valores["mu_oil"].fonte
+        assert "Beggs" not in cm.valores["mu_oil"].fonte

@@ -42,8 +42,8 @@ regra = "viscosidade_fase"
 unidade = "cP"
 condicao = "T do TAG (média das correntes indicadas na regra)"
 funcao = "emulsao"
-fonte = ["oleo.fonte_viscosidade", "salmoura.fonte", "emulsao.fonte"]
-validade = "óleo morto: interpolação log-linear do BOT, limitada a 70 °C (P-40); emulsão pela correlação de Zanker nas faixas da mesma página"
+fonte = ["oleo.fonte_viscosidade", "oleo_vivo.fonte", "salmoura.fonte", "emulsao.fonte"]
+validade = "óleo morto: interpolação log-linear do BOT, limitada a 70 °C (P-40); óleo vivo (padrão): Beggs & Robinson (1975) com o Rs da corrente, faixa Rs 20–2070 scf/STB, API 16–58, T 70–295 °F (aviso fora dela); emulsão pela correlação de Zanker nas faixas da mesma página"
 
 [pressao_vapor_saturado]
 regra = "pressao_vapor_saturado"

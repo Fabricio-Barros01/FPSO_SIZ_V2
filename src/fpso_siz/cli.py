@@ -167,7 +167,7 @@ def _dimensionar_equipamento(a):
             raise ValueError("--tag exige --casos (o JSON do BOT que identifica o contexto)")
         t = tag(a.tag)
         ctx = servico.Contexto(carregar_casos(a.casos), alteracoes=_alteracoes(a.premissa),
-                               propostas=_propostas(a))
+                               propostas=_propostas(a), oleo_vivo=not a.oleo_morto)
         estado = _estado_do_tag(a, t, aj)
         _verificar_contexto(aj, ctx, [estado])
     else:
@@ -237,7 +237,7 @@ def cmd_dimensionar(a):
 
 def cmd_interativo(a):
     return Sessao(casos=a.casos, ajustes=a.ajustes, ascii=a.ascii,
-                  propostas=False if a.sem_propostas else a.propostas).rodar()
+                  propostas=False if a.sem_propostas else a.propostas, oleo_vivo=not a.oleo_morto).rodar()
 
 
 def cmd_pfd(a):
@@ -245,7 +245,8 @@ def cmd_pfd(a):
     from fpso_siz.output.terminal.pfd import resumo
     from fpso_siz.pfd.planta import dimensionar
 
-    ctx = servico.Contexto(carregar_casos(a.casos), alteracoes=_alteracoes(a.premissa), propostas=_propostas(a))
+    ctx = servico.Contexto(carregar_casos(a.casos), alteracoes=_alteracoes(a.premissa), propostas=_propostas(a),
+                           oleo_vivo=not a.oleo_morto)
     aj = _ler_ajustes(a.ajustes)
     _verificar_contexto(aj, ctx, aj.todos())
     _validar_mc(a)
@@ -278,6 +279,9 @@ def _opcao_propostas(sub):
                           "padrão: o do pacote (config/pfd/pendencias_propostas.toml)")
     sub.add_argument("--sem-propostas", action="store_true", dest="sem_propostas",
                      help="não carrega valores propostos: as entradas sem fonte ficam como lacuna")
+    sub.add_argument("--oleo-morto", action="store_true", dest="oleo_morto",
+                     help="viscosidade do óleo morto do BOT, sem a correção de óleo vivo (Beggs & Robinson); "
+                          "modo das fases F10b–F13 e das fixtures do Julia")
 
 
 def _opcoes_mc(sub):

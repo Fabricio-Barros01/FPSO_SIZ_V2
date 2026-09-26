@@ -19,14 +19,15 @@ import math
 from dataclasses import dataclass, field, replace
 
 from fpso_siz.balanco.dados import descritores_premissas, pocos
-from fpso_siz.balanco.indicadores import criterios
+from fpso_siz.balanco.indicadores import criterios, q
 from fpso_siz.balanco.propriedades import poco_do_fluido
 from fpso_siz.core.casos import Case, CaseSet
 from fpso_siz.core.configuracao import carregar
 from fpso_siz.core.formato_julia import jl
 from fpso_siz.core.ieee import div
 from fpso_siz.core.trace import Rastro
-from fpso_siz.core.unidades import HORAS_POR_DIA, SEGUNDOS_POR_HORA, kj_para_j, kw_para_w, mm_para_m
+from fpso_siz.core.unidades import (HORAS_POR_DIA, SEGUNDOS_POR_HORA, kj_para_j, kw_para_w, mm_para_m,
+                                    sm3sm3_para_scf_stb)
 from fpso_siz.pfd import fluidos
 from fpso_siz.pfd.ajustes import MANUAL, estado_legado
 
@@ -184,11 +185,12 @@ class _Pendente(Exception):
 # ------------------------------------------------------------------ contexto de um caso
 class _Caso:
     def __init__(self, tag, metodo, specs, r, dados, prem, ajustes, importados=None, arquivo="", propostas=None,
-                 num=None):
+                 num=None, oleo_vivo=True):
         self.tag, self.metodo, self.specs = tag, metodo, specs
         self.propostas, self.num_caso = propostas, num
         self.r, self.dados, self.prem, self.aj = r, dados, prem, ajustes
         self.manual = importados is not None     # manual: não consulta balanço nem ChEDL
+        self.oleo_vivo = oleo_vivo and not self.manual
         self.imp, self.arquivo = importados or {}, arquivo
         self.padroes = metodos().get(metodo.method_id, {})
         self.rastro = Rastro()
@@ -295,13 +297,22 @@ def _informado(v, origem, fonte):
 
 
 # ------------------------------------------------------------------ propriedades (memo por caso)
-def _oleo(ctx, T, rotulo):
-    chave = ("oleo", rotulo)
+def _rs(ctx, corrente):
+    """Gás dissolvido da corrente de líquido [scf/STB]: Q_G/Q_O padrão do balanço (Standing)."""
+    q_o = q(ctx.r, corrente, "O")
+    return sm3sm3_para_scf_stb(q(ctx.r, corrente, "G") / q_o) if q_o > 0 else 0.0
+
+
+def _oleo(ctx, T, rotulo, rs_corrente=None):
+    """Óleo na condição: morto (BOT, P-40) e, no automático com óleo vivo, corrigido pelo gás
+    dissolvido da corrente `rs_corrente` (Beggs & Robinson)."""
+    vivo = ctx.oleo_vivo and rs_corrente is not None
+    chave = ("oleo", rotulo, rs_corrente if vivo else None)
     if chave not in ctx._props:
         tr = Rastro()
         poco = pocos()[poco_do_fluido(ctx.dados, ctx.r.fluid)]
-        o = fluidos.oleo(poco, ctx.r.rho["O"], T, tr)
-        ctx.anexar(tr, rotulo)
+        o = fluidos.oleo(poco, ctx.r.rho["O"], T, tr, _rs(ctx, rs_corrente) if vivo else None)
+        ctx.anexar(tr, f"{rotulo}, Rs de {rs_corrente}" if vivo else rotulo)
         ctx._props[chave] = o
     return ctx._props[chave]
 
@@ -344,14 +355,15 @@ def _subfases(fase):
     return f if all(x in cfg()["fases"] for x in f) else [fase]
 
 
-def _fase(ctx, corrente, fase, t):
-    """{subfase: (massa kg/s, propriedades a T)} das subfases (óleo, aquosa) da fase pedida."""
+def _fase(ctx, corrente, fase, t, rs=None):
+    """{subfase: (massa kg/s, propriedades a T)} das subfases (óleo, aquosa) da fase pedida.
+    `rs`: corrente cujo gás dissolvido define o óleo vivo (padrão: a própria)."""
     T, rotulo = ctx.temperatura(t)
     s = ctx.r.streams[corrente]
     out = {}
     for sub in _subfases(fase):
         massa = sum(s[c] for c in cfg()["fases"][sub])
-        props = _oleo(ctx, T, rotulo) if sub == "oleo" else _aquosa(ctx, corrente, T, rotulo)
+        props = _oleo(ctx, T, rotulo, rs or corrente) if sub == "oleo" else _aquosa(ctx, corrente, T, rotulo)
         out[sub] = (massa, props)
     return out
 
@@ -403,19 +415,26 @@ def r_densidade_fase(ctx, alvo, corrente, fase, t=None):
     return Valor(rho, "propriedade", f"{corrente}: ρ da fase {fase} (volumes aditivos)")
 
 
-def r_viscosidade_fase(ctx, alvo, corrente, fase, t=None, continua=None):
-    subs = _fase(ctx, corrente, fase, t)
+def _nota(p, ctx, corrente, rs):
+    """Complemento da fonte quando a μ da fase foi corrigida (óleo vivo: com o Rs de qual corrente)."""
+    return f" ({p.nota}; Rs de {rs or corrente})" if p.nota else ""
+
+
+def r_viscosidade_fase(ctx, alvo, corrente, fase, t=None, continua=None, rs=None):
+    subs = _fase(ctx, corrente, fase, t, rs)
     for sub, (massa, p) in subs.items():
         if sub == "oleo" and (massa > 0 or len(subs) == 1):
             for aviso in p.avisos:
                 ctx.aviso(f"{corrente}: {aviso}")
     if len(subs) == 1:
-        return Valor(next(iter(subs.values()))[1].mu, "propriedade", f"{corrente}: μ da fase {fase}")
+        p = next(iter(subs.values()))[1]
+        return Valor(p.mu, "propriedade", f"{corrente}: μ da fase {fase}{_nota(p, ctx, corrente, rs)}")
     (sub_c, (m_c, p_c)), = [(k, v) for k, v in subs.items() if k == continua]
     (sub_d, (m_d, p_d)), = [(k, v) for k, v in subs.items() if k != continua]
     v_c, v_d = m_c / p_c.rho, m_d / p_d.rho
     if v_d == 0:
-        return Valor(p_c.mu, "propriedade", f"{corrente}: μ da fase contínua ({sub_c}), sem fase dispersa")
+        return Valor(p_c.mu, "propriedade",
+                     f"{corrente}: μ da fase contínua ({sub_c}), sem fase dispersa{_nota(p_c, ctx, corrente, rs)}")
     if v_c == 0:
         ctx.aviso(f"{corrente}: fase contínua ({sub_c}) ausente; usada a μ da fase {sub_d}")
         return Valor(p_d.mu, "propriedade", f"{corrente}: μ da fase {sub_d}")
@@ -423,7 +442,8 @@ def r_viscosidade_fase(ctx, alvo, corrente, fase, t=None, continua=None):
     mu, avisos = fluidos.emulsao(p_c.mu, p_d.mu, v_d / (v_c + v_d), tr)
     _, rotulo = ctx.temperatura(t)
     ctx.anexar(tr, f"{corrente}, {rotulo}" if corrente != rotulo else corrente, avisos)
-    return Valor(mu, "propriedade", f"{corrente}: emulsão, {sub_c} contínuo (Branan eq. 27-4)")
+    nota = _nota(p_c, ctx, corrente, rs) or _nota(p_d, ctx, corrente, rs)
+    return Valor(mu, "propriedade", f"{corrente}: emulsão, {sub_c} contínuo (Branan eq. 27-4){nota}")
 
 
 def r_densidade_gas(ctx, alvo, corrente):
@@ -684,7 +704,7 @@ def especificacoes(tag, pfd=True):
     return eq, m, specs
 
 
-def montar(tag, balanco, dados, prem, ajustes=None, estado=None, propostas=None):
+def montar(tag, balanco, dados, prem, ajustes=None, estado=None, propostas=None, oleo_vivo=True):
     """Adaptador automático: entradas do TAG nos casos do balanço (`balanco`: ResultadoCaso
     de cada caso). `estado` (EstadoTAG) ou `ajustes` (formato F10b) trazem o que o usuário
     informou e revisou."""
@@ -695,7 +715,8 @@ def montar(tag, balanco, dados, prem, ajustes=None, estado=None, propostas=None)
     _validar_estado(tag, estado, specs, {r.num for r in balanco})
     casos = []
     for r in balanco:
-        ctx = _Caso(tag, m, specs, r, dados, prem, estado.ajustes_do_caso(r.num), propostas=propostas, num=r.num)
+        ctx = _Caso(tag, m, specs, r, dados, prem, estado.ajustes_do_caso(r.num), propostas=propostas, num=r.num,
+                    oleo_vivo=oleo_vivo)
         valores = _auditar(_fase_aquosa(m, {k: ctx.valor(k) for k in specs}), estado, r.num)
         _rastrear(ctx, valores, specs)
         ativo, motivo = _atividade(tag, ctx, valores, specs)

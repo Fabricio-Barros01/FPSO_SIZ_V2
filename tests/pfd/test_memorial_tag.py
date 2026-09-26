@@ -45,6 +45,13 @@ def docs(planta_base):
     return {t.tag.tag: (t, mc.documento(ctx, t)) for t in planta_base.tags}
 
 
+@pytest.fixture(scope="module")
+def docs_morto(planta_oleo_morto):
+    """Óleo morto do BOT (--oleo-morto): o SG-001 em alarme, com o diagnóstico da F11."""
+    ctx = planta_oleo_morto.contexto
+    return {t.tag.tag: (t, mc.documento(ctx, t)) for t in planta_oleo_morto.tags}
+
+
 def test_documento_de_cada_tag_tem_as_secoes(docs):
     for tag, (rt, d) in docs.items():
         assert d["identificacao"]["numero"] == mc.numero(tag)[1]
@@ -200,8 +207,8 @@ def test_v002_governante_e_ponto(docs):
     assert formatacao.texto_sig(c["selecao"]["sr"]) == formatacao.texto_sig(rt.resultado.derivados["sr"])
 
 
-def test_sg001_diagnostico_sem_intersecao(docs):
-    rt, d = docs["SG-001"]
+def test_sg001_diagnostico_sem_intersecao(docs_morto):
+    rt, d = docs_morto["SG-001"]
     c = d["calculo"]
     assert rt.status == "inviavel" and not c["viavel"] and c["selecao"] is None
     diag = c["diagnostico"]
@@ -216,23 +223,26 @@ def test_sg001_diagnostico_sem_intersecao(docs):
     assert "ponto" not in s
 
 
-def test_sg001_conta_a_mao_da_decantacao(docs):
-    _, d = docs["SG-001"]
+@pytest.mark.parametrize("planta", ["docs", "docs_morto"])
+def test_sg001_conta_a_mao_da_decantacao(request, planta):
+    _, d = request.getfixturevalue(planta)["SG-001"]
     eq = {e["id"]: e for e in d["calculo"]["equacoes"]}
     o = eq["ho"]["operandos"]
     assert o["coef"] * o["tr_o"] * o["dsg"] * (o["dm"] * o["dm"]) / o["mu_o"] == eq["ho"]["resultado"]
     o = eq["dsg"]["operandos"]
     assert o["sg_w"] - o["sg_o"] == eq["dsg"]["resultado"]
     o = eq["dmax_wio"]["operandos"]
-    assert o["h"] / o["beta"] == eq["dmax_wio"]["resultado"] == d["calculo"]["diagnostico"]["teto"]
+    assert o["h"] / o["beta"] == eq["dmax_wio"]["resultado"]
+    if not d["calculo"]["viavel"]:
+        assert eq["dmax_wio"]["resultado"] == d["calculo"]["diagnostico"]["teto"]
     o = eq["liquido"]["operandos"]
     assert o["coef"] * (o["tr_o"] * o["q_o"] + o["tr_w"] * o["q_w"]) == eq["liquido"]["resultado"]
 
 
 @pytest.mark.latex
 @pytest.mark.skipif(not compilacao.disponivel() or not shutil.which("pdftotext"), reason="latexmk/pdftotext ausentes")
-def test_sg001_pdf_mostra_a_inviabilidade(planta_base, tmp_path):
-    ctx, rt = planta_base.contexto, planta_base.tag("SG-001")
+def test_sg001_pdf_mostra_a_inviabilidade(planta_oleo_morto, tmp_path):
+    ctx, rt = planta_oleo_morto.contexto, planta_oleo_morto.tag("SG-001")
     tex = saida_mc.gravar(ctx, rt, tmp_path, data=DATA, git=GIT)
     texto = _normal(_texto_pdf(compilacao.compilar(tex)))
     assert _normal("MEMORIAL DE CÁLCULO – DIAGNÓSTICO") in texto

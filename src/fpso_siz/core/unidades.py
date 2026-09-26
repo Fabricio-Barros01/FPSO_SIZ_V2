@@ -80,6 +80,11 @@ CUFT_M3 = 0.028316846592
 RHO_AGUA_REF = 1000.0
 
 
+def sm3sm3_para_scf_stb(r):
+    """Razão gás/óleo: Sm³/Sm³ → scf/STB (ft³ padrão por barril), fatores exatos."""
+    return r * BARREL_M3 / CUFT_M3
+
+
 def densidade_relativa(rho):
     return rho / RHO_AGUA_REF
 

@@ -109,7 +109,7 @@ def casos_de(texto, validos):
 
 class Sessao:
     def __init__(self, casos=None, entrada=input, saida=None, estilo=None, colunas=None, agora=datetime.now,
-                 ajustes=None, ascii=False, propostas=None):
+                 ajustes=None, ascii=False, propostas=None, oleo_vivo=True):
         self.saida = saida if saida is not None else sys.stdout
         self.entrada = entrada
         self.e = estilo if estilo is not None else Estilo.para(self.saida, ascii=ascii)
@@ -132,6 +132,8 @@ class Sessao:
         self._sem_propostas = propostas is False
         self._propostas = (None if propostas is False else
                            mod_propostas.carregar(propostas) if propostas is not None else mod_propostas.padrao())
+        # viscosidade do óleo vivo (Beggs & Robinson) por padrão; False = óleo morto do BOT
+        self.oleo_vivo = oleo_vivo
 
     # ------------------------------------------------------------------ E/S
     def dizer(self, *linhas):
@@ -192,7 +194,8 @@ class Sessao:
         """Contexto dos TAGs: recriado ao trocar o arquivo de casos ou as premissas (o que
         dependia do anterior — balanço, propriedades, resultados — fica para trás)."""
         if self._ctx is None:
-            self._ctx = servico.Contexto(self.dados, alteracoes=self.alt, propostas=self._propostas)
+            self._ctx = servico.Contexto(self.dados, alteracoes=self.alt, propostas=self._propostas,
+                                         oleo_vivo=self.oleo_vivo)
         return self._ctx
 
     def _arg_propostas(self):
@@ -200,7 +203,7 @@ class Sessao:
         return str(self.caminho_propostas) if self.caminho_propostas is not None else None
 
     def _flag_sem_propostas(self):
-        return {"sem-propostas": self._sem_propostas}
+        return {"sem-propostas": self._sem_propostas, "oleo-morto": not self.oleo_vivo}
 
     def _invalidar(self):
         self._ctx = None

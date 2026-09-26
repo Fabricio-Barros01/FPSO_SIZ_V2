@@ -51,10 +51,34 @@ fonte = "Laliberté, M. J. Chem. Eng. Data 54 (2009) 1725-1760, via thermo.elect
 rotulo_viscosidade = "BOT Tab. 2.2.1.2 / P-40"
 rotulo_densidade = "API (P-07)"
 # Viscosidade: óleo morto medido (BOT Tab. 2.2.1.2), interpolação log-linear e valor do
-# extremo fora da tabela — a mesma regra do balanço (P-40). Sem correção de óleo vivo nem
-# de Bo: não há fonte no acervo nem no ChEDL (limitação declarada no MC).
+# extremo fora da tabela — a mesma regra do balanço (P-40). A correção de óleo vivo está em
+# [oleo_vivo] (padrão; --oleo-morto a desliga); sem correção de Bo (limitação declarada no MC).
 fonte_viscosidade = "BOT I-ET-3010.2K-1200-941-P4X-001 rev. C, Tab. 2.2.1.2 (óleo morto); premissa P-40"
 fonte_densidade = "grau API do poço na condição padrão (balanço, P-07 e eq. do rho_oleo_api); sem correção por T e Bo"
+
+# Óleo VIVO (pedido do usuário em 2026-09-26: "corrija a viscosidade para o valor real").
+# O BOT (Tab. 2.2.1.2) só mede óleo morto; o gás dissolvido na condição do equipamento reduz a
+# viscosidade. Correção de Beggs & Robinson sobre o óleo morto do BOT, com o Rs da corrente
+# (gás dissolvido do balanço, Standing, P-23):
+#   mu_o = A * mu_od^B,  A = a (Rs + b)^c,  B = d (Rs + e)^f,  Rs em scf/STB, mu em cP.
+# Referência bibliográfica publicada, FORA do acervo local (como a correlação de Standing do
+# balanço): a conferir no acervo. Abaixo da faixa de Rs não se extrapola: os coeficientes
+# arredondados dão A(0) = 0,99998 e B(0) = 1,00018, um óleo "vivo" mais viscoso que o morto; o
+# óleo morto medido é mantido (pfd/fluidos.py, oleo_vivo).
+[oleo_vivo]
+rotulo = "Beggs & Robinson (1975)"
+fonte = "Beggs, H. D.; Robinson, J. R. Estimating the Viscosity of Crude Oil Systems. Journal of Petroleum Technology, v. 27, n. 9, p. 1140-1141, 1975 (fora do acervo local; a conferir)"
+a = 10.715
+b = 100.0
+c = -0.515
+d = 5.44
+e = 150.0
+f = -0.338
+# faixa dos dados da correlação no artigo: abaixo do Rs mínimo, óleo morto; fora das
+# demais, aviso
+faixa_rs_scf_stb = [20.0, 2070.0]
+faixa_api = [16.0, 58.0]
+faixa_t_f = [70.0, 295.0]
 
 [emulsao]
 # Zanker — Branan, Rules of Thumb for Chemical Engineers, 5ª ed. (2012), p. 406, eq. 27-4:

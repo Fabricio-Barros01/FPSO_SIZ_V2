@@ -51,7 +51,7 @@ def test_tag_isolado_planta_e_modos_mistos_mesmos_bytes(arquivo_misto, tmp_path,
     planta, tag_ = tmp_path / "planta", tmp_path / "tag"
     base = ["--casos", str(CASOS), "--ajustes", str(arquivo_misto), "--premissa", "eta_pump=0.8"]
     assert main(["pfd", *base, "--saida", str(planta)]) == 1
-    for ident, rc in (("V-001", 1), ("TO-001", 0), ("SG-001", 1), ("B-001", 1)):
+    for ident, rc in (("V-001", 1), ("TO-001", 0), ("SG-001", 0), ("B-001", 1)):
         auto = ["--auto-balanco"] if ident == "B-001" else []
         assert main(["dimensionar", "--tag", ident, *base, *auto, "--saida", str(tag_)]) == rc, ident
         for nome in (f"{ident}.json", f"{ident}_varredura.csv"):

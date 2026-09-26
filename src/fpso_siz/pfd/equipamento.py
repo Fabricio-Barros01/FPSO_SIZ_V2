@@ -58,8 +58,11 @@ class ResultadoTAG:
 class Contexto:
     """Dados compartilhados por todos os TAGs de uma execução ou sessão."""
 
-    def __init__(self, dados, prem=None, alteracoes=None, balanco=None, propostas=None):
+    def __init__(self, dados, prem=None, alteracoes=None, balanco=None, propostas=None, oleo_vivo=True):
         self.dados = dados
+        # viscosidade do óleo: vivo (Beggs & Robinson sobre o óleo morto do BOT, padrão) ou só
+        # morto (o modo das fases F10b–F13 e das fixtures do PFD F1 do Julia)
+        self.oleo_vivo = oleo_vivo
         # valores propostos para as lacunas (pfd/propostas.py); vazio = nenhum arquivo carregado
         self.propostas = propostas if propostas is not None else NENHUMA
         if self.propostas and dados is not None:
@@ -150,7 +153,8 @@ def preparar(ctx, estado):
                          f"dimensionado por {t.equipamento}/{t.metodo}")
     if estado.modo == MANUAL:
         return montar_manual(t, ctx.casos(), estado, propostas=ctx.propostas)
-    return montar(t, ctx.balanco, ctx.dados, ctx.prem, estado=estado, propostas=ctx.propostas)
+    return montar(t, ctx.balanco, ctx.dados, ctx.prem, estado=estado, propostas=ctx.propostas,
+                  oleo_vivo=ctx.oleo_vivo)
 
 
 def dimensionar(entradas, estado=None):
@@ -187,9 +191,9 @@ def fontes_propriedades():
     return fluidos.cfg()
 
 
-def limitacoes():
+def limitacoes(oleo_vivo=True):
     """Limitações da modelagem adicional (vão para o JSON e o MC de cada TAG)."""
-    return cfg()["limitacoes"]
+    return [cfg()["limitacao_oleo"]["vivo" if oleo_vivo else "morto"], *cfg()["limitacoes"]]
 
 
 def rotulo_origem(origem):

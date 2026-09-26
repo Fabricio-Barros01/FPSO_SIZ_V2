@@ -57,7 +57,7 @@ def test_efeito_na_carga_do_aquecedor_e_pequeno(base):
 
 def test_lacunas_de_caracterizacao_declaradas():
     assert {l["grandeza"] for l in td.lacunas()} >= {"Tc, Pc e ω do pseudo-componente C20+/C20++",
-                                                     "viscosidade de óleo vivo"}
+                                                     "viscosidade de óleo vivo pela EOS"}
 
 
 def test_relatorio_deterministico_e_atualizado():

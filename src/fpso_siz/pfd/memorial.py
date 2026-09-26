@@ -415,14 +415,14 @@ def _series_do_metodo(rt, graf, p_env):
     return out
 
 
-def pendencias(rt):
+def pendencias(rt, oleo_vivo=True):
     e = rt.entradas
     sem_fonte = [dict(chave=k, casos=v) for k, v in _sem_fonte(e).items()]
     return dict(revisoes=[dict(chave=v.chave, valor=v.numero if hasattr(v, "numero") else v.valor, fonte=v.fonte,
                                origem=rotulo_origem(v.origem), estado=v.estado, casos=list(v.casos))
                           for v in e.revisoes()],
                 lacunas=[lac.chave for lac in e.lacunas], avisos=[dict(texto=a, casos=n) for a, n in e.avisos()],
-                sem_fonte=sem_fonte, limitacoes=limitacoes(), propostas=propostas_usadas(rt))
+                sem_fonte=sem_fonte, limitacoes=limitacoes(oleo_vivo), propostas=propostas_usadas(rt))
 
 
 def propostas_usadas(rt):
@@ -458,7 +458,7 @@ def documento(ctx, rt):
     m = rt.entradas.metodo
     doc = dict(identificacao=ident, alarme=alarme(ctx, rt), conteudo=conteudo_metodo(m), conteudo_tag=cfg().get("tags", {}).get(rt.tag.tag, {}),
                correntes=correntes(ctx, rt), casos=casos(rt), entradas=entradas(rt),
-               lacunas=lacunas(rt), premissas=premissas(ctx, rt, ident), pendencias=pendencias(rt),
+               lacunas=lacunas(rt), premissas=premissas(ctx, rt, ident), pendencias=pendencias(rt, ctx.oleo_vivo),
                calculo=None)
     r = rt.resultado
     if r is None:

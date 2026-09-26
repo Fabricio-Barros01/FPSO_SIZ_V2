@@ -1,9 +1,9 @@
 
 == Planta / PFD . design_cases_bot.json . casos 1-16 ==============================================
-  2 dimensionado(s) . 8 aguardando entrada . 1 inviavel(is) . 0 inativo(s)
+  3 dimensionado(s) . 8 aguardando entrada . 0 inviavel(is) . 0 inativo(s)
 
   C-01, C-02  -> [M-01    .] -> C-03
-  C-03        -> [SG-001  X] -> C-04 (saida), C-05 (saida), C-06
+  C-03        -> [SG-001  D] -> C-04 (saida), C-05 (saida), C-06
   C-06, C-22  -> [P-001   ?] -> C-07, C-23
   C-07        -> [P-002   ?] -> C-08
   C-08        -> [V-001   D] -> C-09 (saida), C-10
@@ -30,7 +30,7 @@
   P-001   aguardando entrada            10  -                     -
   P-002   aguardando entrada            10  -                     -
   P-003   aguardando entrada            16  -                     -
-  SG-001  inviavel - ALARME             16  -                     -
+  SG-001  dimensionado                  16  Diametro d: 6.050 mm  BOT 12 - Late Life
   TO-001  aguardando entrada            16  -                     -
   TO-002  aguardando entrada            16  -                     -
   V-001   dimensionado                  16  Diametro d: 4.700 mm  BOT 03 - Early Life Blend
@@ -131,9 +131,6 @@
     revisao pendente: Retencao do oleo = 10 min (recomendada); casos 1-16
     revisao pendente: Passo da grade = 150 mm (default); casos 1-16
     ... +6
-    Nao ha equipamento que atenda simultaneamente aos 16 casos. Nenhum diametro admissivel tem
-    esbeltez na banda 3.0-5.0: abaixo do teto de decantacao (3612.0 mm) o SR varia de 20.34 a
-    6975.66. Amplie a grade de diametros ou a banda de SR.
     1 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
 
   TO-001 - Desidratador (pre-tratador eletrostatico)
@@ -142,7 +139,7 @@
     revisao pendente: Passo da grade = 150 mm (default); casos 1-16
     revisao pendente: Esbeltez minima = 3 - (default); casos 1-16
     ... +4
-    1 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
+    6 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
 
   TO-002 - Dessalinizador (tratador eletrostatico)
     ! dm_water - Goticula de agua apos coalescencia [um]; casos 2-3, 8-16

@@ -39,11 +39,10 @@ def planta_propostas(planta_base):
     return dimensionar(contexto=ctx)
 
 
-@pytest.mark.parametrize("planta", ["planta_base", "planta_propostas"])
+@pytest.mark.parametrize("planta", ["planta_base", "planta_oleo_morto", "planta_propostas"])
 def test_todo_tag_inviavel_tem_alarme_anotado(request, planta):
     p = request.getfixturevalue(planta)
     alarmes = inv.alarmes(p)
-    assert alarmes, "sem TAG inviável não há o que investigar"
     for rt, ev, reg in alarmes:
         assert reg is not None, f"{rt.tag.tag} inviável sem investigação anotada em alarmes.toml"
         assert reg["hipoteses"] and ev.mensagem
@@ -57,17 +56,29 @@ def test_variantes_tem_origem_e_existem():
                 assert inv.variante(nome)["origem"].strip()
 
 
-def test_sg001_so_os_casos_2_e_3_sao_inviaveis_isolados(planta_base):
-    rt = planta_base.tag("SG-001")
+def test_sg001_so_os_casos_2_e_3_sao_inviaveis_isolados(planta_oleo_morto):
+    rt = planta_oleo_morto.tag("SG-001")
     ev = inv.evidencia(rt)
     assert {n[:6] for n, _ in ev.casos_inviaveis} == {"BOT 02", "BOT 03"} and len(ev.casos_viaveis) == 14
 
 
-def test_trens_em_paralelo_nao_mudam_o_teto(planta_base):
+def test_oleo_vivo_explica_o_alarme_do_sg001(planta_base, planta_oleo_morto):
+    """Hipótese de premissa confirmada: com a viscosidade de óleo vivo o teto de decantação
+    dos casos 2 e 3 sobe (h_o ∝ 1/µ_o) e o SG-001 tem solução; os outros TAGs sem óleo vivo
+    no critério não mudam de estado."""
+    vivo, morto = planta_base.tag("SG-001"), planta_oleo_morto.tag("SG-001")
+    assert morto.status == "inviavel" and vivo.status == "dimensionado"
+    assert vivo.resultado.ceiling > vivo.resultado.x > morto.resultado.ceiling
+    assert not inv.alarmes(planta_base)
+    assert {t.tag.tag for t, _, _ in inv.alarmes(planta_oleo_morto)} == {"SG-001"}
+    assert inv.registro("SG-001")["estado"] == "explicada"
+
+
+def test_trens_em_paralelo_nao_mudam_o_teto(planta_oleo_morto):
     """O teto de decantação depende da razão de vazões, de µ e de ΔSG, não da vazão: dividir
     por trens reduz o comprimento, não o teto (hipótese de modelo do SG-001)."""
-    ctx = planta_base.contexto
-    base = planta_base.tag("SG-001").resultado
+    ctx = planta_oleo_morto.contexto
+    base = planta_oleo_morto.tag("SG-001").resultado
     for nome in ("trens_2", "trens_3"):
         r = inv.executar_variante(ctx, "SG-001", inv.variante(nome)).resultado
         assert math.isclose(r.ceiling, base.ceiling, rel_tol=1e-12) and r.ceiling_case == base.ceiling_case
@@ -80,6 +91,13 @@ def test_variante_de_premissa_nao_toca_o_contexto(planta_base):
     assert ctx.prem == antes and r.ceiling != planta_base.tag("SG-001").resultado.ceiling
 
 
+def test_variante_de_premissa_herda_o_modo_do_oleo(planta_oleo_morto, planta_base):
+    """O contexto novo da variante mantém a viscosidade do contexto original: com óleo morto a
+    variante η = 0,80 segue inviável e com teto abaixo do diâmetro do caso com óleo vivo."""
+    rt = inv.executar_variante(planta_oleo_morto.contexto, "SG-001", inv.variante("eta_80"))
+    assert rt.status == "inviavel" and rt.resultado.ceiling < planta_base.tag("SG-001").resultado.x
+
+
 def test_p001_um_passe_leva_ao_limite_de_dittus_boelter(planta_propostas):
     """Cadeia de hipóteses do P-001: com 1 passe o domínio de F deixa de ser o impedimento e
     aparece o da correlação do lado tubo (óleo laminar/transição)."""
@@ -89,14 +107,15 @@ def test_p001_um_passe_leva_ao_limite_de_dittus_boelter(planta_propostas):
     assert not r.feasible and "Dittus-Boelter" in r.message
 
 
-def test_alarme_no_documento_do_mc(planta_base):
-    d = mc.documento(planta_base.contexto, planta_base.tag("SG-001"))
+def test_alarme_no_documento_do_mc(planta_base, planta_oleo_morto):
+    d = mc.documento(planta_oleo_morto.contexto, planta_oleo_morto.tag("SG-001"))
     a = d["alarme"]
-    assert a["registrado"] and a["estado"] == "aberta"
+    assert a["registrado"] and a["estado"] == "explicada"
     variantes = [v for h in a["hipoteses"] for v in h["variantes"]]
     assert {v["nome"] for v in variantes} == {"eta_80", "eta_90", "trens_2", "trens_3"}
     assert not any(v["viavel"] for v in variantes)
     assert mc.documento(planta_base.contexto, planta_base.tag("V-001"))["alarme"] is None
+    assert mc.documento(planta_base.contexto, planta_base.tag("SG-001"))["alarme"] is None
 
 
 def test_relatorio_de_alarmes_e_deterministico():

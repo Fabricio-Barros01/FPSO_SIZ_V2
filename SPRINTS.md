@@ -14,7 +14,7 @@ aquela fase).
 
 ## Estado atual
 
-**FASE ATUAL: resolução dos alarmes de inviabilidade (pré-condição da F15) ← ATUAL; F10x, F13, F14 e o planejamento da F15 entregues em 2026-09-26**
+**FASE ATUAL: resolução dos alarmes de inviabilidade (pré-condição da F15) ← ATUAL; F10x (até F10x.5, óleo vivo), F13, F14 e o planejamento da F15 entregues em 2026-09-26. Alarme do SG-001 explicado pela viscosidade de óleo vivo; seguem abertos os de trocadores e bombas.**
 **F11 (MC por TAG) e F11b (MC do balanço por caso) entregues em 2026-09-26, em sessão autônoma
 autorizada pelo usuário, no branch `fases/f11` (sem merge; integração pelo usuário). Ver
 [`docs/validacao/13-memorial-tag.md`](docs/validacao/13-memorial-tag.md).**
@@ -997,6 +997,20 @@ Commits `de962eb` (F10x.1), `04f0139` (F10x.2), `f807387` (F10x.3).
   `interativo`; tabela "Valores PROPOSTOS, a confirmar" no MC. Sem `--propostas` nada muda.
 - F10x.3: MC próprio de cada TAG (função no processo, correntes do bloco com T e P, hipóteses do
   TAG; premissas no texto vêm de P[...]); sem texto de vaso em bomba e trocador.
+- F10x.4 (`ca1f901`, decisão do usuário: "pode seguir com os valores propostos; para mudar, só
+  selecionar a opção e editar"): `pendencias_propostas.toml` em `config/pfd/`, carregado por
+  padrão na CLI e no interativo (`--propostas ARQ` troca, `--sem-propostas` desliga); a edição
+  no interativo vira entrada do usuário e prevalece. A biblioteca (`Contexto`) segue sem
+  propostas se nada for passado.
+- F10x.5 (pedido do usuário: "corrija a viscosidade para o valor real"): **viscosidade de óleo
+  vivo** por Beggs & Robinson (1975) sobre o óleo morto do BOT, com o Rs da corrente vindo do
+  balanço (Q_G/Q_O padrão, Standing), aplicada só dentro da faixa de Rs da correlação (abaixo
+  dela fica o óleo morto medido, com aviso). É o padrão; `--oleo-morto` volta ao modo anterior,
+  que é o das fixtures do Julia e da F10b. Efeito: **o SG-001 passa a ser viável** (D = 6.050 mm,
+  SR 3,94; teto do caso 2 de 3.612 para 6.257 mm) e o Re do óleo no P-002 sobe (1.876–5.588, que
+  continua fora de Dittus-Boelter). Os demais TAGs não mudam (correntes desgaseificadas).
+  Justificativa e tabelas em [`docs/validacao/16-oleo-vivo.md`](docs/validacao/16-oleo-vivo.md).
+  A correlação está fora do acervo local (a conferir).
 - Com as propostas: TO-001/TO-002 dimensionam (d = 5.550 mm); bombas e trocadores seguem
   inviáveis — tratados como alarme na F13.
 - **Aceite:** (1) ✓; (2) ✓ (só `proposto` entra); (3) parcial — os TAGs ficam sem lacuna, mas
@@ -1023,7 +1037,7 @@ anotação e investigação.
   sem piso de velocidade), sem mudar o cálculo padrão; seção ALARME no MC; estado "inviável —
   ALARME" no terminal; relatório gerado `docs/validacao/14-alarmes.md`
   (`tools/investigar_alarmes.py`).
-- Achados: SG-001 inviável só nos casos 2 e 3; conta do teto refeita do rastro sem erro numérico;
+- Achados (com óleo morto; ver F10x.5 para o óleo vivo, que explica o SG-001): SG-001 inviável só nos casos 2 e 3; conta do teto refeita do rastro sem erro numérico;
   nenhuma variante rastreável resolve (3 trens: SR no teto 6,8 > 5) → premissas suspeitas
   (viscosidade de óleo morto; critério de 500 µm aplicado ao FWKO). Trocadores: óleo laminar no
   tubo, fora de Dittus-Boelter (falta correlação laminar no acervo; P-001 com 1 passe chega ao

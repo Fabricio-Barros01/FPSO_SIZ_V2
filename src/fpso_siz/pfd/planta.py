@@ -60,10 +60,11 @@ def normalizar(ajustes):
     return ler(ajustes)
 
 
-def dimensionar(dados=None, prem=None, ajustes=None, balanco=None, contexto=None):
+def dimensionar(dados=None, prem=None, ajustes=None, balanco=None, contexto=None, oleo_vivo=True):
     """Planta dimensionada: um ResultadoTAG por TAG, todos pelo serviço por TAG.
-    `ajustes`: Ajustes, ou o dict do arquivo de ajustes."""
-    ctx = contexto if contexto is not None else Contexto(dados, prem=prem, balanco=balanco)
+    `ajustes`: Ajustes, ou o dict do arquivo de ajustes. `oleo_vivo=False`: viscosidade do
+    óleo morto (modo de paridade com as fixtures do Julia e da F10b)."""
+    ctx = contexto if contexto is not None else Contexto(dados, prem=prem, balanco=balanco, oleo_vivo=oleo_vivo)
     aj = normalizar(ajustes)
     estados = [aj.tags.get(t.tag) or equipamento.estado_inicial(t.tag) for t in tags()]
     if any(e.modo == equipamento.AUTOMATICO for e in estados):
