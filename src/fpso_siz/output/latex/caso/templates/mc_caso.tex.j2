@@ -1,0 +1,125 @@
+<% macro aq(v, d=1) %><% if sem_agua %><< sem_fase >><% else %><< v|br(d) >><% endif %><% endmacro %>
+<% macro opc(v, d=4) %><% if v is none %><< sem_fase >><% else %><< v|br(d) >><% endif %><% endmacro %>
+<% if layout == 'senai' %>
+<% include "00_preambulo_senai.tex.j2" %>
+\thispagestyle{folhaderosto}
+
+\vspace*{5mm}
+
+\setlength{\extrarowheight}{4.0pt}
+
+\hspace*{-15.2pt}%
+\hspace*{-5mm}%
+\begin{tabularx}{\dimexpr\FrameWidth-0pt\relax}{|M{18mm}|X|}
+    \hline
+    \multicolumn{2}{|c|}{\textbf{ÍNDICE DE REVISÕES}} \tabularnewline \hline
+    \textbf{REV.}
+    &
+    \centering \textbf{DESCRIÇÃO E/OU FOLHAS ATINGIDAS}
+    \arraybackslash
+    \tabularnewline \hline
+    \DocRevisao
+    &
+    \DocDescricaoRevisao
+    \vspace{21.35cm}
+    \tabularnewline \hline
+\end{tabularx}
+
+\clearpage
+\section*{Identificação do documento}
+<% else %>
+<% include "preambulo_original.tex.j2" %>
+\begin{titlepage}\centering
+{\large SENAI CETIQT --- Engenharia Química\par}\vspace{1.2cm}
+{\Large\bfseries MEMORIAL DE CÁLCULO --- BALANÇO POR CASO\\[4pt] << titulo|tx >>\par}\vspace{0.6cm}
+{\large Anexo do memorial preliminar do diagrama de blocos (<< meta['numero_balanco'] >>)\par}\vspace{1.0cm}
+<% endif %>
+\small\begin{tabular}{lL{11cm}}\toprule
+Documento & << meta['numero'] >> (<< meta['numero_nota']|tx >>)\\
+Caso & << r.num >> --- << r.caso['name']|tx >> (fluido << r.fluid|tx >>, poço << r.well|tx >>)\\
+Fonte de dados & BOT I-ET-3010.2K-1200-941-P4X-001\_C, Tabelas 2.2.2.3 / 2.2.2.4\\
+Arquivo de casos & \texttt{<< dados.origem|tx >>}\\
+SHA-256 do arquivo & \texttt{\scriptsize << dados.sha256 >>}\\
+Programa & \texttt{fpso-siz} << versao >><% if commit %>, commit \texttt{<< commit >>}<% if sujo %> (com alterações locais)<% endif %><% endif %>\\
+Regra do FWKO & <% if regra == 'eficiencia' %>eficiência, $\eta_A=\max(\eta_{\text{padrão}};\ \eta_{\mathrm{req}})$ (P-43, F10w)<% else %>referência, $\min(40\,\%;\ \mathit{BSW})$ (modo de paridade com o script de referência)<% endif %>\\
+Premissas diferentes do padrão & <% if alteradas %><% for a in alteradas %><< a['id'] >> \texttt{<< a['nome']|tx >>} = << a['atual']|mbn >> << a['unidade']|unid >> (padrão << a['valor']|mbn >>)<% if not loop.last %>; <% endif %><% endfor %><% else %>nenhuma<% endif %>\\
+Revisão & << meta['revisao'] >> --- emissão preliminar\\
+Data de geração & << meta['data'] >>\\ \bottomrule\end{tabular}\normalsize
+
+\medskip
+{\footnotesize Todos os valores deste memorial foram gerados pelo \texttt{fpso-siz} a partir do arquivo de casos identificado acima e das premissas do << meta['numero_balanco'] >>. <% if sem_agua %>O caso não tem fase aquosa (P-42): as grandezas da fase aquosa aparecem como ``<< sem_fase >>''.<% endif %>\par}
+<% if layout != 'senai' %>
+\end{titlepage}
+<% endif %>
+\tableofcontents\clearpage
+
+\section{Dados do caso}
+\begin{longtable}{lL{9cm}}\toprule
+Campo do arquivo de casos & Valor\\\midrule\endhead
+<% for k, v in r.caso.items() %>
+\texttt{<< k|tx >>} & <% if v is string %><< v|tx >><% elif v is iterable %><< v|join(', ') >><% else %><< v|br(2) if v is float else v >><% endif %>\\
+<% endfor %>
+\bottomrule\end{longtable}
+Poço associado: << r.well|tx >> (API << r.api|br(1) >>); BSW de chegada << (100 * r.BSW01)|br(2) >>~\%.
+
+\section{Separação de água livre no SG-001}
+<% set f = r.fwko %>
+\begin{tabular}{lr}\toprule
+Regra & << f['regra'] >>\\
+$\eta_{\text{padrão}}$ (P-43) & << opc(f.get('eta_padrao'), 2) >>\\
+$\eta_{\mathrm{req}}$ & << opc(f.get('eta_req'), 4) >>\\
+$\eta_A$ adotado & << opc(f.get('eta'), 4) >>\\
+Estado & << f.get('estado', '--')|tx >>\\\bottomrule
+\end{tabular}
+
+\section{Correntes}
+Vazões em volume padrão (15,6~°C; 101,3~kPa). $Q_O$: óleo morto; $Q_A$: água produzida; $Q_D$: água de diluição; $Q_G$: gás (Sm³/d); $w_G$: fração mássica de gás.
+
+{\footnotesize\setlength{\tabcolsep}{3pt}\begin{longtable}{lrrrrrrrrL{2.5cm}}\toprule
+Corrente & $Q_O$ & $Q_A$ & $Q_D$ & $Q_G$ & $\dot m$ & $w_G$ & $T$ & $P$ & Fase\\ & m³/d & m³/d & m³/d & Sm³/d & kg/s & -- & °C & kPa & \\\midrule\endhead
+<% for c in topo['correntes'] %>
+<% set m_ = ind.m(r, c['id']) %>
+<< c['id'] >> & << ind.q(r, c['id'], 'O')|br(1) >> & << aq(ind.q(r, c['id'], 'W')) >> & << aq(ind.q(r, c['id'], 'D')) >> & << ind.q(r, c['id'], 'G')|br >> & << m_|br(3) >> & << (r.streams[c['id']]['G'] / m_ if m_ > 0 else 0)|br(4) >> & << r.T[c['id']]|br(2) >> & << r.P[c['id']]|br >> & {\scriptsize << c['fase'] >>}\\
+<% endfor %>
+\bottomrule\end{longtable}}
+
+\section{Balanço de massa e energia por bloco}
+Critério de fechamento: $\varepsilon_m\le<< fech|sci|replace('$', '') >>$ e $\varepsilon_E\le<< fech|sci|replace('$', '') >>$.
+
+{\footnotesize\begin{longtable}{lL{4.6cm}rrrrr}\toprule
+Bloco & Nome & $\dot m_{in}$ (kg/s) & $\dot m_{out}$ (kg/s) & $\varepsilon_m$ & $\dot E_{in}$ (kW) & $\varepsilon_E$\\\midrule\endhead
+<% for b in topo['blocos'] %>
+<% set x = bb(r, b) %>
+<< b['id'] >> & << b['nome'] >> & << x['mi']|br(3) >> & << x['mo']|br(3) >> & << x['em']|sci >> & << x['Ein']|br(1) >> & << x['eE']|sci >>\\
+<% endfor %>
+<% set g = gb(r) %>
+\midrule Global & Módulo completo & << g['mi']|br(3) >> & << g['mo']|br(3) >> & << g['em']|sci >> & << g['Ein']|br(1) >> & << g['eE']|sci >>\\
+\bottomrule\end{longtable}}
+
+\section{Cargas térmicas e potências}
+<% set du = r.duties %>
+\begin{tabular}{lr}\toprule
+Calor recuperado P-001 (kW) & << du['Q_pre']|br(1) >>\\
+$\dot Q_{\mbox{P-002}}$ (kW) & << du['Q_H']|br(1) >>\\
+$\dot Q_{\mbox{DWH-001}}$ (kW) & << du['Q_D']|br(1) >>\\
+$\dot Q_H=\dot Q_{\mbox{P-002}}+\dot Q_{\mbox{DWH-001}}$ (kW) & << (du['Q_H'] + du['Q_D'])|br(1) >>\\
+$\dot Q_C$ (P-003) (kW) & << du['Q_C']|br(1) >>\\
+$\dot W_{\mbox{B-002}}$ / $\dot W_{\mbox{B-003}}$ / $\dot W_{\mbox{B-001}}$ (kW) & << du['W_B1']|br(1) >> / << du['W_B2']|br(1) >> / << du['W_Bo']|br(1) >>\\\bottomrule
+\end{tabular}
+
+\section{Eficiências e BSW}
+\begin{tabular}{lr}\toprule
+$\eta_{G,\mbox{SG-001}}$ & << ind.eta_gas_fwko(r)|br(4) >>\\
+$\eta_{A,\mbox{SG-001}}$ & << opc(ind.eta_agua(r, 'C-05', 'C-03')) >>\\
+$\eta_{O,\mbox{SG-001}}$ (óleo retido) & << ind.eta_oleo_fwko(r)|br(6) >>\\
+$\eta_{G,\mbox{V-001}}$ & << ind.eta_gas_v001(r)|br(4) >>\\
+$\eta_{A,\mbox{TO-001}}$ & << opc(ind.eta_agua(r, 'C-12', 'C-10')) >>\\
+$\eta_{A,\mbox{TO-002}}$ & << opc(ind.eta_agua(r, 'C-19', 'C-18')) >>\\
+BSW C-06 / C-11 / C-19 (\%) & << aq(ind.bsw_pct(r, 'C-06'), 2) >> / << aq(ind.bsw_pct(r, 'C-11'), 2) >> / << aq(ind.bsw_pct(r, 'C-19'), 2) >>\\\bottomrule
+\end{tabular}
+
+\section{Resíduos e água}
+<% set res, mxb = ind.residuos_componentes(r) %>
+Resíduo global por pseudo-componente (kg/s): $O$ << res['O']|sci >>, $A$ << res['W']|sci >>, $D$ << res['D']|sci >>, $G$ << res['G']|sci >>; maior resíduo por volume de controle << mxb|sci >>. <% if sem_agua %>sem fase aquosa (P-42): nenhuma água entra nem sai do módulo.<% else %>água que entra << agua['entra'].values()|sum|br(3) >>~kg/s, sai << agua['sai'].values()|sum|br(3) >>~kg/s, reciclo << agua['reciclo']|br(3) >>~kg/s, resíduo << agua['residuo']|sci >>~kg/s.<% endif %>
+
+\end{document}

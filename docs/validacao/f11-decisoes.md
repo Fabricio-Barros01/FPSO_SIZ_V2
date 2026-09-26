@@ -38,7 +38,20 @@ com o oráculo do balanço e com as fixtures do Julia segue intacta.
 | D10 | Gráficos | TikZ com números no `.tex`; pgfplots lendo CSV | **pgfplots lendo CSV** gravados pelo mesmo comando (`<número>_diagrama.csv`, `_ponto.csv`, `_teto.csv`, `_minimo.csv`, `_casos.csv`). Trocadores e bombas não têm os gráficos de perfil T × Q, resistências e NPSH nesta entrega: todos aguardam entrada e não há dados (ver pendências). |
 | D11 | Entradas no MC | uma linha por caso; agrupado | **Comuns** (um valor para todos os casos ativos) numa tabela e **variáveis** numa matriz caso × entrada, com a legenda de origem e fonte por coluna. |
 | D12 | Texto com caracteres especiais | `esc` do balanço; escape completo | **Escape completo** (`formatacao.tx`) no MC por TAG; `esc` fica como está, pela paridade do balanço. Caracteres gregos e símbolos do rastro são mapeados no preâmbulo (`newunicodechar`). |
+| D14 | "Interface web" | criar uma; usar o modo interativo | O projeto não tem interface web (núcleo + CLI, CLAUDE.md). A **ação equivalente entrou no modo interativo**: "Gerar memorial de cálculo (MC)" no menu do TAG e "Gerar os memoriais…" no da planta, pelos ids de `interativo.toml`, sem código por TAG. |
 | D13 | Data e commit na folha de rosto | fixos; da geração | **Da geração**, ambos parâmetros (`data`, `git`), para que individual × lote e os testes comparem bytes com a data fixada. |
+
+## F11b — memorial do balanço por caso
+
+| # | Decisão | Opções | Escolha e motivo |
+|---|---|---|---|
+| B1 | Opções da CLI | `--caso` só; reinterpretar `--casos` | **As duas**: `memorial --caso N|lista|todos` e `memorial --casos todos` (o comando pedido para o teste local). `--casos` continua aceitando o arquivo do BOT; `todos` (ou ausente) usa o `design_cases_bot.json` da pasta corrente, como o modo interativo. `--saida` passou a ter padrão (`saida/memorial`). |
+| B2 | Layouts | um por vez; os dois | Padrão do memorial por caso: **os dois** (`<saida>/original/MC_CasoNN/` e `<saida>/senai/MC_CasoNN/`); `--layout original|senai` gera um só em `<saida>/MC_CasoNN/`. O memorial completo continua com padrão `original` e não aceita `ambos`. |
+| B3 | Regra do FWKO | forçar a de referência no `original` (como o memorial completo); a regra em uso | **A regra em uso** (padrão: eficiência; `--regra-fwko` escolhe), declarada na folha de rosto. O `original` completo continua forçado à regra de referência (paridade byte a byte), o que não se aplica ao anexo por caso, que não tem oráculo. |
+| B4 | Número do documento | `MC-SEN-SEP-COO-001-CNN-0`; `MC-SEN-SEP-COO-CNN-0` | **`MC-SEN-SEP-COO-CNN-0`** (anexo do MC-SEN-SEP-COO-001), curto para caber no cabeçalho SENAI; arquivo `MC_CasoNN`. |
+| B5 | "—" sem fase aquosa | "--"; "---" | **"---"** (travessão) nas vazões de água produzida/diluição, nas η de água e nos BSW dos casos 1 e 4–7 (P-42), e em η_req/η_A nulos. |
+| B6 | Igualdade isolado × lote do PDF | bytes; texto extraído | **`.tex` byte a byte** e **texto do PDF** (`pdftotext`), que ignora a data de criação embutida pelo pdfTeX. |
+| B7 | Interface | menu do balanço | Ação "Memorial de cálculo por caso (MC_CasoNN)" no menu do balanço, que itera o registro de casos do arquivo carregado (lista, faixa ou todos) e mostra o comando equivalente. |
 
 ## Pendências novas (sem correção nesta fase)
 

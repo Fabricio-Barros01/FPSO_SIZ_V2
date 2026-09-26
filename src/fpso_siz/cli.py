@@ -15,10 +15,11 @@ from fpso_siz.balanco.auditoria import auditar
 from fpso_siz.balanco.dados import carregar_casos, descritores_premissas, premissas
 from fpso_siz.balanco.modelo import EFICIENCIA, REFERENCIA, resolver_todos
 from fpso_siz.core import registro
-from fpso_siz.core.configuracao import exemplos
+from fpso_siz.core.configuracao import carregar, exemplos
 from fpso_siz.output import dimensionamento
 from fpso_siz.output.latex import compilacao
 from fpso_siz.output.latex.balanco import memorial
+from fpso_siz.output.latex.caso import memorial as memorial_caso
 from fpso_siz.output.latex.tag import memorial as memorial_tag
 from fpso_siz.output.terminal.comum import alteracoes as _alteracoes
 from fpso_siz.output.terminal.comum import gravar_balanco
@@ -28,6 +29,7 @@ from fpso_siz.output.terminal.sessao import Sessao
 from fpso_siz.pfd import ajustes as mod_ajustes
 from fpso_siz.pfd import equipamento as servico
 
+AMBOS = "ambos"
 COLUNAS = 79  # largura dos resumos fora do modo interativo (saída pode ser arquivo)
 CHAVES_BOT = ("casos_arquivo", "casos_sha256", "casos")
 
@@ -68,12 +70,31 @@ def cmd_balanco(a):
     return 1 if nao else 0
 
 
+def _arquivo_casos(a):
+    """--casos é o arquivo do BOT; 'todos' (ou nenhum) usa o arquivo padrão da pasta corrente."""
+    if a.casos in (None, memorial_caso.TODOS):
+        return Path(carregar("interativo.toml")["arquivo_casos_padrao"])
+    return Path(a.casos)
+
+
 def cmd_memorial(a):
-    dados = carregar_casos(a.casos)
+    por_caso = a.caso is not None or a.casos == memorial_caso.TODOS
+    if a.layout == AMBOS and not por_caso:
+        raise ValueError(f"--layout {AMBOS} vale com --caso (memorial por caso)")
+    dados = carregar_casos(_arquivo_casos(a))
     prem = premissas(dados, **_alteracoes(a.premissa))
+    saida = a.saida or Path(carregar("interativo.toml")["pasta_padrao"]) / "memorial"
+    if por_caso:
+        resultados = resolver_todos(dados, prem, a.regra_fwko)
+        nums = memorial_caso.selecionar(a.caso or memorial_caso.TODOS, [r.num for r in resultados])
+        layouts = memorial_caso.LAYOUTS if a.layout in (None, AMBOS) else (a.layout,)
+        arquivos, erros = memorial_caso.exportar_lote(dados, prem, resultados, nums, saida, layouts, a.data, pdf=a.pdf)
+        print("memoriais por caso: " + ", ".join(str(p) for p in arquivos))
+        return _codigo_mc(erros, 0)
     resultados = resolver_todos(dados, prem)
-    tex = memorial.gravar(dados, prem, resultados, a.saida, a.layout)
-    print(f"memorial ({a.layout}): {tex}")
+    layout = a.layout or "original"
+    tex = memorial.gravar(dados, prem, resultados, saida, layout)
+    print(f"memorial ({layout}): {tex}")
     if a.pdf:
         try:
             print(f"PDF: {compilacao.compilar(tex)}")
@@ -270,13 +291,19 @@ def main(argv=None):
     b.add_argument("--ascii", action="store_true", help="texto só em ASCII (setas, bordas, acentos)")
     b.set_defaults(func=cmd_balanco)
 
-    m = sub.add_parser("memorial", help="memorial de cálculo do balanço em LaTeX (A4)")
-    m.add_argument("--casos", required=True, type=Path, help="arquivo de casos (JSON do BOT)")
-    m.add_argument("--saida", required=True, type=Path, help="pasta de saída (main.tex)")
-    m.add_argument("--layout", choices=sorted(memorial.LAYOUTS), default="original",
-                   help="original = idêntico ao script de referência; senai = template SENAI CETIQT")
+    m = sub.add_parser("memorial", help="memorial de cálculo do balanço em LaTeX (A4); com --caso, um por caso")
+    m.add_argument("--casos", help="arquivo de casos (JSON do BOT; padrão: o da pasta corrente) ou 'todos' = "
+                                   "um MC_CasoNN por caso, com o arquivo padrão")
+    m.add_argument("--caso", help="memorial por caso: N, lista (1,4-7) ou 'todos' → MC_CasoNN")
+    m.add_argument("--saida", type=Path, help="pasta de saída (padrão: saida/memorial)")
+    m.add_argument("--layout", choices=[*sorted(memorial.LAYOUTS), AMBOS], default=None,
+                   help="original = idêntico ao script de referência; senai = template SENAI CETIQT; "
+                        f"{AMBOS} (só com --caso; padrão do memorial por caso)")
+    m.add_argument("--regra-fwko", choices=(EFICIENCIA, REFERENCIA), default=None,
+                   help="com --caso: regra do FWKO dos resultados (padrão: eficiência)")
     m.add_argument("--premissa", action="append", default=[], metavar="NOME=VALOR")
     m.add_argument("--pdf", action="store_true", help="compila com latexmk, se instalado")
+    m.add_argument("--data", help="com --caso: data da folha de rosto (DD/MM/AAAA; padrão: hoje)")
     m.set_defaults(func=cmd_memorial)
 
     p = sub.add_parser("premissas", help="lista as premissas do balanço (id, valor, unidade, fonte)")

@@ -81,6 +81,7 @@ acoes = [
     { id = "auditoria", rotulo = "Ver auditoria independente" },
     { id = "correntes", rotulo = "Ver correntes de um caso" },
     { id = "exportar", rotulo = "Exportar" },
+    { id = "memorial_caso", rotulo = "Memorial de cálculo por caso (MC_CasoNN)" },
 ]
 
 [menus.casos]
@@ -172,6 +173,8 @@ preliminar = "Resultado preliminar: {n} recomendação(ões)/default(s) sem revi
 avisos_n = "{n} aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro."
 casos_inativos = "Casos inativos: {lista}"
 memorial_disponivel = "Memorial de cálculo (MC) do TAG: ação \"Gerar memorial de cálculo\" no menu, ou --mc [--pdf] no comando."
+casos_memorial_prompt = "Casos do memorial ({min}–{max}, lista como 1,4-7 ou todos)"
+layouts_caso_prompt = "Layout ({layouts})"
 mc_pdf_prompt = "Compilar o PDF com latexmk? (s/N)"
 aviso_item = "{casos}: {aviso}"
 # formulários

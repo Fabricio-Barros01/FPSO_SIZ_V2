@@ -20,3 +20,12 @@ programa = "-"
 area = "FPSO SENAI -- BACIA DE SANTOS"
 titulo = "SEPARAÇÃO TRIFÁSICA E TRATAMENTO DE ÓLEO -- BALANÇO PRELIMINAR"
 projeto = "SEP"
+
+# F11b — memorial do balanço por caso (MC_CasoNN), anexo do MC-SEN-SEP-COO-001.
+[caso]
+arquivo = "MC_Caso{num:02d}"
+numero = "MC-SEN-SEP-COO-C{num:02d}-0"
+titulo = "Balanço de massa e energia --- caso {num} ({nome})"
+tipo = "MEMORIAL DE CÁLCULO -- BALANÇO POR CASO"
+descricao_revisao = "Emissão preliminar --- balanço de massa e energia de um caso (F11b), anexo do MC-SEN-SEP-COO-001"
+sem_fase = "---"   # grandeza da fase aquosa em caso sem água (P-42)
