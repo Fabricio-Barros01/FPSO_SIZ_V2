@@ -50,6 +50,7 @@ arquivo = "arquivo"
 lacuna = "lacuna"
 nao_aplicavel = "não aplicável"
 proposta = "proposta do usuário (a confirmar)"
+ausente = "instância não descrita pelo caso"
 
 # Faixas de apresentação DO PFD: não mudam o método nem suas fixtures Julia.
 # ρ_W = 1154 kg/m³ (P-08); 1500 inclui as salmouras da correlação Laliberté.

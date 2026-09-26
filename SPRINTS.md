@@ -361,8 +361,59 @@ menu e no `dimensionar`. O Pinch precisa de exemplo em `config/exemplos/` (copia
 `exemplo_pinch_kemp.toml`) e talvez de resumo próprio: não tem varredura de diâmetro, e a
 tabela de caso usa `sweep_columns()[0]`.
 
-### F8 — Pinch (Kemp) (depois da F11)
-**Aceite:** `golden_kemp`, `pinch_encaixe`; cobertura ≥ 90 %.
+### F8 — Pinch (Kemp) ✅ (2026-09-26)
+**Aceite:** `golden_kemp`, `pinch_encaixe`; cobertura ≥ 90 %. **Entregue.**
+
+Porte em duas camadas, como no Julia:
+- `analysis/pinch.py` — núcleo PURO da Problem Table (Kemp §3.9.1, pp. 95-96): deslocamento de
+  ΔTmin/2 num único ponto, tabela de intervalos, as duas cascatas, QHmin/QCmin, temperaturas de
+  pinch (lista, porque o passo 9 diz "point(s)"), problema-limiar e curvas compostas (§2.3).
+  Não conhece contrato, caso nem TOML; nenhum caminho levanta exceção (entrada recusada vira
+  resultado inviável com diagnóstico).
+- `sizing/pinch_kemp.py` — encaixe no contrato: eixo ΔTmin, exigência QHmin (não-decrescente, o
+  que autoriza chamá-la de exigência), grupo repetível de correntes, `admissible` sempre
+  verdadeiro (afirmação: todo ΔTmin descreve uma rede possível) e `objective` = distância ao
+  ΔTmin declarado — **seleção por declaração, não otimização**: sem modelo de área e capital não
+  há a curva de custo total do §3.7 e não há ótimo a procurar.
+- `config/equipment/pinch/kemp.toml` é cópia literal do Julia; os critérios numéricos que o
+  Julia deixava no código (tolerância de fluxo nulo, do resíduo do balanço e casas da linha de
+  conferência) foram para `config/equipment/comum/pinch.toml`, pela invariante 2.
+
+**Paridade:** o pinch entrou em `test_paridade_julia` com tolerância **0,0** — bit a bit, porque
+o algoritmo é aritmética sobre os dados, sem correlação empírica no meio.
+**Caso-ouro (`test_golden_kemp`):** os números publicados, um por um — Tab. 2.2 (temperaturas
+deslocadas e o tipo derivado), Tab. 2.3 (fronteiras, CP líquido e ΔH dos cinco intervalos),
+Fig. 2.9 (as duas cascatas, nó a nó), p. 24 (QHmin = 20 kW, QCmin = 60 kW, pinch 85/90/80 °C e
+as duas conferências cruzadas), §3.3.2 (o limiar publicado de 5,55 °C, com a forma fechada
+QHmin = max(0; 4,5·ΔTmin − 25)) e §2.3 (as curvas compostas, pelos cinco invariantes).
+**Encaixe (`test_pinch_encaixe`):** 15 testes — grupo/molde/instância, `case_input` recusando
+instância pela metade (e aceitando buraco no meio), a exceção da fronteira virando inviabilidade
+com o nome do caso, o envelope tomando o pior cenário, o cartão dizendo o que a tela NÃO faz e a
+apresentação conservando o cálculo do núcleo.
+
+**Camada de entradas:** o V2 ganhou suporte a grupo repetível no adaptador manual
+(`pfd/entradas.py`): o molde é expandido em instâncias (`corrente_3_t_in`), e instância que o
+caso não descreve tem origem nova **`ausente`** — não é lacuna (não falta informar nada) e não
+vai para o caso, que é como `case_input` lê um buraco no meio.
+
+#### F8 aplicada à planta — o pré-aquecedor depois do SG (pedido do usuário)
+`pfd/pinch.py` + `config/pfd/pinch.toml` montam do balanço a rede que o usuário pediu: o **óleo
+vivo que sai do SG-001** (C-06, a aquecer até `T_trat`) e o **óleo tratado antes do cargo tank**
+(C-22, a resfriar até `T_store`), com ΔTmin = a própria premissa **P-32** (`dT_app`) do
+pré-aquecedor. O destino de cada corrente é a premissa, não a temperatura que o balanço
+realizou — usar a realizada embutiria o arranjo na resposta.
+
+**Resultado (`tools/pinch_planta.py` → `docs/validacao/22-pinch-planta.md`):** nos 10 casos em
+que a rede se aplica, QHmin, QCmin e a recuperação alvo **coincidem com Q_H, Q_C e Q_pre do
+balanço** (folga máxima da ordem de 1e-10 kW). É validação cruzada genuína: o alvo vem da
+cascata de calor da Problem Table e as cargas vêm da regra
+Q_pre = min(C_frio, C_quente)·(ΔT − ΔT_app) de `balanco/modelo.py` — dois caminhos
+independentes, o mesmo número. O alvo **não** promete mais recuperação do que o único trocador
+já entrega; ele prova que não há mais a recuperar nesta rede.
+Nos 6 casos restantes o óleo já sai do SG acima de `T_trat` (que é **piso**, P-11: o balanço
+escreve T08 = max(T_trat, T07)): a corrente fria não tem exigência, sai da rede com o motivo
+registrado, e o caso fica sem alvo em vez de receber um alvo inventado — inverter o sentido da
+corrente criaria uma carga de resfriamento que o processo não pede.
 
 ### F9 — Separador dinâmico (Song)
 Portar o Euler próprio do Julia, para ter paridade de trajetória. scipy.integrate só como

@@ -104,6 +104,10 @@ uv run python tools/reotimizar_trocadores.py   # reotimização discreta P-002/P
 uv run fpso-siz pfd --casos design_cases_bot.json --saida saida/pfd --mc [--pdf]   # MC de cada TAG (F11)
 uv run fpso-siz dimensionar --tag V-001 --casos design_cases_bot.json --auto-balanco --saida saida/tag --mc [--pdf]
 uv run fpso-siz memorial --casos todos [--layout original|senai|ambos] [--pdf]    # MC_Caso01…16 (F11b)
+uv run fpso-siz dimensionar --exemplo pinch_kemp             # Análise Pinch (F8), exemplo do livro
+uv run python tools/pinch_planta.py          # alvos do pré-aquecedor pela rede do balanço (F8)
+uv run python tools/estudo_circulacao.py     # circulação fixa e cascos em série (estudo; muito lenta)
+uv run python tools/otimizar.py [--sub sg_001 --varredura]   # otimização NSGA-II (F15; lenta)
 FPSO_SNAPSHOTS=1 uv run pytest tests/test_terminal_pfd.py   # regenera os snapshots de tela
 ```
 

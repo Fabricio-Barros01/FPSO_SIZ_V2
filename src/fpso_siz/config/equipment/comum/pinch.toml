@@ -1,0 +1,28 @@
+# Análise Pinch — os critérios NUMÉRICOS que o Julia deixava no código de analysis/pinch.jl.
+#
+# O algoritmo da Problem Table (Kemp §3.9.1, pp. 95-96) não tem constante empírica nenhuma: o
+# único literal com significado físico é o `2` de ΔTmin/2, que é estrutural (metade de um
+# intervalo, passo 2 do algoritmo) e continua no código. O que está aqui é tolerância de ponto
+# flutuante, pela invariante 2 do projeto — mesmo caminho de equipment/comum/trocador.toml.
+
+[singularidades]
+# Tolerância relativa para reconhecer fluxo líquido NULO na cascata factível (passo 9: "the
+# point(s) at which there is zero net heat flow"). No nó que definiu o QHmin o zero é exato
+# (x + (−x)); a tolerância serve para achar pinches adicionais que chegaram a zero por outro
+# caminho aritmético. Relativa à maior carga da cascata, nunca absoluta.
+tol_fluxo_nulo = 1e-9
+fonte = "critério numérico do port (analysis/pinch.jl do Julia, passo 9 de §3.9.1); não é premissa física"
+
+[balanco]
+# Tolerância relativa do resíduo do balanço de entalpia (p. 24): (QCmin − QHmin) tem de igualar
+# ΣQ_quente − ΣQ_frio em qualquer ΔTmin. Relativa à escala das cargas da rede: 1e-9 kW é ruído
+# numa rede de 10 kW e numa de 10 MW, mas um absoluto seria exigência impossível na segunda.
+tol_residuo = 1e-6
+fonte = "conferência cruzada de Kemp p. 24; a tolerância é critério numérico do port, não premissa física"
+
+[memorial]
+# Casas com que a diferença ΣQ_quente − ΣQ_frio é escrita na linha de conferência do memorial
+# (o Julia arredondava em 3 no próprio código). É apresentação, não física; fica aqui porque o
+# método não é camada de saída e a invariante 2 não admite literal no código.
+casas_conferencia = 3
+fonte = "forma da linha de conferência da p. 24 no memorial (port de trace_selection! do Julia)"
