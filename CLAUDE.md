@@ -3,6 +3,32 @@
 Backend Python (biblioteca + CLI) que substitui gradualmente o FPSO_Siz Julia. Estado e
 backlog: [`SPRINTS.md`](SPRINTS.md), que deve ser lido primeiro.
 
+## Skills instaladas
+Fonte e hashes em `skills-lock.json` (todas de `anthropics/claude-code`). O acervo real é
+`.agents/skills/` (lido também pelo ChatGPT Astra); `.claude/skills/` é a visão do Claude
+Code, feita de symlinks para `.agents/skills/` — exceto `code-reviewer`, replicada de fato
+nos dois, para não depender de link relativo. Cada skill é acionada automaticamente pelo
+Claude quando a descrição do `SKILL.md` casa com o pedido; nenhuma delas define comando de
+barra próprio.
+
+| Skill | Categoria |
+|---|---|
+| `code-reviewer` | Revisão |
+| `agent-development` | Desenvolvimento (plugins Claude Code) |
+| `command-development` | Desenvolvimento (plugins Claude Code) |
+| `hook-development` | Desenvolvimento (plugins Claude Code) |
+| `mcp-integration` | Desenvolvimento (plugins Claude Code) |
+| `plugin-structure` | Desenvolvimento (plugins Claude Code) |
+| `plugin-settings` | Desenvolvimento (plugins Claude Code) |
+| `skill-development` | Desenvolvimento (plugins Claude Code) |
+
+Removidas do acervo (não se aplicam a este projeto: núcleo sem UI e sem rede, invariante 1)
+— `frontend-design`, `browser-use`, `valyu-best-practices`, `writing-hookify-rules`,
+`claude-opus-4-5-migration`. `code-reviewer` cobre linguagens genéricas (inclui
+TypeScript/Go/Swift, que não existem aqui); as verificações específicas deste projeto — dados
+sem fonte, refatoração não muda número, contrato de dimensionamento — continuam sendo
+`/code-review` e `/simplify` (comandos nativos do Claude Code, não uma skill deste diretório).
+
 ## Regras de processo
 - **Fase a fase.** Nenhuma fase do SPRINTS.md começa sem aprovação explícita do usuário.
 - **`../FPSO_Siz` (Julia) é somente leitura.** Para executar o Julia, use um
