@@ -126,9 +126,12 @@ class Sessao:
         self._inicial = casos
         self._ajustes_inicial = ajustes
         self._filtro = None
-        # valores PROPOSTOS para as lacunas (pendencias_propostas.toml), carregados e validados
-        self.caminho_propostas = Path(propostas) if propostas is not None else None
-        self._propostas = mod_propostas.carregar(propostas) if propostas is not None else None
+        # valores PROPOSTOS para as lacunas: os do pacote por padrão (None), outro arquivo
+        # (caminho) ou nenhum (False); validados na carga
+        self.caminho_propostas = Path(propostas) if propostas not in (None, False) else None
+        self._sem_propostas = propostas is False
+        self._propostas = (None if propostas is False else
+                           mod_propostas.carregar(propostas) if propostas is not None else mod_propostas.padrao())
 
     # ------------------------------------------------------------------ E/S
     def dizer(self, *linhas):
@@ -193,8 +196,11 @@ class Sessao:
         return self._ctx
 
     def _arg_propostas(self):
-        """--propostas do comando equivalente (o arquivo de valores propostos carregado)."""
+        """--propostas do comando equivalente (outro arquivo); o padrão do pacote não precisa."""
         return str(self.caminho_propostas) if self.caminho_propostas is not None else None
+
+    def _flag_sem_propostas(self):
+        return {"sem-propostas": self._sem_propostas}
 
     def _invalidar(self):
         self._ctx = None
@@ -897,9 +903,9 @@ class Sessao:
         pasta, arq = self._destino(str(Path(self.cfg["pasta_padrao"]) / estado.id))
         gravados = saida_pfd.gravar_tag(self.ctx, rt, pasta) + [self._gravar_ajustes(arq)]
         if estado.avulso:
-            cmd = comando("dimensionar", propostas=self._arg_propostas(), avulso=estado.id, ajustes=str(arq), saida=str(pasta))
+            cmd = comando("dimensionar", propostas=self._arg_propostas(), **self._flag_sem_propostas(), avulso=estado.id, ajustes=str(arq), saida=str(pasta))
         else:
-            cmd = comando("dimensionar", propostas=self._arg_propostas(), tag=estado.id, casos=str(self.caminho_casos),
+            cmd = comando("dimensionar", propostas=self._arg_propostas(), **self._flag_sem_propostas(), tag=estado.id, casos=str(self.caminho_casos),
                           **{"auto-balanco": estado.modo == mod_ajustes.AUTOMATICO}, ajustes=str(arq),
                           saida=str(pasta), premissa=self._args_premissa())
         self.repetir([cmd], gravados)
@@ -923,9 +929,9 @@ class Sessao:
         gravados = saida_pfd.gravar_tag(self.ctx, rt, pasta) + self._mc_gravar([rt], pasta, pdf)
         gravados.append(self._gravar_ajustes(arq))
         if estado.avulso:
-            cmd = comando("dimensionar", propostas=self._arg_propostas(), avulso=estado.id, ajustes=str(arq), saida=str(pasta), mc=True, pdf=pdf)
+            cmd = comando("dimensionar", propostas=self._arg_propostas(), **self._flag_sem_propostas(), avulso=estado.id, ajustes=str(arq), saida=str(pasta), mc=True, pdf=pdf)
         else:
-            cmd = comando("dimensionar", propostas=self._arg_propostas(), tag=estado.id, casos=str(self.caminho_casos),
+            cmd = comando("dimensionar", propostas=self._arg_propostas(), **self._flag_sem_propostas(), tag=estado.id, casos=str(self.caminho_casos),
                           **{"auto-balanco": estado.modo == mod_ajustes.AUTOMATICO}, ajustes=str(arq),
                           saida=str(pasta), premissa=self._args_premissa(), mc=True, pdf=pdf)
         self.repetir([cmd], gravados)
@@ -1011,7 +1017,7 @@ class Sessao:
     def _planta_exportar(self, p):
         pasta, arq = self._destino(str(Path(self.cfg["pasta_padrao"]) / self.cfg["pasta_planta"]))
         gravados = saida_pfd.gravar(p, pasta) + [self._gravar_ajustes(arq)]
-        cmd = comando("pfd", propostas=self._arg_propostas(), casos=str(self.caminho_casos), ajustes=str(arq), saida=str(pasta),
+        cmd = comando("pfd", propostas=self._arg_propostas(), **self._flag_sem_propostas(), casos=str(self.caminho_casos), ajustes=str(arq), saida=str(pasta),
                       premissa=self._args_premissa())
         self.repetir([cmd], gravados)
         return False
@@ -1020,7 +1026,7 @@ class Sessao:
         pasta, arq = self._destino(str(Path(self.cfg["pasta_padrao"]) / self.cfg["pasta_planta"]))
         pdf = self._mc_pdf()
         gravados = saida_pfd.gravar(p, pasta) + self._mc_gravar(p.tags, pasta, pdf) + [self._gravar_ajustes(arq)]
-        cmd = comando("pfd", propostas=self._arg_propostas(), casos=str(self.caminho_casos), ajustes=str(arq), saida=str(pasta),
+        cmd = comando("pfd", propostas=self._arg_propostas(), **self._flag_sem_propostas(), casos=str(self.caminho_casos), ajustes=str(arq), saida=str(pasta),
                       premissa=self._args_premissa(), mc=True, pdf=pdf)
         self.repetir([cmd], gravados)
         return False

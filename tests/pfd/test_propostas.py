@@ -1,4 +1,4 @@
-"""F10x — valores PROPOSTOS para as lacunas (docs/propostas/pendencias_propostas.toml):
+"""F10x — valores PROPOSTOS para as lacunas (config/pfd/pendencias_propostas.toml):
 leitura, esquema, campos, tipos, unidade, faixa, status, arquivo ausente e integração com o
 serviço por TAG, o JSON, o MC e a CLI. A proposta só preenche lacuna e nunca se confunde
 com valor de referência nem com valor calculado."""
@@ -19,7 +19,7 @@ from fpso_siz.pfd import propostas as mod
 from fpso_siz.pfd.planta import dimensionar
 
 RAIZ = Path(__file__).resolve().parents[2]
-ARQ = RAIZ / "docs" / "propostas" / "pendencias_propostas.toml"
+ARQ = RAIZ / "src" / "fpso_siz" / "config" / "pfd" / "pendencias_propostas.toml"
 CASOS = RAIZ / "tests" / "fixtures" / "python_ref" / "design_cases_bot.json"
 TAGS_COM_LACUNA = ["B-001", "B-002", "B-003", "P-001", "P-002", "P-003", "TO-001", "TO-002"]
 
@@ -241,3 +241,28 @@ def test_mc_com_propostas_compila(planta_propostas, tmp_path, ident):
     tex = saida_mc.gravar(planta_propostas.contexto, planta_propostas.tag(ident), tmp_path, data="26/09/2026",
                           git=("0123456789ab", False))
     assert compilacao.compilar(tex).exists()
+
+
+# ------------------------------------------------------------------ padrão da aplicação (decisão 2026-09-26)
+def test_padrao_do_pacote_e_o_arquivo_versionado():
+    p = mod.padrao()
+    assert p.arquivo == mod.ARQUIVO_PADRAO and p.itens == mod.carregar(ARQ).itens
+
+
+def test_cli_carrega_as_propostas_por_padrao(tmp_path, capsys):
+    assert main(["pfd", "--casos", str(CASOS), "--saida", str(tmp_path / "a")]) == 1
+    j = json.loads((tmp_path / "a" / "TO-001.json").read_text(encoding="utf-8"))
+    assert j["status"] == "dimensionado" and j["proveniencia"]["propostas"]["arquivo"] == mod.ARQUIVO_PADRAO
+    assert main(["pfd", "--casos", str(CASOS), "--sem-propostas", "--saida", str(tmp_path / "b")]) == 1
+    j = json.loads((tmp_path / "b" / "TO-001.json").read_text(encoding="utf-8"))
+    assert j["status"] == "aguardando_entrada" and j["proveniencia"]["propostas"] is None
+    assert main(["pfd", "--casos", str(CASOS), "--sem-propostas", "--propostas", str(ARQ)]) == 2
+    assert "não os dois" in capsys.readouterr().err
+
+
+def test_sessao_usa_o_padrao_e_permite_desligar():
+    from fpso_siz.output.terminal.sessao import Sessao
+
+    assert Sessao(casos=CASOS)._propostas.arquivo == mod.ARQUIVO_PADRAO
+    s = Sessao(casos=CASOS, propostas=False)
+    assert s._propostas is None and s._flag_sem_propostas() == {"sem-propostas": True}

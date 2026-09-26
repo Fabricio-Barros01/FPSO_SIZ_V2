@@ -8,9 +8,11 @@
 #   - justificativa: raciocínio físico do valor inicial (sem referência bibliográfica,
 #     normativa ou do BOT atribuída ao número).
 # Precedência: só preenche LACUNA (usuário > regra do TAG > recomendada > default com fonte >
-# proposta > lacuna). Uso: `fpso-siz pfd --casos … --propostas docs/propostas/pendencias_propostas.toml`.
-# Para validar um valor, confirme-o no modo interativo (vira entrada do usuário nos ajustes)
-# e retire-o daqui.
+# proposta > lacuna). Carregado POR PADRÃO pela CLI e pelo modo interativo (decisão do usuário,
+# 2026-09-26: "pode seguir com os valores propostos; para mudar, selecionar a opção e editar").
+# Para mudar um valor: no modo interativo, TAG → "Revisar recomendações e defaults" (confirmar ou
+# editar) ou "Editar entrada"; a edição vira entrada do usuário nos ajustes e prevalece. Outro
+# arquivo: --propostas ARQ; nenhum: --sem-propostas.
 
 esquema = 1
 

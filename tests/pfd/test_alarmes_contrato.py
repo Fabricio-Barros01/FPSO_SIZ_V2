@@ -14,7 +14,7 @@ from fpso_siz.pfd import memorial as mc
 from fpso_siz.pfd import propostas as mod_propostas
 from fpso_siz.pfd.planta import dimensionar
 
-ARQ = Path(__file__).resolve().parents[2] / "docs" / "propostas" / "pendencias_propostas.toml"
+ARQ = Path(__file__).resolve().parents[2] / "src" / "fpso_siz" / "config" / "pfd" / "pendencias_propostas.toml"
 
 
 # ------------------------------------------------------------------ contrato de propriedades

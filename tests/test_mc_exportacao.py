@@ -86,7 +86,7 @@ def test_interativo_com_propostas_repete_o_comando(tmp_path):
     from fpso_siz.output.terminal.estilo import Estilo
     from fpso_siz.output.terminal.sessao import Sessao
 
-    ARQ = RAIZ / "docs" / "propostas" / "pendencias_propostas.toml"
+    ARQ = RAIZ / "src" / "fpso_siz" / "config" / "pfd" / "pendencias_propostas.toml"
     fila = [*abrir_tag("TO-001", "automatico"), op("tag", "exportar"), str(tmp_path / "to"), "", "0", "0", "0"]
     out = io.StringIO()
     s = Sessao(casos=CASOS, entrada=lambda _: fila.pop(0) if fila else (_ for _ in ()).throw(EOFError),

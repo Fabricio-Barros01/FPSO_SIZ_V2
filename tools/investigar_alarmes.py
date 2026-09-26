@@ -1,6 +1,6 @@
 """Relatório dos alarmes de inviabilidade (F13): docs/validacao/14-alarmes.md.
 
-Roda a planta sem e com as propostas (docs/propostas/pendencias_propostas.toml), lista os
+Roda a planta sem e com as propostas (config/pfd/pendencias_propostas.toml), lista os
 TAGs inviáveis com a evidência do motor, as hipóteses de config/pfd/alarmes.toml e o
 resultado de cada variante pelo mesmo serviço por TAG. Para o SG-001, refaz a cadeia de
 decantação do caso do teto a partir dos operandos do rastro (conferência numérica).
@@ -21,7 +21,7 @@ from fpso_siz.pfd.planta import dimensionar
 
 RAIZ = Path(__file__).resolve().parent.parent
 CASOS = RAIZ / "tests" / "fixtures" / "python_ref" / "design_cases_bot.json"
-PROPOSTAS = RAIZ / "docs" / "propostas" / "pendencias_propostas.toml"
+PROPOSTAS = RAIZ / "src" / "fpso_siz" / "config" / "pfd" / "pendencias_propostas.toml"
 
 
 def f(x, casas=0):

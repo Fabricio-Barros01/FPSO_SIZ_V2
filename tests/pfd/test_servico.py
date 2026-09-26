@@ -44,7 +44,7 @@ def test_planta_e_tag_isolado_delegam_ao_mesmo_servico(monkeypatch, tmp_path):
     assert len(balanco) == 1  # um balanço para os 11 TAGs
     assert len(motor) == sum(t.resultado is not None for t in p.tags) == 3
     executar.clear(), balanco.clear(), motor.clear()
-    assert main(["dimensionar", "--tag", "V-001", "--casos", str(CASOS), "--auto-balanco", "--saida",
+    assert main(["dimensionar", "--sem-propostas", "--tag", "V-001", "--casos", str(CASOS), "--auto-balanco", "--saida",
                  str(tmp_path)]) == 0
     assert [a[1].id for a in executar] == ["V-001"] and len(balanco) == 1 and len(motor) == 1
     # o artefato do TAG isolado é o mesmo da planta, byte a byte

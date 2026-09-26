@@ -20,6 +20,7 @@ import hashlib
 import math
 import tomllib
 from dataclasses import dataclass
+from importlib.resources import files
 from pathlib import Path
 
 from fpso_siz.pfd.entradas import especificacoes, metodos
@@ -158,18 +159,31 @@ def ler(dados, arquivo=""):
     return Propostas(tuple(itens), arquivo)
 
 
+ARQUIVO_PADRAO = "pendencias_propostas.toml"
+
+
+def padrao():
+    """As propostas do pacote (config/pfd/pendencias_propostas.toml), carregadas por padrão
+    pela CLI e pelo modo interativo."""
+    bruto = files("fpso_siz.config").joinpath("pfd", ARQUIVO_PADRAO).read_bytes()
+    return _de_bytes(bruto, ARQUIVO_PADRAO)
+
+
 def carregar(caminho):
     """Propostas do arquivo; ausente ou inválido é ValueError (nada é suposto)."""
     caminho = Path(caminho)
     if not caminho.is_file():
         raise ValueError(f"arquivo de propostas não encontrado: {caminho}")
-    bruto = caminho.read_bytes()
+    return _de_bytes(caminho.read_bytes(), caminho.name)
+
+
+def _de_bytes(bruto, nome):
     try:
         dados = tomllib.loads(bruto.decode("utf-8"))
     except (tomllib.TOMLDecodeError, UnicodeDecodeError) as e:
-        raise ValueError(f"{caminho.name}: TOML inválido ({e})") from None
-    p = ler(dados, caminho.name)
-    return Propostas(p.itens, caminho.name, hashlib.sha256(bruto).hexdigest())
+        raise ValueError(f"{nome}: TOML inválido ({e})") from None
+    p = ler(dados, nome)
+    return Propostas(p.itens, nome, hashlib.sha256(bruto).hexdigest())
 
 
 def conferir_casos(propostas, nums):

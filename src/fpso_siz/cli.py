@@ -236,7 +236,8 @@ def cmd_dimensionar(a):
 
 
 def cmd_interativo(a):
-    return Sessao(casos=a.casos, ajustes=a.ajustes, ascii=a.ascii, propostas=a.propostas).rodar()
+    return Sessao(casos=a.casos, ajustes=a.ajustes, ascii=a.ascii,
+                  propostas=False if a.sem_propostas else a.propostas).rodar()
 
 
 def cmd_pfd(a):
@@ -262,14 +263,21 @@ def cmd_pfd(a):
 
 
 def _propostas(a):
-    """pendencias_propostas.toml (--propostas): valores propostos para as lacunas."""
-    return mod_propostas.carregar(a.propostas) if getattr(a, "propostas", None) else None
+    """Valores propostos para as lacunas: os do pacote por padrão; --propostas ARQ usa outro
+    arquivo; --sem-propostas deixa as lacunas abertas."""
+    if getattr(a, "sem_propostas", False):
+        if a.propostas:
+            raise ValueError("use --propostas ou --sem-propostas, não os dois")
+        return None
+    return mod_propostas.carregar(a.propostas) if getattr(a, "propostas", None) else mod_propostas.padrao()
 
 
 def _opcao_propostas(sub):
     sub.add_argument("--propostas", type=Path,
-                     help="pendencias_propostas.toml: valores PROPOSTOS (status = \"proposto\") para as entradas sem "
-                          "fonte; só preenchem lacunas e ficam marcados como proposta a confirmar")
+                     help="outro arquivo de valores PROPOSTOS (status = \"proposto\") para as entradas sem fonte; "
+                          "padrão: o do pacote (config/pfd/pendencias_propostas.toml)")
+    sub.add_argument("--sem-propostas", action="store_true", dest="sem_propostas",
+                     help="não carrega valores propostos: as entradas sem fonte ficam como lacuna")
 
 
 def _opcoes_mc(sub):

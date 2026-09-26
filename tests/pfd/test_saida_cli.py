@@ -37,7 +37,7 @@ def test_exportacao_estrita_com_lacunas_e_inviabilidade(planta_base, tmp_path):
 
 def test_cli_sem_ajustes_e_sem_saida(capsys, monkeypatch, tmp_path):
     monkeypatch.chdir(tmp_path)
-    assert main(["pfd", "--casos", str(CASOS)]) == 1
+    assert main(["pfd", "--sem-propostas", "--casos", str(CASOS)]) == 1
     out = capsys.readouterr().out
     assert "aguardando entrada" in out and "t_agua_out" in out and "inviável" in out
     assert "revisão pendente" in out and "M-01" in out and "[SG-001  X]" in out
@@ -47,7 +47,7 @@ def test_cli_sem_ajustes_e_sem_saida(capsys, monkeypatch, tmp_path):
 def test_cli_exporta_os_mesmos_bytes(planta_ajustada, tmp_path, capsys):
     a, b = tmp_path/"api", tmp_path/"cli"
     pfd.gravar(planta_ajustada, a)
-    assert main(["pfd", "--casos", str(CASOS), "--ajustes", str(AJUSTES), "--saida", str(b)]) == 0
+    assert main(["pfd", "--sem-propostas", "--casos", str(CASOS), "--ajustes", str(AJUSTES), "--saida", str(b)]) == 0
     assert "gravados:" in capsys.readouterr().out
     assert {p.name: p.read_bytes() for p in a.iterdir()} == {p.name: p.read_bytes() for p in b.iterdir()}
     for caminho in b.glob("*.json"):
