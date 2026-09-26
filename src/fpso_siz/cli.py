@@ -19,6 +19,7 @@ from fpso_siz.core.configuracao import exemplos
 from fpso_siz.output import dimensionamento
 from fpso_siz.output.latex import compilacao
 from fpso_siz.output.latex.balanco import memorial
+from fpso_siz.output.latex.tag import memorial as memorial_tag
 from fpso_siz.output.terminal.comum import alteracoes as _alteracoes
 from fpso_siz.output.terminal.comum import gravar_balanco
 from fpso_siz.output.terminal.estilo import Estilo
@@ -157,12 +158,34 @@ def _dimensionar_equipamento(a):
     rt = servico.executar(ctx, estado)
     e = _estilo(a)
     _mostrar(e, tela_tag(ctx, rt, e, COLUNAS))
+    erros = []
     if a.saida:
-        _mostrar(e, ["gravados: " + ", ".join(str(p) for p in pfd.gravar_tag(ctx, rt, a.saida))])
-    return 0 if rt.concluido else 1
+        gravados = pfd.gravar_tag(ctx, rt, a.saida)
+        if a.mc:
+            arqs, erros = memorial_tag.exportar_lote(ctx, [rt], a.saida, a.data, pdf=a.pdf)
+            gravados += arqs
+        _mostrar(e, ["gravados: " + ", ".join(str(p) for p in gravados)])
+    return _codigo_mc(erros, 0 if rt.concluido else 1)
+
+
+def _codigo_mc(erros, codigo):
+    """Falha de compilação do MC: mensagem em stderr e código 3 (como `memorial --pdf`)."""
+    for erro in erros:
+        print(f"erro: {erro}", file=sys.stderr)
+    return 3 if erros else codigo
+
+
+def _validar_mc(a):
+    if a.pdf and not a.mc:
+        raise ValueError("--pdf exige --mc")
+    if a.mc and not a.saida:
+        raise ValueError("--mc exige --saida (pasta onde o memorial é gravado)")
 
 
 def cmd_dimensionar(a):
+    _validar_mc(a)
+    if a.mc and not (a.tag or a.avulso):
+        raise ValueError("--mc vale com --tag ou --avulso (o memorial é do TAG)")
     if a.exemplo and (a.tag or a.auto_balanco or a.avulso):
         raise ValueError("--exemplo não se combina com --tag, --auto-balanco nem --avulso")
     if a.tag and a.avulso:
@@ -201,12 +224,25 @@ def cmd_pfd(a):
     ctx = servico.Contexto(carregar_casos(a.casos), alteracoes=_alteracoes(a.premissa))
     aj = _ler_ajustes(a.ajustes)
     _verificar_contexto(aj, ctx, aj.todos())
+    _validar_mc(a)
     planta = dimensionar(contexto=ctx, ajustes=aj)
     e = _estilo(a)
     _mostrar(e, resumo(planta, e, COLUNAS))
+    erros = []
     if a.saida:
-        _mostrar(e, ["gravados: " + ", ".join(str(p) for p in pfd.gravar(planta, a.saida))])
-    return 0 if planta.completa else 1
+        gravados = pfd.gravar(planta, a.saida)
+        if a.mc:
+            arqs, erros = memorial_tag.exportar_lote(ctx, planta.tags, a.saida, a.data, pdf=a.pdf)
+            gravados += arqs
+        _mostrar(e, ["gravados: " + ", ".join(str(p) for p in gravados)])
+    return _codigo_mc(erros, 0 if planta.completa else 1)
+
+
+def _opcoes_mc(sub):
+    sub.add_argument("--mc", action="store_true",
+                     help="grava o memorial de cálculo (LaTeX A4/SENAI, CSV dos gráficos e JSON) em <saida>/mc/<número>/")
+    sub.add_argument("--pdf", action="store_true", help="com --mc: compila o memorial com latexmk")
+    sub.add_argument("--data", help="data da folha de rosto do memorial (DD/MM/AAAA; padrão: hoje)")
 
 
 def _terminal():
@@ -262,6 +298,7 @@ def main(argv=None):
                    help="dispensável se o arquivo declara `equipment`")
     d.add_argument("--metodo", help="id do método (padrão: o primeiro registrado para o equipamento)")
     d.add_argument("--saida", type=Path, help="pasta de saída (JSON + CSV); sem ela, só o resumo")
+    _opcoes_mc(d)
     d.add_argument("--ascii", action="store_true", help="texto só em ASCII (setas, bordas, acentos)")
     d.set_defaults(func=cmd_dimensionar)
 
@@ -270,6 +307,7 @@ def main(argv=None):
     f.add_argument("--ajustes", type=Path, help="arquivo de ajustes (esquema 2 ou legado F10b)")
     f.add_argument("--saida", type=Path, help="pasta de saída (JSON + CSV por TAG e planta.csv)")
     f.add_argument("--premissa", action="append", default=[], metavar="NOME=VALOR")
+    _opcoes_mc(f)
     f.add_argument("--ascii", action="store_true", help="texto só em ASCII (setas, bordas, acentos)")
     f.set_defaults(func=cmd_pfd)
 

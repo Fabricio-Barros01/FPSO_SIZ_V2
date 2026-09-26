@@ -45,6 +45,7 @@ acoes = [
     { id = "rastro", rotulo = "Propriedades e rastro de um caso" },
     { id = "varredura", rotulo = "Varredura do envelope" },
     { id = "exportar", rotulo = "Exportar JSON/CSV e ajustes" },
+    { id = "memorial", rotulo = "Gerar memorial de cálculo (MC)" },
     { id = "modo", rotulo = "Trocar preenchimento" },
     { id = "associar", rotulo = "Associar a um TAG da planta" },
 ]
@@ -56,6 +57,7 @@ acoes = [
     { id = "pendencias", rotulo = "Preencher pendências" },
     { id = "filtro", rotulo = "Filtrar por caso" },
     { id = "exportar", rotulo = "Exportar" },
+    { id = "memoriais", rotulo = "Gerar os memoriais de cálculo (MC) dos TAGs" },
 ]
 
 [menus.revisar]
@@ -169,7 +171,8 @@ inativo_todo = "Nenhum caso ativo neste TAG; nada a dimensionar."
 preliminar = "Resultado preliminar: {n} recomendação(ões)/default(s) sem revisão (ver Revisar)."
 avisos_n = "{n} aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro."
 casos_inativos = "Casos inativos: {lista}"
-memorial_indisponivel = "Memorial de cálculo do equipamento: previsto na F11; ainda não disponível."
+memorial_disponivel = "Memorial de cálculo (MC) do TAG: ação \"Gerar memorial de cálculo\" no menu, ou --mc [--pdf] no comando."
+mc_pdf_prompt = "Compilar o PDF com latexmk? (s/N)"
 aviso_item = "{casos}: {aviso}"
 # formulários
 aplicar_a = "Aplicar preenchimento"

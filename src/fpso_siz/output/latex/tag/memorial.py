@@ -17,7 +17,7 @@ from pathlib import Path
 from fpso_siz import __version__
 from fpso_siz.core.configuracao import carregar
 from fpso_siz.output.arquivos import escrever_csv, escrever_json
-from fpso_siz.output.latex import formatacao
+from fpso_siz.output.latex import compilacao, formatacao
 from fpso_siz.output.latex.ambiente import ambiente
 from fpso_siz.pfd import memorial as nucleo
 
@@ -235,6 +235,35 @@ def gravar(ctx, rt, pasta, data=None, git=None):
     logo = files(BALANCO).joinpath("recursos", "logo-senai.png")
     (pasta / "logo-senai.png").write_bytes(logo.read_bytes())
     return arq
+
+
+PASTA_MC = "mc"
+
+
+def exportar(ctx, rt, pasta, data=None, git=None, pdf=False):
+    """MC de um TAG em `<pasta>/mc/<número>/` — o mesmo caminho e os mesmos bytes no TAG
+    isolado e no lote. Devolve (arquivos gravados, erro de compilação ou None)."""
+    destino = Path(pasta) / PASTA_MC / nome_base(nucleo.documento(ctx, rt))
+    tex = gravar(ctx, rt, destino, data, git)
+    arquivos = [tex, tex.with_suffix(".json"), *sorted(destino.glob(f"{tex.stem}_*.csv"))]
+    if not pdf:
+        return arquivos, None
+    try:
+        return arquivos + [compilacao.compilar(tex)], None
+    except compilacao.ErroCompilacao as e:
+        return arquivos, e
+
+
+def exportar_lote(ctx, resultados, pasta, data=None, git=None, pdf=False):
+    """MC de cada TAG (mesma função do TAG isolado). (arquivos, [erros])."""
+    git = git if git is not None else proveniencia_git()
+    arquivos, erros = [], []
+    for rt in resultados:
+        arqs, erro = exportar(ctx, rt, pasta, data, git, pdf)
+        arquivos += arqs
+        if erro is not None:
+            erros.append(f"{rt.tag.tag}: {erro}")
+    return arquivos, erros
 
 
 def _json(obj):
