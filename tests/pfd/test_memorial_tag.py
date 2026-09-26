@@ -152,10 +152,11 @@ def test_v001_caso_governante_e_resultado(docs):
     assert all(x["atende"] for x in c["criterios"])
 
 
-def test_v001_conta_a_mao_reproduz_o_rastro(docs):
+@pytest.mark.parametrize("ident", ["V-001", "V-002"])
+def test_knockout_conta_a_mao_reproduz_o_rastro(docs, ident):
     """O passo a passo refeito à mão, só com os operandos impressos no MC (valores
     completos), dá o resultado do rastro."""
-    _, d = docs["V-001"]
+    _, d = docs[ident]
     eq = {e["id"]: e for e in d["calculo"]["equacoes"]}
     o = eq["cd"]["operandos"]
     assert o["cd_entrada"] + o["relaxacao"] * (o["a"] / o["re"] + o["b"] / math.sqrt(o["re"]) + o["c"]
@@ -176,6 +177,8 @@ def test_v001_conta_a_mao_reproduz_o_rastro(docs):
     assert max(s["leff"] + s["d"] / 1000, s["fator"] * s["leff"]) == s["lss"]
     assert s["lss"] / (s["d"] / 1000) == s["sr"]
     assert math.isclose(math.pi * (s["d"] / 1000) ** 2 * s["lss"] / 4, s["volume"], rel_tol=1e-15)
+    if ident != "V-001":
+        return
     # números do cartão em 4 algarismos (o que o leitor confere no PDF)
     assert [formatacao.texto_sig(s[k]) for k in ("leff", "lss", "sr", "volume")] == ["11,74", "16,44", "3,499", "285,3"]
 
@@ -187,3 +190,52 @@ def test_v001_constantes_de_campo_convertidas(docs):
     assert math.isclose(conv["vt"]["convertido"], 0.0119 * 0.3048)
     assert math.isclose(conv["liquido"]["convertido"], 42406.573, rel_tol=1e-8)
     assert abs(conv["liquido"]["desvio"]) < 1e-3 < abs(conv["gas"]["desvio"])   # 0,08 % × 0,86 %
+
+
+# ------------------------------------------------------------------ F11.3 — V-002 e SG-001
+def test_v002_governante_e_ponto(docs):
+    rt, d = docs["V-002"]
+    c = d["calculo"]
+    assert c["caso_governante"] == rt.resultado.driver_case and c["selecao"]["d"] == rt.resultado.x
+    assert formatacao.texto_sig(c["selecao"]["sr"]) == formatacao.texto_sig(rt.resultado.derivados["sr"])
+
+
+def test_sg001_diagnostico_sem_intersecao(docs):
+    rt, d = docs["SG-001"]
+    c = d["calculo"]
+    assert rt.status == "inviavel" and not c["viavel"] and c["selecao"] is None
+    diag = c["diagnostico"]
+    assert diag["caso_teto"] == "BOT 02 — Early Life" == c["caso_governante"]
+    assert diag["teto"] == rt.resultado.ceiling and formatacao.texto_sig(diag["teto"]) == "3.612"
+    assert diag["x_min_banda"] > diag["teto"]           # por isso não há interseção
+    assert [x["atende"] for x in c["criterios"]] == [False, False]
+    s = c["series"]
+    assert s["teto"][0]["x"] == diag["teto"] and s["minimo"][0]["x"] == diag["x_min_banda"]
+    abaixo = [li for li in s["diagrama"] if li["x"] <= diag["teto"]]
+    assert abaixo and not any(li["banda_min"] <= li["y"] <= li["banda_max"] for li in abaixo)
+    assert "ponto" not in s
+
+
+def test_sg001_conta_a_mao_da_decantacao(docs):
+    _, d = docs["SG-001"]
+    eq = {e["id"]: e for e in d["calculo"]["equacoes"]}
+    o = eq["ho"]["operandos"]
+    assert o["coef"] * o["tr_o"] * o["dsg"] * (o["dm"] * o["dm"]) / o["mu_o"] == eq["ho"]["resultado"]
+    o = eq["dsg"]["operandos"]
+    assert o["sg_w"] - o["sg_o"] == eq["dsg"]["resultado"]
+    o = eq["dmax_wio"]["operandos"]
+    assert o["h"] / o["beta"] == eq["dmax_wio"]["resultado"] == d["calculo"]["diagnostico"]["teto"]
+    o = eq["liquido"]["operandos"]
+    assert o["coef"] * (o["tr_o"] * o["q_o"] + o["tr_w"] * o["q_w"]) == eq["liquido"]["resultado"]
+
+
+@pytest.mark.latex
+@pytest.mark.skipif(not compilacao.disponivel() or not shutil.which("pdftotext"), reason="latexmk/pdftotext ausentes")
+def test_sg001_pdf_mostra_a_inviabilidade(planta_base, tmp_path):
+    ctx, rt = planta_base.contexto, planta_base.tag("SG-001")
+    tex = saida_mc.gravar(ctx, rt, tmp_path, data=DATA, git=GIT)
+    texto = _normal(_texto_pdf(compilacao.compilar(tex)))
+    assert _normal("MEMORIAL DE CÁLCULO – DIAGNÓSTICO") in texto
+    assert _normal("não atende") in texto and "3.612mm" in texto and "5.600mm" in texto
+    assert (tmp_path / "MC-SEN-SEP-EQP-001-0_teto.csv").exists()
+    assert (tmp_path / "MC-SEN-SEP-EQP-001-0_minimo.csv").exists()
