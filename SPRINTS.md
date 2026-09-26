@@ -14,7 +14,7 @@ aquela fase).
 
 ## Estado atual
 
-**FASE ATUAL: F15 — planejamento da otimização ← ATUAL (F10x, F13 e F14 entregues em 2026-09-26)**
+**FASE ATUAL: resolução dos alarmes de inviabilidade (pré-condição da F15) ← ATUAL; F10x, F13, F14 e o planejamento da F15 entregues em 2026-09-26**
 **F11 (MC por TAG) e F11b (MC do balanço por caso) entregues em 2026-09-26, em sessão autônoma
 autorizada pelo usuário, no branch `fases/f11` (sem merge; integração pelo usuário). Ver
 [`docs/validacao/13-memorial-tag.md`](docs/validacao/13-memorial-tag.md).**
@@ -1054,7 +1054,11 @@ relatório gerado `docs/validacao/15-termodinamica.md` (`tools/termodinamica_pre
 - **Aceite:** (1) porta única (teste de arquitetura existente, `_chedl.py`) ✓; (2) comparação
   caso a caso sem mudar balanço/paridade ✓; (3) fontes no relatório ✓; (4) cobertura ✓.
 
-### F15 — Otimização com `pymoo` (só planejamento) ← ATUAL
+### F15 — Otimização com `pymoo` (só planejamento) ✅ (planejamento)
+**Entregue (2026-09-26):** `docs/decisoes/0003-otimizacao-pymoo.md` — variáveis com limites de
+origem declarada, objetivos, restrições como estado, NSGA-II/III, porta única `_otim.py`,
+critério de validação; **pré-condição: nenhum alarme aberto** (docs/validacao/14-alarmes.md).
+Nenhuma dependência instalada.
 Planejar a otimização multiobjetivo do módulo (volume dos vasos, cargas térmicas, área dos
 trocadores) sobre o motor de envelope, com `pymoo`.
 **Aceite do planejamento:** documento em `docs/decisoes/` com variáveis de decisão (e de onde
