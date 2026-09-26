@@ -14,7 +14,7 @@ aquela fase).
 
 ## Estado atual
 
-**FASE ATUAL: F14 — termodinâmica preliminar ← ATUAL (F10x e F13 entregues em 2026-09-26)**
+**FASE ATUAL: F15 — planejamento da otimização ← ATUAL (F10x, F13 e F14 entregues em 2026-09-26)**
 **F11 (MC por TAG) e F11b (MC do balanço por caso) entregues em 2026-09-26, em sessão autônoma
 autorizada pelo usuário, no branch `fases/f11` (sem merge; integração pelo usuário). Ver
 [`docs/validacao/13-memorial-tag.md`](docs/validacao/13-memorial-tag.md).**
@@ -1033,7 +1033,7 @@ anotação e investigação.
 - **Aceite:** (1) ✓; (2) estudo em `docs/validacao/14-alarmes.md` gerado pelo motor ✓; (3) ✓
   nenhuma premissa nova no padrão; (4) o MC do SG-001 cita a investigação ✓.
 
-### F14 — Termodinâmica preliminar com `thermo` e `iapws` ← ATUAL
+### F14 — Termodinâmica preliminar com `thermo` e IAPWS ✅
 Flash e propriedades de óleo vivo/gás dissolvido (Bo, Rs, calor de flash) por `thermo`
 (ChEDL, só via `pfd/_chedl.py`) e água/vapor por `iapws`, em camada a jusante do balanço.
 **Aceite:** (1) `iapws` atrás de uma porta única, com teste de arquitetura; (2) comparação
@@ -1041,7 +1041,20 @@ com o balanço preliminar (gás seco, cp constante) caso a caso em `docs/validac
 o balanço nem a paridade; (3) cada propriedade no rastro com a fonte e a faixa de validade;
 (4) cobertura ≥ 90 % no núcleo.
 
-### F15 — Otimização com `pymoo` (só planejamento)
+**Entregue (2026-09-26).** `pfd/termodinamica.py` + `config/pfd/termodinamica.toml` +
+relatório gerado `docs/validacao/15-termodinamica.md` (`tools/termodinamica_preliminar.py`).
+- IAPWS via `chemicals` (IAPWS-95/2008/2011, as mesmas normas do pacote `iapws`), atrás da
+  porta única `pfd/_chedl.py`: nenhuma dependência nova.
+- Balanço × ChEDL, caso a caso, sem alterar o balanço: cp aquoso −2,0 a +0,2 % de Laliberté;
+  cp do gás (ideal a 25 °C) 9–15 % abaixo da EOS de Peng-Robinson na condição dos vasos; Z do
+  gás no FWKO ≈ 0,93; efeito do cp aquoso na carga do P-002 < 2 %.
+- Lacunas de caracterização (sem fonte): Tc/Pc/ω do C20+ (o BOT só dá MW e densidade; as
+  correlações do ChEDL pedem Tb) → sem flash do fluido de poço, calor de flash, Rs/Bo pela EOS
+  nem viscosidade de óleo vivo (hipótese do alarme do SG-001).
+- **Aceite:** (1) porta única (teste de arquitetura existente, `_chedl.py`) ✓; (2) comparação
+  caso a caso sem mudar balanço/paridade ✓; (3) fontes no relatório ✓; (4) cobertura ✓.
+
+### F15 — Otimização com `pymoo` (só planejamento) ← ATUAL
 Planejar a otimização multiobjetivo do módulo (volume dos vasos, cargas térmicas, área dos
 trocadores) sobre o motor de envelope, com `pymoo`.
 **Aceite do planejamento:** documento em `docs/decisoes/` com variáveis de decisão (e de onde

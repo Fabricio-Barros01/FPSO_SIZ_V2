@@ -1,0 +1,22 @@
+# F14 — termodinâmica preliminar: onde comparar o balanço com as propriedades do ChEDL.
+# Só identificadores de corrente (topologia) e texto; nenhum número de engenharia.
+correntes_aquosas = ["C-05", "C-12", "C-19", "C-10", "C-18"]
+correntes_gas = ["C-04", "C-09", "C-17"]
+
+[aquecedor]   # carga do P-002 (aquecimento de C-07 a C-08)
+entrada = "C-07"
+saida = "C-08"
+carga = "Q_H"
+
+[[lacunas]]
+grandeza = "Tc, Pc e ω do pseudo-componente C20+/C20++"
+consequencia = "sem flash do fluido de poço pela EOS: gás liberado, Rs e Bo continuam de Standing (balanço), sem calor de flash nos desgaseificadores"
+motivo = "o BOT dá só MW e densidade do C20+; as correlações de petróleo do ChEDL (ex.: Twu 1985) exigem o ponto de ebulição normal"
+[[lacunas]]
+grandeza = "viscosidade de óleo vivo"
+consequencia = "vasos e trocadores seguem com a viscosidade de óleo morto (P-40); é uma das hipóteses do alarme do SG-001"
+motivo = "sem correlação de óleo vivo no acervo nem no ChEDL"
+[[lacunas]]
+grandeza = "condutividade térmica do óleo e da salmoura"
+consequencia = "k do lado óleo dos trocadores segue como entrada (proposta)"
+motivo = "sem correlação de petróleo no ChEDL; o banco de Magomedov do thermo não tem NaCl"

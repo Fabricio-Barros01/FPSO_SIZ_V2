@@ -81,6 +81,16 @@ def gas(y, MW, T_C, P_kPa, rastro=None):
     return Gas(e["Z"], rho, mu, e["k"], e["VF"], tuple(avisos))
 
 
+def gas_cp(y, T_C, P_kPa):
+    """cp mássico [J/(kg·K)] e Z da fase vapor pela EOS (mesma composição e EOS de `gas`):
+    comparação da F14 com o cp constante do balanço."""
+    c = cfg()["gas"]
+    comp = c["componentes"]
+    e = _chedl.estado_gas([comp[k] for k in y], list(y.values()), c_para_k(T_C), kpa_para_pa(P_kPa), c["eos"],
+                          c["kij"])
+    return dict(cp=e["cp"], Z=e["Z"], VF=e["VF"])
+
+
 # ------------------------------------------------------------------ água
 def agua(T_C, P_kPa, rastro=None):
     """Água sem sal (diluição, S_D = 0): IAPWS. cp não é usado (vem do balanço): NaN."""
