@@ -69,10 +69,10 @@ Só no modo --oleo-morto: os casos 2 e 3 (Early Life, com água) são inviáveis
 
 ### P-001 — investigação lacuna metodológica
 
-Óleo/óleo: sem correlação válida para o óleo em escoamento laminar ou de transição no lado tubo. Decisão do usuário (2026-09-26): não implementar Sieder-Tate nem outra correlação laminar sem referência rastreável em references/. O TAG fica como lacuna metodológica até existir fonte; quando houver, a correlação laminar entra como ramo próprio do método, sem extrapolar Dittus-Boelter.
+Óleo/óleo: o lado tubo fica laminar ou de transição, fora de Dittus-Boelter. FONTE LOCALIZADA (2026-09-26): Branan pp. 40-41 (eq. 2-9 parede, 2-10 Hausen laminar Re <= 2000, 2-11 Sieder-Tate turbulento, 2-12 interpolação de transição 2000 < Re < 10^4) e Saari §6.3, pp. 68-72 (eq. 6.28 laminar desenvolvido, 6.31 Sieder-Tate laminar com µ/µ_s, 6.32 Bhatti & Shah). Falta o EXEMPLO NUMÉRICO resolvido que o aceite do projeto exige para o caso-ouro: o Branan remete à planilha 'Tubes htc' do livro e Saari não fecha exemplo. O TAG continua lacuna metodológica até a correlação ser implementada e validada, como ramo próprio do método, sem extrapolar Dittus-Boelter (docs/validacao/20-correlacao-tubo-laminar.md).
 
 - **premissa**: Arranjo de 2 passes no tubo (default 'escolha' de Saari Tab. 3.1): com a aproximação de P-32 a troca óleo/óleo é quase simétrica (R ≈ 1) e P alto, fora do alcance de um casco 1-2. Contracorrente pura (1 passe) ou cascos em série resolvem o domínio de F.
-- **modelo**: LACUNA METODOLÓGICA: resolvido o domínio de F (1 passe), o óleo no tubo tem Re de 1.661 a 4.947, fora de Dittus-Boelter (Re ≥ 10⁴). Os dois lados são óleo, e trocar os lados não resolve: com a emulsão no casco e o óleo tratado quente nos tubos, o F segue fora do domínio com 2 passes, e com 1 passe o tubo continua laminar/de transição. Falta, no acervo, correlação laminar do lado tubo com fonte.
+- **modelo**: LACUNA METODOLÓGICA: resolvido o domínio de F (1 passe), o óleo no tubo tem Re de 1.661 a 4.947, fora de Dittus-Boelter (Re ≥ 10⁴). Os dois lados são óleo, e trocar os lados não resolve: com a emulsão no casco e o óleo tratado quente nos tubos, o F segue fora do domínio com 2 passes, e com 1 passe o tubo continua laminar/de transição. A correlação do lado tubo laminar e de transição EXISTE no acervo (Branan pp. 40-41, eq. 2-10 e 2-12; Saari pp. 70-72, eq. 6.28 e 6.31); falta o exemplo numérico do caso-ouro e a implementação. O P-001 é o único TAG que atravessa Re = 2000 (Re de 1.661 a 4.947) e precisa dos dois ramos.
 
 ### P-002 — investigação aberta
 
@@ -80,14 +80,14 @@ Topologia P-46 (óleo no casco, água quente nos tubos), P-45 e reotimização F
 
 - **premissa**: CONFIRMADA e adotada (P-46): a alocação com o óleo viscoso no tubo foi trocada; com a água nos tubos, a faixa de Dittus-Boelter só falha no turndown profundo.
 - **premissa**: Vazão da utilidade proporcional à carga: ṁ = q/(cp·ΔT) com o ΔT da utilidade fixo pelos insumos t_agua_in/t_agua_out em todos os casos. Num turndown de 28× a água de aquecimento fica laminar nos tubos. Manter a circulação da utilidade (ΔT menor no turndown) é outra premissa de operação; sem variante executável, a decidir.
-- **modelo**: Correlação do lado tubo só turbulenta (Dittus-Boelter, Re ≥ 10⁴): sem correlação laminar/de transição com fonte no acervo, o caso de turndown não é calculável.
+- **modelo**: Correlação do lado tubo só turbulenta (Dittus-Boelter, Re ≥ 10⁴): o caso de turndown (BOT 06, Re ≈ 4.200) cai na faixa de transição coberta pela eq. 2-12 do Branan (p. 41) e pela eq. 6.27 de Saari (p. 69). A fonte existe; falta o exemplo numérico do caso-ouro e a implementação. A própria fonte declara a região de transição imprevisível e recomenda evitá-la (docs/validacao/20-correlacao-tubo-laminar.md).
 
 ### P-003 — investigação aberta
 
 Topologia P-46 (óleo no casco, água de resfriamento nos tubos), P-45 e reotimização F10x.7. O casco NÃO passa de 2.500 mm, então os cascos em paralelo não se aplicam (e reduziriam o Re por casco). O que ainda governa: a faixa de Dittus-Boelter nos casos de baixa carga (BOT 04, 05 e 06) e, no melhor feixe, o comprimento de tubo acima de 6 m.
 
 - **premissa**: CONFIRMADA e adotada (P-46): a alocação com o óleo viscoso no tubo foi trocada.
-- **premissa**: Vazão da utilidade proporcional à carga (ΔT da utilidade fixo pelos insumos): nos casos de baixa carga a água de resfriamento fica laminar nos tubos, como no P-002.
+- **premissa**: Vazão da utilidade proporcional à carga (ΔT da utilidade fixo pelos insumos): nos casos de baixa carga a água de resfriamento fica laminar nos tubos, como no P-002. A faixa é coberta pelas eq. 2-10 e 2-12 do Branan (pp. 40-41), pendente de exemplo numérico e implementação.
 - **premissa**: Comprimento: a decisão do usuário previu cascos em série só para o P-002. No P-003 o melhor feixe pede tubo acima de 6 m; cascos em série resolveriam esse bloqueio, mas não o de Dittus-Boelter. A decidir.
 
 ### B-001 — investigação explicada

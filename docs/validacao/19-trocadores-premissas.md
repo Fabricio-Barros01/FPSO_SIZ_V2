@@ -35,8 +35,10 @@ o CLAUDE.md. Os números vêm de `docs/validacao/18-trocadores.md`, gerado pela 
     (comprimento → série no P-002; casco → paralelo no P-003).
   - **Registro:** o escolhido entra no TAG como `[recomendadas]` com fonte, revisáveis.
 - **P-001 — lacuna metodológica:** não se implementou Sieder-Tate nem outra correlação laminar
-  sem referência rastreável em `references/`. Quando houver fonte, a correlação entra como ramo
-  próprio do método, sem extrapolar Dittus-Boelter.
+  sem referência rastreável em `references/`. **Fonte localizada em 2026-09-26** (Branan
+  pp. 40–41, eq. 2-9 a 2-12; Saari §6.3, pp. 68–72): falta o exemplo numérico resolvido que o
+  aceite exige para o caso-ouro, e a implementação. A correlação entrará como ramo próprio do
+  método, sem extrapolar Dittus-Boelter (`docs/validacao/20-correlacao-tubo-laminar.md`).
 
 ## Resultado e o que continua governando
 
@@ -57,7 +59,12 @@ por critério e caso e a operação de cada caso.
    subiria. É uma premissa de operação, sem fonte no acervo.
 2. **Comprimento do P-003.** A decisão previu cascos em série só no P-002.
 3. **Correlação laminar/de transição do lado tubo** (P-001 e turndown do P-002/P-003):
-   depende de fonte em `references/`.
+   a fonte existe no acervo (Branan pp. 40–41: Hausen 2-10, Sieder-Tate 2-11, transição 2-12;
+   Saari pp. 70–72: eq. 6.28, 6.31, 6.32). Falta **exemplo numérico resolvido** para o
+   caso-ouro — o Branan remete à planilha "Tubes htc" do livro e Saari não fecha exemplo.
+   Referências autorizadas pelo usuário para suprir isso: Serth & Lestina e a planilha do
+   Branan. Detalhes e requisitos da implementação em
+   `docs/validacao/20-correlacao-tubo-laminar.md`.
 
 ## Paridade
 

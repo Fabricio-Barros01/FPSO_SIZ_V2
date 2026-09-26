@@ -28,10 +28,24 @@ temporária. A primeira tentativa Julia falhou ao escrever o cache protegido em
 `poppler-utils` incluído no devShell; comandos de ambiente documentados no CLAUDE.md.
 Validação completa desta etapa: em execução.
 
-Próximas etapas autorizadas: documentar fontes do P-001, mantendo pendente o ramo até
-haver exemplo numérico da fonte; executar apenas estudos de circulação fixa e cascos em
+**Etapa 1 — fontes e pendência do P-001:** o diagnóstico "falta correlação laminar com
+fonte no acervo" estava **errado** e foi corrigido em toda parte. As correlações existem por
+duas vias: Branan pp. 40–41 (eq. 2-9 temperatura de parede, 2-10 Hausen laminar Re ≤ 2000,
+2-11 Sieder-Tate turbulento, 2-12 interpolação de transição 2000 < Re < 10⁴) e Saari §6.3,
+pp. 68–72 (eq. 6.28 laminar desenvolvido, 6.31 Sieder-Tate laminar com µ/µ_s, 6.32 Bhatti &
+Shah). O que falta é o **exemplo numérico resolvido** do aceite: o Branan remete à planilha
+"Tubes htc" do livro e Saari não fecha exemplo — o mesmo buraco de `golden_saari`. Nada foi
+implementado: o P-001 segue lacuna metodológica e os alarmes do P-002/P-003 seguem abertos.
+Registrados os requisitos da futura implementação (ramo próprio por regime, temperatura de
+parede iterativa da eq. 2-9 sem assumir µ/µ_w = 1, faixas não cobertas voltando como
+inviabilidade com mensagem) e uma errata aparente de sinal na eq. 6.27 de Saari. Documento:
+`docs/validacao/20-correlacao-tubo-laminar.md`; `14-alarmes.md` regenerado do catálogo.
+O usuário autorizou subir Serth & Lestina e a planilha do Branan para fechar o caso-ouro.
+
+Próximas etapas autorizadas: executar apenas estudos de circulação fixa e cascos em
 série; fechar testes e PR. Padrões dos TAGs, P-44b, alertas P-45 e valores `proposto`
-continuam sujeitos à decisão do usuário.
+continuam sujeitos à decisão do usuário. O usuário autorizou o `pymoo` (F15) e a F8 aplicada
+ao pré-aquecedor pós-SG (óleo tratado antes do cargo tank × óleo vivo da saída do SG).
 
 **FASE ATUAL: resolução dos alarmes de inviabilidade (pré-condição da F15) ← ATUAL; F10x (até F10x.7), F13, F14 e o planejamento da F15 entregues em 2026-09-26. Alarmes do SG-001 (óleo vivo) e das bombas (P-44) explicados; P-002/P-003 abertos (Dittus-Boelter no turndown, após P-45/P-46 e reotimização); P-001 é lacuna metodológica.**
 **F11 (MC por TAG) e F11b (MC do balanço por caso) entregues em 2026-09-26, em sessão autônoma
