@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 from fpso_siz.balanco.dados import carregar_casos, premissas
-from fpso_siz.balanco.modelo import resolver_todos
+from fpso_siz.balanco.modelo import REFERENCIA, resolver_todos
 from fpso_siz.output.latex.balanco import memorial
 
 RAIZ = Path(__file__).resolve().parent.parent
@@ -14,9 +14,11 @@ FIX = RAIZ / "tests" / "fixtures" / "python_ref"
 def main():
     dados = carregar_casos(FIX / "design_cases_bot.json")
     prem = premissas(dados)
-    R = resolver_todos(dados, prem)
+    R = resolver_todos(dados, prem, REFERENCIA)
     ref = (FIX / "main_ref.tex").read_text(encoding="utf-8")
-    env, ctx = memorial.preparar(dados, prem, R)
+    env, ctx = memorial.preparar(dados, prem, R, "original")
+    ctx["premissas_memorial"] = [p for p in ctx["premissas_memorial"]
+                                if "original" in p.get("layouts", memorial.LAYOUTS)]
     pos, ruins = 0, 0
     for nome in memorial.LAYOUTS["original"] + memorial.CORPO:
         txt = env.get_template(f"{nome}.tex.j2").render(ctx)
@@ -33,7 +35,7 @@ def main():
         pos += len(txt)
     total = memorial.gerar(dados, prem, R)
     print("IDÊNTICO" if total == ref and not ruins else f"diferente ({ruins} templates); tamanho {len(total)} vs {len(ref)}")
-    return 0 if total == ref else 1
+    return 0 if total == ref and not ruins else 1
 
 
 if __name__ == "__main__":

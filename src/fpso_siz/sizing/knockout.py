@@ -39,11 +39,14 @@ class StewartArnoldTwoPhase(MetodoVaso):
         if not ok:
             return False, msg, tr
         d2_leff = float(k["liquid_capacity_coefficient"]) * p["tr_liquid"] * fu.q_o
+        tr.anotar("liquid", "d²·Leff", coef=float(k["liquid_capacity_coefficient"]), tr=p["tr_liquid"], q_l=fu.q_o)
         tr.trace("liquid", "Eq. 3.9b", "d²·Leff", "42441·tr·Ql", d2_leff, "mm²·m")
         if not math.isfinite(d2_leff):
             return (False, "Vazão de líquido não informada ou inválida: a capacidade de líquido (Eq. 3.9b) não "
                            "pôde ser avaliada.", tr)
         return True, VesselConstraints(d_leff_gas, d2_leff), tr
+
+    lss_pela_maior = True
 
     def lss_from(self, d_mm, leff, gov, k):
         return max(leff + mm_para_m(d_mm), float(k["lss_liquid_factor"]) * leff)

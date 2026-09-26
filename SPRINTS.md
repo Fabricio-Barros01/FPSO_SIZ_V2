@@ -891,6 +891,18 @@ regra de balanço usou.
 
 ### F11 — MC por equipamento/TAG, ligado ao mesmo fluxo (proposta revisada) ← ATUAL
 
+**Preparação (2026-09-26; implementação ainda não iniciada):** diagnóstico no branch
+`fases/f11`, base `73f7ca3`; 814 testes + 2 de compilação (`original`/`senai`) + 1 de
+regeneração Julia aprovados, cobertura global com ramos de 96,95% e de linhas do núcleo
+de 98,69%. O utilitário `tools/comparar_memorial.py` falha por comparar templates com
+o contexto de eficiência contra o original; o teste do documento completo original
+passa byte a byte. `pendencias_propostas.toml` não foi localizado; nenhum valor foi
+incorporado. Minutas de MC viável e diagnóstico, estados dos 11 TAGs, evidências e
+recomendações em [`docs/validacao/f11-preparacao.md`](docs/validacao/f11-preparacao.md).
+**Próximo portão:** confirmação do formato documental apresentado, conforme o pedido
+atual. Nenhum template, snapshot ou caso-ouro novo foi fixado; nenhuma fase posterior
+foi iniciada. Preparação sem commit de entrega e sem integração.
+
 **Aguardando aprovação própria.** Mesmo pipeline LaTeX A4 da F4, template SENAI e conteúdo
 de referência em `src/memorial_specs/` do Julia. Cada gerador consome o resultado do serviço
 por TAG da F10c, com os mesmos valores exportados em JSON/CSV; o template só apresenta.

@@ -91,6 +91,8 @@ class ArnoldElectrostatic(MetodoVaso):
                            "avaliada.", tr)
         return True, VesselConstraints(0.0, d2_leff, d_max, mechanism, beta_o, aw), tr
 
+    lss_pela_maior = True
+
     def lss_from(self, d_mm, leff, gov, k):
         return max(leff + mm_para_m(d_mm), float(k["lss_liquid_factor"]) * leff)
 

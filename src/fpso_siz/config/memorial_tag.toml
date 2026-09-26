@@ -1,0 +1,407 @@
+# Memorial de cálculo (MC) por TAG — F11. Metadados documentais, numeração e conteúdo
+# textual por método. Nenhuma grandeza de engenharia é calculada aqui: os números do MC
+# saem do resultado do serviço por TAG (pfd/equipamento.py) e dos operandos capturados no
+# rastro (core/trace.py). Texto com LaTeX é escrito como está no documento.
+
+revisao = "0"
+descricao_revisao = "Emissão preliminar --- memorial de cálculo por TAG (F11), gerado do rastro do dimensionamento"
+execucao = "Fabrício O."
+verificacao = "--"
+aprovacao = "--"
+# Número do documento: a sequência vem da tabela abaixo, nunca da ordem de exportação.
+formato_numero = "MC-SEN-SEP-EQP-{seq:03d}-{rev}"
+numero_nota = "numeração a confirmar na LI-SEN-SEP-COO-01 (proposta F11: sequência de processo)"
+algarismos = 4   # algarismos significativos exibidos; o cálculo roda em precisão total
+operandos_exatos = ["coef", "campo", "a", "b", "c", "relaxacao", "cd0", "tolerancia"]
+regra_algarismos = "Os cálculos rodam em precisão dupla (IEEE 754); o MC exibe 4 algarismos significativos. Um valor exibido não é o valor usado na conta seguinte: todas as substituições usam o valor completo do rastro."
+
+# Sequência de processo do diagrama de blocos (a mesma ordem da seção 11 do memorial do
+# balanço, MC-SEN-SEP-COO-001): alimentação → SG-001 → trem de aquecimento → V-001 →
+# TO-001 → V-002 → TO-002 → bombas de reciclo e de óleo → resfriador. A bomba de água do
+# desidratador (B-002) segue o TO-001 e a do dessalinizador (B-003) segue o TO-002.
+[numeracao]
+"SG-001" = 1
+"P-001" = 2
+"P-002" = 3
+"V-001" = 4
+"TO-001" = 5
+"B-002" = 6
+"V-002" = 7
+"TO-002" = 8
+"B-003" = 9
+"B-001" = 10
+"P-003" = 11
+
+[senai]
+cliente = "SENAI CETIQT"
+programa = "-"
+area = "FPSO SENAI -- BACIA DE SANTOS"
+projeto = "SEP"
+tipo_dimensionado = "MEMORIAL DE CÁLCULO -- EQUIPAMENTO"
+tipo_diagnostico = "MEMORIAL DE CÁLCULO -- DIAGNÓSTICO"
+tipo_aguardando = "MEMORIAL DE CÁLCULO -- AGUARDANDO ENTRADA"
+
+[textos]
+aguardando = "aguardando entrada"
+sem_fonte = "valor sem fonte rastreável"
+regra_eficiencia = "eficiência de água livre do SG-001, $\\eta_A=\\max(\\eta_{\\text{padrão}};\\ \\eta_{\\mathrm{req}})$ (P-43, F10w)"
+regra_referencia = "regra do script de referência, $\\min(40\\,\\%;\\ \\mathit{BSW})$ (modo de paridade)"
+regra_manual = "não se aplica: preenchimento manual, sem balanço"
+estado_dimensionado = "dimensionado"
+estado_inviavel = "inviável --- diagnóstico, sem dimensões selecionadas"
+estado_aguardando_entrada = "aguardando entrada --- seções de cálculo pendentes"
+estado_inativo = "inativo em todos os casos"
+preliminar = "Resultado preliminar: há recomendações ou defaults com fonte ainda não confirmados pelo usuário (seção 10)."
+
+# ------------------------------------------------------------------ conteúdo por método
+# `equacoes`: o passo a passo do caso governante. `bloco`/`var` localizam, no rastro do
+# caso, o resultado (entrada do rastro) e os operandos capturados na avaliação;
+# `fonte_dados = "selecao"` usa o ponto escolhido do envelope. Em `substituicao`, @nome@ é
+# trocado pelo operando `nome` (valor completo formatado com 4 algarismos) e sua unidade
+# (`unidades`). `conversao` mostra a constante da forma de campo convertida pelas funções
+# exatas de core/unidades.py ao lado do coeficiente métrico publicado (o usado).
+
+[metodos.stewart_arnold_2f]
+objetivo = "Determinar a geometria (diâmetro, comprimento efetivo e comprimento entre costuras) de um vaso horizontal bifásico, meio cheio de líquido, que atenda simultaneamente a todos os casos ativos do TAG: remoção das gotículas de líquido do gás (capacidade de gás) e tempo de retenção do líquido (capacidade de líquido)."
+escopo = "Dimensionamento de processo do casco. Não inclui projeto mecânico (espessura, tampos), bocais, internos, instrumentação nem controle de nível."
+referencias = [
+    "Stewart, M.; Arnold, K. \\emph{Gas-Liquid and Liquid-Liquid Separators}. Gulf Equipment Guides, 2008, cap.~3, §3.6--3.8 (Eq.~3.6--3.11; Tab.~3.2).",
+    "Petrobras. BOT I-ET-3010.2K-1200-941-P4X-001, rev.~C: Tab.~2.2.2.3/2.2.2.4 (casos de projeto) e 2.7.1 (condições de processo).",
+    "MC-SEN-SEP-COO-001 (memorial do balanço preliminar): correntes, temperaturas e pressões de entrada do TAG.",
+]
+hipoteses = [
+    "Vaso horizontal meio cheio de líquido; o líquido (óleo + água arrastada) é tratado como uma fase única, sem decantação líquido--líquido, logo sem teto de diâmetro.",
+    "Vazão de gás na condição padrão, como exige a Eq.~3.8b (m$^3$/h padrão); pressão e temperatura absolutas do vaso.",
+    "O parâmetro $K$ da capacidade de gás é o agrupamento algébrico $[(\\rho_g/(\\rho_l-\\rho_g))(C_D/d_m)]^{1/2}$ com $d_m$ em µm; não é o fator de Souders--Brown, embora o rastro cite a Eq.~3.1.",
+    "$L_{ss}$ é a maior das duas regras de §3.8.4 (Eq.~3.10b e 3.11); o volume é o do cilindro entre costuras, sem os tampos.",
+    "Envelope: um único vaso para todos os casos; grade = união das grades, banda de esbeltez = interseção, alvo = média limitada à banda; escolhe-se o diâmetro admissível mais próximo do alvo.",
+]
+eixo = "d"
+colunas_casos = [
+    { bloco = "gas", var = "C_D", rotulo = "$C_D$" },
+    { bloco = "gas", var = "V_t", rotulo = "$V_t$ (m/s)" },
+    { bloco = "gas", var = "Re", rotulo = "$Re$" },
+    { bloco = "gas", var = "d·Leff", rotulo = "$dL_{eff}$ (mm·m)" },
+    { bloco = "liquid", var = "d²·Leff", rotulo = "$d^2L_{eff}$ (mm²·m)" },
+]
+graficos = ["diagrama", "casos"]
+
+[[metodos.stewart_arnold_2f.equacoes]]
+id = "cd"
+titulo = "Coeficiente de arrasto da gotícula (iteração)"
+fonte = "S\\&A (2008) Eq.~3.6; substituição sucessiva sub-relaxada a partir de $C_D=0{,}34$"
+bloco = "gas"
+var = "C_D"
+metrico = 'C_D^{(i+1)}=C_D^{(i)}+\omega\left[\frac{@a@}{Re^{(i)}}+\frac{@b@}{\sqrt{Re^{(i)}}}+@c@-C_D^{(i)}\right]'
+substituicao = '@cd_entrada@+@relaxacao@\left[\frac{@a@}{@re@}+\frac{@b@}{\sqrt{@re@}}+@c@-@cd_entrada@\right]'
+iteracao = "ultima"
+unidades = {}
+
+[[metodos.stewart_arnold_2f.equacoes]]
+id = "vt"
+titulo = "Velocidade terminal da gotícula"
+fonte = "S\\&A (2008) Eq.~3.7a (campo) e 3.7b (métrica)"
+bloco = "gas"
+var = "V_t"
+campo = 'V_t\,[\mathrm{ft/s}]=@campo@\left[\frac{\rho_l-\rho_g}{\rho_g}\,\frac{d_m}{C_D}\right]^{1/2}\quad(d_m\ \text{em µm})'
+metrico = 'V_t=@coef@\left[\frac{\rho_l-\rho_g}{\rho_g}\,\frac{d_m}{C_D}\right]^{1/2}'
+substituicao = '@coef@\left[\frac{@rho_l@-@rho_g@}{@rho_g@}\cdot\frac{@dm@}{@cd@}\right]^{1/2}'
+unidades = { rho_l = "kg/m^3", rho_g = "kg/m^3", dm = "µm" }
+conversao = { funcao = "vt", campo = 0.0119, fonte = "S\\&A (2008) Eq.~3.7a" }
+
+[[metodos.stewart_arnold_2f.equacoes]]
+id = "re"
+titulo = "Número de Reynolds da gotícula"
+fonte = "S\\&A (2008) §3.7 (definição); forma métrica com $d_m$ em µm e $\\mu_g$ em cP"
+bloco = "gas"
+var = "Re"
+metrico = 'Re=@coef@\,\frac{\rho_g\,d_m\,V_t}{\mu_g}'
+substituicao = '@coef@\cdot\frac{@rho_g@\cdot @dm@\cdot @vt@}{@mu_g@}'
+unidades = { rho_g = "kg/m^3", dm = "µm", vt = "m/s", mu_g = "cP" }
+
+[[metodos.stewart_arnold_2f.equacoes]]
+id = "k"
+titulo = "Agrupamento $K$ da capacidade de gás"
+fonte = "S\\&A (2008) Eq.~3.8b (termo em raiz)"
+bloco = "gas"
+var = "K"
+metrico = 'K=\left[\frac{\rho_g}{\rho_l-\rho_g}\,\frac{C_D}{d_m}\right]^{1/2}'
+substituicao = '\left[\frac{@rho_g@}{@rho_l@-@rho_g@}\cdot\frac{@cd@}{@dm@}\right]^{1/2}'
+unidades = { rho_l = "kg/m^3", rho_g = "kg/m^3", dm = "µm" }
+
+[[metodos.stewart_arnold_2f.equacoes]]
+id = "gas"
+titulo = "Capacidade de gás"
+fonte = "S\\&A (2008) Eq.~3.8a (campo) e 3.8b (métrica)"
+bloco = "gas"
+var = "d·Leff"
+campo = 'd\,[\mathrm{in}]\,L_{eff}\,[\mathrm{ft}]=@campo@\,\frac{T[\mathrm{^\circ R}]\,Z\,Q_g[\mathrm{MMscfd}]}{P[\mathrm{psia}]}\,K'
+metrico = 'd\,L_{eff}=@coef@\,\frac{T\,Z\,Q_g}{P}\,K'
+substituicao = '@coef@\cdot\frac{@t_k@\cdot @z@\cdot @q_g@}{@p_kpa@}\cdot @k@'
+unidades = { t_k = "K", q_g = "m^3/h (padrão)", p_kpa = "kPa" }
+conversao = { funcao = "gas", campo = 420.0, fonte = "S\\&A (2008) Eq.~3.8a" }
+
+[[metodos.stewart_arnold_2f.equacoes]]
+id = "liquido"
+titulo = "Capacidade de líquido (retenção)"
+fonte = "S\\&A (2008) Eq.~3.9a (campo) e 3.9b (métrica)"
+bloco = "liquid"
+var = "d²·Leff"
+campo = 'd^2[\mathrm{in}^2]\,L_{eff}[\mathrm{ft}]=\frac{t_r[\mathrm{min}]\,Q_l[\mathrm{bpd}]}{@campo@}'
+metrico = 'd^2L_{eff}=@coef@\,t_r\,Q_l'
+substituicao = '@coef@\cdot @tr@\cdot @q_l@'
+unidades = { tr = "min", q_l = "m^3/h" }
+conversao = { funcao = "liquido_divisor", campo = 0.7, fonte = "S\\&A (2008) Eq.~3.9a", nota = "arredondamento do coeficiente publicado da Eq.~3.9b; o cálculo usa o publicado" }
+
+[[metodos.stewart_arnold_2f.equacoes]]
+id = "leff"
+titulo = "Comprimento efetivo exigido no diâmetro escolhido"
+fonte = "Máximo das duas capacidades no diâmetro $d$ (envelope sobre os casos)"
+fonte_dados = "selecao"
+metrico = 'L_{eff}=\max\left[\frac{(dL_{eff})_g}{d},\ \frac{(d^2L_{eff})_l}{d^2}\right]'
+substituicao = '\max\left[\frac{@dleff_gas@}{@d@},\ \frac{@d2leff_liq@}{(@d@)^2}\right]=\max\left[@leff_gas@;\ @leff_liq@\right]'
+resultado = "leff"
+unidades = { dleff_gas = "mm·m", d2leff_liq = "mm^2·m", d = "mm", leff_gas = "m", leff_liq = "m" }
+
+[[metodos.stewart_arnold_2f.equacoes]]
+id = "lss"
+titulo = "Comprimento entre costuras"
+fonte = "S\\&A (2008) §3.8.4, Eq.~3.10b e 3.11: a maior das duas regras"
+fonte_dados = "selecao"
+metrico = 'L_{ss}=\max\left[L_{eff}+d,\ f\,L_{eff}\right]'
+substituicao = '\max\left[@leff@+@d_m@;\ @fator@\cdot @leff@\right]=\max\left[@lss_gas@;\ @lss_liq@\right]'
+resultado = "lss"
+unidades = { leff = "m", d_m = "m", lss_gas = "m", lss_liq = "m" }
+
+[[metodos.stewart_arnold_2f.equacoes]]
+id = "sr"
+titulo = "Esbeltez"
+fonte = "S\\&A (2008) §3.8.5: banda recomendada de 3 a 4"
+fonte_dados = "selecao"
+metrico = 'SR=\frac{L_{ss}}{d}'
+substituicao = '\frac{@lss@}{@d_m@}'
+resultado = "sr"
+unidades = { lss = "m", d_m = "m" }
+
+[[metodos.stewart_arnold_2f.equacoes]]
+id = "volume"
+titulo = "Volume do casco entre costuras"
+fonte = "Geometria do cilindro (sem tampos)"
+fonte_dados = "selecao"
+metrico = 'V=\frac{\pi\,d^2\,L_{ss}}{4}'
+substituicao = '\frac{\pi\,(@d_m@)^2\cdot @lss@}{4}'
+resultado = "volume"
+unidades = { d_m = "m", lss = "m" }
+
+[metodos.stewart_arnold]
+objetivo = "Verificar se existe um separador trifásico horizontal, meio cheio de líquido, que atenda simultaneamente a todos os casos ativos do TAG: capacidade de gás, decantação líquido--líquido (teto de diâmetro) e retenção de óleo e água; e, se não existir, documentar por quê."
+escopo = "Dimensionamento de processo do casco pelo modelo semiempírico de Stewart \\& Arnold na forma de Alves \\& Komesu (2025). Não inclui projeto mecânico, bocais, internos, vertedouros nem controle de interface."
+referencias = [
+    "Alves, R.; Komesu, A. Lajer v.~12, n.~1, p.~16--29, 2025 --- modelo semiempírico de Stewart \\& Arnold (Eq.~9--24; Tab.~1 e 3).",
+    "Stewart, M.; Arnold, K. \\emph{Gas-Liquid and Liquid-Liquid Separators}. Gulf Equipment Guides, 2008, cap.~3 e 4 (Tab.~4.1; §4.7.4).",
+    "Petrobras. BOT I-ET-3010.2K-1200-941-P4X-001, rev.~C: Tab.~2.2.2.3/2.2.2.4 e 2.7.1.2 (BSW máximo de 40\\,\\% no óleo do FWKO).",
+    "MC-SEN-SEP-COO-001 (memorial do balanço preliminar) e docs/validacao/12-eficiencia-fwko.md (P-43).",
+]
+hipoteses = [
+    "Vaso horizontal meio cheio de líquido; metade superior de gás; interface óleo--água na altura $\\beta d$ acima da interface calculada pela geometria do segmento circular.",
+    "Casos sem fase aquosa (P-42): a decantação e a retenção da água não se aplicam e o caso não impõe teto.",
+    "O teto de decantação $d_{\\max}$ é o menor entre água em óleo (Eq.~19) e óleo em água (Eq.~21, forma publicada); a variante geométrica Eq.~21* só é registrada.",
+    "$L_{ss}$ pela relação do bloco que governa (Eq.~15 ou 23); volume do cilindro entre costuras.",
+    "Envelope: um único vaso para todos os casos; o teto é o menor entre os casos.",
+]
+eixo = "d"
+colunas_casos = [
+    { bloco = "gas", var = "d·Leff", rotulo = "$dL_{eff}$ (mm·m)" },
+    { bloco = "settling", var = "(h_o)max", rotulo = "$(h_o)_{\\max}$ (mm)" },
+    { bloco = "settling", var = "β", rotulo = "$\\beta$" },
+    { bloco = "liquid", var = "d²·Leff", rotulo = "$d^2L_{eff}$ (mm²·m)" },
+]
+graficos = ["diagrama", "casos"]
+
+[[metodos.stewart_arnold.equacoes]]
+id = "cd"
+titulo = "Coeficiente de arrasto da gotícula (iteração)"
+fonte = "Alves \\& Komesu (2025) Eq.~9 = S\\&A (2008) Eq.~3.6"
+bloco = "gas"
+var = "C_D"
+metrico = 'C_D^{(i+1)}=C_D^{(i)}+\omega\left[\frac{@a@}{Re^{(i)}}+\frac{@b@}{\sqrt{Re^{(i)}}}+@c@-C_D^{(i)}\right]'
+substituicao = '@cd_entrada@+@relaxacao@\left[\frac{@a@}{@re@}+\frac{@b@}{\sqrt{@re@}}+@c@-@cd_entrada@\right]'
+iteracao = "ultima"
+unidades = {}
+
+[[metodos.stewart_arnold.equacoes]]
+id = "vt"
+titulo = "Velocidade terminal da gotícula"
+fonte = "Alves \\& Komesu (2025) Eq.~11 = S\\&A (2008) Eq.~3.7b"
+bloco = "gas"
+var = "V_t"
+campo = 'V_t\,[\mathrm{ft/s}]=@campo@\left[\frac{\rho_l-\rho_g}{\rho_g}\,\frac{d_m}{C_D}\right]^{1/2}'
+metrico = 'V_t=@coef@\left[\frac{\rho_l-\rho_g}{\rho_g}\,\frac{d_m}{C_D}\right]^{1/2}'
+substituicao = '@coef@\left[\frac{@rho_l@-@rho_g@}{@rho_g@}\cdot\frac{@dm@}{@cd@}\right]^{1/2}'
+unidades = { rho_l = "kg/m^3", rho_g = "kg/m^3", dm = "µm" }
+conversao = { funcao = "vt", campo = 0.0119, fonte = "S\\&A (2008) Eq.~3.7a" }
+
+[[metodos.stewart_arnold.equacoes]]
+id = "gas"
+titulo = "Capacidade de gás"
+fonte = "Alves \\& Komesu (2025) Eq.~14 = S\\&A (2008) Eq.~3.8b"
+bloco = "gas"
+var = "d·Leff"
+campo = 'd\,[\mathrm{in}]\,L_{eff}\,[\mathrm{ft}]=@campo@\,\frac{T[\mathrm{^\circ R}]\,Z\,Q_g[\mathrm{MMscfd}]}{P[\mathrm{psia}]}\,K'
+metrico = 'd\,L_{eff}=@coef@\,\frac{T\,Z\,Q_g}{P}\,K'
+substituicao = '@coef@\cdot\frac{@t_k@\cdot @z@\cdot @q_g@}{@p_kpa@}\cdot @k@'
+unidades = { t_k = "K", q_g = "m^3/h (padrão)", p_kpa = "kPa" }
+conversao = { funcao = "gas", campo = 420.0, fonte = "S\\&A (2008) Eq.~3.8a" }
+
+[[metodos.stewart_arnold.equacoes]]
+id = "dsg"
+titulo = "Diferença de densidade relativa"
+fonte = "Alves \\& Komesu (2025) Eq.~16"
+bloco = "settling"
+var = "ΔSG"
+metrico = '\Delta SG=(SG)_w-(SG)_o'
+substituicao = '@sg_w@-@sg_o@'
+unidades = {}
+
+[[metodos.stewart_arnold.equacoes]]
+id = "ho"
+titulo = "Espessura máxima da camada de óleo (água em óleo)"
+fonte = "Alves \\& Komesu (2025) Eq.~17; S\\&A (2008) forma de campo com 1{,}28$\\times10^{-3}$ in"
+bloco = "settling"
+var = "(h_o)max"
+campo = '(h_o)_{\max}[\mathrm{in}]=@campo@\,\frac{(t_r)_o\,\Delta SG\,d_m^2}{\mu_o}'
+metrico = '(h_o)_{\max}=@coef@\,\frac{(t_r)_o\,\Delta SG\,d_m^2}{\mu_o}'
+substituicao = '@coef@\cdot\frac{@tr_o@\cdot @dsg@\cdot (@dm@)^2}{@mu_o@}'
+unidades = { tr_o = "min", dm = "µm", mu_o = "cP" }
+conversao = { funcao = "espessura", campo = 0.00128, fonte = "S\\&A (2008), forma de campo citada no TOML do método" }
+
+[[metodos.stewart_arnold.equacoes]]
+id = "hw"
+titulo = "Espessura máxima da camada de água (óleo em água)"
+fonte = "Alves \\& Komesu (2025) Eq.~20"
+bloco = "settling"
+var = "(h_w)max"
+metrico = '(h_w)_{\max}=@coef@\,\frac{\Delta SG\,(t_r)_w\,d_m^2}{\mu_w}'
+substituicao = '@coef@\cdot\frac{@dsg@\cdot @tr_w@\cdot (@dm@)^2}{@mu_w@}'
+unidades = { tr_w = "min", dm = "µm", mu_w = "cP" }
+
+[[metodos.stewart_arnold.equacoes]]
+id = "awa"
+titulo = "Fração da seção ocupada pela água"
+fonte = "Alves \\& Komesu (2025) Eq.~18"
+bloco = "settling"
+var = "Aw/A"
+metrico = '\frac{A_w}{A}=0{,}5\,\frac{Q_w(t_r)_w}{(t_r)_oQ_o+(t_r)_wQ_w}'
+substituicao = '0{,}5\cdot\frac{@q_w@\cdot @tr_w@}{@tr_o@\cdot @q_o@+@tr_w@\cdot @q_w@}'
+unidades = { q_o = "m^3/h", q_w = "m^3/h", tr_o = "min", tr_w = "min" }
+
+[[metodos.stewart_arnold.equacoes]]
+id = "beta"
+titulo = "Coeficiente $\\beta$ (altura relativa da camada de óleo)"
+fonte = "S\\&A (2008) Fig.~3 por geometria exata do segmento circular (bisseção)"
+bloco = "settling"
+var = "β"
+metrico = '\beta=0{,}5-\frac{h_w}{d},\quad \frac{A_{seg}(h_w)}{A}=\frac{A_w}{A}'
+substituicao = '\frac{A_w}{A}=@aw_a@'
+unidades = {}
+
+[[metodos.stewart_arnold.equacoes]]
+id = "dmax_wio"
+titulo = "Teto de decantação --- água em óleo"
+fonte = "Alves \\& Komesu (2025) Eq.~19"
+bloco = "settling"
+var = "d_max (água em óleo)"
+metrico = 'd_{\max}=\frac{(h_o)_{\max}}{\beta}'
+substituicao = '\frac{@h@}{@beta@}'
+unidades = { h = "mm" }
+
+[[metodos.stewart_arnold.equacoes]]
+id = "dmax_oiw"
+titulo = "Teto de decantação --- óleo em água (forma publicada)"
+fonte = "Alves \\& Komesu (2025) Eq.~21"
+bloco = "settling"
+var = "d_max (óleo em água)"
+metrico = 'd_{\max}=\frac{(h_w)_{\max}}{\beta}'
+substituicao = '\frac{@h@}{@beta@}'
+unidades = { h = "mm" }
+
+[[metodos.stewart_arnold.equacoes]]
+id = "liquido"
+titulo = "Capacidade de líquido (retenção de óleo e água)"
+fonte = "Alves \\& Komesu (2025) Eq.~22 com o coeficiente derivado da forma de campo de S\\&A (docs/validacao/05-vasos.md)"
+bloco = "liquid"
+var = "d²·Leff"
+campo = 'd^2[\mathrm{in}^2]\,L_{eff}[\mathrm{ft}]=@campo@\left[(t_r)_oQ_o+(t_r)_wQ_w\right]_{[\mathrm{bpd}]}'
+metrico = 'd^2L_{eff}=@coef@\left[(t_r)_oQ_o+(t_r)_wQ_w\right]'
+substituicao = '@coef@\cdot\left[@tr_o@\cdot @q_o@+@tr_w@\cdot @q_w@\right]'
+unidades = { tr_o = "min", q_o = "m^3/h", tr_w = "min", q_w = "m^3/h" }
+conversao = { funcao = "liquido", campo = 1.42, fonte = "S\\&A (2008), forma de campo (Units.liquid\\_capacity\\_coefficient)", nota = "o coeficiente usado é o derivado da forma de campo; o 4{,}12$\\times10^4$ impresso por Alves \\& Komesu é erro tipográfico" }
+
+# ------------------------------------------------------------------ métodos sem cálculo ainda
+# (TAGs aguardando entrada): metodologia declarada, sem substituição numérica.
+[metodos.arnold_electrostatic]
+objetivo = "Dimensionar um tratador eletrostático horizontal cheio de líquido (desidratador/dessalinizador) que atenda aos casos ativos do TAG: decantação da água no óleo sob campo elétrico (teto de diâmetro) e tempo de retenção de óleo e água."
+escopo = "Dimensionamento de processo do casco (Stewart \\& Arnold, §4.9). Não inclui grades, transformadores, projeto mecânico nem controle de interface."
+referencias = [
+    "Stewart, M.; Arnold, K. \\emph{Gas-Liquid and Liquid-Liquid Separators}. Gulf Equipment Guides, 2008, cap.~4, §4.7--4.9.6 (Eq.~4.2b, 4.5b, 4.9b, 4.15b--4.18; Tab.~4.1).",
+    "Petrobras. BOT I-ET-3010.2K-1200-941-P4X-001, rev.~C: 2.3.1.1 (especificação do óleo) e 2.7.1.4 (temperatura dos tratadores).",
+]
+hipoteses = [
+    "Vaso cheio de líquido (fração $\\alpha=1$); sem fase gasosa, logo sem capacidade de gás.",
+    "A gotícula de água após coalescência pelo campo elétrico é entrada do TAG: sem fonte citável no acervo, fica como lacuna (regra das fontes).",
+    "Casos sem fase aquosa (P-42): decantação não aplicável.",
+]
+eixo = "d"
+colunas_casos = []
+graficos = ["diagrama", "casos"]
+metodologia = [
+    { titulo = "Diferença de densidade relativa", fonte = "Eq.~4.16", latex = '\Delta SG=(SG)_w-(SG)_o' },
+    { titulo = "Espessura máxima de óleo", fonte = "Eq.~4.5b", latex = '(h_o)_{\max}=@k:settling_coefficient@\,\frac{(t_r)_o\,\Delta SG\,d_m^2}{\mu_o}' },
+    { titulo = "Espessura máxima de água", fonte = "Eq.~4.9b", latex = '(h_w)_{\max}=@k:settling_coefficient@\,\frac{(t_r)_w\,\Delta SG\,d_m^2}{\mu_w}' },
+    { titulo = "Fração de área da água", fonte = "Eq.~4.16", latex = 'a_w=\frac{\alpha\,Q_w(t_r)_w}{(t_r)_oQ_o+(t_r)_wQ_w}' },
+    { titulo = "Teto de decantação", fonte = "Eq.~4.18", latex = 'd_{\max}=\frac{(h_o)_{\max}}{\beta_l-\beta_w}' },
+    { titulo = "Capacidade de líquido", fonte = "Eq.~4.15b", latex = 'd^2L_{eff}=\frac{@k:retention_coefficient@\,[(t_r)_oQ_o+(t_r)_wQ_w]}{\alpha}' },
+]
+
+[metodos.moran]
+objetivo = "Especificar a bomba centrífuga (vazão, carga e potência) e o diâmetro nominal da linha que ela alimenta, para os casos ativos do TAG, com NPSH disponível acima do requerido com margem."
+escopo = "Hidráulica de processo (carga do sistema, NPSH, potência). Não inclui seleção de fabricante, curva da bomba nem projeto de tubulação."
+referencias = [
+    "Moran, S. Pump Sizing: Bridging the Gap Between Theory and Practice. \\emph{Chemical Engineering Progress}, dez.~2016, p.~38--44 (Eq.~1--7).",
+    "Petrobras. BOT I-ET-3010.2K-1200-941-P4X-001, rev.~C (casos de projeto) e MC-SEN-SEP-COO-001 (vazões e pressões).",
+]
+hipoteses = [
+    "Escoamento monofásico incompressível; fator de atrito por Colebrook (turbulento) ou 64/Re (laminar).",
+    "Desníveis, comprimentos, singularidades e NPSH requerido são dados de arranjo e de fabricante: sem fonte no acervo, ficam como lacunas.",
+]
+eixo = "DN"
+colunas_casos = []
+graficos = ["casos"]
+metodologia = [
+    { titulo = "Carga estática", fonte = "Moran (2016)", latex = 'h_{est}=\Delta z+\frac{P_{rec}-P_{suc}}{\rho g}' },
+    { titulo = "Perda de carga", fonte = "Eq.~1/4", latex = 'h_{atrito}=f\,\frac{L}{D}\,\frac{v^2}{2g}+\sum k\,\frac{v^2}{2g}' },
+    { titulo = "Reynolds", fonte = "Eq.~3", latex = 'Re=\frac{\rho v D}{\mu}' },
+    { titulo = "NPSH disponível", fonte = "Eq.~6", latex = '\mathit{NPSH}_d=\frac{P_0-P_v}{\rho g}+h_0-h_{atrito,suc}' },
+    { titulo = "Potência", fonte = "Eq.~7", latex = 'P=\frac{\rho\,g\,Q\,H}{\eta}\quad(\text{SI})' },
+]
+
+[metodos.saari_lmtd]
+objetivo = "Dimensionar o trocador casco-e-tubos (área, número e comprimento dos tubos, diâmetro do casco) que atenda à carga térmica dos casos ativos do TAG, pelo método LMTD com fator F e coeficiente do casco por Bell--Delaware."
+escopo = "Dimensionamento térmico de processo. Não inclui perda de carga detalhada, projeto mecânico (TEMA) nem vibração."
+referencias = [
+    "Saari, J. \\emph{Heat Exchanger Dimensioning}. Lappeenranta University of Technology, cap.~3--6 (Algoritmo 4.1; Eq.~4.4--4.9, 5.7a, 6.23).",
+    "Branan, C. R. \\emph{Rules of Thumb for Chemical Engineers}. 5.~ed. Elsevier, 2012, cap.~2 (Eq.~2-13, 2-18 a 2-31).",
+]
+hipoteses = [
+    "Propriedades constantes na temperatura média de cada lado; $(\\mu/\\mu_{parede})^{0,14}=1$.",
+    "Condutividades, incrustações e temperaturas da utilidade sem fonte no acervo ficam como lacunas.",
+]
+eixo = "N"
+colunas_casos = []
+graficos = ["casos"]
+metodologia = [
+    { titulo = "Carga térmica", fonte = "Eq.~4.5", latex = 'q=\dot m\,c_p\,(T_{s}-T_{e})' },
+    { titulo = "Média logarítmica", fonte = "Eq.~4.6", latex = '\Delta T_{lm}=\frac{\Delta T_1-\Delta T_2}{\ln(\Delta T_1/\Delta T_2)}' },
+    { titulo = "Coeficiente global", fonte = "Eq.~5.7a", latex = '\frac{1}{U}=\frac{1}{h_o}+R_{f,o}+\frac{d_o\ln(d_o/d_i)}{2k_p}+\frac{d_o}{d_i}\left(R_{f,i}+\frac{1}{h_i}\right)' },
+    { titulo = "Área", fonte = "Eq.~4.4", latex = 'A=\frac{q}{U\,F\,\Delta T_{lm}}' },
+]
