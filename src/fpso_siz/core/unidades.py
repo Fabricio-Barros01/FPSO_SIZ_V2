@@ -51,6 +51,10 @@ def kw_para_w(q):
     return q * 1000.0
 
 
+def w_para_kw(q):
+    return q / 1000.0
+
+
 def kj_para_j(e):
     return e * 1000.0
 

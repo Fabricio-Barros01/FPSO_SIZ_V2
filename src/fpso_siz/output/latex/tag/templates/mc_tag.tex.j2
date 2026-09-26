@@ -322,6 +322,62 @@ Campo & Valor & Unidade\\\midrule\endhead
 \caption{Diagrama $d\times L_{eff}$: capacidades envelopadas sobre os casos, banda de esbeltez << calc.banda.sr_min|mbn >>--<< calc.banda.sr_max|mbn >><% if csv.get('ponto') %> e ponto escolhido<% endif %><% if csv.get('teto') %>; à direita do teto não há decantação<% endif %>.}\label{fig:diagrama}
 \end{figure}
 <% endif %>
+<% set sm = doc.calculo.series %>
+<% if csv.get('perfil_tq') %>
+
+\begin{figure}[H]\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.8\textwidth, height=7cm, xlabel={calor trocado acumulado $Q$ (kW)}, ylabel={$T$ (°C)}, legend style={font=\footnotesize, at={(0.5,-0.2)}, anchor=north, legend columns=2}]
+\addplot[thick, blue, mark=*] table[col sep=comma, x=q_kw, y=t_tubo]{<< csv['perfil_tq'] >>};
+\addlegendentry{lado tubo}
+\addplot[thick, red!70!black, mark=square*] table[col sep=comma, x=q_kw, y=t_casco]{<< csv['perfil_tq'] >>};
+\addlegendentry{lado casco (contracorrente)}
+\end{axis}
+\end{tikzpicture}
+\caption{Perfil $T\times Q$ do caso << calc.caso_governante|tx >>, entre as temperaturas terminais (cp constante: perfis lineares; no arranjo 1-2 o perfil interno não é o de contracorrente puro, corrigido por $F$).}
+\end{figure}
+<% endif %>
+<% if csv.get('resistencias') %>
+
+\begin{figure}[H]\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.9\textwidth, height=6.5cm, ybar, bar width=16pt, ymin=0, ylabel={parcela de $1/U$ (\%)}, xtick=data, xticklabels={<% for x in sm.resistencias %>{<< x.parcela >>}<% if not loop.last %>,<% endif %><% endfor %>}, x tick label style={font=\scriptsize, text width=2.6cm, align=center}, nodes near coords, nodes near coords style={font=\scriptsize}]
+\addplot[fill=blue!40] table[col sep=comma, x=i, y=pct]{<< csv['resistencias'] >>};
+\end{axis}
+\end{tikzpicture}
+\caption{Parcela de cada resistência térmica em $1/U$ ($U$ = << sm.u|sigt >> W/m²K, área externa), caso << calc.caso_governante|tx >>.}
+\end{figure}
+<% endif %>
+<% if csv.get('curva_sistema') %>
+
+\begin{figure}[H]\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.8\textwidth, height=7cm, xlabel={$Q$ (m³/h)}, ylabel={$H$ (m)}, legend style={font=\footnotesize, at={(0.5,-0.2)}, anchor=north, legend columns=3}, unbounded coords=jump]
+\addplot[thick, blue] table[col sep=comma, x=q, y=h]{<< csv['curva_sistema'] >>};
+\addlegendentry{curva do sistema}
+\addplot[dashed, black] table[col sep=comma, x=q, y=h_est]{<< csv['curva_sistema'] >>};
+\addlegendentry{carga estática}
+\addplot[only marks, mark=*, mark size=3pt, red] table[col sep=comma, x=q, y=h]{<< csv['ponto_bomba'] >>};
+\addlegendentry{ponto de projeto}
+\end{axis}
+\end{tikzpicture}
+\caption{Curva do sistema com o DN escolhido, caso << calc.caso_governante|tx >> (a mesma hidráulica do dimensionamento, avaliada em frações da vazão de projeto; trechos sem correlação de atrito válida ficam em branco).}
+\end{figure}
+<% endif %>
+<% if csv.get('npsh') %>
+
+\begin{figure}[H]\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.95\textwidth, height=6.5cm, xlabel={caso}, ylabel={NPSH (m)}, xtick=data, legend style={font=\footnotesize, at={(0.5,-0.2)}, anchor=north, legend columns=2}]
+\addplot[only marks, mark=*, blue] table[col sep=comma, x=caso, y=npsh_disponivel]{<< csv['npsh'] >>};
+\addlegendentry{NPSH disponível}
+\addplot[only marks, mark=triangle*, red!70!black] table[col sep=comma, x=caso, y=npsh_exigido]{<< csv['npsh'] >>};
+\addlegendentry{NPSH requerido + margem}
+\end{axis}
+\end{tikzpicture}
+\caption{NPSH disponível × requerido com margem, por caso, no DN escolhido.}
+\end{figure}
+<% endif %>
 <% else %>
 \aguarda.
 <% endif %>

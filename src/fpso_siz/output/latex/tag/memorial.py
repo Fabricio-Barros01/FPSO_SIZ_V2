@@ -182,6 +182,11 @@ def _csvs(doc, pasta, base):
     gravar("ponto", s.get("ponto"))
     gravar("teto", s.get("teto"))
     gravar("minimo", s.get("minimo"))
+    for chave in ("perfil_tq", "curva_sistema", "ponto_bomba", "npsh"):
+        gravar(chave, s.get(chave))
+    if s.get("resistencias"):
+        gravar("resistencias", [dict(i=i, r=x["r"], pct=x["fracao"] * formatacao.POR_CENTO)
+                                for i, x in enumerate(s["resistencias"], 1)])
     casos = s.get("casos") or []
     govs = sorted({c["governante"] for c in casos if c["governante"]})
     gravar("casos", [dict(caso=c["caso"], y=c["y"], teto=c["teto"], x_ref=s["x_casos"],

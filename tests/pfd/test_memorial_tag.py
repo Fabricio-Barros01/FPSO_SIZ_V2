@@ -275,7 +275,44 @@ def test_mc_com_ajustes_sinteticos_cobre_todos_os_metodos(planta_ajustada):
 
 @pytest.mark.latex
 @pytest.mark.skipif(not compilacao.disponivel(), reason="latexmk ausente")
-@pytest.mark.parametrize("ident", ["SG-001", "TO-001", "P-001", "B-001"])
+@pytest.mark.parametrize("ident", ["SG-001", "TO-001", "P-001", "B-001", "B-002", "P-003"])
 def test_mc_com_ajustes_sinteticos_compila(planta_ajustada, tmp_path, ident):
     rt = planta_ajustada.tag(ident)
     assert compilacao.compilar(saida_mc.gravar(planta_ajustada.contexto, rt, tmp_path, data=DATA, git=GIT)).exists()
+
+
+# ------------------------------------------------------------------ F10x.1 — gráficos de trocador e bomba
+@pytest.mark.parametrize("ident", ["P-001", "P-002", "P-003"])
+def test_trocador_perfil_tq_e_parcelas_de_u(planta_ajustada, ident):
+    """Com as entradas sintéticas dos testes: o perfil T × Q liga as temperaturas terminais do
+    caso governante e as parcelas de 1/U somam exatamente o 1/U do dimensionamento."""
+    rt = planta_ajustada.tag(ident)
+    d = mc.documento(planta_ajustada.contexto, rt)
+    s = d["calculo"]["series"]
+    i = mc.indice_governante(rt.resultado)
+    entrada, cons = mc.restricoes(rt)[i]
+    perfil = s["perfil_tq"]
+    assert [p["t_tubo"] for p in perfil] == [entrada.t_tubo_in, entrada.t_tubo_out]
+    assert perfil[-1]["t_casco"] == entrada.t_casco_in and perfil[0]["t_casco"] == cons.t_casco_out
+    assert perfil[-1]["q_kw"] == cons.q / 1000
+    assert math.isclose(sum(x["r"] for x in s["resistencias"]), 1 / s["u"], rel_tol=1e-15)
+    assert s["u"] == rt.resultado.derivados["u"]
+    assert math.isclose(sum(x["fracao"] for x in s["resistencias"]), 1.0, rel_tol=1e-12)
+
+
+@pytest.mark.parametrize("ident", ["B-001", "B-002", "B-003"])
+def test_bomba_curva_do_sistema_e_npsh(planta_ajustada, ident):
+    rt = planta_ajustada.tag(ident)
+    r = rt.resultado
+    s = mc.documento(planta_ajustada.contexto, rt)["calculo"]["series"]
+    i = mc.indice_governante(r)
+    curva = s["curva_sistema"]
+    assert curva[0]["q"] == 0 and curva[0]["h"] == curva[0]["h_est"]          # sem vazão, só a estática
+    fr = carregar("memorial_tag.toml")["graficos"]["fracoes_vazao"]
+    projeto = curva[fr.index(1.0)]
+    assert projeto["q"] == s["ponto_bomba"][0]["q"] and projeto["h"] == s["ponto_bomba"][0]["h"]
+    assert s["ponto_bomba"][0]["h"] == r.y - r.slack[i]                        # a exigência do caso no DN
+    hs = [p["h"] for p in curva if math.isfinite(p["h"])]
+    assert hs == sorted(hs)                                                    # H cresce com Q
+    assert len(s["npsh"]) == len(r.case_names)
+    assert all(x["npsh_disponivel"] >= x["npsh_exigido"] for x in s["npsh"])  # DN admissível em todo caso

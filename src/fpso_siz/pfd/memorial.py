@@ -17,7 +17,7 @@ import re
 from fpso_siz.balanco.dados import descritores_premissas
 from fpso_siz.core.configuracao import carregar
 from fpso_siz.core.parametros import with_defaults
-from fpso_siz.core.unidades import CONVERSOES_CAMPO
+from fpso_siz.core.unidades import CONVERSOES_CAMPO, w_para_kw
 from fpso_siz.pfd.entradas import rotulo_origem
 from fpso_siz.pfd.equipamento import AGUARDANDO, DIMENSIONADO, INATIVO, INVIAVEL, limitacoes
 
@@ -307,6 +307,54 @@ def series(rt, p_env):
         out["x_casos"] = x
         out["rotulos_governantes"] = {g: m.governing_label(g) for g in dict.fromkeys(li["governante"] for li in linhas)
                                       if g}
+    out.update(_series_do_metodo(rt, graf, p_env))
+    return out
+
+
+def restricoes(rt):
+    """[(entrada, restrições)] de cada caso do envelope, na ordem de `case_names`, pela
+    mesma preparação do motor (sizing_constraints é determinística: mesmos números)."""
+    m = rt.entradas.metodo
+    out = []
+    for _, vals in rt.entradas.case_set().expand():
+        entrada = m.case_input(vals)
+        ok, cons, _ = m.sizing_constraints(entrada, with_defaults(m.parameters(), vals), m.constants())
+        out.append((entrada, cons if ok else None))
+    return out
+
+
+def _series_do_metodo(rt, graf, p_env):
+    """Gráficos próprios de trocador (perfil T × Q, parcelas de 1/U) e de bomba (curva do
+    sistema, NPSH por caso), no ponto escolhido e no caso governante, pelos hooks do método."""
+    r, m = rt.resultado, rt.entradas.metodo
+    if not r.feasible or not {"perfil_tq", "resistencias", "curva_sistema", "npsh"} & set(graf):
+        return {}
+    cons = restricoes(rt)
+    i = indice_governante(r)
+    entrada, c = cons[i]
+    out = {}
+    if "perfil_tq" in graf and hasattr(m, "perfil_tq") and c is not None:
+        perfil = m.perfil_tq(entrada, c)
+        out["perfil_tq"] = [dict(q_kw=w_para_kw(q), t_tubo=tt, t_casco=tc)
+                            for (q, tt), (_, tc) in zip(perfil["tubo"], perfil["casco"])]
+    if "resistencias" in graf and hasattr(m, "parcelas_u") and c is not None:
+        parcelas, u = m.parcelas_u(r.x, c)
+        rot = conteudo_metodo(m).get("rotulos_resistencias", {})
+        total = sum(parcelas.values())
+        out["resistencias"] = [dict(parcela=rot.get(k, k), r=v, fracao=v / total) for k, v in parcelas.items()]
+        out["u"] = u
+    if "curva_sistema" in graf and hasattr(m, "curva_sistema") and c is not None:
+        fracoes = cfg()["graficos"]["fracoes_vazao"]
+        out["curva_sistema"] = [dict(q=q, h=h, h_est=c.h_est) for q, h in m.curva_sistema(c, r.x, fracoes)]
+        out["ponto_bomba"] = [dict(q=c.q_m3h, h=_linha_em(r.rows, r.x).per_case_y[i])]
+    if "npsh" in graf and hasattr(m, "npsh_exigido"):
+        linhas = []
+        for j, (pc, (_, cj)) in enumerate(zip(r.per_case, cons)):
+            lin = _linha_em(pc.sweep, r.x)
+            if lin is None or cj is None:
+                continue
+            linhas.append(dict(caso=j + 1, npsh_disponivel=m.npsh_disponivel(lin.derivados), npsh_exigido=m.npsh_exigido(cj)))
+        out["npsh"] = linhas
     return out
 
 
