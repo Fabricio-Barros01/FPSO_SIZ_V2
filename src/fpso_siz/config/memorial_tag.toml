@@ -61,6 +61,75 @@ modo_automatico = "automático (balanço preliminar e propriedades)"
 modo_manual = "manual (entradas do usuário e defaults com fonte)"
 preliminar = "Resultado preliminar: há recomendações ou defaults com fonte ainda não confirmados pelo usuário (seção 10)."
 
+# ------------------------------------------------------------------ conteúdo por TAG
+# Função do equipamento no processo e hipóteses próprias do TAG (além das do método). Texto
+# descritivo apoiado na topologia (topologia_db.toml), nas premissas do balanço e no BOT já
+# citados no código; nenhum número novo. As correntes de entrada e saída, com T e P de cada
+# caso, saem da topologia e do balanço no próprio MC.
+[tags."SG-001"]
+funcao = "Separador trifásico de água livre (FWKO), primeiro equipamento da unidade: recebe a mistura do fluido de poço com o reciclo de água (C-03, do M-01) e separa o gás (C-04, ao Safety K.O. Drum), a água livre (C-05, saída da unidade) e o óleo, que segue como emulsão ao pré-aquecedor (C-06)."
+hipoteses = [
+    "O vaso opera na temperatura e na pressão do gás de saída C-04; a pressão é a do FWKO no arquivo de casos (F-02).",
+    "A água livre removida segue a eficiência $\\eta_A=\\max(\\eta_{\\text{padrão}};\\ \\eta_{\\mathrm{req}})$ da P-43, com BSW do óleo de saída limitado a @P%:BSW_F@ (F-06, BOT 2.7.1.2); nos casos 1 e 4--7 não há fase aquosa (P-42).",
+]
+[tags."P-001"]
+funcao = "Pré-aquecedor óleo/óleo: recupera o calor do óleo tratado quente (C-22, recalque da B-001, lado casco) para aquecer a emulsão que sai do FWKO (C-06 → C-07, lado tubo), antes do aquecedor P-002; o óleo tratado segue ao resfriador (C-23)."
+hipoteses = [
+    "Troca só de calor sensível entre correntes de processo, com a aproximação mínima de @P:dT_app@ da P-32 no balanço.",
+    "Casos sem carga de pré-aquecimento no balanço (10 e 12--16) ficam inativos neste TAG.",
+]
+[tags."P-002"]
+funcao = "Aquecedor de óleo: leva a emulsão pré-aquecida (C-07, lado tubo) à temperatura mínima de tratamento (C-08, @P:T_trat@, F-05/BOT 2.7.1.4) com água quente de utilidade no lado casco; a carga é a $\\dot Q_{\\mbox{P-002}}$ do balanço."
+hipoteses = [
+    "Meio de aquecimento: água pura como líquido saturado na temperatura média da utilidade, com o suprimento limitado pelo BOT 2.7.1.4 (limite declarado no TAG).",
+    "Casos em que o óleo já chega à temperatura de tratamento (10 e 12--16) não têm carga e ficam inativos.",
+]
+[tags."V-001"]
+funcao = "Desgaseificador 1: recebe a emulsão aquecida (C-08) a @P:P_D1@ (P-18) e separa o gás liberado (C-09, ao 2º estágio da VRU) do líquido que segue ao desidratador (C-10)."
+hipoteses = [
+    "Vaso bifásico: o líquido (óleo + água emulsionada) é uma só fase para a retenção; tempo de retenção recomendado para gás com alto CO$_2$ (S\\&A Tab.~3.2, nota), a confirmar.",
+]
+[tags."TO-001"]
+funcao = "Desidratador (pré-tratador eletrostático): recebe o líquido do desgaseificador 1 (C-10) e separa o óleo com BSW de @P%:BSW_pre@ (C-11, P-28) da água (C-12, à bomba B-002)."
+hipoteses = [
+    "Vaso cheio de líquido; a gotícula após a coalescência elétrica é entrada do TAG (sem correlação no acervo).",
+    "Nos casos sem fase aquosa (1 e 4--7) a decantação não se aplica (P-42).",
+]
+[tags."B-002"]
+funcao = "Bomba de água produzida do desidratador: recalca a água separada no TO-001 (C-12, a @P:P_D1@, P-18) para o nó de reciclo M-03 (C-13) e daí ao M-01, à pressão de reciclo de @P:P_rec@ (P-21)."
+hipoteses = [
+    "A água sai do vaso no ponto de bolha: a pressão de vapor é a pressão do vaso (Branan, Ex.~5-2), e o NPSH disponível é a coluna estática menos a perda na sucção.",
+    "Casos sem fase aquosa (1 e 4--7) ficam inativos neste TAG.",
+]
+[tags."V-002"]
+funcao = "Desgaseificador 2: recebe o óleo do desidratador somado à água de diluição (C-16, do M-02) a @P:P_D2@ (P-19) e separa o gás (C-17, ao 1º estágio da VRU) do líquido que segue ao dessalinizador (C-18)."
+hipoteses = [
+    "Vaso bifásico: o líquido é uma só fase para a retenção; tempo de retenção recomendado para gás com alto CO$_2$ (S\\&A Tab.~3.2, nota), a confirmar.",
+]
+[tags."TO-002"]
+funcao = "Dessalinizador (tratador eletrostático): recebe o líquido do desgaseificador 2 (C-18) e separa o óleo tratado com BSW de @P%:BSW_t@ (C-21, F-09/P-29, à bomba B-001) da água (C-19, à bomba B-003)."
+hipoteses = [
+    "Vaso cheio de líquido; a gotícula após a coalescência elétrica é entrada do TAG (sem correlação no acervo).",
+    "Nos casos sem fase aquosa (1 e 4--7) a decantação não se aplica (P-42).",
+]
+[tags."B-003"]
+funcao = "Bomba de água produzida do dessalinizador: recalca a água separada no TO-002 (C-19, a @P:P_D2@, P-19) para o nó de reciclo M-03 (C-20) e daí ao M-01, à pressão de reciclo de @P:P_rec@ (P-21)."
+hipoteses = [
+    "A água sai do vaso no ponto de bolha: a pressão de vapor é a pressão do vaso (Branan, Ex.~5-2).",
+    "Casos sem fase aquosa (1 e 4--7) ficam inativos neste TAG.",
+]
+[tags."B-001"]
+funcao = "Bomba de transferência de óleo: recalca o óleo tratado do dessalinizador (C-21, a @P:P_D2@) a @P:P_pump_oil@ (P-20) para o lado casco do pré-aquecedor P-001 (C-22)."
+hipoteses = [
+    "O óleo sai do vaso no ponto de bolha: a pressão de vapor é a pressão do vaso (Branan, Ex.~5-2).",
+    "O piso de velocidade do default de Moran (2016) é, segundo a nota do próprio descritor, para líquido com sólidos decantáveis; para óleo tratado (líquido limpo) o artigo só impõe o teto. O default não foi alterado: é decisão do usuário (ver pendências).",
+]
+[tags."P-003"]
+funcao = "Resfriador de óleo: resfria o óleo tratado que sai do pré-aquecedor (C-23, lado tubo) à temperatura de armazenamento de @P:T_store@ (C-24, F-08/BOT 2.7.1.10) com água de resfriamento no lado casco; a carga é a $\\dot Q_C$ do balanço."
+hipoteses = [
+    "Meio de resfriamento: água pura como líquido saturado na temperatura média da utilidade; pressão do circuito não informada.",
+]
+
 # ------------------------------------------------------------------ conteúdo por método
 # `equacoes`: o passo a passo do caso governante. `bloco`/`var` localizam, no rastro do
 # caso, o resultado (entrada do rastro) e os operandos capturados na avaliação;

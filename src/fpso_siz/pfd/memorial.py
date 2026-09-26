@@ -14,6 +14,7 @@ TAG aguardando entrada, inativo ou inviável também tem MC: as seções de cál
 import math
 import re
 
+from fpso_siz.balanco.balancos import topologia
 from fpso_siz.balanco.dados import descritores_premissas
 from fpso_siz.core.configuracao import carregar
 from fpso_siz.core.parametros import with_defaults
@@ -84,6 +85,29 @@ def identificacao(ctx, rt):
                 sequencia=seq, numero=num, revisao=cfg()["revisao"], status=rt.status, modo=e.modo,
                 preliminar=e.preliminar, regra_fwko=regra, fwko_exigidos=exigidos, avulso=e.avulso,
                 propostas=dict(arquivo=ctx.propostas.arquivo, sha256=ctx.propostas.sha256) if ctx.propostas else None)
+
+
+def correntes(ctx, rt):
+    """Correntes de entrada e saída do bloco do TAG (topologia), com a faixa de T e P nos
+    casos ativos quando o TAG usa o balanço (automático)."""
+    t, e = rt.tag, rt.entradas
+    if e.avulso or not t.bloco:
+        return []
+    topo = topologia()
+    bloco = next((b for b in topo["blocos"] if b["id"] == t.bloco), None)
+    if bloco is None:
+        return []
+    info = {c["id"]: c for c in topo["correntes"]}
+    ativos = {c.num for c in e.casos if c.ativo}
+    balanco = ctx.resultados_balanco if (e.modo != "manual" and ctx.balanco_resolvido) else []
+    out = []
+    for papel, ids in (("entrada", bloco["entradas"]), ("saída", bloco["saidas"])):
+        for cid in ids:
+            ts = [r.T[cid] for r in balanco if r.num in ativos]
+            ps = [r.P[cid] for r in balanco if r.num in ativos]
+            out.append(dict(id=cid, papel=papel, nome=info[cid]["nome"], fase=info[cid]["fase"],
+                            t=(min(ts), max(ts)) if ts else None, p=(min(ps), max(ps)) if ps else None))
+    return out
 
 
 def casos(rt):
@@ -228,7 +252,7 @@ def tabela_casos(rt, x):
                         teto=pc.ceiling if math.isfinite(pc.ceiling) else None,
                         mecanismo=rotulo_mec(pc.ceiling_mechanism), viavel_isolado=pc.feasible,
                         x_isolado=pc.x if pc.feasible else None))
-    return dict(colunas=[c["rotulo"] for c in colunas], linhas=out)
+    return dict(colunas=[c["rotulo"] for c in colunas], linhas=out, tem_teto=any(l["teto"] is not None for l in out))
 
 
 def criterios(rt, x):
@@ -260,7 +284,10 @@ def diagnostico(rt, x):
 
 def resultados(rt):
     r, m = rt.resultado, rt.entradas.metodo
-    return [dict(rotulo=f.label, valor=f.value, unidade=f.unit, destaque=f.highlight) for f in m.result_fields(r)]
+    campos = m.result_fields(r)
+    if r.feasible:   # campo sem valor no TAG dimensionado não se aplica a ele (ex.: teto num vaso bifásico)
+        campos = [f for f in campos if isinstance(f.value, str) or math.isfinite(f.value)]
+    return [dict(rotulo=f.label, valor=f.value, unidade=f.unit, destaque=f.highlight) for f in campos]
 
 
 def series(rt, p_env):
@@ -405,7 +432,8 @@ def documento(ctx, rt):
     """As dez seções do MC do TAG, como dados (números em precisão total)."""
     ident = identificacao(ctx, rt)
     m = rt.entradas.metodo
-    doc = dict(identificacao=ident, conteudo=conteudo_metodo(m), casos=casos(rt), entradas=entradas(rt),
+    doc = dict(identificacao=ident, conteudo=conteudo_metodo(m), conteudo_tag=cfg().get("tags", {}).get(rt.tag.tag, {}),
+               correntes=correntes(ctx, rt), casos=casos(rt), entradas=entradas(rt),
                lacunas=lacunas(rt), premissas=premissas(ctx, rt, ident), pendencias=pendencias(rt),
                calculo=None)
     r = rt.resultado
@@ -415,7 +443,7 @@ def documento(ctx, rt):
     if not r.per_case:
         # o motor parou na preparação de um caso (ex.: cruzamento de temperatura): só diagnóstico
         doc["calculo"] = dict(caso_governante="", indice_governante=None, viavel=False, equacoes=[], rastro=[],
-                              iteracoes=[], selecao=None, banda=None, tabela=dict(colunas=[], linhas=[]),
+                              iteracoes=[], selecao=None, banda=None, tabela=dict(colunas=[], linhas=[], tem_teto=False),
                               criterios=criterios(rt, None), diagnostico=diagnostico(rt, None),
                               resultados=resultados(rt), series=_series_do_metodo(rt, conteudo_metodo(m).get(
                                   "graficos", []), p_env), x_referencia=None,

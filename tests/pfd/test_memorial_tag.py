@@ -316,3 +316,37 @@ def test_bomba_curva_do_sistema_e_npsh(planta_ajustada, ident):
     assert hs == sorted(hs)                                                    # H cresce com Q
     assert len(s["npsh"]) == len(r.case_names)
     assert all(x["npsh_disponivel"] >= x["npsh_exigido"] for x in s["npsh"])  # DN admissível em todo caso
+
+
+# ------------------------------------------------------------------ F10x.3 — MC próprio de cada TAG
+VASO = ("decantação", "esbeltez na banda", "Teto (mm)", "diagrama $d")
+
+
+@pytest.mark.parametrize("ident", [t.tag for t in tags()])
+def test_mc_e_proprio_do_tag(planta_ajustada, ident):
+    """Cada MC traz a função do seu TAG, as correntes do seu bloco e as hipóteses próprias,
+    e nada da família de outro equipamento (texto de vaso não aparece em bomba ou trocador)."""
+    from fpso_siz.balanco.balancos import topologia
+
+    ctx, rt = planta_ajustada.contexto, planta_ajustada.tag(ident)
+    _, tex = saida_mc.gerar(ctx, rt, DATA, GIT)
+    conteudo = carregar("memorial_tag.toml")["tags"][ident]
+    assert "@P" not in tex and conteudo["hipoteses"] and f"Função do {ident} no processo" in tex
+    bloco = next(b for b in topologia()["blocos"] if b["id"] == rt.tag.bloco)
+    for c in [*bloco["entradas"], *bloco["saidas"]]:
+        assert f"\n{c} & " in tex
+    outros = {t.tag for t in tags()} - {ident}
+    assert not any(f"Função do {o} no processo" in tex for o in outros)
+    if rt.entradas.equipamento.method_id in ("pump", "exchanger"):
+        assert not [p for p in VASO if p in tex]
+    if ident in ("V-001", "V-002"):
+        assert "Teto de decantação" not in tex and "Teto (mm)" not in tex
+
+
+def test_premissas_no_texto_vem_de_p(planta_base):
+    """Texto do TAG com premissa: o número sai de P[...] (mbn), não é digitado."""
+    ctx = planta_base.contexto
+    _, tex = saida_mc.gerar(ctx, planta_base.tag("B-001"), DATA, GIT)
+    assert f"a {formatacao.mbn(ctx.prem['P_pump_oil'])}~kPa (P-20)" in tex
+    _, tex = saida_mc.gerar(ctx, planta_base.tag("TO-002"), DATA, GIT)
+    assert f"BSW de {formatacao.mbn(ctx.prem['BSW_t'] * 100)}\\,\\%" in tex

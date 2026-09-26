@@ -59,8 +59,23 @@ Data de geração & << meta['data'] >>\\ \bottomrule\end{tabular}\normalsize
 
 << doc.conteudo.escopo >>
 
-\subsection{Identificação do TAG e casos}
+\subsection{Função do << ident['tag'] >> no processo}
+<% if tag_texto.funcao %>
+<< tag_texto.funcao >>
+
+<% endif %>
 O TAG << ident['tag'] >> ocupa o bloco << ident['bloco'] >> do diagrama de blocos<% if ident['condicao'] %>, na condição (temperatura e pressão) da corrente << ident['condicao'] >><% endif %>.
+<% if doc.correntes %>
+
+{\footnotesize\begin{longtable}{lL{5.6cm}L{3.2cm}rr}\toprule
+Corrente & Nome (papel no << ident['tag'] >>) & Fase & $T$ (°C) & $P$ (kPa)\\\midrule\endhead
+<% for c in doc.correntes %>
+<< c.id >> & << c.nome|tx >> (<< c.papel >>) & << c.fase|tx >> & <% if c.t %><< c.t[0]|br(1) >><% if c.t[1] != c.t[0] %>--<< c.t[1]|br(1) >><% endif %><% else %>--<% endif %> & <% if c.p %><< c.p[0]|br >><% if c.p[1] != c.p[0] %>--<< c.p[1]|br >><% endif %><% else %>--<% endif %>\\
+<% endfor %>
+\bottomrule\end{longtable}}
+<% endif %>
+
+\subsection{Casos}
 <% set ativos = doc.casos|selectattr('ativo')|list %>
 <% set inativos = doc.casos|rejectattr('ativo')|list %>
 Casos ativos: << ativos|length >> de << doc.casos|length >>.
@@ -103,6 +118,9 @@ Código & Premissa & Valor & Tipo de fonte\\\midrule\endhead
 \begin{enumerate}
 <% for h in doc.conteudo.hipoteses %>
 \item[H-<< loop.index >>] << h >>
+<% endfor %>
+<% for h in tag_texto.hipoteses %>
+\item[H-<< doc.conteudo.hipoteses|length + loop.index >>] (<< ident['tag'] >>) << h >>
 <% endfor %>
 \end{enumerate}
 
@@ -185,7 +203,7 @@ Fonte: << m.fonte >>.
 <% set calc = doc.calculo %>
 \section{Passo a passo do caso governante}
 <% if eqs %>
-Caso do passo a passo: \textbf{<< calc.caso_governante|tx >>}<% if calc.viavel %>, o que governa o ponto escolhido do envelope<% else %>, o que impõe o teto de decantação (sem ponto escolhido: diagnóstico)<% endif %>. Cada linha mostra a equação, a substituição com os valores completos do rastro (exibidos com 4 algarismos) e o resultado.
+Caso do passo a passo: \textbf{<< calc.caso_governante|tx >>}<% if calc.viavel %>, o que governa o ponto escolhido do envelope<% elif calc.diagnostico and calc.diagnostico.teto is not none %>, o que impõe o teto de decantação (sem ponto escolhido: diagnóstico)<% else %>, o primeiro caso avaliado (sem ponto escolhido: diagnóstico)<% endif %>. Cada linha mostra a equação, a substituição com os valores completos do rastro (exibidos com 4 algarismos) e o resultado.
 
 <% if calc.iteracoes %>
 <% set ult = calc.iteracoes[-1] %>
@@ -230,10 +248,10 @@ Sem resultados por caso: ver o diagnóstico da seção 8.
 <% elif calc %>
 Resultados intermediários de cada caso (rastro do caso) e exigência em << calc.eixo|tx >> = << calc.x_referencia|sigt >> << calc.unidade_eixo|unid >> <% if calc.viavel %>(ponto escolhido)<% elif calc.banda %>(menor diâmetro da grade com a esbeltez na banda)<% else %>(primeiro ponto da grade)<% endif %>.
 
-{\scriptsize\begin{longtable}{L{2.7cm}<% for c in calc.tabela.colunas %>r<% endfor %>r<% if calc.viavel %>r<% endif %>L{1.8cm}r}\toprule
-Caso<% for c in calc.tabela.colunas %> & << c >><% endfor %> & \makecell[r]{<< calc.exigencia[0]|tx >>\\(<< calc.exigencia[1]|unid >>)}<% if calc.viavel %> & \makecell[r]{folga\\(<< calc.exigencia[1]|unid >>)}<% endif %> & Governa & Teto (mm)\\\midrule\endhead
+{\scriptsize\begin{longtable}{L{2.7cm}<% for c in calc.tabela.colunas %>r<% endfor %>r<% if calc.viavel %>r<% endif %>L{1.8cm}<% if calc.tabela.tem_teto %>r<% endif %>}\toprule
+Caso<% for c in calc.tabela.colunas %> & << c >><% endfor %> & \makecell[r]{<< calc.exigencia[0]|tx >>\\(<< calc.exigencia[1]|unid >>)}<% if calc.viavel %> & \makecell[r]{folga\\(<< calc.exigencia[1]|unid >>)}<% endif %> & Governa<% if calc.tabela.tem_teto %> & Teto (mm)<% endif %>\\\midrule\endhead
 <% for l in calc.tabela.linhas %>
-<< l.caso|tx >><% for v in l.valores %> & << v|sigt >><% endfor %> & << l.y|sigt >><% if calc.viavel %> & << l.folga|sigt >><% endif %> & << (l.governante or '--')|tx >> & <% if l.teto is not none %><< l.teto|sigt >><% else %>--<% endif %>\\
+<< l.caso|tx >><% for v in l.valores %> & << v|sigt >><% endfor %> & << l.y|sigt >><% if calc.viavel %> & << l.folga|sigt >><% endif %> & << (l.governante or '--')|tx >><% if calc.tabela.tem_teto %> & <% if l.teto is not none %><< l.teto|sigt >><% else %>--<% endif %><% endif %>\\
 <% endfor %>
 \bottomrule\end{longtable}}
 <% if csv.get('casos') %>
@@ -249,7 +267,7 @@ Caso<% for c in calc.tabela.colunas %> & << c >><% endfor %> & \makecell[r]{<< c
 \end{tikzpicture}
 \caption{Critério governante por caso em << calc.eixo|tx >> = << calc.x_referencia|sigt >> << calc.unidade_eixo|unid >>.}
 \end{figure}
-<% if not calc.viavel %>
+<% if not calc.viavel and calc.tabela.tem_teto %>
 
 \begin{figure}[H]\centering
 \begin{tikzpicture}
