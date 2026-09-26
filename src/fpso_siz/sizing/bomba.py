@@ -54,6 +54,12 @@ def _hidraulica(c, dn_mm):
                 h_atrito=hf_suc + hf_rec, h_total=c.h_est + hf_suc + hf_rec, npsh=c.npsh_estatico - hf_suc)
 
 
+def _limite_superior(hid, k):
+    """P-44b: na zona de transição o f de Colebrook-White é aceito se for limite superior do
+    laminar (f ≥ 64/Re): a perda de carga fica superestimada e o NPSH, subestimado."""
+    return hid["regime"] == "transicao" and hid["f"] >= float(k["laminar_coefficient"]) / hid["re"]
+
+
 class MoranPumpSizing(MetodoTOML):
     method_id = "moran"
     config = "equipment/pump/moran.toml"
@@ -134,7 +140,8 @@ class MoranPumpSizing(MetodoTOML):
 
     def case_admissible(self, dn, c, p):
         hid = _hidraulica(c, dn)
-        return p["v_min"] <= hid["v"] <= p["v_max"] and hid["npsh"] >= c.npsh_exigido and hid["confiavel"]
+        return p["v_min"] <= hid["v"] <= p["v_max"] and hid["npsh"] >= c.npsh_exigido and \
+            (hid["confiavel"] or (p.get("aceita_transicao", 0.0) and _limite_superior(hid, c.k)))
 
     def admissible(self, dn, der_, p):
         return True
@@ -149,7 +156,23 @@ class MoranPumpSizing(MetodoTOML):
             return (False, f"As bandas de velocidade pedidas pelos casos não se cruzam: um exige v ≥ {jl(v_min)} m/s e "
                            f"outro v ≤ {jl(v_max)} m/s. Como a linha é uma só, não há velocidade que atenda a todos.")
         return True, dict(dn_min=min(p["dn_min"] for p in params), dn_max=max(p["dn_max"] for p in params),
-                          v_min=v_min, v_max=v_max)
+                          v_min=v_min, v_max=v_max,
+                          piso_caso_projeto=max(p.get("piso_caso_projeto", 0.0) for p in params),
+                          transicao_turndown=max(p.get("transicao_turndown", 0.0) for p in params))
+
+    def envelope_case_params(self, conss, p_env):
+        """P-44 (piso_caso_projeto): o piso v_min só no caso de projeto, o de maior vazão
+        volumétrica; os demais casos, na mesma linha, só com o teto (turndown). P-44b
+        (transicao_turndown): no turndown, a zona de transição com f limite superior."""
+        if not p_env.get("piso_caso_projeto", 0.0) or not conss:
+            return super().envelope_case_params(conss, p_env)
+        projeto = self.caso_projeto(conss)
+        turndown = {**p_env, "v_min": 0.0, "aceita_transicao": p_env.get("transicao_turndown", 0.0)}
+        return [p_env if i == projeto else turndown for i in range(len(conss))]
+
+    def caso_projeto(self, conss):
+        """Índice do caso de projeto da linha (maior vazão volumétrica)."""
+        return max(range(len(conss)), key=lambda i: conss[i].q_m3s)
 
     def selection_message(self, rows, teto, p, mechanism="none"):
         if not rows:
@@ -192,6 +215,21 @@ class MoranPumpSizing(MetodoTOML):
             hid = _hidraulica(replace(cons, q_m3s=cons.q_m3s * f, q_m3h=cons.q_m3h * f), dn)
             pontos.append((cons.q_m3h * f, hid["h_total"] if hid["confiavel"] else math.nan))
         return pontos
+
+    def operacao_por_caso(self, conss, dn, pcs):
+        """Operação de cada caso na linha escolhida (mesma hidráulica do dimensionamento):
+        papel do caso (projeto/turndown pela P-44), v, Re, regime, f, H, folga de NPSH, potência
+        e se o f é o limite superior da zona de transição (P-44b)."""
+        projeto = self.caso_projeto(conss) if conss else -1
+        out = []
+        for i, (c, pc) in enumerate(zip(conss, pcs)):
+            h = _hidraulica(c, dn)
+            out.append(dict(papel="projeto" if i == projeto else "turndown", q=c.q_m3h, v=h["v"], re=h["re"],
+                            regime=h["regime"], f=h["f"], h=h["h_total"], folga_npsh=h["npsh"] - c.npsh_exigido,
+                            potencia=potencia_hidraulica_kw(c.rho, c.q_m3h, h["h_total"], c.rendimento, c.g),
+                            limite_superior=not h["confiavel"] and bool(pc.get("aceita_transicao", 0.0))
+                            and _limite_superior(h, c.k)))
+        return out
 
     def npsh_exigido(self, cons):
         return cons.npsh_exigido

@@ -127,7 +127,45 @@ def test_relatorio_de_alarmes_e_deterministico():
     spec.loader.exec_module(mod)
     texto = mod.gerar()
     assert texto == mod.gerar()
-    for tag in ("SG-001", "P-001", "P-002", "P-003", "B-001", "B-002", "B-003"):
+    for tag in ("SG-001", "P-001", "P-002", "P-003"):
         assert f"| {tag} | inviável (alarme)" in texto
+    assert "| B-001 | DN 600 mm" in texto and "Estudo da P-44" in texto
     assert "(diferença 0.0e+00 mm)" in texto
     assert texto == (caminho.parents[1] / "docs" / "validacao" / "14-alarmes.md").read_text(encoding="utf-8")
+
+
+# ------------------------------------------------------------------ P-44 (F10x.6)
+def test_p44_resolve_as_bombas(planta_propostas):
+    """Com a P-44 as três bombas têm linha: DN pelo caso de maior vazão, com a banda nele; os
+    demais casos abaixo do teto. Sem ela (variante sem_p44), o alarme anterior volta."""
+    ctx = planta_propostas.contexto
+    esperado = {"B-001": 600.0, "B-002": 250.0, "B-003": 125.0}
+    for ident, dn in esperado.items():
+        rt = planta_propostas.tag(ident)
+        assert rt.status == "dimensionado" and rt.resultado.x == dn
+        op = mc.documento(ctx, rt)["calculo"]["series"]["operacao"]
+        projeto = [o for o in op if o["papel"] == "projeto"]
+        assert len(projeto) == 1 and projeto[0]["q"] == max(o["q"] for o in op)
+        casos = rt.entradas.casos
+        v_min = next(c.valores["v_min"].valor for c in casos if c.ativo)
+        assert v_min <= projeto[0]["v"] <= next(c.valores["v_max"].valor for c in casos if c.ativo)
+        assert all(o["v"] <= projeto[0]["v"] for o in op)
+        assert inv.executar_variante(ctx, ident, inv.variante("sem_p44")).status == "inviavel"
+        assert inv.registro(ident)["estado"] == "explicada"
+
+
+def test_p44_piso_nulo_so_no_oleo_limpo(planta_propostas):
+    for ident, v_min in (("B-001", 0.0), ("B-002", 1.0), ("B-003", 1.0)):
+        c = next(c for c in planta_propostas.tag(ident).entradas.casos if c.ativo)
+        assert c.valores["v_min"].valor == v_min
+        assert c.valores["piso_caso_projeto"].valor == 1.0 and c.valores["transicao_turndown"].valor == 1.0
+        assert all("P-44" in c.valores[k].fonte for k in ("piso_caso_projeto", "transicao_turndown"))
+    c = next(c for c in planta_propostas.tag("B-001").entradas.casos if c.ativo)
+    assert c.valores["v_min"].origem == "recomendada" and "P-44" in c.valores["v_min"].fonte
+
+
+def test_p44b_so_no_caso_6_do_b001(planta_propostas):
+    """A zona de transição só aparece no turndown mais profundo (caso 6, ~4 % da vazão de projeto)."""
+    op = mc.documento(planta_propostas.contexto, planta_propostas.tag("B-001"))["calculo"]["series"]["operacao"]
+    assert [o["caso"][:6] for o in op if o["limite_superior"]] == ["BOT 06"]
+    assert all(not o["limite_superior"] for o in op if o["papel"] == "projeto")

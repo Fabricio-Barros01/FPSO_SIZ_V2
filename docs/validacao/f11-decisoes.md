@@ -62,6 +62,10 @@ com o oráculo do balanço e com as fixtures do Julia segue intacta.
 | X3 | Corrente do Rs | a da regra; a saída de líquido | A da regra; **no SG-001, a saída de óleo C-06** (`rs = "C-06"`), porque a entrada leva gás livre. |
 | X4 | Rs abaixo da faixa (< 20 scf/STB) | extrapolar; óleo morto | **Óleo morto**, com aviso: extrapolada, a correlação com coeficientes arredondados dá µ_o > µ_od para Rs → 0. É conservador para a decantação. |
 | X5 | Paridade | regenerar as fixtures; modo óleo morto | **Modo óleo morto** (`--oleo-morto`, `oleo_vivo=False`) para as fixtures do Julia, a regressão F10b e o estudo do alarme da F13. Nenhuma fixture de oráculo foi regenerada; só os snapshots de tela, que mostram o padrão. |
+| X6 | Banda das bombas (P-44) | banda em todos os casos; pelo caso de projeto | **Pelo caso de projeto** (aprovado pelo usuário): o piso só no caso de maior vazão e só em água; o teto em todos. Hook de motor genérico, com default igual ao Julia. |
+| X7 | Transição no turndown (P-44b) | rejeitar; aceitar com f limite superior | **Aceitar**, só no turndown, com o f de Colebrook-White (≥ 64/Re, verificado): é conservador na perda e no NPSH. A confirmar, porque é juízo de engenharia e não correlação. |
+| X8 | Potência da bomba | a do caso governante (Julia); a máxima entre os casos | As **duas** no MC. O resultado segue o motor do Julia; a tabela de operação dá a máxima, que é a que se especifica. |
+
 
 ## Pendências novas (sem correção nesta fase)
 

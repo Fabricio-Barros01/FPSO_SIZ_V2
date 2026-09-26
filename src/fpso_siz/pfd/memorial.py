@@ -412,6 +412,12 @@ def _series_do_metodo(rt, graf, p_env):
                 continue
             linhas.append(dict(caso=j + 1, npsh_disponivel=m.npsh_disponivel(lin.derivados), npsh_exigido=m.npsh_exigido(cj)))
         out["npsh"] = linhas
+    if hasattr(m, "operacao_por_caso") and p_env is not None and all(cj is not None for _, cj in cons):
+        conss = [cj for _, cj in cons]
+        nomes = [n for n, _ in rt.entradas.case_set().expand()]
+        op = m.operacao_por_caso(conss, r.x, m.envelope_case_params(conss, p_env))
+        out["operacao"] = [dict(caso=n, **o) for n, o in zip(nomes, op)]
+        out["potencia_max"] = max(o["potencia"] for o in op)
     return out
 
 

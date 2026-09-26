@@ -10,3 +10,34 @@ min     = 0.0
 max     = 20000.0
 advanced = true
 note    = "Absoluta. Quando informada, substitui a equação de Antoine no NPSH disponível. Uso típico: líquido que sai de um vaso de separação está no ponto de bolha, e a pressão de vapor é a pressão do vaso (Branan, Rules of Thumb for Chemical Engineers, 5ª ed., p. 116, Example 5-2 — 'Liquid at boiling point'). Vazio (nan) = Antoine."
+
+# Premissa P-44 (F10x.6; aprovada pelo usuário em 2026-09-26). Uma linha atende vários casos
+# de operação: ela é dimensionada pelo caso de PROJETO (o de maior vazão volumétrica), e os
+# casos de menor vazão operam na mesma linha com velocidade menor (turndown). O teto v_max
+# vale em todos os casos (no mesmo DN, o de maior vazão tem a maior velocidade); o piso
+# v_min, só no de projeto. Default 0 = regra do Julia (banda inteira em todos os casos).
+[[parameter]]
+key      = "piso_caso_projeto"
+label    = "Piso de velocidade só no caso de projeto"
+unit     = "–"
+default  = 0.0
+min      = 0.0
+max      = 1.0
+advanced = true
+note     = "1 = o piso v_min vale só no caso de maior vazão (projeto) e os demais operam abaixo dele (turndown); 0 = a banda inteira em todos os casos (regra do Julia). O teto v_max vale sempre em todos. Moran (2016) dá a banda para dimensionar a linha; não trata de turndown."
+
+# Premissa P-44b (F10x.6; decorre da P-44, a confirmar pelo usuário). Num caso de turndown a
+# linha grande pode deixar o Reynolds na zona de transição (entre reynolds_laminar_max e
+# reynolds_turbulent_min), onde nenhuma correlação vale. O fator de Colebrook-White ali é
+# MAIOR que 64/Re (verificado no teste), e é usado como limite superior: superestima a perda
+# de carga e subestima o NPSH disponível (lado seguro). Só em caso de turndown; o caso de
+# projeto continua exigindo correlação válida. Default 0 = regra do Julia (rejeita).
+[[parameter]]
+key      = "transicao_turndown"
+label    = "Aceitar a zona de transição nos casos de turndown"
+unit     = "–"
+default  = 0.0
+min      = 0.0
+max      = 1.0
+advanced = true
+note     = "1 = nos casos que não são o de projeto, a zona de transição laminar-turbulento é aceita com o fator de Colebrook-White como limite superior (maior perda, menor NPSH: conservador); 0 = rejeita, como no Julia. Só vale com piso_caso_projeto = 1."

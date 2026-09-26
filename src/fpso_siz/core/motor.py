@@ -79,11 +79,12 @@ def _faixa_texto(s):
     return jl_round(s[0], 2) if len(s) == 1 else f"{jl_round(min(s), 2)}–{jl_round(max(s), 2)}"
 
 
-def _sem_intersecao(m, eixo, conss, names, p):
+def _sem_intersecao(m, eixo, conss, names, pcs):
     """Cada caso, sozinho, tem solução, e as soluções não se cruzam — só o motor sabe."""
     if len(conss) < 2:
         return ""
-    aceitos = [[x for x in eixo.values if x <= m.ceiling_of(c) and m.case_admissible(x, c, p)] for c in conss]
+    aceitos = [[x for x in eixo.values if x <= m.ceiling_of(c) and m.case_admissible(x, c, pc)]
+               for c, pc in zip(conss, pcs)]
     if any(not a for a in aceitos):
         return ""
     if set(aceitos[0]).intersection(*aceitos[1:]):
@@ -137,6 +138,7 @@ def _size_envelope(eq, m, cases, max_corners):
 
     teto, i_teto = _menor_teto(m, conss)
     mecan = m.ceiling_mechanism_of(conss[i_teto])
+    pcs = m.envelope_case_params(conss, p_env)
     rows = []
     for x in eixo.values:
         per_case_y = [m.requirement(x, c) for c in conss]
@@ -144,13 +146,13 @@ def _size_envelope(eq, m, cases, max_corners):
         y = per_case_y[idx]
         gov = m.governing_of(x, conss[idx])
         d = m.derived(x, y, gov, conss[idx], k, p_env)
-        ok = x <= teto and all(m.case_admissible(x, c, p_env) for c in conss) and m.admissible(x, d, p_env)
+        ok = x <= teto and all(m.case_admissible(x, c, pc) for c, pc in zip(conss, pcs)) and m.admissible(x, d, p_env)
         rows.append(EnvelopeRow(x, y, d, gov, names[idx], per_case_y, ok,
                                 m.presentation_data(x, conss[idx], k, p_env)))
 
     admissivel = [r for r in rows if r.ok]
     if not admissivel:
-        msg = m.selection_message(rows, teto, p_env, mechanism=mecan) + _sem_intersecao(m, eixo, conss, names, p_env)
+        msg = m.selection_message(rows, teto, p_env, mechanism=mecan) + _sem_intersecao(m, eixo, conss, names, pcs)
         return infeasible_envelope(f"Não há equipamento que atenda simultaneamente aos {len(names)} casos. " + msg,
                                    case_names=names, rows=rows, per_case=per_case, ceiling=teto,
                                    ceiling_case=names[i_teto], ceiling_mechanism=mecan)

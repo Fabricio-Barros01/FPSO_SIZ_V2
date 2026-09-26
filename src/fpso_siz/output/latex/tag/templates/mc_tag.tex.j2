@@ -422,6 +422,17 @@ Campo & Valor & Unidade\\\midrule\endhead
 \caption{NPSH disponível × requerido com margem, por caso, no DN escolhido.}
 \end{figure}
 <% endif %>
+<% if sm.get('operacao') %>
+
+\paragraph{Operação de cada caso na linha escolhida.} Mesma hidráulica do dimensionamento, no DN escolhido. O caso de \emph{projeto} é o de maior vazão: nele vale a banda de velocidade; nos casos de \emph{turndown} vale só o teto (P-44). Regime marcado com * = zona de transição, com o fator de Colebrook-White como limite superior (P-44b). A potência de eixo a especificar é a maior entre os casos: << sm.potencia_max|sigt >> kW.
+
+{\footnotesize\begin{longtable}{L{2.6cm}L{1.4cm}R{1.4cm}R{1.2cm}R{1.4cm}L{1.6cm}R{1.2cm}R{1.4cm}R{1.4cm}}\toprule
+Caso & Papel & $Q$ (m³/h) & $v$ (m/s) & Re & Regime & $H$ (m) & folga NPSH (m) & $P$ (kW)\\\midrule\endhead
+<% for o in sm.operacao %>
+<< o.caso|tx >> & << o.papel >> & << o.q|sigt >> & << o.v|sigt >> & << o.re|sigt >> & << o.regime|tx >><% if o.limite_superior %>*<% endif %> & << o.h|sigt >> & << o.folga_npsh|sigt >> & << o.potencia|sigt >>\\
+<% endfor %>
+\bottomrule\end{longtable}}
+<% endif %>
 <% else %>
 \aguarda.
 <% endif %>
