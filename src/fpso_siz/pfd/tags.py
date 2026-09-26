@@ -29,14 +29,23 @@ class Tag:
         return registro.resolver(self.equipamento, self.metodo)
 
 
-def _tag(nome_arquivo):
-    d = carregar(f"{PASTA}/{nome_arquivo}")
+def _tag(nome_arquivo, pasta=PASTA):
+    d = carregar(f"{pasta}/{nome_arquivo}")
     faltam = [c for c in CAMPOS if c not in d]
     if faltam:
         raise ValueError(f"{nome_arquivo}: faltam os campos {faltam}")
     return Tag(d["tag"], d["nome"], d["equipamento"], d["metodo"], d["bloco"], d.get("condicao", ""),
                dict(d.get("entradas", {})), dict(d.get("recomendadas", {})), dict(d.get("insumos", {})),
                dict(d.get("inativo_se", {})))
+
+
+VARIANTES = "pfd/variantes"
+
+
+def topologia_alternativa(nome):
+    """TAG com outra alocação de correntes (estudo de alarme, F13): mesmo esquema de
+    pfd/tags, em pfd/variantes/<nome>.toml. Não entra na planta."""
+    return _tag(f"{nome}.toml", VARIANTES)
 
 
 @cache

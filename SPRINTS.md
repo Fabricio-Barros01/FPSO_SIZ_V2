@@ -1052,6 +1052,19 @@ anotação e investigação.
   mesmo limite). Bombas: faixa de vazão de 10–23× entre casos numa linha só; B-002 casos 15–16
   no vão da série de DN para a banda 1–1,5 m/s.
 - BOT versionado em `docs/bot/` (a pedido do usuário) e conferido nos itens citados.
+- **F13.2 (2026-09-26): trocadores com outra alocação de fluidos.** Variantes de topologia
+  executáveis (`config/pfd/variantes/*.toml`, `pfd/tags.topologia_alternativa`,
+  `equipamento.preparar_tag`) que não entram na planta. Também entraram a regra
+  `densidade_utilidade` e o ΔT de processo por corrente em `vazao_utilidade`. Com o óleo no
+  casco e a água nos tubos, P-002 e P-003 deixam de ser recusados pela faixa de Dittus-Boelter.
+  O que resta:
+  - P-002: tubo de 7,08 m contra o limite de estoque de 6 m;
+  - P-003: casco acima de 2.500 mm, o que pede cascos em paralelo;
+  - nos dois: a banda de velocidade exigida em todos os casos (turndown, como nas bombas antes
+    da P-44);
+  - P-001 (óleo/óleo): segue sem correlação laminar no tubo.
+
+  O padrão não mudou: a alocação é decisão do usuário.
 - **Aceite:** (1) ✓; (2) estudo em `docs/validacao/14-alarmes.md` gerado pelo motor ✓; (3) ✓
   nenhuma premissa nova no padrão; (4) o MC do SG-001 cita a investigação ✓.
 

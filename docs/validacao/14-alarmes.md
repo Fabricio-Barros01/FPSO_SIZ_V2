@@ -38,6 +38,9 @@ Nenhum TAG inviável: não há alarme a investigar.
 | TAG | Variante | Origem do valor | Resultado |
 |---|---|---|---|
 | P-001 | 1 passe no tubo (contracorrente pura) | limite inferior do descritor passes_tubo (Saari §4.2.1: contracorrente puro, F = 1), sugerido pela própria mensagem do motor | segue inviável: Não há equipamento que atenda simultaneamente aos 10 casos. Na banda de velocidade 1.0–3.0 m/s todos os feixes caem fora da faixa em que Saari declara a correla… |
+| P-001 | emulsão fria no casco, óleo tratado quente nos tubos | prática de alocar o fluido mais viscoso no casco (hipótese do alarme); k e incrustações do P-001 são as mesmas propostas nos dois lados | segue inviável: Caso 'BOT 01 — Early Life': O arranjo 1-2 não fecha com estas temperaturas: o fator de correção F sai do domínio da Fig. 4.3. Em contracorrente puro (1 passe) o… |
+| P-002 | óleo no casco, água quente nos tubos | prática de alocar o fluido mais viscoso no casco (hipótese do alarme); k e incrustações = propostas do P-002 trocadas de lado | segue inviável: Não há equipamento que atenda simultaneamente aos 10 casos. Na banda de velocidade 1.0–3.0 m/s todos os feixes pedem tubo mais longo que o limite de 6.0 m — o m… |
+| P-003 | óleo no casco, água de resfriamento nos tubos | prática de alocar o fluido mais viscoso no casco (hipótese do alarme); k e incrustações = propostas do P-003 trocadas de lado | segue inviável: Não há equipamento que atenda simultaneamente aos 16 casos. Na banda de velocidade todos os feixes pedem casco maior que o limite de 2500.0 mm — o menor deles d… |
 
 ## Estudo da P-44 (banda de velocidade pelo caso de projeto)
 
@@ -71,20 +74,20 @@ Só no modo --oleo-morto: os casos 2 e 3 (Early Life, com água) são inviáveis
 O motor para no caso 1: com 2 passes no tubo o fator F da Fig. 4.3 sai do domínio (cruzamento interno de temperatura no arranjo 1-2).
 
 - **premissa**: Arranjo de 2 passes no tubo (default 'escolha' de Saari Tab. 3.1): com a aproximação de P-32 a troca óleo/óleo é quase simétrica (R ≈ 1) e P alto, fora do alcance de um casco 1-2. Contracorrente pura (1 passe) ou cascos em série resolvem o domínio de F.
-- **modelo**: Resolvido o domínio de F (1 passe), o impedimento seguinte é o mesmo do P-002/P-003: óleo em escoamento laminar/de transição no tubo, fora de Dittus-Boelter. Como os dois lados são óleo, trocar os lados não resolve: falta correlação laminar no acervo.
+- **modelo**: Resolvido o domínio de F (1 passe), o impedimento seguinte é o mesmo do P-002/P-003: óleo em escoamento laminar/de transição no tubo, fora de Dittus-Boelter. Como os dois lados são óleo, trocar os lados não resolve: com a emulsão no casco e o óleo tratado quente nos tubos, o F segue fora do domínio (2 passes) e, com 1 passe, o Re no tubo fica em 1.661–4.947. Falta correlação laminar no acervo.
 
 ### P-002 — investigação aberta
 
 Todos os casos: o óleo no lado tubo tem Re de ~1.900 a ~5.600 e Pr ~150 com óleo vivo (~1.100 a ~3.400 e Pr ~250 com --oleo-morto), fora da faixa de Dittus-Boelter (Re ≥ 10⁴, Pr ≤ 120) declarada por Saari: a correção de óleo vivo aproxima, mas não resolve.
 
-- **premissa**: Alocação de fluidos: óleo viscoso no lado tubo. A prática é pôr o fluido mais viscoso no casco, onde Bell-Delaware cobre escoamento laminar (fator Jr); a água quente de utilidade iria nos tubos. A troca de lados é mudança de topologia do TAG (sem variante executável neste modelo).
+- **premissa**: Alocação de fluidos: óleo viscoso no lado tubo. A prática é pôr o fluido mais viscoso no casco, onde Bell-Delaware cobre escoamento laminar (fator Jr), e a água quente de utilidade nos tubos. Variante de topologia (config/pfd/variantes/p_002_oleo_casco.toml): a água nos tubos fica turbulenta e a faixa de Dittus-Boelter deixa de ser o impedimento. O que resta é o comprimento de tubo (o feixe mais curto na banda pede 7,08 m, contra o limite de estoque de 6 m) e a banda de velocidade exigida em todos os casos, com carga que varia entre os casos, como nas bombas antes da P-44.
 - **modelo**: Correlação do lado tubo só turbulenta: não há correlação laminar/de transição (ex.: Sieder–Tate) no acervo; o programa não extrapola.
 
 ### P-003 — investigação aberta
 
 Todos os casos: o óleo no lado tubo tem Re de ~1.300 a ~4.000 e Pr ~150, fora da faixa de Dittus-Boelter declarada por Saari.
 
-- **premissa**: Alocação de fluidos: óleo viscoso no lado tubo; a água de resfriamento em circuito fechado (BOT 3.3.2) iria nos tubos e o óleo no casco (Bell-Delaware com Jr). Mudança de topologia do TAG, sem variante executável neste modelo.
+- **premissa**: Alocação de fluidos: óleo viscoso no lado tubo. A água de resfriamento em circuito fechado (BOT 3.3.2) iria nos tubos, e o óleo no casco (Bell-Delaware com Jr). Variante de topologia (config/pfd/variantes/p_003_oleo_casco.toml): a faixa de Dittus-Boelter deixa de ser o impedimento. O que resta é o casco, que passa do limite de 2.500 mm de chapa enrolada (Saari Tab. 3.1: dividir em cascos em paralelo), e a banda de velocidade exigida em todos os casos.
 - **modelo**: Correlação do lado tubo só turbulenta, como no P-002.
 
 ### B-001 — investigação explicada

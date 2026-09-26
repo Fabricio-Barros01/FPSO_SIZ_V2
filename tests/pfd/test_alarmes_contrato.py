@@ -169,3 +169,39 @@ def test_p44b_so_no_caso_6_do_b001(planta_propostas):
     op = mc.documento(planta_propostas.contexto, planta_propostas.tag("B-001"))["calculo"]["series"]["operacao"]
     assert [o["caso"][:6] for o in op if o["limite_superior"]] == ["BOT 06"]
     assert all(not o["limite_superior"] for o in op if o["papel"] == "projeto")
+
+
+# ------------------------------------------------------------------ topologia alternativa (F13.2)
+@pytest.mark.parametrize("ident, nome", [("P-002", "p_002_oleo_casco"), ("P-003", "p_003_oleo_casco")])
+def test_oleo_no_casco_tira_o_impedimento_de_dittus_boelter(planta_propostas, ident, nome):
+    """Com a água de utilidade nos tubos, a faixa de Dittus-Boelter deixa de ser o motivo da
+    recusa; a utilidade nos tubos fecha a mesma carga do balanço que no TAG da planta."""
+    from fpso_siz.pfd.tags import tags, topologia_alternativa
+    ctx = planta_propostas.contexto
+    base = planta_propostas.tag(ident)
+    assert "Dittus-Boelter" in base.resultado.message
+    rt = inv.executar_variante(ctx, ident, inv.variante(nome))
+    assert rt.status == "inviavel" and "Dittus-Boelter" not in rt.resultado.message
+    assert not rt.entradas.lacunas
+    for cb, cv in zip(base.entradas.casos, rt.entradas.casos, strict=True):
+        if cb.ativo:
+            assert math.isclose(cv.valores["m_tubo"].valor, cb.valores["m_casco"].valor, rel_tol=1e-12)
+            assert cv.valores["m_casco"].valor == cb.valores["m_tubo"].valor
+            assert cv.valores["rho_tubo"].origem == "propriedade" and "IAPWS" in cv.valores["rho_tubo"].fonte
+    assert topologia_alternativa(nome).tag == ident
+    assert all(t.nome != topologia_alternativa(nome).nome for t in tags())   # não entra na planta
+
+
+def test_topologia_de_outro_tag_e_recusada(planta_propostas):
+    v = dict(inv.variante("p_002_oleo_casco"))
+    with pytest.raises(ValueError, match="topologia de P-002"):
+        inv.executar_variante(planta_propostas.contexto, "P-003", v)
+
+
+def test_p001_emulsao_no_casco_segue_sem_correlacao(planta_propostas):
+    """Óleo/óleo: trocar os lados não tira o óleo laminar do tubo (Re < 10⁴ com 1 passe)."""
+    ctx = planta_propostas.contexto
+    v = dict(inv.variante("p_001_emulsao_casco"))
+    assert "fator de correção F" in inv.executar_variante(ctx, "P-001", v).resultado.message
+    v["geral"] = {"passes_tubo": 1.0}
+    assert "Dittus-Boelter" in inv.executar_variante(ctx, "P-001", v).resultado.message

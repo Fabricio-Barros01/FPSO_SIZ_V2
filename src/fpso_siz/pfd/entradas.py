@@ -490,9 +490,14 @@ def _utilidade(ctx, entrada, saida):
     return t_in, t_out, ctx._props[chave]
 
 
-def r_vazao_utilidade(ctx, alvo, carga, entrada, saida):
+def r_vazao_utilidade(ctx, alvo, carga, entrada, saida, processo=None):
+    """ṁ da utilidade que fecha a carga do balanço. `processo` = [corrente de entrada, de
+    saída] do fluido de processo; sem ela, o processo é o lado tubo (convenção do PFD F1)."""
     t_in, t_out, a = _utilidade(ctx, entrada, saida)
-    delta_processo = ctx.num("t_tubo_out") - ctx.num("t_tubo_in")
+    if processo is None:
+        delta_processo = ctx.num("t_tubo_out") - ctx.num("t_tubo_in")
+    else:
+        delta_processo = ctx.r.T[processo[1]] - ctx.r.T[processo[0]]
     if ctx.r.duties[carga] > 0 and delta_processo * (t_in - t_out) <= 0:
         raise ValueError(f"{ctx.tag.tag}, caso {ctx.r.num}: temperaturas da utilidade incompatíveis "
                          "com o sentido da troca térmica (inclui ΔT nulo)")
@@ -502,6 +507,10 @@ def r_vazao_utilidade(ctx, alvo, carga, entrada, saida):
 
 def r_cp_utilidade(ctx, alvo, entrada, saida):
     return Valor(_utilidade(ctx, entrada, saida)[2].cp, "propriedade", "utilidade: cp da água (IAPWS-95)")
+
+
+def r_densidade_utilidade(ctx, alvo, entrada, saida):
+    return Valor(_utilidade(ctx, entrada, saida)[2].rho, "propriedade", "utilidade: ρ da água (IAPWS-95)")
 
 
 def r_viscosidade_utilidade(ctx, alvo, entrada, saida):
@@ -536,7 +545,8 @@ REGRAS = {
     "densidade_gas": r_densidade_gas, "viscosidade_gas": r_viscosidade_gas,
     "compressibilidade_gas": r_compressibilidade_gas, "pressao_vapor_saturado": r_pressao_vapor_saturado,
     "premissa": r_premissa, "insumo": r_insumo, "vazao_utilidade": r_vazao_utilidade,
-    "cp_utilidade": r_cp_utilidade, "viscosidade_utilidade": r_viscosidade_utilidade,
+    "cp_utilidade": r_cp_utilidade, "densidade_utilidade": r_densidade_utilidade,
+    "viscosidade_utilidade": r_viscosidade_utilidade,
     "condutividade_utilidade": r_condutividade_utilidade, "grade_descritor": r_grade_descritor,
     "grade_velocidade": r_grade_velocidade,
 }

@@ -61,6 +61,14 @@ funcao = "agua_saturada"
 fonte = ["agua.fonte_densidade"]
 validade = "água pura como líquido saturado; pressão do circuito não informada"
 
+[densidade_utilidade]
+regra = "densidade_utilidade"
+unidade = "kg/m³"
+condicao = "temperatura média da utilidade"
+funcao = "agua_saturada"
+fonte = ["agua.fonte_densidade"]
+validade = "água pura como líquido saturado; usada quando a utilidade vai nos tubos (topologias de estudo, F13)"
+
 [viscosidade_utilidade]
 regra = "viscosidade_utilidade"
 unidade = "cP"
