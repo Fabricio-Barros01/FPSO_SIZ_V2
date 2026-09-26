@@ -1,6 +1,6 @@
 
 == SG-001 . Separador trifasico de agua livre (FWKO) ==============================================
-  casos 1-16 . automatico (balanco preliminar) . inviavel
+  casos 1-16 . automatico (balanco preliminar) . inviavel - ALARME
   design_cases_bot.json . sha256 ca3dfe559b32... . premissas: base
 
                    +-------------+

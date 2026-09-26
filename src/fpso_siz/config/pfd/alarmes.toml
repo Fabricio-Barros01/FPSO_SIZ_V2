@@ -1,0 +1,114 @@
+# Alarmes de inviabilidade (F13). A unidade do BOT é um projeto básico real: um TAG sem
+# equipamento que atenda aos casos não é um resultado de projeto, é um ALARME de possível
+# erro — de premissa, numérico ou de modelo — que exige anotação e investigação.
+#
+# Cada hipótese tem uma classe (premissa | numerico | modelo), a descrição e, quando o
+# modelo permite, uma VARIANTE executável pelo mesmo motor (pfd/investigacao.py): o que
+# muda na variante é declarado aqui e não altera o cálculo padrão. Uma variante só usa
+# valor com origem: fonte citada no código, premissa do balanço ou a faixa declarada pelo
+# usuário. Hipótese sem variante fica registrada como investigação pendente.
+# Estado da investigação: "aberta" (ninguém decidiu) — a decisão de projeto é do usuário.
+
+classes = { premissa = "premissa", numerico = "numérico", modelo = "modelo" }
+
+[[alarme]]
+tag = "SG-001"
+estado = "explicada"
+resumo = "Só no modo --oleo-morto: os casos 2 e 3 (Early Life, com água) são inviáveis isolados, porque o teto de decantação (água em óleo) fica abaixo do menor diâmetro com a esbeltez na banda. Com a viscosidade de óleo vivo (padrão) o vaso é viável (docs/validacao/16-oleo-vivo.md)."
+hipoteses = [
+    { classe = "premissa", texto = "CONFIRMADA: a viscosidade de óleo MORTO (BOT Tab. 2.2.1.2, P-40) usada para o óleo vivo do FWKO. O gás dissolvido na saída de óleo (Rs de C-06) reduz µ_o cerca de 40 % pela correlação de Beggs & Robinson (1975), e (h_o)max ∝ 1/µ_o: o teto dos casos 2 e 3 sobe e o vaso passa a ter solução. A correlação está fora do acervo local (a conferir) e não substitui um PVT medido." },
+    { classe = "premissa", texto = "Critério de decantação de gotículas de água de 500 µm no óleo (S&A §4.7.2) aplicado ao FWKO, cuja saída de óleo pode levar até o BSW de F-06 (BOT 2.7.1.2): o FWKO remove água livre, não especifica o óleo. O critério pode ser mais restritivo que a função do vaso." },
+    { classe = "premissa", texto = "Eficiência de água livre P-43 (premissa do autor, faixa de 80–90 % declarada pelo usuário): muda o reciclo quente e a temperatura de entrada do FWKO, logo µ_o e o teto.", variantes = ["eta_80", "eta_90"] },
+    { classe = "modelo", texto = "Um único vaso para todos os casos: com trens em paralelo a vazão por vaso cai e o comprimento exigido também; o teto (razão de vazões, µ, ΔSG) não muda.", variantes = ["trens_2", "trens_3"] },
+    { classe = "numerico", texto = "Conferência numérica: (h_o)max, β e d_max refeitos à mão com os operandos do rastro reproduzem o resultado (teste da conta à mão); β por bisseção idêntico ao Julia." },
+]
+
+[[alarme]]
+tag = "P-001"
+estado = "aberta"
+resumo = "O motor para no caso 1: com 2 passes no tubo o fator F da Fig. 4.3 sai do domínio (cruzamento interno de temperatura no arranjo 1-2)."
+hipoteses = [
+    { classe = "premissa", texto = "Arranjo de 2 passes no tubo (default 'escolha' de Saari Tab. 3.1): com a aproximação de P-32 a troca óleo/óleo é quase simétrica (R ≈ 1) e P alto, fora do alcance de um casco 1-2. Contracorrente pura (1 passe) ou cascos em série resolvem o domínio de F.", variantes = ["passes_1"] },
+    { classe = "modelo", texto = "Resolvido o domínio de F (1 passe), o impedimento seguinte é o mesmo do P-002/P-003: óleo em escoamento laminar/de transição no tubo, fora de Dittus-Boelter. Como os dois lados são óleo, trocar os lados não resolve: falta correlação laminar no acervo." },
+]
+
+[[alarme]]
+tag = "P-002"
+estado = "aberta"
+resumo = "Todos os casos: o óleo no lado tubo tem Re de ~1.900 a ~5.600 e Pr ~150 com óleo vivo (~1.100 a ~3.400 e Pr ~250 com --oleo-morto), fora da faixa de Dittus-Boelter (Re ≥ 10⁴, Pr ≤ 120) declarada por Saari: a correção de óleo vivo aproxima, mas não resolve."
+hipoteses = [
+    { classe = "premissa", texto = "Alocação de fluidos: óleo viscoso no lado tubo. A prática é pôr o fluido mais viscoso no casco, onde Bell-Delaware cobre escoamento laminar (fator Jr); a água quente de utilidade iria nos tubos. A troca de lados é mudança de topologia do TAG (sem variante executável neste modelo)." },
+    { classe = "modelo", texto = "Correlação do lado tubo só turbulenta: não há correlação laminar/de transição (ex.: Sieder–Tate) no acervo; o programa não extrapola." },
+]
+
+[[alarme]]
+tag = "P-003"
+estado = "aberta"
+resumo = "Todos os casos: o óleo no lado tubo tem Re de ~1.300 a ~4.000 e Pr ~150, fora da faixa de Dittus-Boelter declarada por Saari."
+hipoteses = [
+    { classe = "premissa", texto = "Alocação de fluidos: óleo viscoso no lado tubo; a água de resfriamento em circuito fechado (BOT 3.3.2) iria nos tubos e o óleo no casco (Bell-Delaware com Jr). Mudança de topologia do TAG, sem variante executável neste modelo." },
+    { classe = "modelo", texto = "Correlação do lado tubo só turbulenta, como no P-002." },
+]
+
+[[alarme]]
+tag = "B-001"
+estado = "aberta"
+resumo = "Cada caso tem DN admissível isolado (125 a 600 mm), mas as faixas não se cruzam: a vazão de óleo varia cerca de 23× entre os casos."
+hipoteses = [
+    { classe = "premissa", texto = "Piso de velocidade de 1 m/s aplicado ao óleo tratado: pela nota do descritor v_min (Moran 2016) o piso é para líquido com sólidos decantáveis; para líquido limpo o artigo só impõe o teto.", variantes = ["vmin_0"] },
+    { classe = "premissa", texto = "Envelope exige a banda de velocidade em TODOS os casos de uma única linha; no projeto, a linha é dimensionada pelo caso de maior vazão e os de menor vazão operam com velocidade menor (ou com bombas em paralelo/recirculação de mínimo fluxo)." },
+    { classe = "modelo", texto = "Na variante sem piso, o caso 6 (baixa vazão, óleo mais frio e viscoso) cai na transição laminar-turbulento nos DN grandes, onde nenhuma correlação de atrito da implementação vale (Colebrook só para Re > 4000; 64/Re só até 2000)." },
+]
+
+[[alarme]]
+tag = "B-002"
+estado = "aberta"
+resumo = "Casos 15 e 16 inviáveis isolados: entre DN 150 (≈1,7 m/s) e DN 200 (≈1,0 m/s) a banda de 1,0–1,5 m/s cai no vão da série; nos demais a vazão varia cerca de 10×."
+hipoteses = [
+    { classe = "premissa", texto = "Banda de velocidade 1–1,5 m/s (Moran 2016) mais estreita que o salto de área entre DN consecutivos da série (200/150 → 1,78×): há vazões sem DN na banda. Numérico só na aparência: é a combinação banda × série." },
+    { classe = "premissa", texto = "Banda aplicada a todos os casos de uma única linha, como no B-001." },
+]
+
+[[alarme]]
+tag = "B-003"
+estado = "aberta"
+resumo = "Cada caso tem DN admissível isolado (40 a 125 mm), mas as faixas não se cruzam: a vazão de água varia entre os casos."
+hipoteses = [
+    { classe = "premissa", texto = "Banda de velocidade aplicada a todos os casos de uma única linha (turndown), como no B-001." },
+]
+
+# ------------------------------------------------------------------ variantes
+# `premissas`: alterações de premissa do balanço (nome = valor); `geral`: entrada do TAG em
+# todos os casos; `fator_vazao`: divide as vazões do TAG (trens em paralelo). `origem` diz de
+# onde vem cada valor usado.
+[variantes.eta_80]
+rotulo = "η_padrão = 0,80 (P-43)"
+premissas = { eta_F = 0.80 }
+origem = "limite inferior da faixa de 80–90 % declarada pelo usuário para a P-43 (F10w)"
+
+[variantes.eta_90]
+rotulo = "η_padrão = 0,90 (P-43)"
+premissas = { eta_F = 0.90 }
+origem = "limite superior da faixa de 80–90 % declarada pelo usuário para a P-43 (F10w)"
+
+[variantes.trens_2]
+rotulo = "2 trens em paralelo (2 × 50 %)"
+fator_vazao = 2
+chaves_vazao = ["q_oil", "q_water", "q_gas"]
+origem = "divisão da vazão por um número inteiro de vasos iguais; não há valor suposto"
+
+[variantes.trens_3]
+rotulo = "3 trens em paralelo (3 × 33 %)"
+fator_vazao = 3
+chaves_vazao = ["q_oil", "q_water", "q_gas"]
+origem = "divisão da vazão por um número inteiro de vasos iguais; não há valor suposto"
+
+[variantes.passes_1]
+rotulo = "1 passe no tubo (contracorrente pura)"
+geral = { passes_tubo = 1.0 }
+origem = "limite inferior do descritor passes_tubo (Saari §4.2.1: contracorrente puro, F = 1), sugerido pela própria mensagem do motor"
+
+[variantes.vmin_0]
+rotulo = "sem piso de velocidade (líquido limpo)"
+geral = { v_min = 0.0 }
+origem = "nota do descritor v_min em equipment/pump/moran.toml (Moran 2016: piso só para líquido com sólidos decantáveis)"

@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from fpso_siz.balanco.dados import constantes
 from fpso_siz.balanco.propriedades import mu_interp
 from fpso_siz.core.configuracao import carregar
-from fpso_siz.core.unidades import c_para_k, kpa_para_pa, mgl_para_kgm3, pas_para_cp
+from fpso_siz.core.unidades import c_para_f, c_para_k, kpa_para_pa, mgl_para_kgm3, pas_para_cp
 from fpso_siz.pfd import _chedl
 
 BLOCO = "propriedades"
@@ -47,6 +47,7 @@ class Liquido:
     cp: float       # J/(kg·K)
     k: float        # W/(m·K); NaN = lacuna de entrada
     avisos: tuple = field(default_factory=tuple)
+    nota: str = ""  # correção aplicada à μ (ex.: óleo vivo), para a fonte da entrada
 
 
 def _anotar(rastro, fonte, var, formula, valor, unidade):
@@ -79,6 +80,16 @@ def gas(y, MW, T_C, P_kPa, rastro=None):
             mu, "cP")
     _anotar(rastro, c["rotulo_transporte"], "k_g", f"mistura {e['metodo_k']}", e["k"], "W/(m·K)")
     return Gas(e["Z"], rho, mu, e["k"], e["VF"], tuple(avisos))
+
+
+def gas_cp(y, T_C, P_kPa):
+    """cp mássico [J/(kg·K)] e Z da fase vapor pela EOS (mesma composição e EOS de `gas`):
+    comparação da F14 com o cp constante do balanço."""
+    c = cfg()["gas"]
+    comp = c["componentes"]
+    e = _chedl.estado_gas([comp[k] for k in y], list(y.values()), c_para_k(T_C), kpa_para_pa(P_kPa), c["eos"],
+                          c["kij"])
+    return dict(cp=e["cp"], Z=e["Z"], VF=e["VF"])
 
 
 # ------------------------------------------------------------------ água
@@ -136,15 +147,56 @@ def salmoura_fracao(T_C, w, rastro=None):
 
 
 # ------------------------------------------------------------------ óleo
-def oleo(poco, rho_std, T_C, rastro=None):
-    """Óleo morto: μ da tabela do poço (BOT) com a regra P-40 do balanço; ρ padrão pelo API.
-    cp vem do balanço e k é lacuna."""
+def oleo(poco, rho_std, T_C, rastro=None, rs_scf_stb=None):
+    """Óleo: μ de óleo morto da tabela do poço (BOT) com a regra P-40 do balanço e, se
+    `rs_scf_stb` é dado, a correção de óleo vivo de Beggs & Robinson (1975) com o gás
+    dissolvido da corrente; ρ padrão pelo API. cp vem do balanço e k é lacuna."""
     c = cfg()["oleo"]
     mu, marcador = mu_interp(poco.viscosidade, T_C)
     avisos = [] if marcador == "interp." else [f"viscosidade do óleo {marcador} (tabela do BOT; P-40)"]
-    _anotar(rastro, c["rotulo_viscosidade"], "μ_o", f"óleo morto, log-linear em T ({marcador})", mu, "cP")
+    nota = ""
+    if rs_scf_stb is None:
+        _anotar(rastro, c["rotulo_viscosidade"], "μ_o", f"óleo morto, log-linear em T ({marcador})", mu, "cP")
+    else:
+        _anotar(rastro, c["rotulo_viscosidade"], "μ_od", f"óleo morto, log-linear em T ({marcador})", mu, "cP")
+        mu_od = mu
+        mu, av = oleo_vivo(mu_od, rs_scf_stb, poco.api, T_C, rastro)
+        avisos += av
+        if mu != mu_od:
+            nota = f"óleo vivo, {cfg()['oleo_vivo']['rotulo']}"
     _anotar(rastro, c["rotulo_densidade"], "ρ_o", "condição padrão, sem correção por T e Bo", rho_std, "kg/m³")
-    return Liquido(rho_std, mu, math.nan, math.nan, tuple(avisos))
+    return Liquido(rho_std, mu, math.nan, math.nan, tuple(avisos), nota)
+
+
+def oleo_vivo(mu_od, rs_scf_stb, api, T_C, rastro=None):
+    """(μ_o [cP], avisos): Beggs & Robinson (1975), μ_o = A·μ_od^B com A e B função do gás
+    dissolvido Rs [scf/STB]; coeficientes e faixa de dados em fluidos.toml [oleo_vivo].
+    Abaixo da faixa de Rs a correlação não é extrapolada: com os coeficientes arredondados ela
+    não volta a μ_od quando Rs → 0 (dá um óleo vivo mais viscoso que o morto), e o valor medido
+    do óleo morto (BOT) é mantido, conservador para a decantação."""
+    c = cfg()["oleo_vivo"]
+    rs_min, rs_max = c["faixa_rs_scf_stb"]
+    if not rs_scf_stb >= rs_min:
+        avisos = []
+        if round(rs_scf_stb) > 0:
+            avisos.append(f"Rs = {rs_scf_stb:.0f} scf/STB abaixo da faixa de Beggs & Robinson ({rs_min:g}–{rs_max:g} "
+                          "scf/STB): mantido o óleo morto do BOT")
+        _anotar(rastro, c["rotulo"], "μ_o", "Rs abaixo da faixa da correlação: óleo morto mantido", mu_od, "cP")
+        return mu_od, avisos
+    A = c["a"] * (rs_scf_stb + c["b"]) ** c["c"]
+    B = c["d"] * (rs_scf_stb + c["e"]) ** c["f"]
+    mu = A * mu_od ** B
+    t_f = c_para_f(T_C)
+    avisos = []
+    if rs_scf_stb > rs_max:
+        avisos.append(f"Rs = {rs_scf_stb:.0f} scf/STB acima da faixa de Beggs & Robinson ({rs_min:g}–{rs_max:g} scf/STB)")
+    if not c["faixa_api"][0] <= api <= c["faixa_api"][1]:
+        avisos.append(f"API {api:g} fora da faixa de Beggs & Robinson ({c['faixa_api'][0]:g}–{c['faixa_api'][1]:g})")
+    if not c["faixa_t_f"][0] <= t_f <= c["faixa_t_f"][1]:
+        avisos.append(f"T = {t_f:.0f} °F fora da faixa de Beggs & Robinson ({c['faixa_t_f'][0]:g}–{c['faixa_t_f'][1]:g} °F)")
+    _anotar(rastro, c["rotulo"], "Rs", "gás dissolvido da corrente (balanço, Standing)", rs_scf_stb, "scf/STB")
+    _anotar(rastro, c["rotulo"], "μ_o", "óleo vivo: A·μ_od^B", mu, "cP")
+    return mu, avisos
 
 
 # ------------------------------------------------------------------ emulsão

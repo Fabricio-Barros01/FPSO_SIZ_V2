@@ -98,6 +98,14 @@ def overall_u(h_i, h_o, rf_i, rf_o, d_i, d_o, k_w):
     return 1 / r_tot
 
 
+def parcelas_resistencia(h_i, h_o, rf_i, rf_o, d_i, d_o, k_w):
+    """As cinco resistências em série de `overall_u` (m²·K/W, referidas à área externa),
+    com as mesmas expressões e na mesma ordem: a soma é 1/U (memorial, F10x)."""
+    razao = d_o / d_i
+    return {"conveccao_casco": 1 / h_o, "incrustacao_casco": rf_o, "parede": d_o * math.log(razao) / (2 * k_w),
+            "incrustacao_tubo": razao * rf_i, "conveccao_tubo": razao / h_i}
+
+
 def effectiveness_ntu_counterflow(ntu, c_star):
     if not (math.isfinite(ntu) and ntu >= 0 and math.isfinite(c_star) and 0 <= c_star <= 1):
         return math.nan
@@ -394,6 +402,22 @@ class SaariLMTD(MetodoTOML):
 
     def governing_label(self, g):
         return "área de troca térmica" if g == "termica" else str(g)
+
+    # --- memorial (F10x): mesma física do dimensionamento, avaliada no ponto escolhido
+    def parcelas_u(self, n, cons):
+        """(resistências de 1/U [m²·K/W] com n tubos por passe, U [W/m²K])."""
+        t = _tubo(cons, n)
+        if not (math.isfinite(t["u"]) and t["u"] > 0):
+            return {}, math.nan
+        return parcelas_resistencia(t["h_i"], t["h_o"], cons.rf_tubo, cons.rf_casco, cons.d_i, cons.d_o,
+                                    cons.k_parede), t["u"]
+
+    def perfil_tq(self, e, cons):
+        """Temperaturas terminais × calor acumulado a partir da entrada do tubo [W, °C]:
+        o tubo vai de T_ent (0) a T_saída (q); o casco, em contracorrente, entra no fim
+        do tubo (q) e sai no início (0). cp constante: perfis lineares entre os terminais."""
+        return {"tubo": [(0.0, e.t_tubo_in), (cons.q, e.t_tubo_out)],
+                "casco": [(0.0, cons.t_casco_out), (cons.q, e.t_casco_in)]}
 
     def requirement_spec(self):
         return ("comprimento de tubo", "m")

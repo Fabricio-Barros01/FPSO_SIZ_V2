@@ -14,10 +14,11 @@ TAG aguardando entrada, inativo ou inviável também tem MC: as seções de cál
 import math
 import re
 
+from fpso_siz.balanco.balancos import topologia
 from fpso_siz.balanco.dados import descritores_premissas
 from fpso_siz.core.configuracao import carregar
 from fpso_siz.core.parametros import with_defaults
-from fpso_siz.core.unidades import CONVERSOES_CAMPO
+from fpso_siz.core.unidades import CONVERSOES_CAMPO, w_para_kw
 from fpso_siz.pfd.entradas import rotulo_origem
 from fpso_siz.pfd.equipamento import AGUARDANDO, DIMENSIONADO, INATIVO, INVIAVEL, limitacoes
 
@@ -82,7 +83,31 @@ def identificacao(ctx, rt):
     return dict(tag=t.tag, nome=t.nome, bloco=t.bloco, condicao=t.condicao, equipamento=e.equipamento.label,
                 metodo=m.label, metodo_id=m.method_id, referencia=getattr(m, "method_reference", lambda: "")(),
                 sequencia=seq, numero=num, revisao=cfg()["revisao"], status=rt.status, modo=e.modo,
-                preliminar=e.preliminar, regra_fwko=regra, fwko_exigidos=exigidos, avulso=e.avulso)
+                preliminar=e.preliminar, regra_fwko=regra, fwko_exigidos=exigidos, avulso=e.avulso,
+                propostas=dict(arquivo=ctx.propostas.arquivo, sha256=ctx.propostas.sha256) if ctx.propostas else None)
+
+
+def correntes(ctx, rt):
+    """Correntes de entrada e saída do bloco do TAG (topologia), com a faixa de T e P nos
+    casos ativos quando o TAG usa o balanço (automático)."""
+    t, e = rt.tag, rt.entradas
+    if e.avulso or not t.bloco:
+        return []
+    topo = topologia()
+    bloco = next((b for b in topo["blocos"] if b["id"] == t.bloco), None)
+    if bloco is None:
+        return []
+    info = {c["id"]: c for c in topo["correntes"]}
+    ativos = {c.num for c in e.casos if c.ativo}
+    balanco = ctx.resultados_balanco if (e.modo != "manual" and ctx.balanco_resolvido) else []
+    out = []
+    for papel, ids in (("entrada", bloco["entradas"]), ("saída", bloco["saidas"])):
+        for cid in ids:
+            ts = [r.T[cid] for r in balanco if r.num in ativos]
+            ps = [r.P[cid] for r in balanco if r.num in ativos]
+            out.append(dict(id=cid, papel=papel, nome=info[cid]["nome"], fase=info[cid]["fase"],
+                            t=(min(ts), max(ts)) if ts else None, p=(min(ps), max(ps)) if ps else None))
+    return out
 
 
 def casos(rt):
@@ -227,7 +252,7 @@ def tabela_casos(rt, x):
                         teto=pc.ceiling if math.isfinite(pc.ceiling) else None,
                         mecanismo=rotulo_mec(pc.ceiling_mechanism), viavel_isolado=pc.feasible,
                         x_isolado=pc.x if pc.feasible else None))
-    return dict(colunas=[c["rotulo"] for c in colunas], linhas=out)
+    return dict(colunas=[c["rotulo"] for c in colunas], linhas=out, tem_teto=any(l["teto"] is not None for l in out))
 
 
 def criterios(rt, x):
@@ -257,9 +282,36 @@ def diagnostico(rt, x):
                 mecanismo=getattr(m, "rotulo_mecanismo", str)(r.ceiling_mechanism), x_min_banda=x)
 
 
+def alarme(ctx, rt):
+    """Alarme do TAG inviável (config/pfd/alarmes.toml) com o resultado de cada variante
+    registrada, pelo mesmo serviço; None se o TAG não está inviável."""
+    from fpso_siz.pfd import investigacao
+
+    if rt.status != INVIAVEL or rt.entradas.avulso:
+        return None
+    reg = investigacao.registro(rt.tag.tag)
+    if reg is None:
+        return dict(registrado=False, estado="sem investigação anotada", resumo="", hipoteses=[])
+    classes = investigacao.cfg()["classes"]
+    hipoteses = []
+    for h in reg["hipoteses"]:
+        vs = []
+        for nome in h.get("variantes", []):
+            v = investigacao.variante(nome)
+            r = investigacao.executar_variante(ctx, rt.tag.tag, v, rt.estado).resultado
+            vs.append(dict(nome=nome, rotulo=v["rotulo"], origem=v["origem"], viavel=r.feasible,
+                           x=r.x if r.feasible else None, teto=r.ceiling if math.isfinite(r.ceiling) else None,
+                           caso_teto=r.ceiling_case, mensagem=r.message))
+        hipoteses.append(dict(classe=classes[h["classe"]], texto=h["texto"], variantes=vs))
+    return dict(registrado=True, estado=reg["estado"], resumo=reg["resumo"], hipoteses=hipoteses)
+
+
 def resultados(rt):
     r, m = rt.resultado, rt.entradas.metodo
-    return [dict(rotulo=f.label, valor=f.value, unidade=f.unit, destaque=f.highlight) for f in m.result_fields(r)]
+    campos = m.result_fields(r)
+    if r.feasible:   # campo sem valor no TAG dimensionado não se aplica a ele (ex.: teto num vaso bifásico)
+        campos = [f for f in campos if isinstance(f.value, str) or math.isfinite(f.value)]
+    return [dict(rotulo=f.label, valor=f.value, unidade=f.unit, destaque=f.highlight) for f in campos]
 
 
 def series(rt, p_env):
@@ -307,17 +359,86 @@ def series(rt, p_env):
         out["x_casos"] = x
         out["rotulos_governantes"] = {g: m.governing_label(g) for g in dict.fromkeys(li["governante"] for li in linhas)
                                       if g}
+    out.update(_series_do_metodo(rt, graf, p_env))
     return out
 
 
-def pendencias(rt):
+def restricoes(rt):
+    """[(entrada, restrições)] de cada caso do envelope, na ordem de `case_names`, pela
+    mesma preparação do motor (sizing_constraints é determinística: mesmos números)."""
+    m = rt.entradas.metodo
+    out = []
+    for _, vals in rt.entradas.case_set().expand():
+        entrada = m.case_input(vals)
+        ok, cons, _ = m.sizing_constraints(entrada, with_defaults(m.parameters(), vals), m.constants())
+        out.append((entrada, cons if ok else None))
+    return out
+
+
+def _series_do_metodo(rt, graf, p_env):
+    """Gráficos próprios de trocador (perfil T × Q, parcelas de 1/U) e de bomba (curva do
+    sistema, NPSH por caso), no ponto escolhido e no caso governante, pelos hooks do método."""
+    r, m = rt.resultado, rt.entradas.metodo
+    if not {"perfil_tq", "resistencias", "curva_sistema", "npsh"} & set(graf):
+        return {}
+    cons = restricoes(rt)
+    i = indice_governante(r)
+    if cons[i][1] is None:   # inviável já na preparação do caso: o primeiro caso que prepara
+        i = next((j for j, (_, cj) in enumerate(cons) if cj is not None), i)
+    entrada, c = cons[i]
+    out = {"caso_metodo": rt.entradas.case_set().expand()[i][0]}
+    # o perfil T × Q só depende do balanço térmico do caso: sai também no inviável
+    if "perfil_tq" in graf and hasattr(m, "perfil_tq") and c is not None:
+        perfil = m.perfil_tq(entrada, c)
+        out["perfil_tq"] = [dict(q_kw=w_para_kw(q), t_tubo=tt, t_casco=tc)
+                            for (q, tt), (_, tc) in zip(perfil["tubo"], perfil["casco"])]
+    if not r.feasible:
+        return out
+    if "resistencias" in graf and hasattr(m, "parcelas_u") and c is not None:
+        parcelas, u = m.parcelas_u(r.x, c)
+        rot = conteudo_metodo(m).get("rotulos_resistencias", {})
+        total = sum(parcelas.values())
+        out["resistencias"] = [dict(parcela=rot.get(k, k), r=v, fracao=v / total) for k, v in parcelas.items()]
+        out["u"] = u
+    if "curva_sistema" in graf and hasattr(m, "curva_sistema") and c is not None:
+        fracoes = cfg()["graficos"]["fracoes_vazao"]
+        out["curva_sistema"] = [dict(q=q, h=h, h_est=c.h_est) for q, h in m.curva_sistema(c, r.x, fracoes)]
+        out["ponto_bomba"] = [dict(q=c.q_m3h, h=_linha_em(r.rows, r.x).per_case_y[i])]
+    if "npsh" in graf and hasattr(m, "npsh_exigido"):
+        linhas = []
+        for j, (pc, (_, cj)) in enumerate(zip(r.per_case, cons)):
+            lin = _linha_em(pc.sweep, r.x)
+            if lin is None or cj is None:
+                continue
+            linhas.append(dict(caso=j + 1, npsh_disponivel=m.npsh_disponivel(lin.derivados), npsh_exigido=m.npsh_exigido(cj)))
+        out["npsh"] = linhas
+    return out
+
+
+def pendencias(rt, oleo_vivo=True):
     e = rt.entradas
     sem_fonte = [dict(chave=k, casos=v) for k, v in _sem_fonte(e).items()]
     return dict(revisoes=[dict(chave=v.chave, valor=v.numero if hasattr(v, "numero") else v.valor, fonte=v.fonte,
                                origem=rotulo_origem(v.origem), estado=v.estado, casos=list(v.casos))
                           for v in e.revisoes()],
                 lacunas=[lac.chave for lac in e.lacunas], avisos=[dict(texto=a, casos=n) for a, n in e.avisos()],
-                sem_fonte=sem_fonte, limitacoes=limitacoes())
+                sem_fonte=sem_fonte, limitacoes=limitacoes(oleo_vivo), propostas=propostas_usadas(rt))
+
+
+def propostas_usadas(rt):
+    """Valores propostos pelo usuário que entraram no cálculo (origem `proposta`), por
+    entrada, com os casos: separados dos valores com fonte e dos calculados."""
+    grupos = {}
+    for c in rt.entradas.casos:
+        if not c.ativo:
+            continue
+        for k, v in (*c.valores.items(), *c.insumos.items()):
+            if v.proposta:
+                grupos.setdefault((k, v.valor, v.fonte), []).append(c.num)
+    specs, ins = rt.entradas.specs, rt.entradas.tag.insumos
+    return [dict(chave=k, rotulo=specs[k].label if k in specs else ins[k]["rotulo"],
+                 unidade=specs[k].unit if k in specs else ins[k]["unidade"], valor=v, fonte=f, casos=nums)
+            for (k, v, f), nums in grupos.items()]
 
 
 def _sem_fonte(e):
@@ -335,13 +456,24 @@ def documento(ctx, rt):
     """As dez seções do MC do TAG, como dados (números em precisão total)."""
     ident = identificacao(ctx, rt)
     m = rt.entradas.metodo
-    doc = dict(identificacao=ident, conteudo=conteudo_metodo(m), casos=casos(rt), entradas=entradas(rt),
-               lacunas=lacunas(rt), premissas=premissas(ctx, rt, ident), pendencias=pendencias(rt),
+    doc = dict(identificacao=ident, alarme=alarme(ctx, rt), conteudo=conteudo_metodo(m), conteudo_tag=cfg().get("tags", {}).get(rt.tag.tag, {}),
+               correntes=correntes(ctx, rt), casos=casos(rt), entradas=entradas(rt),
+               lacunas=lacunas(rt), premissas=premissas(ctx, rt, ident), pendencias=pendencias(rt, ctx.oleo_vivo),
                calculo=None)
     r = rt.resultado
     if r is None:
         return doc
     p_env = _parametros_envelope(m, rt.entradas)
+    if not r.per_case:
+        # o motor parou na preparação de um caso (ex.: cruzamento de temperatura): só diagnóstico
+        doc["calculo"] = dict(caso_governante="", indice_governante=None, viavel=False, equacoes=[], rastro=[],
+                              iteracoes=[], selecao=None, banda=None, tabela=dict(colunas=[], linhas=[], tem_teto=False),
+                              criterios=criterios(rt, None), diagnostico=diagnostico(rt, None),
+                              resultados=resultados(rt), series=_series_do_metodo(rt, conteudo_metodo(m).get(
+                                  "graficos", []), p_env), x_referencia=None,
+                              eixo=m.sweep_axis(p_env).label if p_env else "",
+                              unidade_eixo=m.sweep_axis(p_env).unit if p_env else "", exigencia=m.requirement_spec())
+        return doc
     i = indice_governante(r)
     x = x_referencia(rt, p_env)
     sel = selecao(rt, i)

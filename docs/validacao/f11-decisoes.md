@@ -53,6 +53,16 @@ com o oráculo do balanço e com as fixtures do Julia segue intacta.
 | B6 | Igualdade isolado × lote do PDF | bytes; texto extraído | **`.tex` byte a byte** e **texto do PDF** (`pdftotext`), que ignora a data de criação embutida pelo pdfTeX. |
 | B7 | Interface | menu do balanço | Ação "Memorial de cálculo por caso (MC_CasoNN)" no menu do balanço, que itera o registro de casos do arquivo carregado (lista, faixa ou todos) e mostra o comando equivalente. |
 
+## F10x.4–F10x.5 — propostas por padrão e óleo vivo
+
+| # | Decisão | Opções | Escolha e motivo |
+|---|---|---|---|
+| X1 | Carga das propostas | só com `--propostas`; por padrão | **Por padrão** (decisão do usuário), com `--sem-propostas` para desligar. A origem continua `proposta`, com revisão pendente: o usuário confirma ou edita no interativo. |
+| X2 | Viscosidade do óleo | óleo morto do BOT (P-40); óleo vivo por correlação | **Óleo vivo por Beggs & Robinson (1975)**, que é a correlação publicada de uso corrente para µ_o a partir de µ_od e Rs, sobre o µ_od medido do BOT. O Rs vem do próprio balanço. Não há PVT de óleo vivo no BOT nem correlação no acervo ou no ChEDL; a referência fica marcada "a conferir". |
+| X3 | Corrente do Rs | a da regra; a saída de líquido | A da regra; **no SG-001, a saída de óleo C-06** (`rs = "C-06"`), porque a entrada leva gás livre. |
+| X4 | Rs abaixo da faixa (< 20 scf/STB) | extrapolar; óleo morto | **Óleo morto**, com aviso: extrapolada, a correlação com coeficientes arredondados dá µ_o > µ_od para Rs → 0. É conservador para a decantação. |
+| X5 | Paridade | regenerar as fixtures; modo óleo morto | **Modo óleo morto** (`--oleo-morto`, `oleo_vivo=False`) para as fixtures do Julia, a regressão F10b e o estudo do alarme da F13. Nenhuma fixture de oráculo foi regenerada; só os snapshots de tela, que mostram o padrão. |
+
 ## Pendências novas (sem correção nesta fase)
 
 | # | Pendência |

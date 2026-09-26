@@ -1,7 +1,9 @@
 """F11.5 — MC pela CLI (`dimensionar --tag … --mc`, `pfd --mc`) e pelo modo interativo:
 o TAG isolado e o lote gravam o mesmo número de documento e os mesmos bytes."""
+import json
+
 import pytest
-from roteiro import CASOS, abrir_tag, op, repetir_comando, rodar
+from roteiro import CASOS, RAIZ, abrir_tag, op, repetir_comando, rodar
 
 from fpso_siz.cli import main
 from fpso_siz.pfd import memorial as mc
@@ -76,3 +78,19 @@ def test_interativo_gera_os_mcs_da_planta(tmp_path, monkeypatch):
     assert rc == 0
     assert len(list((pasta / "mc").iterdir())) == len(tags())
     assert "fpso-siz pfd" in out and "--mc --pdf" in out
+
+
+def test_interativo_com_propostas_repete_o_comando(tmp_path):
+    import io
+
+    from fpso_siz.output.terminal.estilo import Estilo
+    from fpso_siz.output.terminal.sessao import Sessao
+
+    ARQ = RAIZ / "src" / "fpso_siz" / "config" / "pfd" / "pendencias_propostas.toml"
+    fila = [*abrir_tag("TO-001", "automatico"), op("tag", "exportar"), str(tmp_path / "to"), "", "0", "0", "0"]
+    out = io.StringIO()
+    s = Sessao(casos=CASOS, entrada=lambda _: fila.pop(0) if fila else (_ for _ in ()).throw(EOFError),
+               saida=out, estilo=Estilo(False, True), colunas=100, propostas=ARQ)
+    assert s.rodar() == 0
+    assert f"--propostas {ARQ}" in out.getvalue()
+    assert json.loads((tmp_path / "to" / "TO-001.json").read_text(encoding="utf-8"))["status"] == "dimensionado"

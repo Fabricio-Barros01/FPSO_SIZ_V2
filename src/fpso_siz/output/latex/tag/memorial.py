@@ -15,6 +15,7 @@ from importlib.resources import files
 from pathlib import Path
 
 from fpso_siz import __version__
+from fpso_siz.balanco.dados import descritores_premissas
 from fpso_siz.core.configuracao import carregar
 from fpso_siz.output.arquivos import escrever_csv, escrever_json
 from fpso_siz.output.latex import compilacao, formatacao
@@ -24,6 +25,7 @@ from fpso_siz.pfd import memorial as nucleo
 PACOTE = "fpso_siz.output.latex.tag"
 BALANCO = "fpso_siz.output.latex.balanco"
 MARCA = re.compile(r"@(k:)?([A-Za-z_][A-Za-z0-9_]*)@")
+PREMISSA = re.compile(r"@P(%?):([A-Za-z_][A-Za-z0-9_]*)@")
 TIPO_FONTE = {"F-": "dado de fonte (BOT)", "P-": "premissa"}
 
 
@@ -69,6 +71,19 @@ def substituir(expr, operandos, unidades=None, constantes=None, exatos=()):
         u = unidades.get(nome)
         return f"{v}\\,\\text{{{formatacao.unid(u)}}}" if u else v
     return MARCA.sub(troca, expr)
+
+
+def com_premissas(texto, prem, dados):
+    """Troca @P:nome@ pelo valor da premissa com a unidade (e @P%:nome@ pela fração em %):
+    premissa citada no texto vem de P[...] com mbn, nunca digitada."""
+    unidades = {d["nome"]: d["unidade"] for d in descritores_premissas(dados)}
+
+    def troca(mo):
+        pct, nome = mo.groups()
+        if pct:
+            return f"{formatacao.mbn(prem[nome] * formatacao.POR_CENTO)}\\,\\%"
+        return f"{formatacao.mbn(prem[nome])}~{formatacao.unid(unidades[nome])}"
+    return PREMISSA.sub(troca, texto)
 
 
 def _valor_entrada(v):
@@ -182,6 +197,11 @@ def _csvs(doc, pasta, base):
     gravar("ponto", s.get("ponto"))
     gravar("teto", s.get("teto"))
     gravar("minimo", s.get("minimo"))
+    for chave in ("perfil_tq", "curva_sistema", "ponto_bomba", "npsh"):
+        gravar(chave, s.get(chave))
+    if s.get("resistencias"):
+        gravar("resistencias", [dict(i=i, r=x["r"], pct=x["fracao"] * formatacao.POR_CENTO)
+                                for i, x in enumerate(s["resistencias"], 1)])
     casos = s.get("casos") or []
     govs = sorted({c["governante"] for c in casos if c["governante"]})
     gravar("casos", [dict(caso=c["caso"], y=c["y"], teto=c["teto"], x_ref=s["x_casos"],
@@ -206,7 +226,11 @@ def contexto(ctx, rt, data=None, git=None):
     exatos = set(c.get("operandos_exatos", ()))
     constantes = {k: v for k, v in rt.entradas.metodo.constants().items() if isinstance(v, (int, float))}
     calc = doc["calculo"]
-    tpl = dict(doc=doc, meta=meta, ident=ident, status=status, textos=c["textos"], regra=c["regra_algarismos"],
+    ct = doc["conteudo_tag"]
+    dados_ctx = ctx.dados if not ident["avulso"] else None
+    tag_texto = dict(funcao=com_premissas(ct.get("funcao", ""), ctx.prem, dados_ctx) if ctx.prem else ct.get("funcao", ""),
+                     hipoteses=[com_premissas(h, ctx.prem, dados_ctx) if ctx.prem else h for h in ct.get("hipoteses", [])])
+    tpl = dict(doc=doc, tag_texto=tag_texto, meta=meta, ident=ident, status=status, textos=c["textos"], regra=c["regra_algarismos"],
                prem=_premissas(doc, ctx.prem), metodologia=_metodologia(doc, constantes),
                eqs=_equacoes(calc, exatos) if calc else [], commit=commit, sujo=sujo, versao=__version__,
                entradas=tabelas_entrada(doc), dados=ctx.dados if not ident["avulso"] else None, versoes=ctx.versoes, valor_entrada=_valor_entrada,

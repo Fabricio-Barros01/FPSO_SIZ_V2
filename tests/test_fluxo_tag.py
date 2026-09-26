@@ -55,7 +55,7 @@ def test_tag_automatico_pendencia_revisao_exportacao_e_comando(tmp_path):
     assert "RECOMENDADAS E DEFAULTS COM FONTE — REVISÃO PENDENTE" in out
     assert "✓ Viável" in out and "valor(es) confirmados com a fonte" in out
     cmd = comandos_repetir(out)
-    assert cmd == [["dimensionar", "--tag", "TO-001", "--casos", str(CASOS), "--auto-balanco",
+    assert cmd == [["dimensionar", "--sem-propostas", "--tag", "TO-001", "--casos", str(CASOS), "--auto-balanco",
                     "--ajustes", str(pasta / saida_ajustes.NOME), "--saida", str(pasta)]]
     feitos = {p: p.read_bytes() for p in (pasta / "TO-001.json", pasta / "TO-001_varredura.csv")}
     for p in feitos:
@@ -246,7 +246,7 @@ def test_planta_filtro_e_exportacao_igual_ao_comando(tmp_path):
     linha = next(li for li in out.splitlines() if "[B-002" in li and "filtro" not in li and "→" in li.split("[B-002")[0]
                  and li.count("[") == 1 and "-]" in li)
     assert linha
-    assert comandos_repetir(out) == [["pfd", "--casos", str(CASOS), "--ajustes", str(pasta / saida_ajustes.NOME),
+    assert comandos_repetir(out) == [["pfd", "--sem-propostas", "--casos", str(CASOS), "--ajustes", str(pasta / saida_ajustes.NOME),
                                       "--saida", str(pasta)]]
     feitos = {p: p.read_bytes() for p in pasta.iterdir() if p.name != saida_ajustes.NOME}
     assert len(feitos) == 23

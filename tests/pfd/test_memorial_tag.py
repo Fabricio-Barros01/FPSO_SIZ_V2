@@ -45,6 +45,13 @@ def docs(planta_base):
     return {t.tag.tag: (t, mc.documento(ctx, t)) for t in planta_base.tags}
 
 
+@pytest.fixture(scope="module")
+def docs_morto(planta_oleo_morto):
+    """Óleo morto do BOT (--oleo-morto): o SG-001 em alarme, com o diagnóstico da F11."""
+    ctx = planta_oleo_morto.contexto
+    return {t.tag.tag: (t, mc.documento(ctx, t)) for t in planta_oleo_morto.tags}
+
+
 def test_documento_de_cada_tag_tem_as_secoes(docs):
     for tag, (rt, d) in docs.items():
         assert d["identificacao"]["numero"] == mc.numero(tag)[1]
@@ -200,8 +207,8 @@ def test_v002_governante_e_ponto(docs):
     assert formatacao.texto_sig(c["selecao"]["sr"]) == formatacao.texto_sig(rt.resultado.derivados["sr"])
 
 
-def test_sg001_diagnostico_sem_intersecao(docs):
-    rt, d = docs["SG-001"]
+def test_sg001_diagnostico_sem_intersecao(docs_morto):
+    rt, d = docs_morto["SG-001"]
     c = d["calculo"]
     assert rt.status == "inviavel" and not c["viavel"] and c["selecao"] is None
     diag = c["diagnostico"]
@@ -216,23 +223,26 @@ def test_sg001_diagnostico_sem_intersecao(docs):
     assert "ponto" not in s
 
 
-def test_sg001_conta_a_mao_da_decantacao(docs):
-    _, d = docs["SG-001"]
+@pytest.mark.parametrize("planta", ["docs", "docs_morto"])
+def test_sg001_conta_a_mao_da_decantacao(request, planta):
+    _, d = request.getfixturevalue(planta)["SG-001"]
     eq = {e["id"]: e for e in d["calculo"]["equacoes"]}
     o = eq["ho"]["operandos"]
     assert o["coef"] * o["tr_o"] * o["dsg"] * (o["dm"] * o["dm"]) / o["mu_o"] == eq["ho"]["resultado"]
     o = eq["dsg"]["operandos"]
     assert o["sg_w"] - o["sg_o"] == eq["dsg"]["resultado"]
     o = eq["dmax_wio"]["operandos"]
-    assert o["h"] / o["beta"] == eq["dmax_wio"]["resultado"] == d["calculo"]["diagnostico"]["teto"]
+    assert o["h"] / o["beta"] == eq["dmax_wio"]["resultado"]
+    if not d["calculo"]["viavel"]:
+        assert eq["dmax_wio"]["resultado"] == d["calculo"]["diagnostico"]["teto"]
     o = eq["liquido"]["operandos"]
     assert o["coef"] * (o["tr_o"] * o["q_o"] + o["tr_w"] * o["q_w"]) == eq["liquido"]["resultado"]
 
 
 @pytest.mark.latex
 @pytest.mark.skipif(not compilacao.disponivel() or not shutil.which("pdftotext"), reason="latexmk/pdftotext ausentes")
-def test_sg001_pdf_mostra_a_inviabilidade(planta_base, tmp_path):
-    ctx, rt = planta_base.contexto, planta_base.tag("SG-001")
+def test_sg001_pdf_mostra_a_inviabilidade(planta_oleo_morto, tmp_path):
+    ctx, rt = planta_oleo_morto.contexto, planta_oleo_morto.tag("SG-001")
     tex = saida_mc.gravar(ctx, rt, tmp_path, data=DATA, git=GIT)
     texto = _normal(_texto_pdf(compilacao.compilar(tex)))
     assert _normal("MEMORIAL DE CÁLCULO – DIAGNÓSTICO") in texto
@@ -275,7 +285,92 @@ def test_mc_com_ajustes_sinteticos_cobre_todos_os_metodos(planta_ajustada):
 
 @pytest.mark.latex
 @pytest.mark.skipif(not compilacao.disponivel(), reason="latexmk ausente")
-@pytest.mark.parametrize("ident", ["SG-001", "TO-001", "P-001", "B-001"])
+@pytest.mark.parametrize("ident", ["SG-001", "TO-001", "P-001", "B-001", "B-002", "P-003"])
 def test_mc_com_ajustes_sinteticos_compila(planta_ajustada, tmp_path, ident):
     rt = planta_ajustada.tag(ident)
     assert compilacao.compilar(saida_mc.gravar(planta_ajustada.contexto, rt, tmp_path, data=DATA, git=GIT)).exists()
+
+
+# ------------------------------------------------------------------ F10x.1 — gráficos de trocador e bomba
+@pytest.mark.parametrize("ident", ["P-001", "P-002", "P-003"])
+def test_trocador_perfil_tq_e_parcelas_de_u(planta_ajustada, ident):
+    """Com as entradas sintéticas dos testes: o perfil T × Q liga as temperaturas terminais do
+    caso governante e as parcelas de 1/U somam exatamente o 1/U do dimensionamento."""
+    rt = planta_ajustada.tag(ident)
+    d = mc.documento(planta_ajustada.contexto, rt)
+    s = d["calculo"]["series"]
+    i = mc.indice_governante(rt.resultado)
+    entrada, cons = mc.restricoes(rt)[i]
+    perfil = s["perfil_tq"]
+    assert [p["t_tubo"] for p in perfil] == [entrada.t_tubo_in, entrada.t_tubo_out]
+    assert perfil[-1]["t_casco"] == entrada.t_casco_in and perfil[0]["t_casco"] == cons.t_casco_out
+    assert perfil[-1]["q_kw"] == cons.q / 1000
+    assert math.isclose(sum(x["r"] for x in s["resistencias"]), 1 / s["u"], rel_tol=1e-15)
+    assert s["u"] == rt.resultado.derivados["u"]
+    assert math.isclose(sum(x["fracao"] for x in s["resistencias"]), 1.0, rel_tol=1e-12)
+
+
+@pytest.mark.parametrize("ident", ["B-001", "B-002", "B-003"])
+def test_bomba_curva_do_sistema_e_npsh(planta_ajustada, ident):
+    rt = planta_ajustada.tag(ident)
+    r = rt.resultado
+    s = mc.documento(planta_ajustada.contexto, rt)["calculo"]["series"]
+    i = mc.indice_governante(r)
+    curva = s["curva_sistema"]
+    assert curva[0]["q"] == 0 and curva[0]["h"] == curva[0]["h_est"]          # sem vazão, só a estática
+    fr = carregar("memorial_tag.toml")["graficos"]["fracoes_vazao"]
+    projeto = curva[fr.index(1.0)]
+    assert projeto["q"] == s["ponto_bomba"][0]["q"] and projeto["h"] == s["ponto_bomba"][0]["h"]
+    assert s["ponto_bomba"][0]["h"] == r.y - r.slack[i]                        # a exigência do caso no DN
+    hs = [p["h"] for p in curva if math.isfinite(p["h"])]
+    assert hs == sorted(hs)                                                    # H cresce com Q
+    assert len(s["npsh"]) == len(r.case_names)
+    assert all(x["npsh_disponivel"] >= x["npsh_exigido"] for x in s["npsh"])  # DN admissível em todo caso
+
+
+# ------------------------------------------------------------------ F10x.3 — MC próprio de cada TAG
+VASO = ("decantação", "esbeltez na banda", "Teto (mm)", "diagrama $d")
+
+
+@pytest.mark.parametrize("ident", [t.tag for t in tags()])
+def test_mc_e_proprio_do_tag(planta_ajustada, ident):
+    """Cada MC traz a função do seu TAG, as correntes do seu bloco e as hipóteses próprias,
+    e nada da família de outro equipamento (texto de vaso não aparece em bomba ou trocador)."""
+    from fpso_siz.balanco.balancos import topologia
+
+    ctx, rt = planta_ajustada.contexto, planta_ajustada.tag(ident)
+    _, tex = saida_mc.gerar(ctx, rt, DATA, GIT)
+    conteudo = carregar("memorial_tag.toml")["tags"][ident]
+    assert "@P" not in tex and conteudo["hipoteses"] and f"Função do {ident} no processo" in tex
+    bloco = next(b for b in topologia()["blocos"] if b["id"] == rt.tag.bloco)
+    for c in [*bloco["entradas"], *bloco["saidas"]]:
+        assert f"\n{c} & " in tex
+    outros = {t.tag for t in tags()} - {ident}
+    assert not any(f"Função do {o} no processo" in tex for o in outros)
+    if rt.entradas.equipamento.method_id in ("pump", "exchanger"):
+        assert not [p for p in VASO if p in tex]
+    if ident in ("V-001", "V-002"):
+        assert "Teto de decantação" not in tex and "Teto (mm)" not in tex
+
+
+def test_premissas_no_texto_vem_de_p(planta_base):
+    """Texto do TAG com premissa: o número sai de P[...] (mbn), não é digitado."""
+    ctx = planta_base.contexto
+    _, tex = saida_mc.gerar(ctx, planta_base.tag("B-001"), DATA, GIT)
+    assert f"a {formatacao.mbn(ctx.prem['P_pump_oil'])}~kPa (P-20)" in tex
+    _, tex = saida_mc.gerar(ctx, planta_base.tag("TO-002"), DATA, GIT)
+    assert f"BSW de {formatacao.mbn(ctx.prem['BSW_t'] * 100)}\\,\\%" in tex
+
+
+def test_caracteres_do_mc_tem_cobertura_no_preambulo(planta_ajustada, planta_base):
+    """Todo caractere fora do Latin-1 que o MC escreve tem mapeamento no preâmbulo
+    (newunicodechar): um texto novo com símbolo sem cobertura quebraria a compilação."""
+    from importlib.resources import files
+
+    pre = files("fpso_siz.output.latex.tag").joinpath("templates", "preambulo_extra.tex").read_text(encoding="utf-8")
+    cobertos = set(re.findall(r"\\newunicodechar\{(.)\}", pre)) | set("—–’‘“”…")
+    for planta in (planta_base, planta_ajustada):
+        for rt in planta.tags:
+            _, tex = saida_mc.gerar(planta.contexto, rt, DATA, GIT)
+            fora = {ch for ch in tex if ord(ch) > 0xFF} - cobertos
+            assert not fora, (rt.tag.tag, sorted(fora))

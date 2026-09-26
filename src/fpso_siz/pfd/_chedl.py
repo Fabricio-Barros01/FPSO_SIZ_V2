@@ -40,7 +40,7 @@ def estado_gas(ids, zs, T, P, eos, kij):
     g = r.gas
     if g is None:
         raise ValueError(f"a EOS não prevê fase vapor a T = {T} K e P = {P} Pa")
-    return dict(Z=g.Z(), VF=r.VF, mu=g.mu(), k=g.k(), MW=g.MW(),
+    return dict(Z=g.Z(), VF=r.VF, mu=g.mu(), k=g.k(), MW=g.MW(), cp=g.Cp_mass(),
                 metodo_mu=props.ViscosityGasMixture.method, metodo_k=props.ThermalConductivityGasMixture.method,
                 metodo_mu_puros=sorted({v.method for v in props.ViscosityGases}))
 

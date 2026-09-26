@@ -51,6 +51,10 @@ def kw_para_w(q):
     return q * 1000.0
 
 
+def w_para_kw(q):
+    return q / 1000.0
+
+
 def kj_para_j(e):
     return e * 1000.0
 
@@ -74,6 +78,11 @@ CUFT_M3 = 0.028316846592
 
 # Massa específica de referência da água (convenção de densidade relativa, Units.jl)
 RHO_AGUA_REF = 1000.0
+
+
+def sm3sm3_para_scf_stb(r):
+    """Razão gás/óleo: Sm³/Sm³ → scf/STB (ft³ padrão por barril), fatores exatos."""
+    return r * BARREL_M3 / CUFT_M3
 
 
 def densidade_relativa(rho):

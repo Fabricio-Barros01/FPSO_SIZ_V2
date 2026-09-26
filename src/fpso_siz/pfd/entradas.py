@@ -4,9 +4,10 @@ Para cada TAG (config/pfd/tags/) e cada caso, cada entrada do método de dimensi
 sai de UMA origem, nesta precedência:
 
     automático: usuário (caso > geral) > regra do TAG (balanço/propriedades) > recomendada
-                do TAG > default do método com fonte (config/pfd/metodos.toml) > LACUNA
+                do TAG > default do método com fonte (config/pfd/metodos.toml) > PROPOSTA
+                (pendencias_propostas.toml, só se carregado) > LACUNA
     manual:     usuário (caso > geral) > arquivo importado (caso > geral) > recomendada do
-                TAG > default do método com fonte > LACUNA
+                TAG > default do método com fonte > PROPOSTA > LACUNA
 
 e carrega a origem, a fonte e o estado de revisão (JSON, terminal e MC). O manual não
 consulta o balanço nem o ChEDL. As propriedades na condição do equipamento vêm de
@@ -18,14 +19,15 @@ import math
 from dataclasses import dataclass, field, replace
 
 from fpso_siz.balanco.dados import descritores_premissas, pocos
-from fpso_siz.balanco.indicadores import criterios
+from fpso_siz.balanco.indicadores import criterios, q
 from fpso_siz.balanco.propriedades import poco_do_fluido
 from fpso_siz.core.casos import Case, CaseSet
 from fpso_siz.core.configuracao import carregar
 from fpso_siz.core.formato_julia import jl
 from fpso_siz.core.ieee import div
 from fpso_siz.core.trace import Rastro
-from fpso_siz.core.unidades import HORAS_POR_DIA, SEGUNDOS_POR_HORA, kj_para_j, kw_para_w, mm_para_m
+from fpso_siz.core.unidades import (HORAS_POR_DIA, SEGUNDOS_POR_HORA, kj_para_j, kw_para_w, mm_para_m,
+                                    sm3sm3_para_scf_stb)
 from fpso_siz.pfd import fluidos
 from fpso_siz.pfd.ajustes import MANUAL, estado_legado
 
@@ -35,6 +37,7 @@ NAO_APLICAVEL = "nao_aplicavel"
 USUARIO = "usuario"
 ARQUIVO = "arquivo"
 # estados de revisão de um valor (o cálculo não depende deles; só o destaque)
+PROPOSTA = "proposta"      # valor proposto pelo usuário para uma lacuna (pfd/propostas.py)
 PENDENTE, CONFIRMADA, DESATUALIZADA = "pendente", "confirmada", "desatualizada"
 REVISAO_ABERTA = (PENDENTE, DESATUALIZADA)
 
@@ -81,7 +84,13 @@ class Valor:
     def requer_revisao(self):
         """Recomendações e defaults com fonte precisam de confirmação explícita; o cálculo
         preliminar pode usá-los, mas eles seguem destacados até lá."""
-        return self.origem == "recomendada" or (self.origem == "metodo" and self.tipo in ("fonte", "escolha"))
+        return (self.origem in ("recomendada", PROPOSTA)
+                or (self.origem == "metodo" and self.tipo in ("fonte", "escolha")))
+
+    @property
+    def proposta(self):
+        """Valor proposto pelo usuário sem fonte técnica (a confirmar); não é dado validado."""
+        return self.origem == PROPOSTA
 
 
 @dataclass(frozen=True)
@@ -175,10 +184,13 @@ class _Pendente(Exception):
 
 # ------------------------------------------------------------------ contexto de um caso
 class _Caso:
-    def __init__(self, tag, metodo, specs, r, dados, prem, ajustes, importados=None, arquivo=""):
+    def __init__(self, tag, metodo, specs, r, dados, prem, ajustes, importados=None, arquivo="", propostas=None,
+                 num=None, oleo_vivo=True):
         self.tag, self.metodo, self.specs = tag, metodo, specs
+        self.propostas, self.num_caso = propostas, num
         self.r, self.dados, self.prem, self.aj = r, dados, prem, ajustes
         self.manual = importados is not None     # manual: não consulta balanço nem ChEDL
+        self.oleo_vivo = oleo_vivo and not self.manual
         self.imp, self.arquivo = importados or {}, arquivo
         self.padroes = metodos().get(metodo.method_id, {})
         self.rastro = Rastro()
@@ -213,7 +225,7 @@ class _Caso:
         if regra is None:
             padrao = self.padroes.get(chave)
             if padrao is None:
-                return Valor(math.nan, LACUNA, pendente=(chave,))
+                return self._proposta(chave) or Valor(math.nan, LACUNA, pendente=(chave,))
             if "regra" not in padrao:
                 return Valor(self.specs[chave].default, "metodo", padrao["fonte"], padrao["tipo"])
             regra = padrao
@@ -226,6 +238,13 @@ class _Caso:
         if not math.isfinite(v.valor):
             return Valor(math.nan, LACUNA, v.fonte + "; resultado não finito", pendente=(chave,))
         return v
+
+    def _proposta(self, chave):
+        """Valor do pendencias_propostas.toml para a lacuna, se carregado (origem própria)."""
+        p = self.propostas.de(self.tag.tag, chave, self.num_caso) if self.propostas else None
+        if p is None:
+            return None
+        return Valor(p.valor, PROPOSTA, f"{p.origem} (status proposto, a confirmar): {p.justificativa}")
 
     def num(self, chave):
         """Valor de outra entrada do mesmo caso; lacuna propaga."""
@@ -241,11 +260,13 @@ class _Caso:
             v, origem = float(self.aj[chave]), "usuario"
         elif "valor" in ins:
             v, origem = float(ins["valor"]), "recomendada"
+        elif self._proposta(chave) is not None:
+            v, origem = self._proposta(chave).valor, PROPOSTA
         else:
             raise _Pendente((chave,))
         if chave not in self.insumos:
-            fonte = ins.get("fonte", "ajustes do usuário")
-            self.insumos[chave] = Valor(v, origem, fonte)
+            fonte = self._proposta(chave).fonte if origem == PROPOSTA else ins.get("fonte", "ajustes do usuário")
+            self.insumos[chave] = Valor(v, origem, fonte, revisao=PENDENTE if origem == PROPOSTA else "")
             self.rastro.trace(BLOCO, rotulo_origem(origem), chave, fonte, v, ins["unidade"])
         if "limite_max" in ins and v > ins["limite_max"]:
             self.aviso(f"{ins['rotulo']} = {jl(v)} {ins['unidade']} acima do limite de {jl(ins['limite_max'])} "
@@ -276,13 +297,22 @@ def _informado(v, origem, fonte):
 
 
 # ------------------------------------------------------------------ propriedades (memo por caso)
-def _oleo(ctx, T, rotulo):
-    chave = ("oleo", rotulo)
+def _rs(ctx, corrente):
+    """Gás dissolvido da corrente de líquido [scf/STB]: Q_G/Q_O padrão do balanço (Standing)."""
+    q_o = q(ctx.r, corrente, "O")
+    return sm3sm3_para_scf_stb(q(ctx.r, corrente, "G") / q_o) if q_o > 0 else 0.0
+
+
+def _oleo(ctx, T, rotulo, rs_corrente=None):
+    """Óleo na condição: morto (BOT, P-40) e, no automático com óleo vivo, corrigido pelo gás
+    dissolvido da corrente `rs_corrente` (Beggs & Robinson)."""
+    vivo = ctx.oleo_vivo and rs_corrente is not None
+    chave = ("oleo", rotulo, rs_corrente if vivo else None)
     if chave not in ctx._props:
         tr = Rastro()
         poco = pocos()[poco_do_fluido(ctx.dados, ctx.r.fluid)]
-        o = fluidos.oleo(poco, ctx.r.rho["O"], T, tr)
-        ctx.anexar(tr, rotulo)
+        o = fluidos.oleo(poco, ctx.r.rho["O"], T, tr, _rs(ctx, rs_corrente) if vivo else None)
+        ctx.anexar(tr, f"{rotulo}, Rs de {rs_corrente}" if vivo else rotulo)
         ctx._props[chave] = o
     return ctx._props[chave]
 
@@ -325,14 +355,15 @@ def _subfases(fase):
     return f if all(x in cfg()["fases"] for x in f) else [fase]
 
 
-def _fase(ctx, corrente, fase, t):
-    """{subfase: (massa kg/s, propriedades a T)} das subfases (óleo, aquosa) da fase pedida."""
+def _fase(ctx, corrente, fase, t, rs=None):
+    """{subfase: (massa kg/s, propriedades a T)} das subfases (óleo, aquosa) da fase pedida.
+    `rs`: corrente cujo gás dissolvido define o óleo vivo (padrão: a própria)."""
     T, rotulo = ctx.temperatura(t)
     s = ctx.r.streams[corrente]
     out = {}
     for sub in _subfases(fase):
         massa = sum(s[c] for c in cfg()["fases"][sub])
-        props = _oleo(ctx, T, rotulo) if sub == "oleo" else _aquosa(ctx, corrente, T, rotulo)
+        props = _oleo(ctx, T, rotulo, rs or corrente) if sub == "oleo" else _aquosa(ctx, corrente, T, rotulo)
         out[sub] = (massa, props)
     return out
 
@@ -384,19 +415,26 @@ def r_densidade_fase(ctx, alvo, corrente, fase, t=None):
     return Valor(rho, "propriedade", f"{corrente}: ρ da fase {fase} (volumes aditivos)")
 
 
-def r_viscosidade_fase(ctx, alvo, corrente, fase, t=None, continua=None):
-    subs = _fase(ctx, corrente, fase, t)
+def _nota(p, ctx, corrente, rs):
+    """Complemento da fonte quando a μ da fase foi corrigida (óleo vivo: com o Rs de qual corrente)."""
+    return f" ({p.nota}; Rs de {rs or corrente})" if p.nota else ""
+
+
+def r_viscosidade_fase(ctx, alvo, corrente, fase, t=None, continua=None, rs=None):
+    subs = _fase(ctx, corrente, fase, t, rs)
     for sub, (massa, p) in subs.items():
         if sub == "oleo" and (massa > 0 or len(subs) == 1):
             for aviso in p.avisos:
                 ctx.aviso(f"{corrente}: {aviso}")
     if len(subs) == 1:
-        return Valor(next(iter(subs.values()))[1].mu, "propriedade", f"{corrente}: μ da fase {fase}")
+        p = next(iter(subs.values()))[1]
+        return Valor(p.mu, "propriedade", f"{corrente}: μ da fase {fase}{_nota(p, ctx, corrente, rs)}")
     (sub_c, (m_c, p_c)), = [(k, v) for k, v in subs.items() if k == continua]
     (sub_d, (m_d, p_d)), = [(k, v) for k, v in subs.items() if k != continua]
     v_c, v_d = m_c / p_c.rho, m_d / p_d.rho
     if v_d == 0:
-        return Valor(p_c.mu, "propriedade", f"{corrente}: μ da fase contínua ({sub_c}), sem fase dispersa")
+        return Valor(p_c.mu, "propriedade",
+                     f"{corrente}: μ da fase contínua ({sub_c}), sem fase dispersa{_nota(p_c, ctx, corrente, rs)}")
     if v_c == 0:
         ctx.aviso(f"{corrente}: fase contínua ({sub_c}) ausente; usada a μ da fase {sub_d}")
         return Valor(p_d.mu, "propriedade", f"{corrente}: μ da fase {sub_d}")
@@ -404,7 +442,8 @@ def r_viscosidade_fase(ctx, alvo, corrente, fase, t=None, continua=None):
     mu, avisos = fluidos.emulsao(p_c.mu, p_d.mu, v_d / (v_c + v_d), tr)
     _, rotulo = ctx.temperatura(t)
     ctx.anexar(tr, f"{corrente}, {rotulo}" if corrente != rotulo else corrente, avisos)
-    return Valor(mu, "propriedade", f"{corrente}: emulsão, {sub_c} contínuo (Branan eq. 27-4)")
+    nota = _nota(p_c, ctx, corrente, rs) or _nota(p_d, ctx, corrente, rs)
+    return Valor(mu, "propriedade", f"{corrente}: emulsão, {sub_c} contínuo (Branan eq. 27-4){nota}")
 
 
 def r_densidade_gas(ctx, alvo, corrente):
@@ -437,7 +476,8 @@ def r_insumo(ctx, alvo, chave):
 
 
 def _utilidade(ctx, entrada, saida):
-    faltam = [k for k in (entrada, saida) if k not in ctx.aj and "valor" not in ctx.tag.insumos[k]]
+    faltam = [k for k in (entrada, saida) if k not in ctx.aj and "valor" not in ctx.tag.insumos[k]
+              and ctx._proposta(k) is None]
     if faltam:
         raise _Pendente(faltam)
     t_in, _ = ctx.insumo(entrada)
@@ -664,7 +704,7 @@ def especificacoes(tag, pfd=True):
     return eq, m, specs
 
 
-def montar(tag, balanco, dados, prem, ajustes=None, estado=None):
+def montar(tag, balanco, dados, prem, ajustes=None, estado=None, propostas=None, oleo_vivo=True):
     """Adaptador automático: entradas do TAG nos casos do balanço (`balanco`: ResultadoCaso
     de cada caso). `estado` (EstadoTAG) ou `ajustes` (formato F10b) trazem o que o usuário
     informou e revisou."""
@@ -675,7 +715,8 @@ def montar(tag, balanco, dados, prem, ajustes=None, estado=None):
     _validar_estado(tag, estado, specs, {r.num for r in balanco})
     casos = []
     for r in balanco:
-        ctx = _Caso(tag, m, specs, r, dados, prem, estado.ajustes_do_caso(r.num))
+        ctx = _Caso(tag, m, specs, r, dados, prem, estado.ajustes_do_caso(r.num), propostas=propostas, num=r.num,
+                    oleo_vivo=oleo_vivo)
         valores = _auditar(_fase_aquosa(m, {k: ctx.valor(k) for k in specs}), estado, r.num)
         _rastrear(ctx, valores, specs)
         ativo, motivo = _atividade(tag, ctx, valores, specs)
@@ -686,7 +727,7 @@ def montar(tag, balanco, dados, prem, ajustes=None, estado=None):
     return EntradasTAG(tag, eq, m, specs, casos, _lacunas(tag, m, specs, casos))
 
 
-def montar_manual(tag, casos, estado, pfd=True):
+def montar_manual(tag, casos, estado, pfd=True, propostas=None):
     """Adaptador manual: `casos` = [(num, nome)]; valores do usuário e do arquivo importado,
     recomendações do TAG e defaults com fonte; o resto é lacuna. Não consulta o balanço.
     Atividade: a informada pelo usuário e as regras de vazão do TAG sobre os valores
@@ -700,7 +741,7 @@ def montar_manual(tag, casos, estado, pfd=True):
     out = []
     for n, nome in casos:
         ctx = _Caso(tag, m, specs, None, None, None, estado.ajustes_do_caso(n), estado.importados_do_caso(n),
-                    estado.arquivo)
+                    estado.arquivo, propostas=propostas, num=n)
         valores = _auditar(_fase_aquosa(m, {k: ctx.valor(k) for k in specs}), estado, n)
         _rastrear(ctx, valores, specs)
         if n in estado.inativos:

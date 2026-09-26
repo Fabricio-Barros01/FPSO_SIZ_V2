@@ -5,7 +5,7 @@ o DN pela banda de velocidade, pela folga de NPSH e pela validade da correlaçã
 (case_admissible). Escolhe-se o MENOR DN admissível.
 """
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from fpso_siz.core.contrato import Equipamento, ResultField, SweepAxis, SweepColumn, der
 from fpso_siz.core.corrente import field_units
@@ -178,6 +178,26 @@ class MoranPumpSizing(MetodoTOML):
         return (f"Na banda de velocidade {banda} todos os diâmetros cavitam: a maior folga de NPSH é "
                 f"{jl_round(melhor, 2)} m, e ela precisa ser ≥ 0. Suba o nível do reservatório de sucção, encurte a "
                 "linha de sucção, reduza a temperatura, ou escolha bomba de menor NPSH requerido.")
+
+    # --- memorial (F10x): mesma hidráulica do dimensionamento
+    def curva_sistema(self, cons, dn, fracoes):
+        """[(Q [m³/h], H [m])] da linha com o DN escolhido, com a vazão de projeto multiplicada
+        por cada fração. Q = 0: só a carga estática. Ponto sem correlação de atrito válida
+        (transição laminar-turbulento) fica NaN: o programa não extrapola."""
+        pontos = []
+        for f in fracoes:
+            if f == 0:
+                pontos.append((0.0, cons.h_est))
+                continue
+            hid = _hidraulica(replace(cons, q_m3s=cons.q_m3s * f, q_m3h=cons.q_m3h * f), dn)
+            pontos.append((cons.q_m3h * f, hid["h_total"] if hid["confiavel"] else math.nan))
+        return pontos
+
+    def npsh_exigido(self, cons):
+        return cons.npsh_exigido
+
+    def npsh_disponivel(self, derivados):
+        return derivados["npsh"]
 
     def governing_label(self, g):
         return {"atrito": "perda por atrito", "estatica": "carga estática"}.get(g, str(g))

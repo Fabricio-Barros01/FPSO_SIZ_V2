@@ -51,11 +51,13 @@ def estrutura_tag(ctx, rt):
     return _limpar({
         "schema_version": ESQUEMA,
         "proveniencia": {"arquivo": ctx.dados.origem if bot else None, "sha256": ctx.dados.sha256 if bot else None,
-                         "fpso_siz": __version__, "propriedades": ctx.versoes},
+                         "fpso_siz": __version__, "propriedades": ctx.versoes,
+                         "propostas": ({"arquivo": ctx.propostas.arquivo, "sha256": ctx.propostas.sha256}
+                                       if ctx.propostas else None)},
         "tag": asdict(e.tag), "avulso": e.avulso, "modo": e.modo, "status": rt.status, "preliminar": e.preliminar,
         "premissas": ctx.prem if bot else None,
         "ajustes": canonico_estado(rt.estado, list(e.specs)) if rt.estado is not None else {},
-        "limitacoes": limitacoes(),
+        "limitacoes": limitacoes(ctx.oleo_vivo),
         "blocos_sem_dimensionamento": blocos_sem_dimensionamento(topologia()) if bot else [],
         "fontes_propriedades": fontes_propriedades(),
         "descritores": [asdict(s) for s in e.specs.values()],

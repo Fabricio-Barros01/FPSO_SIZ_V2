@@ -46,10 +46,12 @@ def roteiro(*respostas):
     return entrada
 
 
-def sessao(*respostas, casos=CASOS, colunas=100, cor=False, unicode=True, ajustes=None):
+def sessao(*respostas, casos=CASOS, colunas=100, cor=False, unicode=True, ajustes=None, propostas=False):
+    """Sessão roteirizada; por padrão SEM os valores propostos (os roteiros das fases F10b/F10c
+    exercitam o preenchimento das lacunas). `propostas=None` usa o padrão da aplicação."""
     out = io.StringIO()
     s = Sessao(casos=casos, entrada=roteiro(*respostas), saida=out, estilo=Estilo(cor, unicode), colunas=colunas,
-               agora=lambda: AGORA, ajustes=ajustes)
+               agora=lambda: AGORA, ajustes=ajustes, propostas=propostas)
     return s, out
 
 

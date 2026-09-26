@@ -14,7 +14,7 @@ aquela fase).
 
 ## Estado atual
 
-**FASE ATUAL: F10x — pendências de entrada com os valores propostos ← ATUAL (registrada; aguardando aprovação)**
+**FASE ATUAL: resolução dos alarmes de inviabilidade (pré-condição da F15) ← ATUAL; F10x (até F10x.5, óleo vivo), F13, F14 e o planejamento da F15 entregues em 2026-09-26. Alarme do SG-001 explicado pela viscosidade de óleo vivo; seguem abertos os de trocadores e bombas.**
 **F11 (MC por TAG) e F11b (MC do balanço por caso) entregues em 2026-09-26, em sessão autônoma
 autorizada pelo usuário, no branch `fases/f11` (sem merge; integração pelo usuário). Ver
 [`docs/validacao/13-memorial-tag.md`](docs/validacao/13-memorial-tag.md).**
@@ -970,7 +970,7 @@ com commit, regra do FWKO, premissas diferentes do padrão e data; "—" nas gra
 aquosa dos casos 1 e 4–7 (P-42). Ação no menu do balanço iterando os casos. Isolado × lote:
 `.tex` byte a byte e texto do PDF iguais; os 32 PDFs compilam.
 
-### F10x — Preenchimento das pendências de entrada com os valores propostos (registrada, não executada) ← ATUAL
+### F10x — Preenchimento das pendências de entrada com os valores propostos ✅
 Carregar os valores do `pendencias_propostas.toml` do usuário (em `docs/propostas/`, com
 `status = "proposto"`) como entradas dos TAGs aguardando entrada (TO: gotícula após
 coalescência; P: condutividades, incrustações, temperaturas da utilidade; B: arranjo,
@@ -985,7 +985,39 @@ passo a passo (equações declaradas em `memorial_tag.toml`) e os gráficos de t
 parcelas de U) e de bomba (curva do sistema, NPSHd × NPSHr por caso); (5) balanço, oráculo e
 fixtures do Julia inalterados; cobertura ≥ 90 % no núcleo.
 
-### F13 — Contrato de propriedades + estudo do SG-001 (registrada, não executada)
+**Entregue (2026-09-26, aprovada pelo usuário: "continue com as fases por etapas").**
+Commits `de962eb` (F10x.1), `04f0139` (F10x.2), `f807387` (F10x.3).
+- F10x.1: gráficos de trocador (perfil T × Q, parcelas de 1/U) e de bomba (curva do sistema,
+  NPSH disponível × requerido por caso), pelos hooks do método (mesma física).
+- F10x.2: `docs/propostas/pendencias_propostas.toml` com as 43 lacunas do inventário, todas
+  `status = "proposto"`, origem "proposta do usuário" e justificativa física, sem referência
+  atribuída ao número; carga validada (`pfd/propostas.py`: esquema, campos, tipo, unidade,
+  faixa, limite, status, duplicidade, casos); origem própria `proposta` (revisão pendente),
+  separada dos valores com fonte e dos calculados; `--propostas` em `dimensionar`, `pfd` e
+  `interativo`; tabela "Valores PROPOSTOS, a confirmar" no MC. Sem `--propostas` nada muda.
+- F10x.3: MC próprio de cada TAG (função no processo, correntes do bloco com T e P, hipóteses do
+  TAG; premissas no texto vêm de P[...]); sem texto de vaso em bomba e trocador.
+- F10x.4 (`ca1f901`, decisão do usuário: "pode seguir com os valores propostos; para mudar, só
+  selecionar a opção e editar"): `pendencias_propostas.toml` em `config/pfd/`, carregado por
+  padrão na CLI e no interativo (`--propostas ARQ` troca, `--sem-propostas` desliga); a edição
+  no interativo vira entrada do usuário e prevalece. A biblioteca (`Contexto`) segue sem
+  propostas se nada for passado.
+- F10x.5 (pedido do usuário: "corrija a viscosidade para o valor real"): **viscosidade de óleo
+  vivo** por Beggs & Robinson (1975) sobre o óleo morto do BOT, com o Rs da corrente vindo do
+  balanço (Q_G/Q_O padrão, Standing), aplicada só dentro da faixa de Rs da correlação (abaixo
+  dela fica o óleo morto medido, com aviso). É o padrão; `--oleo-morto` volta ao modo anterior,
+  que é o das fixtures do Julia e da F10b. Efeito: **o SG-001 passa a ser viável** (D = 6.050 mm,
+  SR 3,94; teto do caso 2 de 3.612 para 6.257 mm) e o Re do óleo no P-002 sobe (1.876–5.588, que
+  continua fora de Dittus-Boelter). Os demais TAGs não mudam (correntes desgaseificadas).
+  Justificativa e tabelas em [`docs/validacao/16-oleo-vivo.md`](docs/validacao/16-oleo-vivo.md).
+  A correlação está fora do acervo local (a conferir).
+- Com as propostas: TO-001/TO-002 dimensionam (d = 5.550 mm); bombas e trocadores seguem
+  inviáveis — tratados como alarme na F13.
+- **Aceite:** (1) ✓; (2) ✓ (só `proposto` entra); (3) parcial — os TAGs ficam sem lacuna, mas
+  bombas/trocadores/SG-001 inviáveis (alarmes F13); (4) gráficos ✓, passo a passo com
+  substituição só nos vasos (bomba/trocador: rastro em tabela); (5) ✓; cobertura ✓.
+
+### F13 — Contrato de propriedades + alarmes de inviabilidade (estudo do SG-001) ✅
 Formalizar o contrato das propriedades de fluido consumidas pelos métodos (unidade, condição,
 correlação, faixa de validade e fonte, por grandeza) e estudar as alternativas para a
 inviabilidade do SG-001 (entrada mais quente, gotícula/retenção, trens em paralelo, η menor
@@ -995,7 +1027,27 @@ mudar número; (2) estudo em `docs/validacao/` com a tabela de alternativas × t
 banda, para os 16 casos, gerado pelo mesmo motor; (3) nenhuma premissa nova entra no cálculo
 padrão sem aprovação do usuário; (4) o MC do SG-001 cita o estudo.
 
-### F14 — Termodinâmica preliminar com `thermo` e `iapws` (registrada, não executada)
+**Entregue (2026-09-26).** Diretriz do usuário: a unidade do BOT é um projeto básico real;
+TAG sem equipamento que atenda é **alarme** de erro de premissa, numérico ou de modelo, com
+anotação e investigação.
+- `config/pfd/contrato_propriedades.toml` + `pfd/contrato.py`: um descritor por grandeza de
+  fluido (regra, unidade, condição, função, fonte, validade), conferido contra o código.
+- `config/pfd/alarmes.toml` + `pfd/investigacao.py`: hipóteses por TAG inviável e variantes
+  executáveis pelo mesmo motor (η 0,80/0,90 da faixa do usuário, trens em paralelo, 1 passe,
+  sem piso de velocidade), sem mudar o cálculo padrão; seção ALARME no MC; estado "inviável —
+  ALARME" no terminal; relatório gerado `docs/validacao/14-alarmes.md`
+  (`tools/investigar_alarmes.py`).
+- Achados (com óleo morto; ver F10x.5 para o óleo vivo, que explica o SG-001): SG-001 inviável só nos casos 2 e 3; conta do teto refeita do rastro sem erro numérico;
+  nenhuma variante rastreável resolve (3 trens: SR no teto 6,8 > 5) → premissas suspeitas
+  (viscosidade de óleo morto; critério de 500 µm aplicado ao FWKO). Trocadores: óleo laminar no
+  tubo, fora de Dittus-Boelter (falta correlação laminar no acervo; P-001 com 1 passe chega ao
+  mesmo limite). Bombas: faixa de vazão de 10–23× entre casos numa linha só; B-002 casos 15–16
+  no vão da série de DN para a banda 1–1,5 m/s.
+- BOT versionado em `docs/bot/` (a pedido do usuário) e conferido nos itens citados.
+- **Aceite:** (1) ✓; (2) estudo em `docs/validacao/14-alarmes.md` gerado pelo motor ✓; (3) ✓
+  nenhuma premissa nova no padrão; (4) o MC do SG-001 cita a investigação ✓.
+
+### F14 — Termodinâmica preliminar com `thermo` e IAPWS ✅
 Flash e propriedades de óleo vivo/gás dissolvido (Bo, Rs, calor de flash) por `thermo`
 (ChEDL, só via `pfd/_chedl.py`) e água/vapor por `iapws`, em camada a jusante do balanço.
 **Aceite:** (1) `iapws` atrás de uma porta única, com teste de arquitetura; (2) comparação
@@ -1003,7 +1055,24 @@ com o balanço preliminar (gás seco, cp constante) caso a caso em `docs/validac
 o balanço nem a paridade; (3) cada propriedade no rastro com a fonte e a faixa de validade;
 (4) cobertura ≥ 90 % no núcleo.
 
-### F15 — Otimização com `pymoo` (só planejamento)
+**Entregue (2026-09-26).** `pfd/termodinamica.py` + `config/pfd/termodinamica.toml` +
+relatório gerado `docs/validacao/15-termodinamica.md` (`tools/termodinamica_preliminar.py`).
+- IAPWS via `chemicals` (IAPWS-95/2008/2011, as mesmas normas do pacote `iapws`), atrás da
+  porta única `pfd/_chedl.py`: nenhuma dependência nova.
+- Balanço × ChEDL, caso a caso, sem alterar o balanço: cp aquoso −2,0 a +0,2 % de Laliberté;
+  cp do gás (ideal a 25 °C) 9–15 % abaixo da EOS de Peng-Robinson na condição dos vasos; Z do
+  gás no FWKO ≈ 0,93; efeito do cp aquoso na carga do P-002 < 2 %.
+- Lacunas de caracterização (sem fonte): Tc/Pc/ω do C20+ (o BOT só dá MW e densidade; as
+  correlações do ChEDL pedem Tb) → sem flash do fluido de poço, calor de flash, Rs/Bo pela EOS
+  nem viscosidade de óleo vivo (hipótese do alarme do SG-001).
+- **Aceite:** (1) porta única (teste de arquitetura existente, `_chedl.py`) ✓; (2) comparação
+  caso a caso sem mudar balanço/paridade ✓; (3) fontes no relatório ✓; (4) cobertura ✓.
+
+### F15 — Otimização com `pymoo` (só planejamento) ✅ (planejamento)
+**Entregue (2026-09-26):** `docs/decisoes/0003-otimizacao-pymoo.md` — variáveis com limites de
+origem declarada, objetivos, restrições como estado, NSGA-II/III, porta única `_otim.py`,
+critério de validação; **pré-condição: nenhum alarme aberto** (docs/validacao/14-alarmes.md).
+Nenhuma dependência instalada.
 Planejar a otimização multiobjetivo do módulo (volume dos vasos, cargas térmicas, área dos
 trocadores) sobre o motor de envelope, com `pymoo`.
 **Aceite do planejamento:** documento em `docs/decisoes/` com variáveis de decisão (e de onde

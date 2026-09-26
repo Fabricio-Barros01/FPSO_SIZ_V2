@@ -1,6 +1,8 @@
 """Formatação numérica pt-BR para LaTeX (idêntica à do script de referência)."""
 import math
 
+from fpso_siz.core.unidades import POR_CENTO  # noqa: F401  (porcentagens de apresentação)
+
 
 def br(x, d=0):
     """Número com separador de milhar '.' e decimal ','; '--' para None; zero sem sinal."""

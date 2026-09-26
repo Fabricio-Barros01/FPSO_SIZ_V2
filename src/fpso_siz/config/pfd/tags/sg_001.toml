@@ -15,7 +15,7 @@ q_gas = { regra = "vazao_gas_padrao", corrente = "C-04" }
 rho_oil = { regra = "densidade_fase", corrente = "C-03", fase = "oleo" }
 rho_water = { regra = "densidade_fase", corrente = "C-03", fase = "agua" }
 rho_gas = { regra = "densidade_gas", corrente = "C-04" }
-mu_oil = { regra = "viscosidade_fase", corrente = "C-03", fase = "oleo" }
+mu_oil = { regra = "viscosidade_fase", corrente = "C-03", fase = "oleo", rs = "C-06" }  # óleo vivo: o gás dissolvido é o do óleo que sai do vaso
 mu_water = { regra = "viscosidade_fase", corrente = "C-03", fase = "agua" }
 mu_gas = { regra = "viscosidade_gas", corrente = "C-04" }
 pressure = { regra = "pressao", corrente = "C-04" }

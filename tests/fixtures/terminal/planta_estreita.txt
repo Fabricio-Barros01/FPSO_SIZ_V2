@@ -1,11 +1,11 @@
 
 ━━ Planta / PFD · design_cases_bot.json · casos
    1–16
-  2 dimensionado(s) · 8 aguardando entrada · 1
+  3 dimensionado(s) · 8 aguardando entrada · 0
   inviável(is) · 0 inativo(s)
 
   C-01, C-02  → [M-01    ·] → C-03
-  C-03        → [SG-001  X] → C-04 (saída),
+  C-03        → [SG-001  D] → C-04 (saída),
                               C-05 (saída), C-06
   C-06, C-22  → [P-001   ?] → C-07, C-23
   C-07        → [P-002   ?] → C-08
@@ -40,7 +40,7 @@
   P-001   aguardando entrada
   P-002   aguardando entrada
   P-003   aguardando entrada
-  SG-001  inviável
+  SG-001  dimensionado
   TO-001  aguardando entrada
   TO-002  aguardando entrada
   V-001   dimensionado
@@ -52,6 +52,9 @@
     P-002 · Casos ativos: 10
     P-003 · Casos ativos: 16
     SG-001 · Casos ativos: 16
+    SG-001 · Resultado: Diâmetro d: 6.050 mm
+    SG-001 · Caso governante: BOT 12 — Late
+    Life
     TO-001 · Casos ativos: 16
     TO-002 · Casos ativos: 16
     V-001 · Casos ativos: 16
@@ -230,13 +233,6 @@
     revisão pendente: Passo da grade = 150
     mm (default); casos 1–16
     … +6
-    Não há equipamento que atenda
-    simultaneamente aos 16 casos. Nenhum
-    diâmetro admissível tem esbeltez na
-    banda 3.0–5.0: abaixo do teto de
-    decantação (3612.0 mm) o SR varia de
-    20.34 a 6975.66. Amplie a grade de
-    diâmetros ou a banda de SR.
     1 aviso(s) de propriedades/faixas;
     detalhe no JSON do TAG e no rastro.
 
@@ -250,7 +246,7 @@
     revisão pendente: Esbeltez mínima = 3 –
     (default); casos 1–16
     … +4
-    1 aviso(s) de propriedades/faixas;
+    6 aviso(s) de propriedades/faixas;
     detalhe no JSON do TAG e no rastro.
 
   TO-002 — Dessalinizador (tratador eletrostático)
