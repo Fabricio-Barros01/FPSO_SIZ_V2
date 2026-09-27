@@ -3,7 +3,11 @@
 É o item do aceite que amarra a física nova aos casos reais: BOT 04, BOT 05 e BOT 06 (os de
 baixa carga) e os dez casos ativos do P-001. O que se prova aqui é que NENHUM caso é mais
 recusado por falta de correlação, e que o que restou de inviabilidade tem restrição governante
-identificada — comprimento no P-003, área no P-001.
+identificada — a ÁREA no P-001. No P-003 o comprimento só volta a bloquear com o tubo de 25,4 mm.
+
+Os regimes afirmados aqui são os medidos na geometria que a reotimização escolhe (12,7 mm, um
+passe): o Reynolds de cada caso está no teste, e a tabela completa está em
+`docs/validacao/24-pelicula-baixo-reynolds.md`.
 """
 import math
 
@@ -38,16 +42,25 @@ def test_a_pelicula_esta_ligada_nos_tres_tags_com_fonte():
         assert rec["valor"] == 1.0 and "Branan" in rec["fonte"] and "2-10" in rec["fonte"]
 
 
-def test_p002_viavel_e_o_bot06_calculado_na_transicao(planta_propostas):
-    """O BOT 06 (3,6 % da carga de projeto) era o único bloqueio do P-002. Agora é calculado na
-    transição, e o TAG fica viável — sem circulação fixa e sem mudar arquitetura."""
+def test_p002_viavel_e_os_casos_de_baixa_carga_calculam(planta_propostas):
+    """O BOT 06 (3,6 % da carga de projeto) era o único bloqueio do P-002. Na geometria que a
+    reotimização escolhe (12,7 mm, um passe) ele cai no LAMINAR, Re ≈ 1.416, e é calculado por
+    Hausen; o BOT 04 (Re ≈ 4.145) e o BOT 05 (Re ≈ 5.461) caem na transição. O TAG fica viável —
+    sem circulação fixa e sem mudar arquitetura."""
     ctx = planta_propostas.contexto
     c = candidato(ctx, "P-002")
     assert c.viavel and not c.bloqueios
-    op = operacao(c)["BOT 06"]
-    assert op["regime"] == pel.TRANSICAO and op["nu_valido"]
-    assert 2000 < op["re"] < 1e4 and math.isfinite(op["h_i"]) and op["h_i"] > 0
-    assert "2-12" in op["correlacao"]
+    op = operacao(c)
+    seis = op["BOT 06"]
+    assert seis["regime"] == pel.LAMINAR and seis["nu_valido"]
+    assert seis["re"] <= 2000 and math.isfinite(seis["h_i"]) and seis["h_i"] > 0
+    assert "2-10" in seis["correlacao"]
+    # a interpolação da transição é exercida pela planta, e não só pelo caso-ouro
+    for caso in ("BOT 04", "BOT 05"):
+        o = op[caso]
+        assert o["regime"] == pel.TRANSICAO and o["nu_valido"], caso
+        assert 2000 < o["re"] < 1e4 and o["h_i"] > 0, caso
+        assert "2-12" in o["correlacao"], caso
     # e o estado do TAG na planta é dimensionado
     assert planta_propostas.tag("P-002").status == servico.DIMENSIONADO
 
@@ -65,14 +78,18 @@ def test_os_dois_trocadores_sao_viaveis_com_um_casco(planta_propostas):
         assert c.valores.get("cascos_serie", 1.0) == 1.0 and c.valores.get("cascos_paralelo", 1.0) == 1.0, ident
 
 
-@pytest.mark.parametrize("caso, regime", [("BOT 04", pel.TRANSICAO), ("BOT 05", pel.LAMINAR),
-                                          ("BOT 06", pel.LAMINAR)])
+# Reynolds medido na geometria escolhida (12,7 mm, um passe, 7.526 tubos/passe): os três casos de
+# baixa carga ficam no laminar, e a transição aparece nos BOT 11, 15 e 16.
+@pytest.mark.parametrize("caso, regime", [("BOT 04", pel.LAMINAR), ("BOT 05", pel.LAMINAR),
+                                          ("BOT 06", pel.LAMINAR), ("BOT 11", pel.TRANSICAO),
+                                          ("BOT 15", pel.TRANSICAO), ("BOT 16", pel.TRANSICAO)])
 def test_p003_casos_de_baixa_carga_calculam(planta_propostas, caso, regime):
-    """Os três casos que o P-003 não conseguia calcular agora calculam, no regime que o Reynolds
+    """Os casos que o P-003 não conseguia calcular agora calculam, no regime que o Reynolds
     indica, e nenhum é recusado por correlação."""
     c = candidato(planta_propostas.contexto, "P-003")
     op = operacao(c)[caso]
     assert op["regime"] == regime and op["nu_valido"] and op["h_i"] > 0
+    assert (op["re"] <= 2000) if regime == pel.LAMINAR else (2000 < op["re"] < 1e4)
     assert "dittus_boelter" not in {crit for crit, _ in c.bloqueios}
 
 

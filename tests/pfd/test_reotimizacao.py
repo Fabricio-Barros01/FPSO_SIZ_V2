@@ -51,8 +51,8 @@ def test_busca_reduzida_do_p002_para_em_um_casco(planta_propostas):
 
 def test_mc_do_p002_dimensionado_mostra_a_operacao_de_todos_os_casos(planta_propostas):
     """O P-002 ficou VIÁVEL quando a película do lado tubo passou a ter os três regimes: não há
-    mais feixe mais próximo a exibir, e todos os casos — inclusive o BOT 06, na transição — entram
-    na tabela de operação com a correlação válida, num casco só."""
+    mais feixe mais próximo a exibir, e todos os casos — inclusive o BOT 06, no laminar (Re ≈
+    1.416) — entram na tabela de operação com a correlação válida, num casco só."""
     rt = planta_propostas.tag("P-002")
     assert rt.status == "dimensionado"
     s = mc.documento(planta_propostas.contexto, rt)["calculo"]["series"]
@@ -60,7 +60,7 @@ def test_mc_do_p002_dimensionado_mostra_a_operacao_de_todos_os_casos(planta_prop
     assert s["v2"]["cascos_serie"] == 1.0 and s["v2"]["cascos_paralelo"] == 1.0
     papel = {o["caso"][:6]: o for o in s["operacao"]}
     assert all(o["nu_valido"] for o in papel.values())
-    assert papel["BOT 06"]["papel"] == "turndown" and papel["BOT 06"]["regime"] == "transicao"
+    assert papel["BOT 06"]["papel"] == "turndown" and papel["BOT 06"]["regime"] == "laminar"
 
 
 def test_p003_dimensionado_com_um_casco_dentro_dos_limites(planta_propostas):

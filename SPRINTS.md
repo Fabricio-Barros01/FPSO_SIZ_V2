@@ -131,9 +131,18 @@ cresceria com a distância), também registrada.
 
 | TAG | Antes | Depois | Restrição que governa agora |
 |---|---|---|---|
-| P-002 | inviável: faixa de Dittus-Boelter no BOT 06 | **viável** | nenhuma — sem circulação fixa e sem mudar arquitetura (viável com um casco, 493,6 m², e com dois em série, 389,9 m²) |
-| P-003 | inviável: faixa de Dittus-Boelter nos BOT 04/05/06 **e** comprimento | inviável | **comprimento de tubo**: o melhor feixe de um casco pede 7,33 m contra o limite de estoque de 6 m (22 % acima); dois cascos em série resolvem (1.585 tubos/passe, 5,99 m, 1.515,7 m²) |
-| P-001 | inviável: domínio do fator F (2 passes) e faixa de Dittus-Boelter (1 passe) | inviável | **área**: no platô laminar h_i satura em ~34 e U em ~25 W/(m²·K), contra U·A exigido de 1,55 MW/K; o melhor feixe da grade pede 186,4 m de tubo. Com 2 passes, o domínio do fator F ainda vem antes |
+| P-002 | inviável: faixa de Dittus-Boelter no BOT 06 | **viável, UM casco** | nenhuma — sem circulação fixa e sem mudar arquitetura: 12,7 mm, 1 passe, passo 1,25, arranjo 90°, chicana 0,2·Ds, 1.605 tubos/passe, L = 5,99 m, 383,8 m² (21 dos 96 candidatos viáveis) |
+| P-003 | inviável: faixa de Dittus-Boelter nos BOT 04/05/06 **e** comprimento | **viável, UM casco** | nenhuma — 12,7 mm, 1 passe, passo 1,25, arranjo 30°, chicana 0,2·Ds, 7.526 tubos/passe, L = 4,91 m, 1.473,4 m² (32 dos 96 viáveis). O bloqueio de comprimento só reaparece com o tubo de 25,4 mm (7,33 m contra o limite de 6 m) |
+| P-001 | inviável: domínio do fator F (2 passes) e faixa de Dittus-Boelter (1 passe) | inviável | **área**: no platô laminar h_i satura em ~34 e U em ~25 W/(m²·K), contra U·A exigido de 1,55 MW/K; o melhor feixe da grade pede 186,4 m de tubo (o escolhido, 434,4 m). Com 2 passes, o domínio do fator F ainda vem antes |
+
+**Regime de cada caso, medido na geometria escolhida** (tabela completa em
+`docs/validacao/24-pelicula-baixo-reynolds.md`): no P-002 os três casos de maior carga e o BOT 11
+ficam turbulentos, BOT 04 (Re = 4.145) e BOT 05 (Re = 5.461) na transição e o BOT 06 (Re = 1.416)
+no laminar; no P-003 os BOT 04, 05 e 06 (Re = 1.449, 629 e 162) ficam no laminar e a transição
+aparece nos BOT 11, 15 e 16 (Re = 6.111, 4.615 e 5.139); no P-001, com um passe, seis casos ficam
+na transição e quatro no laminar, nenhum turbulento. Com o tubo de 12,7 mm e um passe a velocidade
+por tubo cai, e por isso os casos de menor carga ficam abaixo de Re = 2000 — é por isso que os
+regimes NÃO são os da geometria que a física antiga escolhia (19,05 mm/2 passes, 25,4 mm).
 
 Os dez casos ativos do P-001 e os dezesseis do P-003 **calculam**: nenhum é mais recusado por
 falta de correlação. No P-001 a varredura mostra que **não é a banda de velocidade** que impede:
@@ -144,10 +153,13 @@ em ~60.000 m² — é a área, e o teto de 3 m/s (erosão, Saari) impede o óleo
 - **Circulação fixa da utilidade: NÃO é necessária.** O P-002 é viável com a circulação
   proporcional à carga, que é o cálculo padrão. A variante continua estudo e passa a ser escolha
   de operação, não remédio de viabilidade — e por isso **não foi promovida**.
-- **Cascos em série no P-003:** justificados por limite construtivo (6 m de tubo, excedido em
-  22 %), não por deficiência do modelo. No P-002, **um casco basta**; dois cascos dão menos área
-  (389,9 contra 493,6 m²), o que é escolha de otimização. A decisão de estender a série ao P-003
-  é do usuário.
+- **Cascos em série: NÃO são necessários em nenhum dos dois.** Com a grade reexecutada sobre a
+  física corrigida, o P-002 e o P-003 fecham **com um casco só** (12,7 mm). O bloqueio de
+  comprimento do P-003 era da geometria que a física antiga escolhia (25,4 mm: 7,33 m contra o
+  limite de 6 m) e desaparece com o tubo menor, que acomoda mais tubos no mesmo casco. A premissa
+  original — série prevista só para o P-002 — segue **intacta e sem uso**, e não se estendeu nada
+  ao P-003. Dividir em cascos continua sendo escolha de otimização do usuário, não remédio de
+  viabilidade.
 - **P-44b: continua necessária, e só para o B-001** (sem ela o B-001 fica inviável; B-002 e B-003
   não mudam). É política de **atrito** na faixa 2300 < Re < 4000, que o acervo não cobre
   (Hagen-Poiseuille exata até 2300, Colebrook-White a partir de 4000) — grandeza e equipamento
@@ -166,7 +178,7 @@ sem DN admissível** — de 95,4 a 113,1 m³/h. Não é bug, discretização art
 lógica do seletor: é série comercial discreta combinada com banda de velocidade. A fronteira fica
 **preservada e documentada**, e a F15 deve reconhecer regiões inviáveis em vez de forçar solução.
 
-**FASE ATUAL: resolução dos alarmes de inviabilidade ← ATUAL; F8 (Pinch de Kemp, com a aplicação ao pré-aquecedor) e F15 (otimização com pymoo, como estudo) implementadas em 2026-09-26; F10x (até F10x.7), F13 e F14 entregues em 2026-09-26. Alarmes do SG-001 (óleo vivo) e das bombas (P-44) explicados; P-002/P-003 abertos (Dittus-Boelter no turndown, após P-45/P-46 e reotimização); P-001 é lacuna metodológica.**
+**FASE ATUAL: resolução dos alarmes de inviabilidade ← ATUAL; F8 (Pinch de Kemp, com a aplicação ao pré-aquecedor) e F15 (otimização com pymoo, como estudo) implementadas em 2026-09-26; F10x (até F10x.7), F13 e F14 entregues em 2026-09-26. Alarmes do SG-001 (óleo vivo) e das bombas (P-44) explicados; P-002 e P-003 FECHADOS pela física em 2026-09-27 (película do lado tubo nos três regimes, um casco cada, sem premissa nova); o P-001 segue inviável, agora pela ÁREA — a lacuna metodológica dele está fechada. F12 CANCELADA; F9 ADIADA. 10 dos 11 TAGs dimensionados.**
 **F11 (MC por TAG) e F11b (MC do balanço por caso) entregues em 2026-09-26, em sessão autônoma
 autorizada pelo usuário, no branch `fases/f11` (sem merge; integração pelo usuário). Ver
 [`docs/validacao/13-memorial-tag.md`](docs/validacao/13-memorial-tag.md).**
