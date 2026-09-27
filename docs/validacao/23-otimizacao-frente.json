@@ -1,0 +1,177 @@
+{
+  "completo": {
+    "frente": [],
+    "meta": {
+      "algoritmo": "NSGA-II",
+      "avaliacoes": 192,
+      "geracoes": 8,
+      "objetivos": [
+        "volume_vasos",
+        "carga_aquecimento",
+        "area_trocadores"
+      ],
+      "populacao": 24,
+      "pymoo": "0.6.2",
+      "semente": 1,
+      "subproblema": "completo",
+      "tags_restritas": [
+        "SG-001",
+        "V-001",
+        "V-002",
+        "TO-001",
+        "TO-002",
+        "P-001",
+        "P-002",
+        "P-003",
+        "B-001",
+        "B-002",
+        "B-003"
+      ],
+      "variaveis": [
+        "eta_F",
+        "trens_sg",
+        "passes_p002",
+        "passes_p003"
+      ]
+    },
+    "objetivos": [
+      "volume_vasos",
+      "carga_aquecimento",
+      "area_trocadores"
+    ],
+    "projeto_atual": {
+      "estados": {
+        "B-001": "dimensionado",
+        "B-002": "dimensionado",
+        "B-003": "dimensionado",
+        "P-001": "inviavel",
+        "P-002": "inviavel",
+        "P-003": "inviavel",
+        "SG-001": "dimensionado",
+        "TO-001": "dimensionado",
+        "TO-002": "dimensionado",
+        "V-001": "dimensionado",
+        "V-002": "dimensionado"
+      },
+      "objetivos": {
+        "area_trocadores": NaN,
+        "carga_aquecimento": 9769.69725111758,
+        "volume_vasos": 2327.8388670708964
+      },
+      "restricoes": {
+        "B-001": 0.0,
+        "B-002": 0.0,
+        "B-003": 0.0,
+        "P-001": 1.0,
+        "P-002": 0.09090909090909091,
+        "P-003": 1.0,
+        "SG-001": 0.0,
+        "TO-001": 0.0,
+        "TO-002": 0.0,
+        "V-001": 0.0,
+        "V-002": 0.0
+      },
+      "x": [
+        0.85,
+        1.0,
+        2.0,
+        1.0
+      ]
+    },
+    "variaveis": [
+      "eta_F",
+      "trens_sg",
+      "passes_p002",
+      "passes_p003"
+    ]
+  },
+  "sg_001": {
+    "frente": [
+      {
+        "objetivos": {
+          "carga_aquecimento": 9345.757301841504,
+          "volume_vasos": 1857.8186284659723
+        },
+        "restricoes": {
+          "B-001": 0.0,
+          "B-002": 0.0,
+          "B-003": 0.0,
+          "SG-001": 0.0,
+          "TO-001": 0.0,
+          "TO-002": 0.0,
+          "V-001": 0.0,
+          "V-002": 0.0
+        },
+        "x": [
+          0.8991906205192002,
+          2.838178968115256
+        ]
+      }
+    ],
+    "meta": {
+      "algoritmo": "NSGA-II",
+      "avaliacoes": 192,
+      "geracoes": 8,
+      "objetivos": [
+        "volume_vasos",
+        "carga_aquecimento"
+      ],
+      "populacao": 24,
+      "pymoo": "0.6.2",
+      "semente": 1,
+      "subproblema": "sg_001",
+      "tags_restritas": [
+        "SG-001",
+        "V-001",
+        "V-002",
+        "TO-001",
+        "TO-002",
+        "B-001",
+        "B-002",
+        "B-003"
+      ],
+      "variaveis": [
+        "eta_F",
+        "trens_sg"
+      ]
+    },
+    "objetivos": [
+      "volume_vasos",
+      "carga_aquecimento"
+    ],
+    "projeto_atual": {
+      "estados": {
+        "B-001": "dimensionado",
+        "B-002": "dimensionado",
+        "B-003": "dimensionado",
+        "SG-001": "dimensionado",
+        "TO-001": "dimensionado",
+        "TO-002": "dimensionado",
+        "V-001": "dimensionado",
+        "V-002": "dimensionado"
+      },
+      "objetivos": {
+        "carga_aquecimento": 9769.69725111758,
+        "volume_vasos": 2327.8388670708964
+      },
+      "restricoes": {
+        "B-001": 0.0,
+        "B-002": 0.0,
+        "B-003": 0.0,
+        "SG-001": 0.0,
+        "TO-001": 0.0,
+        "TO-002": 0.0,
+        "V-001": 0.0,
+        "V-002": 0.0
+      },
+      "x": [
+        0.85,
+        1.0
+      ]
+    },
+    "variaveis": [
+      "eta_F",
+      "trens_sg"
+    ]
+  }
+}
