@@ -79,12 +79,20 @@ class _Paralelo:
 
 
 def _pool(processos, dados, propostas, sub):
-    """Pool de processos com os dados por herança (contexto `fork`): o que trafega em cada
-    geração é só o vetor de decisão e a Avaliacao de volta."""
+    """Pool de processos que recebe os dados uma vez por processo; o que trafega em cada geração é
+    só o vetor de decisão e a Avaliacao de volta.
+
+    O contexto é `forkserver`, não `fork`: os filhos nascem de um servidor de processo limpo, de
+    uma thread só. `fork` a partir de um processo COM threads (é o caso quando a suíte roda sob
+    pytest-xdist, cujo worker tem threads de comunicação) é inseguro e o Python 3.12+ avisa sobre
+    isso. O preço do `forkserver` é picklar os argumentos e reimportar o pacote no filho, e aqui
+    isso é barato: os casos e as propostas dão cerca de 5 kB e 12 kB, e o preload adianta o import
+    do avaliador."""
     import multiprocessing
 
-    return multiprocessing.get_context("fork").Pool(
-        processos, initializer=_abrir, initargs=(dados, propostas, sub))
+    ctx = multiprocessing.get_context("forkserver")
+    ctx.set_forkserver_preload(["fpso_siz.pfd.otimizacao"])
+    return ctx.Pool(processos, initializer=_abrir, initargs=(dados, propostas, sub))
 
 
 def avaliar_pontos(dados, pontos, propostas=None, sub=None, processos=None):

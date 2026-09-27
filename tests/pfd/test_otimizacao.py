@@ -9,6 +9,7 @@ Também se fixa o que a rodada NÃO pode fazer: variável sem limite de origem d
 apenas proposto como variável de decisão, e lacuna ou caso inativo contando como violação.
 """
 import math
+import os
 from pathlib import Path
 
 import pytest
@@ -23,6 +24,12 @@ CASOS = Path(__file__).resolve().parents[1] / "fixtures" / "python_ref" / "desig
 SUB = "sg_001"
 # grade grossa só para o teste: a da ferramenta é a declarada no TOML
 PASSOS = {"eta_F": 0.05}
+# Uma avaliação deste subproblema custa dezenas de segundos (balanço + TAGs, com o SG-001
+# redimensionado por causa dos trens), e os critérios 2 e 3 pedem dezenas delas. Avaliar em
+# processos dá EXATAMENTE o mesmo resultado (tests/pfd/test_otimizacao_paralela.py prova a
+# equivalência), então o que estes testes verificam não muda — só o tempo de parede. O número é
+# conservador de propósito: a suíte já roda com workers do xdist em volta.
+PROCESSOS = max(2, (os.cpu_count() or 4) // 4)
 
 
 @pytest.fixture(scope="module")
@@ -116,10 +123,11 @@ def test_criterio_2_a_frente_do_nsga2_nao_e_dominada_pela_varredura_exaustiva(da
     domina um ponto da frente. É o critério 2 do 0003, em grade grossa."""
     from fpso_siz import _otim
     ids = [o["id"] for o in ot.objetivos(SUB)]
-    ref = [a for a in ot.varredura(dados, SUB, PASSOS) if a.viavel]
+    ref = [a for a in _otim.avaliar_pontos(dados, ot.grade(SUB, PASSOS), sub=SUB, processos=PROCESSOS)
+           if a.viavel]
     assert ref, "a grade do subproblema tem de ter pontos viáveis"
     frente_ref = ot.nao_dominados([a.objetivos for a in ref], ids)
-    _, hist, meta = _otim.otimizar(dados, populacao=6, geracoes=2, sub=SUB)
+    _, hist, meta = _otim.otimizar(dados, populacao=6, geracoes=2, sub=SUB, processos=PROCESSOS)
     viaveis = [a for a in hist if a.viavel]
     assert viaveis and meta["algoritmo"] == "NSGA-II"
     frente_alg = ot.nao_dominados([a.objetivos for a in viaveis], ids)
@@ -130,8 +138,8 @@ def test_criterio_2_a_frente_do_nsga2_nao_e_dominada_pela_varredura_exaustiva(da
 @pytest.mark.otim
 def test_criterio_3_mesma_semente_mesma_frente(dados):
     from fpso_siz import _otim
-    a = _otim.otimizar(dados, populacao=4, geracoes=2, semente=7, sub=SUB)
-    b = _otim.otimizar(dados, populacao=4, geracoes=2, semente=7, sub=SUB)
+    a = _otim.otimizar(dados, populacao=4, geracoes=2, semente=7, sub=SUB, processos=PROCESSOS)
+    b = _otim.otimizar(dados, populacao=4, geracoes=2, semente=7, sub=SUB, processos=PROCESSOS)
     assert [p[0] for p in a[0]] == [p[0] for p in b[0]]
     assert [p[1] for p in a[0]] == [p[1] for p in b[0]]
 

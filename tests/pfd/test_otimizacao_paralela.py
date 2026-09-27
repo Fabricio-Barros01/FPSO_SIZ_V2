@@ -30,7 +30,9 @@ def _igual(a, b):
 
 @pytest.mark.otim
 def test_rodada_paralela_da_a_mesma_frente_e_o_mesmo_historico(dados):
-    kw = dict(populacao=4, geracoes=2, sub=SUB)
+    # uma geração já cobre a população inicial inteira pelo runner; duas só dobrariam o custo da
+    # metade SEQUENCIAL da comparação, que é a caríssima
+    kw = dict(populacao=4, geracoes=1, sub=SUB)
     f1, h1, m1 = _otim.otimizar(dados, **kw, processos=1)
     f2, h2, m2 = _otim.otimizar(dados, **kw, processos=PROCESSOS)
     assert h1 and len(h1) == len(h2)

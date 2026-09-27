@@ -214,7 +214,9 @@ def main():
     ap.add_argument("--geracoes", type=int, default=None)
     ap.add_argument("--semente", type=int, default=None)
     ap.add_argument("--varredura", action="store_true", help="confere a frente contra a grade exaustiva")
-    ap.add_argument("--processos", type=int, default=os.cpu_count(),
+    # metade das CPUs lógicas: com SMT ligado isso é o número de núcleos FÍSICOS, e cada processo
+    # carrega um modelo de planta inteiro — a memória aperta antes dos núcleos
+    ap.add_argument("--processos", type=int, default=max(1, (os.cpu_count() or 2) // 2),
                     help="processos que avaliam a população de cada geração (1 = sequencial)")
     ap.add_argument("--saida", type=Path, default=RAIZ / "docs" / "validacao" / "23-otimizacao.md")
     ap.add_argument("--dados", type=Path, default=None, help="base dos arquivos .json/.csv da frente")
