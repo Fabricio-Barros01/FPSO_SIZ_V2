@@ -1373,6 +1373,48 @@ relatório gerado `docs/validacao/15-termodinamica.md` (`tools/termodinamica_pre
 - **Aceite:** (1) porta única (teste de arquitetura existente, `_chedl.py`) ✓; (2) comparação
   caso a caso sem mudar balanço/paridade ✓; (3) fontes no relatório ✓; (4) cobertura ✓.
 
+### F4 — Caracterização do fluido de poço ✅ (2026-09-27) — `docs/validacao/30-caracterizacao-fluido-de-poco.md`
+
+**Não há surrogate n-alcano.** A investigação mudou a solução duas vezes, com aprovação a cada
+passo, e o resultado é melhor que o planejado.
+
+**Fonte nova no acervo:** `references/riazi1996.pdf` — Riazi & Al-Sahhaf, *Fluid Phase
+Equilibria* **117** (1996) 217-224, correlações de Tb, SG, Tc, Pc e ω para cortes SCN C6–C50.
+Transcrição conferida contra as **duas verificações internas do próprio artigo** (Pc = 1,013 bar
+e Tbr = 0,996 em M = 1382): calculados 1,0087 bar e 0,9959.
+
+**O que a investigação encontrou, antes de implementar:**
+1. só `C20+` e `C20++` são recusados pelo backend — mas **`C7` era resolvido como n-heptano
+   puro**, trocando em silêncio um corte SCN por uma parafina normal;
+2. o **n-C33 que o plano original previa não tem parâmetros de EOS consistentes**: só n-C28,
+   C30, C32, C36, C40 e C44 têm entrada PSRK; os demais caem em `ACENTRIC_DEFINITION`, que dá
+   ω = **0,0000** para n-C37–C43. Com n-C33, o pseudo-componente mais LEVE teria Tc MAIOR que o
+   mais pesado — fisicamente invertido;
+3. com Riazi no acervo, o surrogate deixou de ser necessário: as frações plus são
+   caracterizadas **pelo MW do próprio BOT** (570 e 468, exatos), e a densidade fica a ~2,5 %
+   da declarada, contra ~15 % de uma parafina.
+
+**Regra da transformação: a identidade.** Cada componente mantém a sua fração molar; o que muda
+é a propriedade atribuída. Logo fechamento, não-negatividade e conservação valem por
+construção, não por aritmética.
+
+**Domínio validado:** 7 composições × 8 temperaturas (35–90 °C) × 4 pressões (101–2.500 kPa) =
+**224 de 224 condições convergem**.
+
+**Três propriedades BLOQUEADAS, cada uma por motivo demonstrado:**
+- **h e cp** — não há Cp_ig com fonte. A rota rastreável do próprio artigo (eq. 1 + Tab. 1-3)
+  **não fecha**: dá fração de parafina negativa a partir de C15 (−0,45 em C19, −2,4 em C20+).
+  Não se arbitrou H/C; o pacote é montado **sem** Cp_ig, e o backend simplesmente não expõe
+  `H_mass`/`Cp_mass`;
+- **ρ da fase líquida** — PR sem translação de volume dá 474,3 kg/m³ contra 877,3 pela mistura
+  ideal com as SG de Riazi (razão **0,541**). A caracterização não é a causa: a SG reproduz a
+  densidade do BOT dentro de 5 % (há teste);
+- **flash de componente puro** — degenera no backend; volta como estado, nunca exceção.
+
+Paridade **bit a bit** contra o estado anterior ao R1 (`409f1800…f16414`). Suíte: **1.280
+aprovados, cobertura 95,89 %** (24 testes novos). O teste de arquitetura pegou uma violação da
+invariante 2 minha (coeficientes da eq. 5 no módulo em vez do TOML) — corrigida.
+
 ### F3 — Serviço termodinâmico ativo ✅ (2026-09-27) — `docs/validacao/29-servico-termodinamico.md`
 
 A F14 é COMPARATIVA (mede o desvio do balanço). Esta fase entrega o contrato que o processo

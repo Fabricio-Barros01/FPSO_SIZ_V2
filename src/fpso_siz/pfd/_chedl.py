@@ -135,3 +135,60 @@ def agua_iapws_completa(T, P):
     ph = IAPWS95Liquid(T=T, P=P, zs=[1.0])
     return dict(rho=ph.rho_mass(), mu=ph.mu(), k=ph.k(), cp=ph.Cp_mass(), h=ph.H_mass(),
                 MW=ph.MW())
+
+
+@cache
+def _pacote_pseudo(reais, pseudos, kij):
+    """Pacote de EOS para uma mistura de componentes REAIS (do banco) e PSEUDO-componentes
+    (Tc/Pc/ω dados). Cacheado por conjunto, como `_flash_gas`.
+
+    `reais`: ((posicao, identificador), ...);  `pseudos`: ((posicao, nome, MW, Tc, Pc, omega), ...).
+
+    **Sem Cp_ig.** O pacote é montado sem capacidade calorífica de gás ideal, porque não há
+    fonte para a dos pseudo-componentes (ver config/pfd/caracterizacao_scn.toml). A
+    consequência é deliberada: o equilíbrio, Z e a densidade saem normalmente — eles não
+    dependem de Cp_ig —, e entalpia e cp ficam indisponíveis POR CONSTRUÇÃO, em vez de
+    saírem de um número suposto.
+    """
+    import thermo
+    from thermo import ChemicalConstantsPackage, PropertyCorrelationsPackage
+    from thermo.interaction_parameters import IPDB
+
+    n = len(reais) + len(pseudos)
+    Tcs, Pcs, omegas, MWs, CASs, nomes = [None]*n, [None]*n, [None]*n, [None]*n, [None]*n, [None]*n
+    consts_reais, _ = thermo.ChemicalConstantsPackage.from_IDs([i for _, i in reais]) if reais else (None, None)
+    for k, (pos, ident) in enumerate(reais):
+        Tcs[pos], Pcs[pos] = consts_reais.Tcs[k], consts_reais.Pcs[k]
+        omegas[pos], MWs[pos] = consts_reais.omegas[k], consts_reais.MWs[k]
+        CASs[pos], nomes[pos] = consts_reais.CASs[k], consts_reais.names[k]
+    for pos, nome, mw, tc, pc, om in pseudos:
+        Tcs[pos], Pcs[pos], omegas[pos], MWs[pos] = tc, pc, om, mw
+        CASs[pos], nomes[pos] = None, nome
+    # kij: do banco entre REAIS; zero em qualquer par com pseudo-componente (premissa declarada)
+    kijs = [[0.0]*n for _ in range(n)]
+    if reais and len(reais) > 1:
+        m = IPDB.get_ip_asymmetric_matrix(kij, [c for _, c in
+                                                sorted((pos, CASs[pos]) for pos, _ in reais)], "kij")
+        ordem = sorted(pos for pos, _ in reais)
+        for a, pa in enumerate(ordem):
+            for b, pb in enumerate(ordem):
+                kijs[pa][pb] = m[a][b]
+    consts = ChemicalConstantsPackage(Tcs=Tcs, Pcs=Pcs, omegas=omegas, MWs=MWs, CASs=CASs, names=nomes)
+    kw = dict(Tcs=Tcs, Pcs=Pcs, omegas=omegas, kijs=kijs)
+    gas = thermo.CEOSGas(thermo.PRMIX, kw)
+    liq = thermo.CEOSLiquid(thermo.PRMIX, kw)
+    props = PropertyCorrelationsPackage(constants=consts, skip_missing=True)
+    return thermo.FlashVL(consts, props, liquid=liq, gas=gas)
+
+
+def flash_pseudo(reais, pseudos, zs, T, P, kij):
+    """Flash (T, P) de uma mistura com pseudo-componentes. Devolve as fases com Z, ρ, MW e
+    composição; **sem h e sem cp**, que o pacote não tem como calcular."""
+    flash = _pacote_pseudo(tuple(reais), tuple(pseudos), kij)
+    r = flash.flash(T=T, P=P, zs=list(zs))
+    fases = []
+    for nome, fase, beta, beta_m in _fases_de(r):
+        fases.append(dict(nome=nome, fracao_molar=beta, fracao_massica=beta_m,
+                          composicao=list(fase.zs), Z=fase.Z(), MW=fase.MW(),
+                          rho=fase.rho_mass()))
+    return dict(VF=r.VF, fases=fases)

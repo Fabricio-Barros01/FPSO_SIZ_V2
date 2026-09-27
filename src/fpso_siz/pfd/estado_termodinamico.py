@@ -35,6 +35,7 @@ from dataclasses import dataclass, field
 
 from fpso_siz.core.configuracao import carregar
 from fpso_siz.pfd import _chedl
+from fpso_siz.pfd import caracterizacao
 from fpso_siz.pfd import fluidos
 
 NAO_APLICAVEL = math.nan   # grandeza que o modelo não fornece (lacuna declarada no TOML)
@@ -182,6 +183,8 @@ def flash_tp(T, P, z, fluido):
         return _agua(T, P, z, d, fluido)
     if modelo == "laliberte":
         return _salmoura(T, P, z, d, fluido)
+    if modelo == "peng_robinson_pseudo":
+        return _fluido_de_poco(T, P, z, d, fluido)
     raise ValueError(f"modelo desconhecido para {fluido!r}: {modelo!r}")
 
 
@@ -213,6 +216,52 @@ def _hidrocarboneto(T, P, z, d, fluido):
     return EstadoTermodinamico(fluido=fluido, T=T, P=P, z=dict(z), base_composicao=d["base_composicao"],
                                fases=tuple(fases), modelo=d["modelo"], backend=_backend(), fonte=d["fonte"],
                                referencia_entalpia=d["referencia_entalpia"], avisos=tuple(avisos))
+
+
+def _fluido_de_poco(T, P, z, d, fluido, mws_plus=None):
+    """Fluido de poço completo: componentes reais do banco + pseudo-componentes caracterizados
+    por Riazi & Al-Sahhaf (1996) (cortes SCN C6–C19 e frações plus C20+/C20++).
+
+    **A composição não é transformada**: cada componente mantém a sua fração molar. O que muda
+    é a caracterização. **h e cp não são entregues** — ver `caracterizacao.bloqueios()`."""
+    c = fluidos.cfg()["gas"]
+    comp = c["componentes"]
+    mws_plus = mws_plus if mws_plus is not None else {}
+    chaves = list(z)
+    reais, pseudos, faltam = [], [], []
+    for pos, nome in enumerate(chaves):
+        tipo = caracterizacao.classificar(nome, mws_plus or None)
+        if tipo == caracterizacao.REAL:
+            ident = comp.get(nome, nome)
+            reais.append((pos, ident))
+            continue
+        if tipo == caracterizacao.PLUS and nome not in mws_plus:
+            faltam.append(nome)
+            continue
+        p = caracterizacao.caracterizar(nome, mws_plus.get(nome))
+        pseudos.append((pos, p.nome, p.MW, p.Tc, p.Pc, p.omega))
+    if faltam:
+        raise ValueError(f"fração plus sem MW do BOT: {sorted(faltam)}; informe `mws_plus`")
+    try:
+        r = _chedl.flash_pseudo(reais, pseudos, [z[k] for k in chaves], T, P, c["kij"])
+    except (ArithmeticError, ValueError) as e:
+        return _falha(fluido, T, P, z, d, f"o flash não convergiu a T = {T} K e P = {P} Pa: {e}")
+    fases = tuple(Fase(nome=f["nome"], fracao_molar=f["fracao_molar"], fracao_massica=f["fracao_massica"],
+                       composicao=dict(zip(chaves, f["composicao"])), Z=f["Z"], MW=f["MW"], rho=f["rho"],
+                       h=NAO_APLICAVEL, cp=NAO_APLICAVEL, mu=NAO_APLICAVEL, k=NAO_APLICAVEL,
+                       metodos={"Tc/Pc/omega dos pseudo": caracterizacao.cfg()["fonte"]["referencia"]})
+                 for f in r["fases"])
+    avisos = tuple(f"{b['grandeza']}: {b['situacao']}" for b in caracterizacao.bloqueios())
+    return EstadoTermodinamico(fluido=fluido, T=T, P=P, z=dict(z), base_composicao=d["base_composicao"],
+                               fases=fases, modelo=d["modelo"], backend=_backend(), fonte=d["fonte"],
+                               referencia_entalpia=d["referencia_entalpia"], avisos=avisos)
+
+
+def flash_poco(T, P, z, mws_plus):
+    """Atalho do fluido de poço, que precisa dos MW das frações plus (dado do BOT)."""
+    d = declaracao("poco")
+    _conferir(T, P, z, d)
+    return _fluido_de_poco(T, P, z, d, "poco", mws_plus)
 
 
 def _aviso_k_liquido(metodo):

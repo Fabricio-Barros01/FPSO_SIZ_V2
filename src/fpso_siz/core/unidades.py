@@ -109,6 +109,10 @@ def m_para_mm(x):
 BAR_PA = 1.0e5
 
 
+def bar_para_pa(p_bar):
+    return p_bar * BAR_PA
+
+
 def potencia_hidraulica_kw(rho, q_m3h, h_m, eta, g):
     """P = ρ·g·Q·H/(3,6×10⁶·η), Q em m³/h: os 3600 s/h e 1000 W/kW são conversão exata."""
     return rho * g * q_m3h * h_m / (3.6e6 * eta)

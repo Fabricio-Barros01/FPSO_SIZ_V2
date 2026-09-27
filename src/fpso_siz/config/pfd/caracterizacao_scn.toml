@@ -1,0 +1,147 @@
+# Fase 4 — caracterização dos pseudo-componentes do fluido de poço.
+#
+# O fluido do BOT tem três tipos de componente, e só o primeiro existe em banco de dados:
+#   1. componentes REAIS (N2, CO2, H2S, C1-C3, iC4/nC4, iC5/nC5, BTEX) — identificador do
+#      chemicals, propriedades do banco;
+#   2. cortes SCN (single carbon number) C6-C19 — NÃO são n-alcanos puros. O backend até
+#      resolve o nome "C7" como n-heptano, e é justamente isso que este arquivo impede:
+#      o corte real tem iso-parafinas, naftênicos e aromáticos;
+#   3. frações "plus" C20+ e C20++ — o BOT dá só MW e densidade.
+#
+# Os tipos 2 e 3 são caracterizados pelas correlações de Riazi & Al-Sahhaf (1996), que valem
+# para SCN de C6 a C50. NÃO há substituição de composição: a fração molar de cada componente
+# é preservada exatamente. O que muda é a PROPRIEDADE atribuída a ele.
+
+[fonte]
+referencia = "Riazi, M. R.; Al-Sahhaf, T. A. Physical properties of heavy petroleum fractions and crude oils. Fluid Phase Equilibria 117 (1996) 217-224"
+arquivo = "references/riazi1996.pdf"
+forma = "eq. 2 do artigo: theta = theta_inf - exp(a - b*M^c), com M em g/mol"
+conferencia = "transcrição conferida contra as duas verificações internas do próprio artigo (p. 220): a eq. 2 com os coeficientes de Pc dá 1,013 bar em M = 1382, e Tbr dá 0,996; calculados 1,0087 bar e 0,9959"
+limitacao_tabelas = "as Tabelas 4 e 5 do artigo (valores tabelados de Katz-Firoozabadi e 'recommended values') estão ilegíveis no escaneamento do acervo; TODAS as propriedades aqui são calculadas pelas equações, nenhuma é valor tabelado"
+
+# ---------------------------------------------------------------------------- correlações
+# Coeficientes [theta_inf, a, b, c] da eq. 2. Onde a propriedade tabelada é o NEGATIVO
+# (o artigo lista "-Pc" e "-omega"), o sinal está declarado em `negativa`.
+
+[correlacao.Tb_de_Nc]
+# eq. 3: função do número de carbono, não de M
+forma = "Tb = 1090 - exp(6.9955 - 0.11193*Nc^(2/3))"
+inf = 1090.0
+a = 6.9955
+b = 0.11193
+c = 0.6666666666666666
+unidade = "K"
+fonte = "eq. 3, p. 218"
+
+[correlacao.M_de_Nc]
+forma = "M = 14*Nc - 4"
+coef_a = 14.0
+coef_b = 4.0
+unidade = "g/mol"
+fonte = "eq. 7, p. 220; o artigo a recomenda como 'good simple relation' e mostra (Fig. 1) melhor acordo com a Tabela 5 que os valores de Whitson"
+
+[correlacao.Tb_de_M]
+# Usada só pelas frações plus, que não têm número de carbono: o Tb sai do M.
+# AMBIGUIDADE DE OCR RESOLVIDA: a Tab. 6 imprime b = 0,01954 e a eq. 5 do texto imprime
+# 0,01964. Adotado 0,01964, porque reproduz a eq. 7 (M = 14·Nc − 4) com desvio médio de
+# 0,28 % contra 0,70 % do outro valor, ao longo de C6–C50.
+forma = "Tb = 1080 - exp(6.97996 - 0.01964*M^(2/3))"
+inf = 1080.0
+a = 6.97996
+b = 0.01964
+c = 0.6666666666666666
+negativa = false
+unidade = "K"
+fonte = "eq. 5, p. 219"
+
+[correlacao.SG]
+forma = "S = 1.07 - exp(3.56073 - 2.93886*M^0.1)"
+inf = 1.07
+a = 3.56073
+b = 2.93886
+c = 0.1
+negativa = false
+unidade = "-"
+fonte = "eq. 6, p. 219 (= linha S da Tab. 6)"
+
+[correlacao.Tbr]
+forma = "Tbr = Tb/Tc = 1.2 - exp(-0.34742 - 0.02327*M^0.55); Tc = Tb/Tbr"
+inf = 1.2
+a = -0.34742
+b = 0.02327
+c = 0.55
+negativa = false
+unidade = "-"
+fonte = "Tab. 6, p. 221"
+
+[correlacao.Pc]
+forma = "-Pc = 0 - exp(6.34492 - 0.7239*M^0.3)  =>  Pc = exp(6.34492 - 0.7239*M^0.3)"
+inf = 0.0
+a = 6.34492
+b = 0.7239
+c = 0.3
+negativa = true
+unidade = "bar"
+fonte = "Tab. 6, p. 221"
+
+[correlacao.omega]
+forma = "-omega = 0.3 - exp(-6.252 + 3.64457*M^0.1)  =>  omega = exp(-6.252 + 3.64457*M^0.1) - 0.3"
+inf = 0.3
+a = -6.252
+b = -3.64457
+c = 0.1
+negativa = true
+unidade = "-"
+fonte = "Tab. 6, p. 221"
+
+# ---------------------------------------------------------------------------- componentes
+[scn]
+# Cortes SCN: o número de carbono vem do próprio rótulo do BOT (C6 → Nc = 6).
+prefixo = "C"
+nc_min = 6
+nc_max = 19
+nota = "C6-C19 do BOT são CORTES SCN, não n-alcanos. A caracterização é a de Riazi; o nome não é usado para consultar banco de dados."
+
+[plus.'C20+']
+# Fração plus: o MW é DADO DO BOT, não da correlação. As demais propriedades saem das mesmas
+# correlações, aplicadas a esse M.
+mw_de = "arquivo de casos, c20_pseudo.C20+.mw"
+nota = "MW do BOT preservado EXATAMENTE; densidade da correlação conferida contra a do BOT"
+
+[plus.'C20++']
+mw_de = "arquivo de casos, c20_pseudo.C20++.mw"
+nota = "idem"
+
+# ---------------------------------------------------------------------------- premissas e bloqueios
+[premissa.kij]
+valor = "zero para todo par que envolva pseudo-componente"
+motivo = "não há kij de banco (ChemSep/IPDB é indexado por CAS, e pseudo-componente não tem CAS). Pares entre componentes REAIS continuam com o kij do banco."
+fonte = "prática corrente; declarada aqui porque é premissa, não dado"
+
+[[bloqueio]]
+grandeza = "cp de gás ideal (Cp_ig) dos pseudo-componentes"
+situacao = "BLOQUEADO — propriedade ausente, não estimada"
+motivo = "Riazi & Al-Sahhaf (1996) não fornece Cp_ig. A rota candidata (Lastovka-Shaw) exige a variável de similaridade alpha = átomos/MW, isto é, a razão H/C do corte. A rota rastreável do próprio artigo para obter H/C — decompor o corte em parafina/naftênico/aromático pela eq. 1 com as Tabelas 1-3 — NÃO FECHA: resolvida para SG e para o parâmetro de refração I, ela dá fração de parafina NEGATIVA a partir de C15 (xp = -0,04 em C15, -0,45 em C19, -2,4 em C20+), o que é fisicamente impossível. Sem H/C rastreável, não se arbitra um valor."
+consequencia = "h e cp das fases do fluido de poço ficam indisponíveis POR CONSTRUÇÃO: o pacote é montado sem Cp_ig, e o backend não expõe H_mass nem Cp_mass. VLE, Z, densidade, frações de fase e composições das fases não dependem de Cp_ig e estão disponíveis."
+quando = "precisa de fonte para Cp_ig de fração de petróleo, ou para a composição PNA / razão H:C dos cortes"
+
+[[bloqueio]]
+grandeza = "faixa de validade das Tabelas 1-3 (S e I) acima de ~C20"
+situacao = "extrapolação declarada"
+motivo = "as linhas S das Tabelas 1 e 3 valem C5-C19 e C6-C20; acima disso a decomposição PNA é extrapolação. Não afeta Tc/Pc/omega (Tab. 6 vale C6-C50), afeta apenas a tentativa de obter H/C."
+consequencia = "nenhuma sobre as propriedades entregues"
+quando = "—"
+
+[[bloqueio]]
+grandeza = "densidade da fase LÍQUIDA do fluido de poço"
+situacao = "retornada pelo backend, porém NÃO validada para uso de engenharia"
+motivo = "Peng-Robinson sem translação de volume subestima o volume de líquido de frações pesadas. Medido na condição padrão do BOT (15,6 °C, 101,3 kPa) para o fluido Early Life: PR dá 474,3 kg/m³ contra 877,3 kg/m³ pela mistura ideal de volumes com as SG de Riazi — razão 0,541. A caracterização NÃO é a causa: a SG de Riazi reproduz a densidade do C20+/C20++ declarada pelo BOT dentro de 5 % (há teste)."
+consequencia = "rho da fase líquida do fluido de poço fica BLOQUEADA para consumo pelo processo. Z e rho da fase VAPOR não têm esse problema. A correção usual é a translação de volume de Péneloux, que exige um parâmetro de deslocamento por componente — outra entrada com fonte própria."
+quando = "precisa de fonte para o parâmetro de translação de volume dos pseudo-componentes"
+
+[[bloqueio]]
+grandeza = "flash de componente PURO"
+situacao = "não suportado pelo caminho atual"
+motivo = "o flash VL do backend degenera (divisão por zero) quando a composição tem um único componente; é caso degenerado do algoritmo, não da caracterização"
+consequencia = "o serviço devolve estado com ok = False e a mensagem do backend, nunca exceção (há teste). Misturas, inclusive com traço de 1e-12 de pseudo-componente, funcionam."
+quando = "não é necessário para o processo, que sempre trabalha com mistura"

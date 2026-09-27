@@ -13,6 +13,7 @@ Unidades do serviço: T [K], P [Pa], rho [kg/m³], h [J/kg], cp [J/(kg·K)], mu 
 | `hidrocarboneto` | peng_robinson | fracao_molar | vapor, liquido | gás ideal a 298,15 K, sem entalpia de formação (convenção do thermo) |
 | `agua` | iapws95 | fracao_molar | liquido | convenção IAPWS-95: u = s = 0 no líquido saturado do ponto triplo |
 | `salmoura` | laliberte | fracao_massica_de_sal | aquosa | não aplicável: o modelo de Laliberté dá cp, não entalpia |
+| `poco` | peng_robinson_pseudo | fracao_molar | vapor, liquido | não aplicável: sem Cp_ig dos pseudo-componentes, h e cp não são calculados (bloqueio declarado em caracterizacao_scn.toml) |
 
 As fontes de cada modelo estão no TOML do serviço e em `fluidos.toml`. **As bases de composição não são iguais**: hidrocarboneto e água recebem fração molar; salmoura recebe a fração mássica de sal. **As referências de entalpia também não são comuns** — só diferenças do mesmo fluido têm significado.
 
