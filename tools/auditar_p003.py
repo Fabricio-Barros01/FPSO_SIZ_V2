@@ -32,6 +32,8 @@ class Auditor:
         self.iteracoes = Counter()          # histograma de iterações do ponto fixo
         self.bd_chamadas = 0
         self.bd_por_fase = Counter()
+        self.feixe_chamadas = 0
+        self.feixe_por_fase = Counter()
         self.js_variavel = Counter()        # n_b visto em cada iteração, por chamada de _tubo
         self.geo_por_tubo = 0
         self.casos = {}                     # marca estável por objeto de caso
@@ -78,18 +80,30 @@ class Auditor:
         trocador._tubo = espiao_tubo
         self._restaurar.append(lambda: setattr(trocador, "_tubo", tubo))
 
-        original_bd = bd.bell_delaware
+        # Depois do R1 há DOIS passos: `feixe_ideal` (a parte cara, invariante no ponto fixo) e
+        # `com_chicanas` (a combinação com Js, barata, uma por passagem). Contam-se os dois: é a
+        # razão entre eles que mostra o efeito do R1.
+        original_feixe = bd.feixe_ideal
 
-        def espiao_bd(g, w_s, cp_s, mu_s, k_s, n_b, l_bi, l_bo, k):
+        def espiao_feixe(g, w_s, cp_s, mu_s, k_s, k):
+            self.feixe_chamadas += 1
+            self.feixe_por_fase[FASE["nome"]] += 1
+            return original_feixe(g, w_s, cp_s, mu_s, k_s, k)
+
+        original_comb = bd.com_chicanas
+
+        def espiao_comb(feixe, n_b, l_bi, l_bo, l_bc, k):
             self.bd_chamadas += 1
             self.bd_por_fase[FASE["nome"]] += 1
-            return original_bd(g, w_s, cp_s, mu_s, k_s, n_b, l_bi, l_bo, k)
-        bd.bell_delaware = espiao_bd
-        self._restaurar.append(lambda: setattr(bd, "bell_delaware", original_bd))
-        # `trocador` importou o nome; trocar só no módulo de origem não bastaria
-        tr_bd = trocador.bell_delaware
-        trocador.bell_delaware = espiao_bd
-        self._restaurar.append(lambda: setattr(trocador, "bell_delaware", tr_bd))
+            return original_comb(feixe, n_b, l_bi, l_bo, l_bc, k)
+
+        for modulo, nome, espiao, orig in ((bd, "feixe_ideal", espiao_feixe, original_feixe),
+                                           (bd, "com_chicanas", espiao_comb, original_comb),
+                                           # `trocador` importou os nomes: trocar só na origem não bastaria
+                                           (trocador, "feixe_ideal", espiao_feixe, trocador.feixe_ideal),
+                                           (trocador, "com_chicanas", espiao_comb, trocador.com_chicanas)):
+            setattr(modulo, nome, espiao)
+            self._restaurar.append(lambda m=modulo, n=nome, o=orig: setattr(m, n, o))
 
     def _envolver_fase(self, cls, nome, original):
         def espiao(*a, **k):
@@ -118,6 +132,9 @@ class Auditor:
             "pares_distintos_por_fase": {f: len(s) for f, s in sorted(self.pares_por_fase.items())},
             "bell_delaware_chamadas": self.bd_chamadas,
             "bell_delaware_por_fase": dict(self.bd_por_fase.most_common()),
+            "feixe_ideal_chamadas": self.feixe_chamadas,
+            "feixe_ideal_por_fase": dict(self.feixe_por_fase.most_common()),
+            "combinacoes_por_feixe": (self.bd_chamadas / self.feixe_chamadas) if self.feixe_chamadas else None,
             "iteracoes_por_tubo": {str(k): v for k, v in sorted(self.iteracoes.items())},
             "iteracoes_media": (self.bd_chamadas / total_tubo) if total_tubo else None,
             "casos_distintos": len(self.casos),
@@ -327,14 +344,19 @@ def identidade_bell_delaware(ctx, ident):
 
     estado = servico.estado_inicial(ident)
     entradas = servico.preparar(ctx, estado)
-    orig_tubo, orig_bd = trocador._tubo, trocador.bell_delaware
+    orig_tubo, orig_bd = trocador._tubo, trocador.com_chicanas
+    orig_feixe = trocador.feixe_ideal
     saidas, cont = [], Counter()
 
-    def espiao_bd(g, w_s, cp_s, mu_s, k_s, n_b, l_bi, l_bo, k):
-        h, f, ok = orig_bd(g, w_s, cp_s, mu_s, k_s, n_b, l_bi, l_bo, k)
+    def espiao_feixe(g, w_s, cp_s, mu_s, k_s, k):
+        cont["feixe_ideal"] += 1
+        return orig_feixe(g, w_s, cp_s, mu_s, k_s, k)
+
+    def espiao_bd(feixe, n_b, l_bi, l_bo, l_bc, k):
+        h, f, ok = orig_bd(feixe, n_b, l_bi, l_bo, l_bc, k)
         saidas.append((h, f.jc, f.jl, f.jb, f.js, f.jr, f.re, f.a_s, f.h_ideal, ok))
         cont["bd"] += 1
-        if not (l_bi == l_bo == g.l_bc):
+        if not (l_bi == l_bo == l_bc):
             cont["espacamento_de_ponta_desigual"] += 1
         if f.js == 1.0:
             cont["js_exatamente_1"] += 1
@@ -350,11 +372,11 @@ def identidade_bell_delaware(ctx, ident):
             cont["bd_redundantes"] += len(saidas) - 1
         return r
 
-    trocador.bell_delaware, trocador._tubo = espiao_bd, espiao_tubo
+    trocador.com_chicanas, trocador.feixe_ideal, trocador._tubo = espiao_bd, espiao_feixe, espiao_tubo
     try:
         servico.dimensionar(entradas, estado)
     finally:
-        trocador.bell_delaware, trocador._tubo = orig_bd, orig_tubo
+        trocador.com_chicanas, trocador.feixe_ideal, trocador._tubo = orig_bd, orig_feixe, orig_tubo
     return {**cont, "fracao_bd_redundante": (cont["bd_redundantes"] / cont["bd"]) if cont["bd"] else None}
 
 

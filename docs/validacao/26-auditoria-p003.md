@@ -184,11 +184,16 @@ redimensionado 4 vezes com **1 entrada distinta** — 3 recomputações idêntic
 
 Percentuais sobre as 194.261 chamadas de `_tubo` por avaliação, exceto onde indicado.
 
-### Necessário pela física / espaço de projeto — **0,03 %**
+### Chamadas associadas diretamente às soluções selecionadas — **0,03 %**
 
-As 54 chamadas dos pontos escolhidos (33 no P-003, 21 no P-002). Se o diagnóstico "cada caso tem
-solução isolada?" continuar sendo produto desejado, o RAMO A acrescenta o seu mínimo — mas ele
-próprio só precisa do primeiro admissível de cada caso, não da grade inteira.
+As 54 chamadas dos pontos escolhidos (33 no P-003, 21 no P-002).
+
+**Este rótulo é deliberadamente estreito, e não deve ser lido como "só isto é necessário".** As
+demais chamadas pertencem ao **algoritmo de busca atual**: enumerar a grade é um jeito legítimo
+de achar o ótimo e de produzir o envelope, e parte desse custo só desaparece com uma
+reformulação (limites fechados, parada no primeiro admissível, separar busca de envelope) — não
+por ser supérfluo em si. O que a auditoria afirma é que esse custo é **consequência da
+formulação escolhida**, não exigência da física do trocador.
 
 ### Estruturalmente ineficiente, numericamente correto — **~70 %**
 
@@ -258,8 +263,21 @@ decisão sobre o que a memória de cálculo apresenta, e por isso fica para o us
 
 Explicadas: 875.148 (P-003) + 37.575 (P-002) = **912.723**, e 180.883 + 13.378 = **194.261**
 chamadas de `_tubo` — os dois números do perfil, sem resto, a partir da árvore da seção 1.
-**O gargalo não é normal:** 0,03 % do custo é a física do ponto escolhido; 78,7 % das avaliações
-de Bell-Delaware são bit a bit idênticas à primeira da sua própria chamada.
+**O gargalo não é normal:** 0,03 % das chamadas estão associadas diretamente às soluções
+selecionadas, o restante pertence à formulação de busca adotada; e 78,7 % das avaliações de
+Bell-Delaware são bit a bit idênticas à primeira da sua própria chamada.
+
+## O que foi feito depois desta auditoria
+
+**R1 foi implementado** e está em `27-r1-feixe-fora-do-laco.md`: o feixe saiu do laço de ponto
+fixo, com paridade bit a bit, 4,70× menos avaliações completas de Bell-Delaware e `avaliar()` de
+21,7 s para 15,3 s. As contagens desta auditoria são as de **antes** do R1 — o perfil mudou de
+dono (hoje o primeiro colocado é a película do lado tubo), e R2 deve ser decidido sobre o perfil
+novo, não sobre este.
+
+A premissa do Js e a política das duas grades foram investigadas e documentadas no mesmo
+documento; R3 e R4 continuam não implementados, com a proposta arquitetural que os viabiliza
+registrada lá.
 
 ## Como reproduzir
 

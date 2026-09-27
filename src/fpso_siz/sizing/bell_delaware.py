@@ -195,26 +195,60 @@ class Fatores:
     a_s: float = math.nan
 
 
-def bell_delaware(g, w_s, cp_s, mu_s, k_s, n_b, l_bi, l_bo, k):
-    """(h_o, fatores, ok)."""
+@dataclass(frozen=True)
+class FeixeIdeal:
+    """A parte de Bell-Delaware que NÃO depende do número de chicanas.
+
+    Das cinco correções da Eq. 2-18, **só Js (Eq. 2-28) é função de n_b**; Jc, Jl, Jb e Jr
+    dependem apenas da geometria do casco e do Reynolds, e h_ideal, Re e A_s idem. Quem resolve
+    o ponto fixo em L varia n_b a cada passagem — e por isso pode avaliar isto UMA vez e
+    recombinar só Js. A separação é da estrutura de dependência das equações, não um cache: o
+    resultado é o mesmo termo a termo, na mesma ordem de multiplicação."""
+    a_s: float = math.nan
+    re: float = math.nan
+    h_ideal: float = math.nan
+    jc: float = math.nan
+    jl: float = math.nan
+    jb: float = math.nan
+    jr: float = math.nan
+    falhou: str = ""          # "" = utilizável; senão, em que passo a conta parou
+
+
+def feixe_ideal(g, w_s, cp_s, mu_s, k_s, k):
+    """Tudo o que a Eq. 2-18 pede menos Js, para uma geometria e um escoamento de casco."""
     a_s = crossflow_area(g, k)
     if not (math.isfinite(a_s) and a_s > 0):
-        return math.nan, Fatores(), False
+        return FeixeIdeal(falhou="area_de_escoamento_cruzado")
     re = shell_reynolds(g.d_o, w_s, mu_s, a_s)
     if not (math.isfinite(re) and re > 0):
-        return math.nan, Fatores(), False
+        return FeixeIdeal(falhou="reynolds_do_casco")
     j = colburn_ideal(re, g.layout, g.p_t, g.d_o, k)
     hi = h_ideal(j, cp_s, w_s, a_s, k_s, mu_s)
     if not (math.isfinite(hi) and hi > 0):
-        return math.nan, Fatores(), False
+        return FeixeIdeal(falhou="h_ideal")
     jc = j_baffle_cut(g, k)
     a_sb, a_tb, a_w = leakage_areas(g)
     jl = j_leakage(a_sb, a_tb, a_w, k)
     jb = j_bypass(g, a_s, re, k)
-    js = j_spacing(n_b, l_bi, l_bo, g.l_bc, re <= float(k["jb_re_corte"]), k)
     jr = j_laminar(re, g, k)
+    return FeixeIdeal(a_s, re, hi, jc, jl, jb, jr)
+
+
+def com_chicanas(feixe, n_b, l_bi, l_bo, l_bc, k):
+    """(h_o, fatores, ok) do feixe já avaliado, para um número de chicanas.
+
+    É o único passo que o ponto fixo em L precisa refazer."""
+    if feixe.falhou:
+        return math.nan, Fatores(), False
+    js = j_spacing(n_b, l_bi, l_bo, l_bc, feixe.re <= float(k["jb_re_corte"]), k)
+    jc, jl, jb, jr, hi = feixe.jc, feixe.jl, feixe.jb, feixe.jr, feixe.h_ideal
     todos = (jc, jl, jb, js, jr)
     if not all(math.isfinite(x) and x > 0 for x in todos):
-        return math.nan, Fatores(jc, jl, jb, js, jr, math.nan, hi, re, a_s), False
+        return math.nan, Fatores(jc, jl, jb, js, jr, math.nan, hi, feixe.re, feixe.a_s), False
     produto = jc * jl * jb * js * jr
-    return hi * produto, Fatores(jc, jl, jb, js, jr, produto, hi, re, a_s), True
+    return hi * produto, Fatores(jc, jl, jb, js, jr, produto, hi, feixe.re, feixe.a_s), True
+
+
+def bell_delaware(g, w_s, cp_s, mu_s, k_s, n_b, l_bi, l_bo, k):
+    """(h_o, fatores, ok). Avalia o feixe e combina com o número de chicanas, numa passagem."""
+    return com_chicanas(feixe_ideal(g, w_s, cp_s, mu_s, k_s, k), n_b, l_bi, l_bo, g.l_bc, k)

@@ -17,7 +17,8 @@ from fpso_siz.core.ieee import div
 from fpso_siz.core.trace import Rastro
 from fpso_siz.core.unidades import cp_para_pas, m_para_mm, mm_para_m
 from fpso_siz.sizing.base import MetodoTOML, driver_case
-from fpso_siz.sizing.bell_delaware import ShellGeometry, baffle_clearance, bell_delaware, layout_pitches
+from fpso_siz.sizing.bell_delaware import (ShellGeometry, baffle_clearance, com_chicanas, feixe_ideal,
+                                           layout_pitches)
 from fpso_siz.sizing.hidraulica import reynolds_pipe
 from fpso_siz.sizing.pelicula import depende_do_comprimento, filme_tubo, temperatura_parede
 
@@ -230,7 +231,19 @@ def _t_parede(c, u, h_i):
 def _tubo_bell_delaware(c, n_total, v, re, d_feixe):
     """Bell-Delaware depende de L (nº de chicanas) e L depende de h_o: ponto fixo em L. Com a
     película de baixo Reynolds ligada, h_i também depende de L (correlação laminar de Hausen) e
-    entra no mesmo ponto fixo — sem a extensão, h_i é constante e o laço é o do Julia."""
+    entra no mesmo ponto fixo — sem a extensão, h_i é constante e o laço é o do Julia.
+
+    Das cinco correções da Eq. 2-18, **só Js depende do número de chicanas**: Jc, Jl, Jb, Jr,
+    h_ideal, Re e A_s são função apenas da geometria e do escoamento do casco, que o laço não
+    muda. Por isso o feixe é avaliado UMA vez, antes do laço (`feixe_ideal`), e cada passagem
+    recombina só Js (`com_chicanas`). Não é cache: é a estrutura de dependência das equações, e
+    a conta final é termo a termo a mesma, na mesma ordem.
+
+    PREMISSA DO ARRANJO DE CHICANAS: os vãos de entrada e de saída são iguais ao vão central
+    (`l_bi = l_bo = l_bc`) — ver `espac_chicana` e a nota do TOML. Nesse arranjo a Eq. 2-28 dá
+    Js = 1 identicamente, e é isso que se observa. A equação continua aqui, completa e
+    exercitada a cada passagem: um arranjo de vãos de ponta maiores (prática comum, por causa
+    dos bocais) só precisa de uma entrada nova, sem tocar neste laço."""
     kbd = c.kbd
     padrao = _t()["laco_comprimento"]
     tol = float(kbd.get("tolerancia", padrao["tolerancia"]))
@@ -250,11 +263,13 @@ def _tubo_bell_delaware(c, n_total, v, re, d_feixe):
     # na transição (Hausen, Gz = Re·Pr·d/L) ele depende, e entra no ponto fixo.
     por_iteracao = c.baixo_re and depende_do_comprimento(re, c.k)
     h_i, nu_valido, diag = _pelicula(c, _caminho(c, l), re)
+    # invariante no laço: a geometria do casco e o escoamento do casco não mudam com L
+    feixe = feixe_ideal(geo, c.m_casco, c.cp_casco, c.mu_casco, c.k_casco, kbd)
     for it in range(1, maxit + 1):
         if por_iteracao:
             h_i, nu_valido, diag = _pelicula(c, _caminho(c, l), re)
         n_b = max(l / l_bc - 1, 1.0) if (math.isfinite(l) and l > 0 and l_bc > 0) else 1.0
-        h_o, fat, bd_ok = bell_delaware(geo, c.m_casco, c.cp_casco, c.mu_casco, c.k_casco, n_b, l_bc, l_bc, kbd)
+        h_o, fat, bd_ok = com_chicanas(feixe, n_b, l_bc, l_bc, l_bc, kbd)
         if not bd_ok:
             return dict(VAZIO, v=v, re=re, h_i=h_i, n_total=float(n_total), d_casco=d_feixe, d_shell=d_s,
                         re_casco=fat.re, h_ideal=fat.h_ideal, nu_valido=nu_valido, **diag)

@@ -1400,6 +1400,56 @@ medir o swap. Se o SMT rende acima dos 6 núcleos físicos, **este benchmark nã
 para a Fase 10. Uma primeira varredura foi descartada por erro de método: com lote de 8 pontos o
 tempo de parede é `ceil(lote ÷ W)`, e a divisibilidade, não o hardware, produzia a curva.
 
+### R1 — o feixe sai do laço de ponto fixo ✅ (2026-09-27) — `docs/validacao/27-r1-feixe-fora-do-laco.md`
+
+Intervenção restrita autorizada depois da auditoria: **só R1**. Nenhuma equação, tolerância,
+critério de convergência, malha ou correlação alterada. **Paridade bit a bit**: o instantâneo dos
+11 TAGs e 5.391 linhas de varredura, com cada float em hexadecimal, tem o MESMO SHA-256 antes e
+depois (`409f1800…f16414`).
+
+Não é cache: a conta invariante saiu do laço porque **as entradas dela estão fora do laço**. Das
+cinco correções da Eq. 2-18 só Js depende do número de chicanas, então `feixe_ideal` é avaliada
+uma vez por chamada de `_tubo` e `com_chicanas` recombina só Js a cada passagem.
+`bell_delaware()` continua com a mesma assinatura, definida como composição das duas.
+
+| | antes | depois |
+|---|---|---|
+| `avaliar(dados, x)` | 21,713 s | **15,346 s** (−29,3 %, 1,41×) |
+| P-003 `dimensionar` | 20,570 s | **14,210 s** (−30,9 %) |
+| avaliações completas do feixe | 912.723 | **194.261** (−78,7 %, 4,70×) |
+| chamadas de função por avaliação | 86,7 M | 53,8 M (−38 %) |
+| P-003 como fração de `avaliar()` | 94,7 % | 92,6 % |
+
+A previsão da auditoria (4,70×) saiu exata; o ganho de ponta a ponta é 1,41 % porque aquele
+termo era ~40 % do tempo. **O perfil mudou de dono**: o primeiro colocado agora é
+`pelicula.filme_tubo` (885.326 chamadas, 11,56 s acumulados) — é ela, e não Bell-Delaware, que
+faz o ponto fixo iterar, e isso é trabalho necessário (Hausen depende de L). **R2 tem de ser
+decidido sobre este perfil, não sobre o antigo.**
+
+Suíte: **1.199 aprovados, cobertura 95,93 %** (13 testes novos prendem a invariância do R1).
+
+**Js.** A igualdade `l_bi = l_bo = l_bc` é **estrutural**, não default acidental: o modelo tem um
+único parâmetro de espaçamento e não existe outro valor a passar. A equação não foi removida nem
+neutralizada; a premissa foi registrada em comentário no `saari_lmtd.toml` (em dois pontos) e na
+docstring de `_tubo_bell_delaware`. **O oráculo pegou uma tentativa errada minha**: escrevi a
+premissa no campo `note`, que é DADO conferido campo a campo por `test_paridade_julia.py` — foi
+para comentário, e a fixture não foi tocada.
+
+**Grades.** `n` = tubos por passe, a mesma variável física nos dois ramos. Δn = 5 é
+**granularidade numérica declarada** ("passo 5 mantém a varredura legível"), não restrição
+física — a física pede n inteiro. Cada grade é ancorada no **seu próprio** `n_min`
+(`faixa_julia` gera `n_min + i·Δn`), e o ramo conjunto usa `min_i(n_min,i)`: daí offsets
+diferentes (só 11,6 % dos pontos coincidem no P-003). O ramo por caso **não** pode mudar o
+projeto (só produz o diagnóstico `per_case`); o conjunto pode, em até 4 tubos, o que vale
+**0,015 % de área** (0,0187 % por passo da grade, medido). Nenhum caso pode ser perdido pelo
+passo 5: a banda de um caso tem largura 2·n_min ≥ 50. Política canônica única fica **proposta,
+não feita** — mudaria números.
+
+**R3/R4 não implementados**, com a proposta arquitetural que os viabiliza registrada: separar
+**busca do projeto** (pode usar limites fechados e parar no primeiro admissível) de **geração do
+envelope** (varredura completa, só quando alguém vai ler). Hoje a F15 paga a documentação 800
+vezes por rodada.
+
 ### Auditoria algorítmica do P-003 ✅ (2026-09-27) — `docs/validacao/26-auditoria-p003.md`
 
 Auditoria pedida antes de qualquer otimização: **o custo do P-003 é necessário?** Ferramenta
