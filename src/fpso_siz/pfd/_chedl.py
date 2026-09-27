@@ -84,3 +84,54 @@ def salmoura_laliberte(T, w, cas):
     faixas = {p: (float(linha["Min T" + s]), float(linha["Max T" + s]), float(linha["Max w" + s]))
               for p, s in _FAIXAS_LALIBERTE.items()}
     return valores, faixas
+
+
+# ------------------------------------------------------------------ serviço termodinâmico (F3)
+# As funções abaixo servem `pfd/estado_termodinamico.py`. Elas NÃO substituem as de cima: as
+# antigas continuam como estão, porque o PFD depende delas e a paridade é bit a bit.
+
+def flash_vle(ids, zs, T, P, eos, kij):
+    """Flash (T, P) completo: TODAS as fases previstas, com composição, fração e propriedades.
+
+    Diferente de `estado_gas`, que devolve só a fase vapor, aqui volta o equilíbrio inteiro —
+    é o que um serviço consumível pelo processo precisa entregar. Levanta ValueError se o
+    backend não convergir; quem chama decide o que fazer (o serviço transforma em estado)."""
+    flash, props = _flash_gas(tuple(ids), eos, kij)
+    r = flash.flash(T=T, P=P, zs=list(zs))
+    fases = []
+    for nome, fase, beta, beta_m in _fases_de(r):
+        fases.append(dict(nome=nome, fracao_molar=beta, fracao_massica=beta_m,
+                          composicao=list(fase.zs), Z=fase.Z(), MW=fase.MW(),
+                          rho=fase.rho_mass(), h=fase.H_mass(), cp=fase.Cp_mass(),
+                          mu=fase.mu(), k=fase.k()))
+    return dict(VF=r.VF, fases=fases, h=r.H_mass(),
+                metodos=dict(mu_gas=props.ViscosityGasMixture.method,
+                             k_gas=props.ThermalConductivityGasMixture.method,
+                             mu_liquido=props.ViscosityLiquidMixture.method,
+                             k_liquido=props.ThermalConductivityLiquidMixture.method))
+
+
+def _fases_de(r):
+    """[(nome, fase, fração molar, fração mássica)] do resultado, na ordem vapor → líquidos."""
+    betas, betas_m = list(r.betas), list(r.betas_mass)
+    out, i = [], 0
+    if r.gas is not None:
+        out.append(("vapor", r.gas, betas[i], betas_m[i]))
+        i += 1
+    for j, liq in enumerate(r.liquids):
+        nome = "liquido" if j == 0 else f"liquido{j}"
+        out.append((nome, liq, betas[i], betas_m[i]))
+        i += 1
+    return out
+
+
+def agua_iapws_completa(T, P):
+    """Água pura pela fase IAPWS-95 do thermo: acrescenta cp e h ao que `agua_iapws` já dá.
+
+    rho, mu e k saem numericamente IGUAIS aos de `agua_iapws` (mesma norma; conferido por
+    teste), então o serviço não introduz uma segunda verdade para a água."""
+    from thermo.phases import IAPWS95Liquid
+
+    ph = IAPWS95Liquid(T=T, P=P, zs=[1.0])
+    return dict(rho=ph.rho_mass(), mu=ph.mu(), k=ph.k(), cp=ph.Cp_mass(), h=ph.H_mass(),
+                MW=ph.MW())

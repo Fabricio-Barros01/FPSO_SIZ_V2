@@ -1373,6 +1373,55 @@ relatório gerado `docs/validacao/15-termodinamica.md` (`tools/termodinamica_pre
 - **Aceite:** (1) porta única (teste de arquitetura existente, `_chedl.py`) ✓; (2) comparação
   caso a caso sem mudar balanço/paridade ✓; (3) fontes no relatório ✓; (4) cobertura ✓.
 
+### F3 — Serviço termodinâmico ativo ✅ (2026-09-27) — `docs/validacao/29-servico-termodinamico.md`
+
+A F14 é COMPARATIVA (mede o desvio do balanço). Esta fase entrega o contrato que o processo
+poderá **chamar**: `flash_tp(T, P, z, fluido) → EstadoTermodinamico`, em
+`pfd/estado_termodinamico.py` + `config/pfd/estado_termodinamico.toml`.
+
+**Fase puramente aditiva.** Nada do balanço, do dimensionamento ou dos relatórios passa pelo
+serviço ainda: integrar é a Fase 5, e o surrogate da fração pesada é a Fase 4. **Paridade bit a
+bit** contra o estado anterior ao R1 (mesmo SHA-256 `409f1800…f16414`).
+
+**A interface não conhece biblioteca nenhuma**: `EstadoTermodinamico` e `Fase` são dados
+simples, e quem fala com o ChEDL continua sendo a porta única `pfd/_chedl.py` (há teste).
+
+| fluido | modelo | base de `z` | fases |
+|---|---|---|---|
+| `hidrocarboneto` | Peng-Robinson (VLE) | fração molar | vapor, líquido |
+| `agua` | IAPWS-95 | fração molar | líquido |
+| `salmoura` | Laliberté (2009) | **fração mássica de sal** | aquosa |
+
+Entrega por fase: frações molar e mássica, composição (x/y), Z, ρ, h, cp, μ, k, MW, método
+efetivo do backend; e no estado: modelo, backend com versão, fonte, referência de entalpia,
+avisos e `ok`/mensagem.
+
+**Três decisões que o contrato torna explícitas**, porque são armadilhas silenciosas:
+as **bases de composição não são iguais** entre fluidos; as **referências de entalpia não são
+comuns** (PR conta do gás ideal a 298,15 K; IAPWS-95 do ponto triplo), então só diferenças do
+mesmo fluido têm sentido; e **composição que não soma 1 é recusada**, não normalizada em
+silêncio.
+
+**Uma verdade só:** onde o PFD já calculava a mesma coisa, o serviço dá o MESMO número bit a
+bit — `fluidos.gas` (Z, μ, k), `fluidos.agua` (ρ, μ, k) e `fluidos.salmoura_fracao` (ρ, cp, μ).
+Há teste para os três. O serviço só ACRESCENTA cp e h para a água (via a fase IAPWS-95 do
+backend, conferida contra as funções de `chemicals`: diferença relativa zero).
+
+**Lacunas declaradas, entregues como NaN e nunca como número suposto:** fluido de poço completo
+(C20+ sem Tc/Pc/ω → o serviço RECUSA a composição, com a lacuna nomeada); k e h da salmoura; e
+**k da fase líquida de hidrocarboneto**, que numa sondagem a 250 K deu 2,5e-4 W/(m·K) — cerca de
+400× abaixo do esperado, por extrapolação dos ajustes REFPROP_FIT dos leves. Esse valor **não
+foi corrigido nem substituído**: vai com o método na mão e com aviso, e tem de ser validado
+antes de a Fase 5 consumi-lo.
+
+Convergência: não convergir é **estado** (`ok = False` + mensagem), nunca exceção; entrada
+inválida é `ValueError`; e um erro de programação (TypeError) **não** é engolido — há teste.
+
+Suíte: **1.256 aprovados, cobertura 95,89 %** (17 testes novos). Desempenho inalterado, como
+esperado de uma camada que ninguém chama ainda: `resolver_caso` 0,52 → 0,54 ms, `resolver_todos`
+20,7 → 21,2 ms, `avaliar()` 8,92 → 8,67 s — tudo dentro do ruído de medição contra o baseline
+pós-R2.
+
 ### Baseline de desempenho ✅ medida (2026-09-27) — `docs/validacao/performance-baseline.md`
 
 **Nada foi otimizado nesta fase**: o objetivo era medir o estado atual, já com a Fase 1
