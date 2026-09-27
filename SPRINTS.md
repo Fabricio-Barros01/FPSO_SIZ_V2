@@ -1400,6 +1400,46 @@ medir o swap. Se o SMT rende acima dos 6 núcleos físicos, **este benchmark nã
 para a Fase 10. Uma primeira varredura foi descartada por erro de método: com lote de 8 pontos o
 tempo de parede é `ceil(lote ÷ W)`, e a divisibilidade, não o hardware, produzia a curva.
 
+### Auditoria algorítmica do P-003 ✅ (2026-09-27) — `docs/validacao/26-auditoria-p003.md`
+
+Auditoria pedida antes de qualquer otimização: **o custo do P-003 é necessário?** Ferramenta
+`tools/auditar_p003.py`; dados em `26-auditoria-p003.json`. **Nada foi alterado** — nenhuma
+equação, correlação, critério ou estratégia.
+
+**A árvore fecha exatamente com o perfil**: 194.261 chamadas de `_tubo` (P-003 180.883 + P-002
+13.378 + P-001 0) e 912.723 de `bell_delaware` (875.148 + 37.575 + 0), sem resto. **O gargalo
+NÃO é normal.**
+
+- **Só 0,03 % é a física do ponto escolhido.** O objetivo (área) é monótono crescente em n, o
+  ótimo é o **primeiro** ponto admissível (índice 0 de 2.903), e a varredura segue por mais
+  3.009 pontos — 55 % das chamadas do P-003.
+- **A grade é a UNIÃO das bandas de velocidade dos 16 casos; a viabilidade pede a INTERSEÇÃO**,
+  que é fechada: n ∈ [7.524,4; 22.573,2]. O ótimo, n = 7.526, é o primeiro ponto da grade acima
+  desse limite analítico — a busca redescobre por enumeração o que uma divisão dá.
+- **78,7 % das avaliações de Bell-Delaware são bit a bit idênticas**, e isso foi provado chamada
+  a chamada, não por álgebra: em 180.883 de 180.883 chamadas de `_tubo` do P-003, todas as
+  saídas sucessivas de `bell_delaware` são iguais. O ponto fixo itera por causa de `h_i`
+  (Hausen, calculado fora de `bell_delaware`); `bell_delaware` só vê L por `n_b`, que só entra
+  em `Js` — e como o espaçamento de ponta é sempre igual ao central, **Js = 1 em 875.148 de
+  875.148 chamadas**.
+- `_tubo` é recalculada 2,02× por par (caso, n) distinto: `requirement`, `case_admissible` e
+  `derived` reconstroem o mesmo ponto.
+- Existe um **segundo** varrimento: `per_case` dimensiona cada caso isolado (29 % das chamadas).
+  É produto real (diagnóstico por caso), mas usa objetos de restrição próprios e grades
+  desalinhadas da conjunta (só 11,6 % dos pontos coincidem).
+
+**Candidatos com número, nenhum implementado.** R1 — não repetir `bell_delaware` no ponto fixo:
+elimina 718.462 chamadas (78,7 %), fator **4,70×**, e **é o único que comprovadamente não muda
+número nenhum**. R2 — memoizar `_tubo`: 2,03×. R1+R2 ≈ 9,5×. R3 (parar no primeiro admissível,
+2,14×) e R4 (entrar pela interseção fechada, 1,20×) **mudam o que a memória de cálculo mostra**:
+`r.rows` alimenta CSV, relatório, MC (bordas da banda, diagrama, bloqueios) e a métrica de
+violação da F15 — é decisão do usuário, não otimização invisível.
+
+**Duas perguntas em aberto, de física, que não respondi:** (1) `Js` nunca é exercitada porque os
+vãos de ponta são sempre iguais ao central — ou a Eq. 2-28 é código morto a documentar, ou falta
+uma entrada de espaçamento de ponta; (2) as grades do ramo por caso e do ramo conjunto estão
+desalinhadas, discretizando o mesmo n de formas diferentes.
+
 ### F15 — Otimização com `pymoo` ✅ implementada (2026-09-26), como ESTUDO
 **Dependência autorizada pelo usuário em 2026-09-26**; `pymoo` 0.6.2 (Apache-2.0) fixado no
 `uv.lock`.

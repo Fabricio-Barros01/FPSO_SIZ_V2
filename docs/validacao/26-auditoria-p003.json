@@ -1,0 +1,435 @@
+{
+  "P-001": {
+    "alinhamento_das_grades": {
+      "coincidentes_com_a_conjunta": 111,
+      "fracao_coincidente": 0.15205479452054796,
+      "pontos_da_grade_conjunta": 335,
+      "pontos_das_varreduras_por_caso": 730
+    },
+    "arvore": {},
+    "contagem": {
+      "bell_delaware_chamadas": 0,
+      "bell_delaware_por_fase": {},
+      "casos_distintos": 0,
+      "iteracoes_media": null,
+      "iteracoes_por_tubo": {},
+      "pares_distintos_por_fase": {},
+      "tubo_chamadas": 0,
+      "tubo_fator_recomputacao": null,
+      "tubo_pares_distintos": 0,
+      "tubo_por_fase": {}
+    },
+    "espaco": {
+      "cascos_paralelo": 1.0,
+      "cascos_serie": 1.0,
+      "casos_com_restricao_valida": 4,
+      "casos_expandidos": 10,
+      "grade_ok": true,
+      "max_iter_ponto_fixo": null,
+      "n_max": 1994.0,
+      "n_min": 28.0,
+      "n_step": 5.0,
+      "passes": 2.0,
+      "pontos_da_grade": 394,
+      "tolerancia_ponto_fixo": null,
+      "v_max": 3.0,
+      "v_min": 1.0
+    },
+    "identidade_bell_delaware": {
+      "fracao_bd_redundante": null
+    },
+    "limites_fechados": {
+      "abaixo_do_teto_geometrico": 335,
+      "dentro_da_intersecao": 259,
+      "intersecao_velocidade": [
+        648.4497872050273,
+        1945.3493616150818
+      ],
+      "pontos_da_grade": 335,
+      "sobrevivem_aos_dois": 259,
+      "teto_geometrico_n": 4846.855638359001
+    },
+    "ponto_fixo": {
+      "aviso": "o primeiro caso não produz restrição válida"
+    },
+    "posicao_do_otimo": {
+      "viavel": false
+    },
+    "rejeicao": {
+      "case_admissible_poupados_pelo_curto_circuito": 228,
+      "case_admissible_testados": 1112,
+      "casos_por_ponto_no_pior_caso": 4,
+      "criterios": {
+        "correlacao_tubo": 5,
+        "velocidade": 76
+      },
+      "pontos": 335,
+      "pontos_aprovados": 254,
+      "primeiro_caso_que_reprova": {
+        "0": 76,
+        "3": 5,
+        "None": 254
+      }
+    },
+    "status": "inviavel",
+    "tag": "P-001"
+  },
+  "P-002": {
+    "alinhamento_das_grades": {
+      "coincidentes_com_a_conjunta": 532,
+      "fracao_coincidente": 0.28803465078505686,
+      "pontos_da_grade_conjunta": 427,
+      "pontos_das_varreduras_por_caso": 1847
+    },
+    "arvore": {
+      "case_admissible_em_pontos_aprovados": 2880,
+      "case_admissible_em_pontos_reprovados": 250,
+      "iteracoes_media_ponto_fixo": 2.8087158020630887,
+      "ramo_B_antes_do_primeiro_admissivel": 3726,
+      "ramo_B_depois_do_escolhido": 4080,
+      "ramo_B_ponto_escolhido": 21
+    },
+    "contagem": {
+      "bell_delaware_chamadas": 37575,
+      "bell_delaware_por_fase": {
+        "case_admissible": 15132,
+        "derived": 4548,
+        "operacao_por_caso": 39,
+        "requirement": 17856
+      },
+      "casos_distintos": 20,
+      "iteracoes_media": 2.8087158020630887,
+      "iteracoes_por_tubo": {
+        "10": 499,
+        "11": 56,
+        "2": 11583,
+        "4": 43,
+        "5": 149,
+        "6": 224,
+        "7": 279,
+        "8": 316,
+        "9": 229
+      },
+      "pares_distintos_por_fase": {
+        "case_admissible": 4977,
+        "derived": 2274,
+        "operacao_por_caso": 10,
+        "requirement": 6117
+      },
+      "tubo_chamadas": 13378,
+      "tubo_fator_recomputacao": 2.1870197809383685,
+      "tubo_pares_distintos": 6117,
+      "tubo_por_fase": {
+        "case_admissible": 4977,
+        "derived": 2274,
+        "operacao_por_caso": 10,
+        "requirement": 6117
+      }
+    },
+    "espaco": {
+      "cascos_paralelo": 1.0,
+      "cascos_serie": 1.0,
+      "casos_com_restricao_valida": 10,
+      "casos_expandidos": 10,
+      "grade_ok": true,
+      "max_iter_ponto_fixo": null,
+      "n_max": 2159.0,
+      "n_min": 25.0,
+      "n_step": 5.0,
+      "passes": 1.0,
+      "pontos_da_grade": 427,
+      "tolerancia_ponto_fixo": null,
+      "v_max": 3.0,
+      "v_min": 1.0
+    },
+    "identidade_bell_delaware": {
+      "bd": 37575,
+      "bd_redundantes": 24197,
+      "fracao_bd_redundante": 0.6439654025282768,
+      "js_exatamente_1": 37575,
+      "todas_identicas": 13378,
+      "tubo": 13378,
+      "tubo_com_mais_de_uma_bd": 13378
+    },
+    "limites_fechados": {
+      "abaixo_do_teto_geometrico": 427,
+      "dentro_da_intersecao": 288,
+      "intersecao_velocidade": [
+        719.6180989203673,
+        2158.854296761102
+      ],
+      "pontos_da_grade": 427,
+      "sobrevivem_aos_dois": 288,
+      "teto_geometrico_n": 19084.132826929574
+    },
+    "ponto_fixo": {
+      "amostras": [
+        {
+          "a_s": 0.01789862029649385,
+          "h_ideal": 10256.543617617017,
+          "jb": 0.8882501604123878,
+          "jc": 1.0051468144734976,
+          "jl": 0.6679689757389111,
+          "jr": 1.0,
+          "js": 1.0,
+          "n_b": 1.0,
+          "re": 42790.525129927984
+        },
+        {
+          "a_s": 0.01789862029649385,
+          "h_ideal": 10256.543617617017,
+          "jb": 0.8882501604123878,
+          "jc": 1.0051468144734976,
+          "jl": 0.6679689757389111,
+          "jr": 1.0,
+          "js": 1.0,
+          "n_b": 5.0,
+          "re": 42790.525129927984
+        },
+        {
+          "a_s": 0.01789862029649385,
+          "h_ideal": 10256.543617617017,
+          "jb": 0.8882501604123878,
+          "jc": 1.0051468144734976,
+          "jl": 0.6679689757389111,
+          "jr": 1.0,
+          "js": 1.0,
+          "n_b": 20.0,
+          "re": 42790.525129927984
+        },
+        {
+          "a_s": 0.01789862029649385,
+          "h_ideal": 10256.543617617017,
+          "jb": 0.8882501604123878,
+          "jc": 1.0051468144734976,
+          "jl": 0.6679689757389111,
+          "jr": 1.0,
+          "js": 1.0,
+          "n_b": 60.0,
+          "re": 42790.525129927984
+        }
+      ],
+      "invariantes_em_n_b": [
+        "re",
+        "a_s",
+        "h_ideal",
+        "jc",
+        "jl",
+        "jb",
+        "jr"
+      ],
+      "n_usado": 1124,
+      "variam_com_n_b": []
+    },
+    "posicao_do_otimo": {
+      "admissiveis": 111,
+      "indice_do_escolhido": 0,
+      "objetivo_monotono_crescente": true,
+      "pontos": 427,
+      "pontos_antes_do_primeiro_admissivel": 316,
+      "pontos_depois_do_escolhido": 110,
+      "primeiro_admissivel": 1605.0,
+      "viavel": true,
+      "x_escolhido": 1605.0
+    },
+    "rejeicao": {
+      "case_admissible_poupados_pelo_curto_circuito": 1140,
+      "case_admissible_testados": 3130,
+      "casos_por_ponto_no_pior_caso": 10,
+      "criterios": {
+        "correlacao_tubo": 79,
+        "velocidade": 60
+      },
+      "pontos": 427,
+      "pontos_aprovados": 288,
+      "primeiro_caso_que_reprova": {
+        "0": 108,
+        "1": 21,
+        "9": 10,
+        "None": 288
+      }
+    },
+    "status": "dimensionado",
+    "tag": "P-002"
+  },
+  "P-003": {
+    "alinhamento_das_grades": {
+      "coincidentes_com_a_conjunta": 2027,
+      "fracao_coincidente": 0.11567653940535297,
+      "pontos_da_grade_conjunta": 4508,
+      "pontos_das_varreduras_por_caso": 17523
+    },
+    "arvore": {
+      "case_admissible_em_pontos_aprovados": 48160,
+      "case_admissible_em_pontos_reprovados": 3502,
+      "iteracoes_media_ponto_fixo": 4.838199277986322,
+      "ramo_B_antes_do_primeiro_admissivel": 28968,
+      "ramo_B_depois_do_escolhido": 99297,
+      "ramo_B_ponto_escolhido": 33
+    },
+    "contagem": {
+      "bell_delaware_chamadas": 875148,
+      "bell_delaware_por_fase": {
+        "case_admissible": 377488,
+        "derived": 44062,
+        "operacao_por_caso": 75,
+        "requirement": 453523
+      },
+      "casos_distintos": 32,
+      "iteracoes_media": 4.838199277986322,
+      "iteracoes_por_tubo": {
+        "10": 4675,
+        "11": 10376,
+        "12": 11700,
+        "13": 3007,
+        "2": 99246,
+        "3": 142,
+        "4": 4093,
+        "5": 10652,
+        "6": 13417,
+        "7": 9455,
+        "8": 7546,
+        "9": 6574
+      },
+      "pares_distintos_por_fase": {
+        "case_admissible": 69185,
+        "derived": 22031,
+        "operacao_por_caso": 16,
+        "requirement": 89651
+      },
+      "tubo_chamadas": 180883,
+      "tubo_fator_recomputacao": 2.0176350514773955,
+      "tubo_pares_distintos": 89651,
+      "tubo_por_fase": {
+        "case_admissible": 69185,
+        "derived": 22031,
+        "operacao_por_caso": 16,
+        "requirement": 89651
+      }
+    },
+    "espaco": {
+      "cascos_paralelo": 1.0,
+      "cascos_serie": 1.0,
+      "casos_com_restricao_valida": 16,
+      "casos_expandidos": 16,
+      "grade_ok": true,
+      "max_iter_ponto_fixo": null,
+      "n_max": 22574.0,
+      "n_min": 36.0,
+      "n_step": 5.0,
+      "passes": 1.0,
+      "pontos_da_grade": 4508,
+      "tolerancia_ponto_fixo": null,
+      "v_max": 3.0,
+      "v_min": 1.0
+    },
+    "identidade_bell_delaware": {
+      "bd": 875148,
+      "bd_redundantes": 694265,
+      "fracao_bd_redundante": 0.7933115313067047,
+      "js_exatamente_1": 875148,
+      "todas_identicas": 180883,
+      "tubo": 180883,
+      "tubo_com_mais_de_uma_bd": 180883
+    },
+    "limites_fechados": {
+      "abaixo_do_teto_geometrico": 4401,
+      "dentro_da_intersecao": 3010,
+      "intersecao_velocidade": [
+        7524.412798501014,
+        22573.238395503042
+      ],
+      "pontos_da_grade": 4508,
+      "sobrevivem_aos_dois": 2903,
+      "teto_geometrico_n": 22036.458449756727
+    },
+    "ponto_fixo": {
+      "amostras": [
+        {
+          "a_s": 0.14028931581257942,
+          "h_ideal": 2143.138658449391,
+          "jb": 0.944557898946321,
+          "jc": 0.9940560186629628,
+          "jl": 0.6348397637535558,
+          "jr": 1.0,
+          "js": 1.0,
+          "n_b": 1.0,
+          "re": 2342.278757300756
+        },
+        {
+          "a_s": 0.14028931581257942,
+          "h_ideal": 2143.138658449391,
+          "jb": 0.944557898946321,
+          "jc": 0.9940560186629628,
+          "jl": 0.6348397637535558,
+          "jr": 1.0,
+          "js": 1.0,
+          "n_b": 5.0,
+          "re": 2342.278757300756
+        },
+        {
+          "a_s": 0.14028931581257942,
+          "h_ideal": 2143.138658449391,
+          "jb": 0.944557898946321,
+          "jc": 0.9940560186629628,
+          "jl": 0.6348397637535558,
+          "jr": 1.0,
+          "js": 1.0,
+          "n_b": 20.0,
+          "re": 2342.278757300756
+        },
+        {
+          "a_s": 0.14028931581257942,
+          "h_ideal": 2143.138658449391,
+          "jb": 0.944557898946321,
+          "jc": 0.9940560186629628,
+          "jl": 0.6348397637535558,
+          "jr": 1.0,
+          "js": 1.0,
+          "n_b": 60.0,
+          "re": 2342.278757300756
+        }
+      ],
+      "invariantes_em_n_b": [
+        "re",
+        "a_s",
+        "h_ideal",
+        "jc",
+        "jl",
+        "jb",
+        "jr"
+      ],
+      "n_usado": 11704,
+      "variam_com_n_b": []
+    },
+    "posicao_do_otimo": {
+      "admissiveis": 2903,
+      "indice_do_escolhido": 0,
+      "objetivo_monotono_crescente": true,
+      "pontos": 4508,
+      "pontos_antes_do_primeiro_admissivel": 1498,
+      "pontos_depois_do_escolhido": 3009,
+      "primeiro_admissivel": 7526.0,
+      "viavel": true,
+      "x_escolhido": 7526.0
+    },
+    "rejeicao": {
+      "case_admissible_poupados_pelo_curto_circuito": 20466,
+      "case_admissible_testados": 51662,
+      "casos_por_ponto_no_pior_caso": 16,
+      "criterios": {
+        "correlacao_tubo": 320,
+        "velocidade": 1178
+      },
+      "pontos": 4508,
+      "pontos_aprovados": 3010,
+      "primeiro_caso_que_reprova": {
+        "0": 1164,
+        "6": 334,
+        "None": 3010
+      }
+    },
+    "status": "dimensionado",
+    "tag": "P-003"
+  }
+}
