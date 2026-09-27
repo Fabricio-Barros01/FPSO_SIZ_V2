@@ -1377,10 +1377,11 @@ relatório gerado `docs/validacao/15-termodinamica.md` (`tools/termodinamica_pre
 **Dependência autorizada pelo usuário em 2026-09-26**; `pymoo` 0.6.2 (Apache-2.0) fixado no
 `uv.lock`.
 
-**A pré-condição do 0003 — nenhum alarme aberto — NÃO está satisfeita**: P-001, P-002 e P-003
-seguem em alarme (falta a correlação laminar/de transição, cuja fonte já existe mas ainda não tem
-exemplo numérico). O usuário autorizou implementar mesmo assim; por isso **toda rodada é estudo e
-nenhum ponto da frente é recomendação de projeto**, e o relatório abre com esse aviso.
+**A pré-condição do 0003 — nenhum alarme aberto — ainda NÃO está satisfeita**: o P-002 e o P-003
+fecharam em 2026-09-27 com a película do lado tubo nos três regimes
+(`docs/validacao/24-pelicula-baixo-reynolds.md`), mas **o P-001 segue inviável**, agora pela área.
+O usuário autorizou implementar mesmo assim; por isso **toda rodada é estudo e nenhum ponto da
+frente é recomendação de projeto**, e o relatório abre com esse aviso.
 
 Entregue:
 - `fpso_siz/_otim.py` — **porta única do `pymoo`**, com import preguiçoso e teste de arquitetura
@@ -1392,6 +1393,48 @@ Entregue:
   declaradas (premissa do balanço, entrada de um TAG, divisão da vazão em trens) e chamando o
   **mesmo serviço por TAG** de sempre. Inviabilidade continua estado e vira violação (g > 0);
   lacuna e caso inativo **não** são violação de projeto (são dado).
+
+#### Correções da F15 antes da rodada definitiva (2026-09-27)
+
+Duas correções de contabilidade, antes de qualquer rodada nova. A `23-otimizacao.md` versionada
+é **anterior a elas** e será regenerada na reexecução da F15; os números dela não valem mais.
+
+1. **Multiplicidade dos TAGs replicados.** Um TAG declarado com `destino = "fator_vazao"` é
+   dimensionado com a vazão dividida por N, isto é, como UMA unidade — mas o objetivo somava o
+   volume dele uma vez só. "Mais trens" aparecia então como redução de volume instalado, o que é
+   erro de conta, não engenharia: o que o projeto leva são N vasos. O objetivo passa a somar
+   `N × unitário` para qualquer TAG replicado, com a multiplicidade saindo da própria
+   decodificação (`otimizacao.multiplicidade`) — o código não cita TAG nenhum.
+   Efeito medido no recorte `sg_001`, com a premissa no valor de base (η_padrão = 0,85):
+
+   | N | volume unitário do SG-001 (m³) | `volume_vasos` antes (m³) | depois (m³) |
+   |---|---|---|---|
+   | 1 | 684,83 | 2.327,84 | 2.327,84 |
+   | 2 | 342,42 | 1.985,42 | 2.327,84 |
+   | 3 | 228,28 | 1.871,28 | 2.327,84 |
+
+   O volume do separador é proporcional à vazão, então N × (V/N) = V: **no objetivo de volume,
+   dividir o SG-001 em trens não ganha nada**, e era exatamente essa a ilusão. N = 1 não mudou
+   número nenhum. `tests/pfd/test_otimizacao_trens.py`.
+2. **Falta de dado não é viabilidade.** `aguardando_entrada` (lacuna) continua *não* sendo
+   violação de projeto — lacuna é dado —, mas deixou de ser confundida com projeto viável. O
+   ponto ganha a classificação `situacao` (`viavel`, `inviavel`, `nao_avaliavel`,
+   `nao_convergiu`), `Avaliacao.viavel` exige `avaliavel`, e o `_otim` dá ao algoritmo **uma
+   restrição a mais** que conta os TAGs sem dado. Sem ela o pymoo devolvia como viável um ponto
+   de que não se sabe nada. `inativo` segue julgável: o TAG não opera, e nada falta.
+   O relatório acompanha: a contagem por situação substituiu a afirmação "todos inviáveis", a
+   varredura exaustiva separa "fronteira de viabilidade" de "pontos que não puderam ser
+   julgados", e o CSV ganhou a coluna `situacao` (o booleano `viavel` continua, pelo formato).
+
+**Fechamento da fase (2026-09-27).** `uv run pytest -n 4 --dist loadscope --cov=fpso_siz
+--cov-fail-under=90`: **1.186 aprovados, cobertura 95,86 %**, em 19:36 nesta máquina. São os
+1.177 de antes mais os 9 testes novos (6 da multiplicidade, 3 dos estados). Os 19:36 medidos
+ficam bem abaixo dos 51:54 anotados no `CLAUDE.md` para a rodada com cobertura; a diferença não
+foi investigada aqui e entra como item da baseline de desempenho (Fase 2).
+
+`docs/validacao/23-otimizacao.md`, o JSON e os CSVs continuam marcados como **desatualizados**
+por decisão do usuário: só a Fase 13 os regenera.
+
 - `config/pfd/otimizacao.toml` — variáveis, objetivos, restrições, subproblemas e parâmetros do
   algoritmo, cada um com a origem do limite. O código não nomeia variável nem objetivo.
   Valor apenas `proposto` não é variável de decisão (há teste).
@@ -1404,8 +1447,8 @@ Entregue:
 3. mesma semente → mesma frente;
 4. o dimensionamento padrão não muda ao avaliar pontos fora do projeto.
 
-**Resultado das rodadas:** no **problema completo** não há indivíduo viável — com os alarmes dos
-trocadores abertos, todo ponto tem pelo menos um TAG inviável. **Isso é o resultado**, e é
+**Resultado das rodadas:** no **problema completo** não há indivíduo viável — com o alarme do
+P-001 aberto, todo ponto tem pelo menos um TAG inviável. **Isso é o resultado**, e é
 exatamente a razão da pré-condição do 0003: otimizar ali seria otimizar um erro. A rodada segue
 útil como diagnóstico, porque a violação mostra qual TAG barra cada ponto e quanto falta. No
 **subproblema do SG-001** a frente existe e é conferida contra a grade; ela degenera num ponto

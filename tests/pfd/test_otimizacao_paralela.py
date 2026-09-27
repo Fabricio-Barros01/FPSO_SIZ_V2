@@ -25,7 +25,8 @@ def dados():
 
 def _igual(a, b):
     return (a.x == b.x and a.objetivos == b.objetivos and a.restricoes == b.restricoes
-            and a.estados == b.estados and a.convergiu == b.convergiu)
+            and a.estados == b.estados and a.convergiu == b.convergiu and a.sem_dado == b.sem_dado
+            and a.situacao == b.situacao)
 
 
 @pytest.mark.otim
@@ -44,10 +45,17 @@ def test_rodada_paralela_da_a_mesma_frente_e_o_mesmo_historico(dados):
 
 @pytest.mark.otim
 def test_varredura_em_processos_e_a_mesma_avaliacao_do_modulo_puro(dados):
-    """`avaliar_pontos` é o caminho que a ferramenta usa na varredura exaustiva do critério 2."""
-    pontos = ot.grade(SUB, {"eta_F": 0.10})[:PROCESSOS]
-    assert len(pontos) == PROCESSOS
+    """`avaliar_pontos` é o caminho que a ferramenta usa na varredura exaustiva do critério 2.
+
+    Os pontos escolhidos varrem o número de unidades do TAG replicado (1, 2 e 3) com a mesma
+    premissa: é aí que a multiplicidade entra no objetivo, e é o que precisa sair igual nos dois
+    caminhos."""
+    eta = ot.grade(SUB, {"eta_F": 0.10})[0][0]
+    pontos = [p for p in ot.grade(SUB, {"eta_F": 0.10}) if p[0] == eta]
+    assert sorted(p[1] for p in pontos) == [1.0, 2.0, 3.0]
     a = _otim.avaliar_pontos(dados, pontos, sub=SUB)
     b = _otim.avaliar_pontos(dados, pontos, sub=SUB, processos=PROCESSOS)
     assert all(_igual(x, y) for x, y in zip(a, b))
     assert [x.x for x in a] == [tuple(p) for p in pontos]
+    ids = [o["id"] for o in ot.objetivos(SUB) if o["tipo"] == "soma_derivado"]
+    assert all(x.objetivos[i] == y.objetivos[i] for x, y in zip(a, b) for i in ids)

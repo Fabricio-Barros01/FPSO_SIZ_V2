@@ -41,9 +41,14 @@ def _algoritmo(n_obj, populacao, semente):
 def _saidas(a, ids_obj, tags, grande):
     """(F, G) de uma Avaliacao. Objetivo não calculável (um TAG do somatório não está
     dimensionado) entra como a penalidade declarada: o indivíduo é dominado, e a violação é que
-    informa o caminho de volta ao admissível."""
+    informa o caminho de volta ao admissível.
+
+    G tem uma posição a mais do que os TAGs restringidos: a ÚLTIMA conta os TAGs que ficaram
+    esperando entrada. Lacuna não é violação de projeto — por isso ela não entra na violação do
+    TAG —, mas também não é projeto avaliado, e sem essa posição o pymoo devolveria como
+    "viável" um ponto de que não se sabe nada. Falta de dado não vira viabilidade por omissão."""
     return ([a.objetivos[i] if math.isfinite(a.objetivos[i]) else grande for i in ids_obj],
-            [a.restricoes[t] for t in tags])
+            [a.restricoes[t] for t in tags] + [float(len(a.sem_dado))])
 
 
 _TRABALHO = {}
@@ -127,8 +132,9 @@ def _problema(dados, propostas, sub, pool=None):
 
         def __init__(self):
             extra = {} if runner is None else {"elementwise_runner": runner}
-            super().__init__(n_var=len(lo), n_obj=len(ids_obj), n_ieq_constr=len(tags), xl=lo, xu=hi,
-                             **extra)
+            # len(tags) violações de projeto + 1 posição para "ponto não avaliável" (ver _saidas)
+            super().__init__(n_var=len(lo), n_obj=len(ids_obj), n_ieq_constr=len(tags) + 1,
+                             xl=lo, xu=hi, **extra)
             self.avaliacoes = [] if runner is None else runner.avaliacoes
 
         def _evaluate(self, x, out, *args, **kwargs):

@@ -1,5 +1,12 @@
 # F15 — otimização multiobjetivo do módulo (estudo)
 
+> **Este relatório está DESATUALIZADO (anotado à mão em 2026-09-27).** Ele foi gerado antes de
+> duas correções da F15 registradas no `SPRINTS.md`: (1) o objetivo passou a somar `N × volume
+> unitário` nos TAGs replicados — os números de `volume_vasos` com mais de um trem abaixo estão
+> subcontados; (2) ponto com TAG esperando entrada deixou de poder sair como viável. O texto
+> também ainda afirma que P-002 e P-003 estão em alarme, o que não vale mais. **A reexecução da
+> F15 regenera este arquivo**; até lá, nenhum número daqui deve ser citado.
+
 Gerado por `tools/otimizar.py`; a frente sai do NSGA-II/III pela porta única `fpso_siz/_otim.py`, e cada avaliação é o mesmo serviço por TAG do `pfd` — a otimização não fala com o motor.
 
 ## Aviso de pré-condição

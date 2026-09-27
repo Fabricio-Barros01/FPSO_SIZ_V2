@@ -101,11 +101,68 @@ def test_a_decodificacao_respeita_destino_e_tipo(dados):
 
 def test_lacuna_e_caso_inativo_nao_contam_como_violacao(dados):
     """Estado de dado não é violação de projeto: sem as propostas, os TAGs com lacuna ficam
-    "aguardando entrada", e a restrição os ignora."""
+    "aguardando entrada", e a MEDIDA DE VIOLAÇÃO os ignora."""
     a = ot.avaliar(dados, x_do_projeto(dados), propostas=mod_propostas.NENHUMA)
     aguardando = [t for t, e in a.estados.items() if e in ot.cfg()["restricoes"]["estados_neutros"]]
     assert aguardando
     assert all(a.restricoes[t] == 0.0 for t in aguardando)
+
+
+def test_falta_de_dado_nao_produz_candidato_viavel(dados):
+    """Neutro na violação NÃO é projeto avaliado. Sem as propostas há TAG esperando entrada:
+    o ponto é "não avaliável" e não pode sair como viável — não se sabe se aquele TAG atende."""
+    sem_dado_declarados = set(ot.cfg()["restricoes"]["estados_sem_dado"])
+    assert sem_dado_declarados <= set(ot.cfg()["restricoes"]["estados_neutros"])
+    a = ot.avaliar(dados, x_do_projeto(dados), propostas=mod_propostas.NENHUMA)
+    esperado = {t for t, e in a.estados.items() if e in sem_dado_declarados}
+    assert esperado and a.sem_dado == esperado
+    assert all(a.restricoes[t] == 0.0 for t in a.sem_dado)   # continua não sendo violação
+    assert not a.avaliavel and not a.viavel and a.situacao == "nao_avaliavel"
+
+
+def test_as_quatro_situacoes_de_um_ponto_sao_distintas():
+    """`dimensionado`, `inviável`, `inativo` e `não avaliável` são estados diferentes. O status
+    por TAG fica em `estados`; `situacao` classifica o PONTO, e nunca chama de viável um ponto
+    de que falta dado."""
+    def av(estados, restricoes, convergiu=True, sem_dado=frozenset()):
+        return ot.Avaliacao((), {}, restricoes, estados, convergiu, sem_dado)
+
+    # TAG inativo é estado de dado como a lacuna, mas o ponto segue julgável: nada falta.
+    inativo = av({"A": "dimensionado", "B": "inativo"}, {"A": 0.0, "B": 0.0})
+    assert inativo.avaliavel and inativo.viavel and inativo.situacao == "viavel"
+
+    aguardando = av({"A": "dimensionado", "B": "aguardando_entrada"}, {"A": 0.0, "B": 0.0},
+                    sem_dado=frozenset({"B"}))
+    assert not aguardando.avaliavel and not aguardando.viavel
+    assert aguardando.situacao == "nao_avaliavel" and aguardando.violacao_total == 0.0
+
+    inviavel = av({"A": "inviavel"}, {"A": 0.4})
+    assert inviavel.avaliavel and not inviavel.viavel and inviavel.situacao == "inviavel"
+
+    # falta de dado E violação: o que falta primeiro é o dado
+    ambos = av({"A": "inviavel", "B": "aguardando_entrada"}, {"A": 0.4, "B": 0.0},
+               sem_dado=frozenset({"B"}))
+    assert ambos.situacao == "nao_avaliavel"
+
+    nao_convergiu = av({"A": ""}, {"A": 1.0}, convergiu=False)
+    assert nao_convergiu.situacao == "nao_convergiu" and not nao_convergiu.avaliavel
+
+
+def test_o_algoritmo_recebe_o_dado_ausente_como_restricao_a_mais():
+    """Em `_otim`, G tem uma posição além dos TAGs: a contagem dos que esperam entrada. É o que
+    impede o pymoo de devolver como viável um ponto não avaliável."""
+    from fpso_siz import _otim
+    tags = ["A", "B"]
+    completo = ot.Avaliacao((), {"o": 1.0}, {"A": 0.0, "B": 0.0}, {"A": "dimensionado", "B": "inativo"},
+                            True, frozenset())
+    faltando = ot.Avaliacao((), {"o": 1.0}, {"A": 0.0, "B": 0.0},
+                            {"A": "dimensionado", "B": "aguardando_entrada"}, True, frozenset({"B"}))
+    f1, g1 = _otim._saidas(completo, ["o"], tags, 1e9)
+    f2, g2 = _otim._saidas(faltando, ["o"], tags, 1e9)
+    assert f1 == f2 == [1.0]
+    assert len(g1) == len(tags) + 1
+    assert g1 == [0.0, 0.0, 0.0] and max(g1) <= 0
+    assert g2 == [0.0, 0.0, 1.0] and max(g2) > 0
 
 
 def test_a_violacao_soma_so_os_tags_que_violam(dados):

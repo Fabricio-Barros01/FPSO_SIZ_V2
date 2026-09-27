@@ -1,9 +1,11 @@
 # F15 — otimização multiobjetivo do módulo (docs/decisoes/0003-otimizacao-pymoo.md).
 #
 # ESTADO DA PRÉ-CONDIÇÃO: o documento 0003 exige "nenhum alarme aberto" antes da primeira
-# rodada, e os alarmes do P-001, P-002 e P-003 CONTINUAM ABERTOS (docs/validacao/14-alarmes.md).
-# O usuário autorizou a implementação em 2026-09-26 mesmo assim; por isso toda rodada é ESTUDO,
-# e o relatório carrega esse aviso. Nenhum ponto da frente é recomendação de projeto.
+# rodada. Os alarmes do P-002 e do P-003 FECHARAM com a película do lado tubo nos três regimes
+# (docs/validacao/24-pelicula-baixo-reynolds.md); SÓ O P-001 SEGUE INVIÁVEL, por saturação da
+# troca em baixa vazão. O usuário autorizou a implementação em 2026-09-26 com a pré-condição
+# ainda aberta; enquanto o P-001 estiver assim toda rodada é ESTUDO, e o relatório carrega esse
+# aviso. Nenhum ponto da frente é recomendação de projeto.
 #
 # Tudo o que a otimização pode mexer está declarado aqui, com LIMITE DE ORIGEM DECLARADA (a
 # tabela do 0003). O código não nomeia variável nem objetivo: itera estas listas. Valor com
@@ -101,8 +103,16 @@ fonte = "área de troca é o proxy de custo dos trocadores (0003); com cascos di
 # pontua melhor que um sem solução em caso nenhum, que é o que o NSGA-II precisa para caminhar.
 tags = ["SG-001", "V-001", "V-002", "TO-001", "TO-002", "P-001", "P-002", "P-003", "B-001", "B-002", "B-003"]
 # TAG que espera entrada (lacuna) ou que fica inativo não é violação de projeto: é estado de
-# dado. A rodada registra e a restrição os ignora — lacuna continua lacuna.
+# dado. A rodada registra e a MEDIDA DE VIOLAÇÃO os ignora — lacuna continua lacuna.
 estados_neutros = ["aguardando_entrada", "inativo"]
+# Mas neutro na violação não é o mesmo que projeto avaliado. São dois estados diferentes:
+#   inativo            → o TAG não opera naquele ponto; nada a dimensionar, e o ponto segue
+#                        julgável;
+#   aguardando_entrada → falta DADO; não se sabe se o TAG atende. O ponto é "não avaliável" e
+#                        NÃO pode sair como viável — nem da frente, nem do relatório.
+# Por isso o algoritmo recebe, além das violações por TAG, uma restrição a mais que conta os
+# TAGs sem dado: falta de dado não vira viabilidade por omissão.
+estados_sem_dado = ["aguardando_entrada"]
 fonte = "restrições do contrato de dimensionamento como estado (0003); a métrica de violação é critério numérico da otimização, não premissa física"
 
 [algoritmo]
@@ -116,9 +126,9 @@ fonte = "0003: populações de 40–100 com avaliação cara; semente fixa para 
 # ---------------------------------------------------------------------------- subproblemas
 # Um subproblema restringe variáveis, objetivos e TAGs restringidos. Existe por duas razões
 # declaradas: (1) o critério de validação 2 do 0003 exige comparar a frente do NSGA-II com uma
-# varredura exaustiva da MESMA grade, e isso só é exaustível num subproblema pequeno; (2) com os
-# alarmes dos trocadores abertos, o problema completo não tem ponto viável — a rodada completa
-# serve para mostrar isso, não para recomendar projeto.
+# varredura exaustiva da MESMA grade, e isso só é exaustível num subproblema pequeno; (2) com o
+# alarme do P-001 aberto, o problema completo não tem ponto viável — a rodada completa serve
+# para mostrar isso, não para recomendar projeto.
 
 [[subproblema]]
 id = "sg_001"
@@ -126,7 +136,7 @@ rotulo = "SG-001: η_padrão × número de trens"
 variaveis = ["eta_F", "trens_sg"]
 objetivos = ["volume_vasos", "carga_aquecimento"]
 tags = ["SG-001", "V-001", "V-002", "TO-001", "TO-002", "B-001", "B-002", "B-003"]
-fonte = "critério de validação 2 do 0003 (docs/decisoes/0003-otimizacao-pymoo.md): subproblema pequeno cuja frente é conferível contra varredura exaustiva; os trocadores ficam fora porque os seus alarmes seguem abertos"
+fonte = "critério de validação 2 do 0003 (docs/decisoes/0003-otimizacao-pymoo.md): subproblema pequeno cuja frente é conferível contra varredura exaustiva; os trocadores ficam fora porque o alarme do P-001 segue aberto"
 # Passo da grade da varredura exaustiva com que a frente é conferida. É critério NUMÉRICO da
 # validação (resolução da conferência), não premissa física; variável inteira anda de 1 em 1.
 grade_passo = { eta_F = 0.02 }

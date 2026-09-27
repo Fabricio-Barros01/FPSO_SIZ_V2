@@ -5,9 +5,9 @@ Roda o NSGA-II/III pela porta única `fpso_siz/_otim.py` sobre o avaliador puro
 config/pfd/otimizacao.toml. Determinístico (semente fixa) e LENTO: cada indivíduo roda o balanço
 e os TAGs da planta (cerca de 3 s no problema completo).
 
-**A pré-condição do documento 0003 — nenhum alarme aberto — NÃO está satisfeita**: P-001, P-002
-e P-003 seguem em alarme. Toda rodada é ESTUDO, e nenhum ponto da frente é recomendação de
-projeto.
+**A pré-condição do documento 0003 — nenhum alarme aberto — ainda NÃO está satisfeita**: o
+P-002 e o P-003 fecharam (docs/validacao/24-pelicula-baixo-reynolds.md), mas o P-001 segue
+inviável. Toda rodada é ESTUDO, e nenhum ponto da frente é recomendação de projeto.
 
     uv run python tools/otimizar.py [--sub sg_001] [--populacao N] [--geracoes N] [--semente N]
                                     [--varredura] [--saida docs/validacao/23-otimizacao.md]
@@ -17,6 +17,7 @@ import csv
 import json
 import math
 import os
+from collections import Counter
 from pathlib import Path
 
 from fpso_siz import _otim
@@ -63,6 +64,20 @@ def tabela_declaracao(sub):
     return out
 
 
+# Os quatro desfechos possíveis de um PONTO, distintos do status de cada TAG. "não avaliável"
+# não é um jeito educado de dizer inviável: é falta de dado, e não pode virar viabilidade.
+SITUACAO = {"viavel": "viável", "inviavel": "inviável",
+            "nao_avaliavel": "não avaliável (aguardando entrada)",
+            "nao_convergiu": "balanço não convergiu"}
+
+
+def contagem(avaliacoes):
+    """"n inviáveis, m não avaliáveis" — a composição real de um conjunto de pontos. Dizer
+    "todos inviáveis" quando parte deles só esperava dado seria a confusão que a F15 desfez."""
+    n = Counter(a.situacao for a in avaliacoes)
+    return ", ".join(f"{n[s]} {SITUACAO[s]}" for s in SITUACAO if n[s]) or "nenhum ponto avaliado"
+
+
 def linha_ponto(a, ids_var, ids_obj, sub=None):
     """A linha de um ponto. Variável inteira aparece DECODIFICADA (o algoritmo caminha no
     contínuo e a decodificação arredonda): mostrar 2,8869 trens seria mentir sobre o que foi
@@ -72,7 +87,7 @@ def linha_ponto(a, ids_var, ids_obj, sub=None):
                     for i, v in zip(ids_var, a.x))
     objs = " · ".join(f"{i} = {f(a.objetivos[i])}" for i in ids_obj)
     viol = ", ".join(f"{t} {f(g, 3)}" for t, g in a.restricoes.items() if g > 0) or "—"
-    return f"| {xs} | {objs} | {viol} | {'viável' if a.viavel else 'inviável'} |"
+    return f"| {xs} | {objs} | {viol} | {SITUACAO[a.situacao]} |"
 
 
 def secao(dados, sub, populacao, geracoes, semente, com_varredura, titulo, proposito, processos):
@@ -85,6 +100,7 @@ def secao(dados, sub, populacao, geracoes, semente, com_varredura, titulo, propo
     frente, hist, meta = _otim.otimizar(dados, populacao=populacao, geracoes=geracoes, semente=semente,
                                         sub=sub, processos=processos)
     viaveis = [a for a in hist if a.viavel]
+    sem_dado = [a for a in hist if a.situacao == "nao_avaliavel"]
     front_hist = ot.nao_dominados([a.objetivos for a in viaveis], ids_obj) if viaveis else []
     out = [f"## {titulo}", "", proposito, "", "### O que a rodada pôde mexer", ""]
     out += tabela_declaracao(sub)
@@ -101,12 +117,11 @@ def secao(dados, sub, populacao, geracoes, semente, com_varredura, titulo, propo
             "são os mesmos que o `fpso-siz pfd` publica hoje.", "",
             "### Frente de Pareto", ""]
     if not viaveis:
-        out += ["Nenhum indivíduo viável: com os alarmes dos trocadores abertos, todo ponto do espaço de decisão "
-                "tem pelo menos um TAG inviável, e a frente é vazia. **Isto é o resultado da rodada**, e é "
-                "exatamente a razão da pré-condição do 0003 — otimizar sobre um modelo que ainda dá "
-                "\"nenhum equipamento atende\" seria otimizar um erro.", "",
+        out += [f"Nenhum indivíduo viável, e a frente é vazia: {contagem(hist)}. **Isto é o resultado da "
+                "rodada**, e é exatamente a razão da pré-condição do 0003 — otimizar sobre um modelo que ainda "
+                "dá \"nenhum equipamento atende\" seria otimizar um erro.", "",
                 "A rodada continua útil como diagnóstico: a coluna de violações mostra qual TAG barra cada ponto e "
-                "quanto falta, e a violação do P-002 cai com os passes no tubo.", ""]
+                "quanto falta.", ""]
     else:
         out += ["| Variáveis | Objetivos | Violações | Estado |", "|---|---|---|---|"]
         for a in sorted(viaveis, key=lambda a: tuple(a.objetivos[i] for i in ids_obj)):
@@ -118,6 +133,10 @@ def secao(dados, sub, populacao, geracoes, semente, com_varredura, titulo, propo
                     "objetivos melhoram na mesma direção (mais trens reduzem o volume por vaso, e η maior reduz a "
                     "carga de aquecimento), então não há troca a mostrar — o conjunto de Pareto degenera num ponto.",
                     ""]
+    if sem_dado:
+        out += [f"{len(sem_dado)} dos {len(hist)} pontos ficaram **não avaliáveis**: algum TAG restringido "
+                "esperava entrada (lacuna). Eles não entram na frente — falta de dado não é viabilidade —, e o "
+                "que eles pedem é dado, não ajuste de projeto.", ""]
     avaliacoes = [a for a in hist]
     if com_varredura:
         ref = _otim.avaliar_pontos(dados, ot.grade(sub), sub=sub, processos=processos)
@@ -134,7 +153,10 @@ def secao(dados, sub, populacao, geracoes, semente, com_varredura, titulo, propo
         out += ["", ("Nenhum ponto da varredura domina um ponto da frente do algoritmo." if not dominados
                      else f"**{len(dominados)} ponto(s) da frente do algoritmo são dominados pela varredura** — "
                           "a rodada não convergiu; aumente população ou gerações."), ""]
-        inviaveis = [a for a in ref if not a.viavel]
+        # inviável é o ponto que FOI julgado e não atende. O que esperava dado, ou cujo balanço
+        # não convergiu, não é fronteira de viabilidade — vai numa lista à parte.
+        inviaveis = [a for a in ref if a.situacao == "inviavel"]
+        outros = [a for a in ref if a.situacao not in ("viavel", "inviavel")]
         if inviaveis:
             barrando = sorted({t for a in inviaveis for t, g in a.restricoes.items() if g > 0})
             out += ["#### Fronteira de viabilidade encontrada na grade", "",
@@ -144,6 +166,15 @@ def secao(dados, sub, populacao, geracoes, semente, com_varredura, titulo, propo
                     "do usuário, não algo que a otimização possa resolver escolhendo um valor.", "",
                     "| Variáveis | Objetivos | Violações | Estado |", "|---|---|---|---|"]
             for a in sorted(inviaveis, key=lambda a: a.x):
+                out.append(linha_ponto(a, ids_var, ids_obj, sub))
+            out.append("")
+        if outros:
+            out += ["#### Pontos da grade que não puderam ser julgados", "",
+                    f"{len(outros)} dos {len(ref)} pontos não são inviáveis: {contagem(outros)}. Eles não dizem "
+                    "nada sobre viabilidade — o que falta neles é **dado**, e é isso que precisa ser fornecido "
+                    "antes de a faixa ser lida como fronteira de projeto.", "",
+                    "| Variáveis | Objetivos | Violações | Estado |", "|---|---|---|---|"]
+            for a in sorted(outros, key=lambda a: a.x):
                 out.append(linha_ponto(a, ids_var, ids_obj, sub))
             out.append("")
         avaliacoes = avaliacoes + ref
@@ -171,11 +202,14 @@ def gerar(dados, populacao, geracoes, semente, destino_dados, rodadas=None, proc
            "cada avaliação é o mesmo serviço por TAG do `pfd` — a otimização não fala com o motor.", "",
            "## Aviso de pré-condição", "",
            "O documento `docs/decisoes/0003-otimizacao-pymoo.md` exige **nenhum alarme aberto** antes da primeira "
-           "rodada. Os alarmes do P-001, P-002 e P-003 **continuam abertos** (`docs/validacao/14-alarmes.md`): "
-           "falta a correlação laminar/de transição do lado tubo, cuja fonte já existe no acervo mas ainda não tem "
-           "exemplo numérico para o caso-ouro (`docs/validacao/20-correlacao-tubo-laminar.md`). O usuário "
-           "autorizou a implementação da F15 mesmo assim, em 2026-09-26; **toda rodada aqui é estudo, e nenhum "
-           "ponto da frente é recomendação de projeto.**", ""]
+           "rodada. Os alarmes do **P-002 e do P-003 fecharam** quando a película do lado tubo passou a ter os "
+           "três regimes (`docs/validacao/24-pelicula-baixo-reynolds.md`); **só o P-001 segue inviável**, por "
+           "saturação da troca em baixa vazão (`docs/validacao/14-alarmes.md`). O usuário autorizou a "
+           "implementação da F15 com a pré-condição ainda aberta, em 2026-09-26; enquanto o P-001 estiver assim "
+           "**toda rodada aqui é estudo, e nenhum ponto da frente é recomendação de projeto.**", "",
+           "Um TAG replicado (`fator_vazao`) é dimensionado como UMA unidade, com a vazão dividida pelo número "
+           "de unidades; os objetivos que somam um derivado extensivo dele somam o valor unitário **vezes o "
+           "número de unidades**.", ""]
     pacote, todas = {}, []
     for sub, varredura, titulo, proposito in rodadas:
         linhas, dados_json, ids_var, ids_obj, avaliacoes = secao(dados, sub, populacao, geracoes, semente,
@@ -192,9 +226,12 @@ def gerar(dados, populacao, geracoes, semente, destino_dados, rodadas=None, proc
         caminho = destino_dados.with_name(f"{destino_dados.name}-{nome}").with_suffix(".csv")
         with caminho.open("w", encoding="utf-8", newline="") as fh:
             w = csv.writer(fh)
-            w.writerow([*ids_var, *ids_obj, "violacao_total", "viavel"])
+            # `situacao` distingue os quatro desfechos; `viavel` fica pelo histórico do formato,
+            # e é o que ela seria: 1 só quando a situação é "viavel"
+            w.writerow([*ids_var, *ids_obj, "violacao_total", "situacao", "viavel"])
             for a in avaliacoes:
-                w.writerow([*a.x, *(a.objetivos[i] for i in ids_obj), a.violacao_total, int(a.viavel)])
+                w.writerow([*a.x, *(a.objetivos[i] for i in ids_obj), a.violacao_total, a.situacao,
+                            int(a.viavel)])
         arquivos.append((caminho, nome, len(avaliacoes)))
     out += ["## Arquivos", "",
             f"- `{destino_dados.with_suffix('.json').name}`: por rodada, a frente, o ponto do projeto e os "
