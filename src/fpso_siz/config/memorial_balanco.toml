@@ -1,4 +1,4 @@
-# Metadados do memorial de cálculo do balanço preliminar (capa, cabeçalho, revisões).
+# Metadados da memória de cálculo do balanço preliminar (capa, cabeçalho, revisões).
 numero = "MC-SEN-SEP-COO-001-0"
 numero_nota = "numeração a confirmar na LI-SEN-SEP-COO-01"
 titulo = "Memorial preliminar do diagrama de blocos"
@@ -14,7 +14,7 @@ caso_eta_req = 15   # caso da substituição numérica de η_req do SG-001 (F10w
 
 [senai]
 # Campos do template SENAI CETIQT (config/dados.tex do template)
-tipo = "MEMORIAL DE CÁLCULO -- DIAGRAMA DE BLOCOS"
+tipo = "MEMÓRIA DE CÁLCULO -- DIAGRAMA DE BLOCOS"
 cliente = "SENAI CETIQT"
 programa = "-"
 area = "FPSO SENAI -- BACIA DE SANTOS"
@@ -26,6 +26,6 @@ projeto = "SEP"
 arquivo = "MC_Caso{num:02d}"
 numero = "MC-SEN-SEP-COO-C{num:02d}-0"
 titulo = "Balanço de massa e energia --- caso {num} ({nome})"
-tipo = "MEMORIAL DE CÁLCULO -- BALANÇO POR CASO"
+tipo = "MEMÓRIA DE CÁLCULO -- BALANÇO POR CASO"
 descricao_revisao = "Emissão preliminar --- balanço de massa e energia de um caso (F11b), anexo do MC-SEN-SEP-COO-001"
 sem_fase = "---"   # grandeza da fase aquosa em caso sem água (P-42)

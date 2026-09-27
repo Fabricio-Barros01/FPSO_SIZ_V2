@@ -245,7 +245,7 @@ def test_sg001_pdf_mostra_a_inviabilidade(planta_oleo_morto, tmp_path):
     ctx, rt = planta_oleo_morto.contexto, planta_oleo_morto.tag("SG-001")
     tex = saida_mc.gravar(ctx, rt, tmp_path, data=DATA, git=GIT)
     texto = _normal(_texto_pdf(compilacao.compilar(tex)))
-    assert _normal("MEMORIAL DE CÁLCULO – DIAGNÓSTICO") in texto
+    assert _normal("MEMÓRIA DE CÁLCULO – DIAGNÓSTICO") in texto
     assert _normal("não atende") in texto and "3.612mm" in texto and "5.600mm" in texto
     assert (tmp_path / "MC-SEN-SEP-EQP-001-0_teto.csv").exists()
     assert (tmp_path / "MC-SEN-SEP-EQP-001-0_minimo.csv").exists()

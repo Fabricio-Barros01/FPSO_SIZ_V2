@@ -108,6 +108,6 @@
   Revisar).
   1 aviso(s) de propriedades/faixas; detalhe no
   JSON do TAG e no rastro.
-  Memorial de cálculo (MC) do TAG: ação "Gerar
-  memorial de cálculo" no menu, ou --mc [--pdf] no
+  Memória de cálculo (MC) do TAG: ação "Gerar
+  memória de cálculo" no menu, ou --mc [--pdf] no
   comando.

@@ -1,4 +1,13 @@
-"""F4 — memorial LaTeX do balanço: paridade, robustez a dados/premissas, bijeção e compilação."""
+"""F4 — memória de cálculo LaTeX do balanço: paridade, robustez a dados/premissas, bijeção e compilação.
+
+A paridade com o documento de referência é **byte a byte, salvo uma divergência lexical
+declarada**: por decisão do usuário em 2026-09-27 o termo adotado é "memória de cálculo", e o
+script de referência escreve "memorial". As substituições estão em
+`fixtures/python_ref/lexico_memoria_calculo.toml`, com a justificativa; elas são aplicadas ao
+texto de REFERÊNCIA antes da comparação, e nada mais é tolerado — um número diferente, uma casa
+decimal, uma vírgula fora de lugar continuam reprovando. O `main_ref.tex` não é editado: o hash
+dele é a proveniência do oráculo.
+"""
 import contextlib
 import difflib
 import importlib.util
@@ -26,6 +35,22 @@ RAIZ = Path(__file__).resolve().parents[1]
 FIX = RAIZ / "tests" / "fixtures" / "python_ref"
 CASOS = FIX / "design_cases_bot.json"
 SCRIPT = RAIZ / "references" / "Balanço_Preliminar.py"
+LEXICO = tomllib.loads((FIX / "lexico_memoria_calculo.toml").read_text(encoding="utf-8"))["substituicao"]
+
+
+def com_termo_adotado(texto):
+    """O texto do script de referência reescrito com o termo que este programa adota."""
+    for s_ in LEXICO:
+        texto = texto.replace(s_["de"], s_["para"])
+    return texto
+
+
+def referencia():
+    """O `main_ref.tex` com o termo adotado. Ver o docstring do módulo."""
+    texto = (FIX / "main_ref.tex").read_text(encoding="utf-8")
+    for s_ in LEXICO:
+        assert s_["de"] in texto, f"substituição obsoleta: {s_['de']!r} não está no main_ref.tex"
+    return com_termo_adotado(texto)
 precisa_script = pytest.mark.skipif(not SCRIPT.exists(), reason="acervo local references/ ausente")
 
 # Linhas em que o script original escrevia um literal fixo (2.500, 0,01/0,99, 285, 240.000,
@@ -52,7 +77,8 @@ def base():
 
 
 def test_layout_original_identico_ao_script(base):
-    assert memorial.gerar(*base) == (FIX / "main_ref.tex").read_text(encoding="utf-8")
+    """Byte a byte, salvo o termo declarado em `lexico_memoria_calculo.toml`."""
+    assert memorial.gerar(*base) == referencia()
 
 
 def test_corpo_identico_entre_layouts_salvo_premissas_do_layout(base):
@@ -133,7 +159,8 @@ def rodar_original(tmp, casos_json, alteracoes=None):
 
 
 def diferencas_nao_previstas(original, novo):
-    a, b = original.splitlines(), novo.splitlines()
+    # o termo é divergência DECLARADA (lexico_memoria_calculo.toml), não diferença de resultado
+    a, b = com_termo_adotado(original).splitlines(), novo.splitlines()
     ruins, previstas = [], 0
     for op, i1, i2, j1, j2 in difflib.SequenceMatcher(None, a, b, autojunk=False).get_opcodes():
         if op == "equal":
@@ -219,7 +246,7 @@ def test_formatacao():
 
 def test_cli_memorial(tmp_path, capsys):
     assert main(["memorial", "--casos", str(CASOS), "--saida", str(tmp_path / "o")]) == 0
-    assert (tmp_path / "o" / "main.tex").read_bytes() == (FIX / "main_ref.tex").read_bytes()
+    assert (tmp_path / "o" / "main.tex").read_text(encoding="utf-8") == referencia()
     assert main(["memorial", "--casos", str(CASOS), "--saida", str(tmp_path / "s"), "--layout", "senai"]) == 0
     assert (tmp_path / "s" / "logo-senai.png").stat().st_size > 0
     with pytest.raises(SystemExit):

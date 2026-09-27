@@ -1,1 +1,1 @@
-"""Memorial de cálculo do balanço preliminar."""
+"""Memória de cálculo do balanço preliminar."""

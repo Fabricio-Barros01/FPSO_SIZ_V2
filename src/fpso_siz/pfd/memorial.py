@@ -1,4 +1,4 @@
-"""Conteúdo do memorial de cálculo (MC) de um TAG (F11): só dados, sem formatação.
+"""Conteúdo da memória de cálculo (MC) de um TAG (F11): só dados, sem formatação.
 
 Consome o ResultadoTAG do serviço por TAG (pfd/equipamento.py) — o mesmo do terminal, do
 JSON e do CSV — e devolve um dicionário com as dez seções do MC. Nenhuma equação de

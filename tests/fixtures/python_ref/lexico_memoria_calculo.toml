@@ -1,0 +1,102 @@
+# Divergência lexical declarada entre o documento de referência e o que este programa gera.
+#
+# Decisão do usuário em 2026-09-27: o termo correto é "memória de cálculo", não "memorial de
+# cálculo", e a paridade byte a byte do TEXTO com a saída do script de referência
+# (`references/Balanço_Preliminar.py`, cujo produto é `main_ref.tex`) fica relaxada NESTE ponto.
+#
+# O `main_ref.tex` NÃO é editado: ele é o artefato do script de referência, e o hash dele é a
+# proveniência do oráculo (tests/balanco/test_oraculo.py, `main_tex_sha256`). Em vez disso, o teste
+# de paridade aplica estas substituições ao texto de referência ANTES de comparar. O efeito é
+# cirúrgico: só o termo é tolerado, e qualquer outra diferença — um número, uma casa decimal, uma
+# vírgula — continua reprovando. A concordância de gênero entra caso a caso, porque "memorial" é
+# masculino e "memória" é feminino.
+#
+# A paridade dos NÚMEROS não foi relaxada: ela é verificada pelo `oraculo_balanco.json`, que não
+# tem texto corrido, e pela regressão da regra padrão do FWKO.
+#
+# `de` = como está no documento de referência; `para` = como este programa escreve.
+# Strings literais (aspas simples): o texto tem barras invertidas do LaTeX.
+
+[[substituicao]]
+de = 'Memorial preliminar do diagrama de blocos'
+para = 'Memória de cálculo preliminar do diagrama de blocos'
+
+[[substituicao]]
+de = 'MEMORIAL PRELIMINAR DE CÁLCULO'
+para = 'MEMÓRIA DE CÁLCULO PRELIMINAR'
+
+[[substituicao]]
+de = 'deste memorial foram gerados'
+para = 'desta memória de cálculo foram gerados'
+
+[[substituicao]]
+de = 'objetivo do memorial preliminar'
+para = 'objetivo da memória de cálculo preliminar'
+
+[[substituicao]]
+de = 'Este memorial converteu'
+para = 'Esta memória de cálculo converteu'
+
+[[substituicao]]
+de = 'O memorial não selecionou'
+para = 'A memória de cálculo não selecionou'
+
+[[substituicao]]
+de = 'é um \textbf{memorial preliminar de cálculo do diagrama de blocos}'
+para = 'é uma \textbf{memória de cálculo preliminar do diagrama de blocos}'
+
+[[substituicao]]
+de = 'correntes deste memorial'
+para = 'correntes desta memória de cálculo'
+
+[[substituicao]]
+de = 'em todo o memorial e no fluxograma'
+para = 'em toda a memória de cálculo e no fluxograma'
+
+[[substituicao]]
+de = 'adotadas neste memorial e no fluxograma'
+para = 'adotadas nesta memória de cálculo e no fluxograma'
+
+[[substituicao]]
+de = 'adotados neste memorial.}'
+para = 'adotados nesta memória de cálculo.}'
+
+[[substituicao]]
+de = 'adotados neste memorial como dado de fonte'
+para = 'adotados nesta memória de cálculo como dado de fonte'
+
+[[substituicao]]
+de = 'Este memorial seguiu o DB'
+para = 'Esta memória de cálculo seguiu o DB'
+
+[[substituicao]]
+de = 'tabelas do memorial foram'
+para = 'tabelas da memória de cálculo foram'
+
+[[substituicao]]
+de = 'para o memorial de cálculo definitivo'
+para = 'para a memória de cálculo definitiva'
+
+[[substituicao]]
+de = 'presente memorial preliminar'
+para = 'presente memória de cálculo preliminar'
+
+[[substituicao]]
+de = 'deficiência do memorial preliminar'
+para = 'deficiência da memória de cálculo preliminar'
+
+[[substituicao]]
+de = 'e do próprio memorial'
+para = 'e da própria memória de cálculo'
+
+[[substituicao]]
+de = 'cada valor do memorial foi classificado'
+para = 'cada valor da memória de cálculo foi classificado'
+
+[[substituicao]]
+de = 'O memorial preliminar cumpriu'
+para = 'A memória de cálculo preliminar cumpriu'
+
+[[substituicao]]
+de = 'O memorial foi gerado pelo script'
+para = 'A memória de cálculo foi gerada pelo script'

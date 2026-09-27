@@ -65,5 +65,5 @@
   Folga = comprimento efetivo Leff do envelope - o que o caso exige; 0 no caso governante.
 
   Resultado preliminar: 6 recomendacao(oes)/default(s) sem revisao (ver Revisar).
-  Memorial de calculo (MC) do TAG: acao "Gerar memorial de calculo" no menu, ou --mc [--pdf] no
+  Memoria de calculo (MC) do TAG: acao "Gerar memoria de calculo" no menu, ou --mc [--pdf] no
   comando.

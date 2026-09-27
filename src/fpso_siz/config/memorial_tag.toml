@@ -1,10 +1,10 @@
-# Memorial de cálculo (MC) por TAG — F11. Metadados documentais, numeração e conteúdo
+# Memória de cálculo (MC) por TAG — F11. Metadados documentais, numeração e conteúdo
 # textual por método. Nenhuma grandeza de engenharia é calculada aqui: os números do MC
 # saem do resultado do serviço por TAG (pfd/equipamento.py) e dos operandos capturados no
 # rastro (core/trace.py). Texto com LaTeX é escrito como está no documento.
 
 revisao = "0"
-descricao_revisao = "Emissão preliminar --- memorial de cálculo por TAG (F11), gerado do rastro do dimensionamento"
+descricao_revisao = "Emissão preliminar --- memória de cálculo por TAG (F11), gerado do rastro do dimensionamento"
 execucao = "Fabrício O."
 verificacao = "--"
 aprovacao = "--"
@@ -42,9 +42,9 @@ cliente = "SENAI CETIQT"
 programa = "-"
 area = "FPSO SENAI -- BACIA DE SANTOS"
 projeto = "SEP"
-tipo_dimensionado = "MEMORIAL DE CÁLCULO -- EQUIPAMENTO"
-tipo_diagnostico = "MEMORIAL DE CÁLCULO -- DIAGNÓSTICO"
-tipo_aguardando = "MEMORIAL DE CÁLCULO -- AGUARDANDO ENTRADA"
+tipo_dimensionado = "MEMÓRIA DE CÁLCULO -- EQUIPAMENTO"
+tipo_diagnostico = "MEMÓRIA DE CÁLCULO -- DIAGNÓSTICO"
+tipo_aguardando = "MEMÓRIA DE CÁLCULO -- AGUARDANDO ENTRADA"
 
 # Critérios do diagnóstico do feixe (hook `bloqueios` do trocador; F10x.7)
 [bloqueios]

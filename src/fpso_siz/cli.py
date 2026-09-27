@@ -291,7 +291,7 @@ def _opcao_propostas(sub):
 
 def _opcoes_mc(sub):
     sub.add_argument("--mc", action="store_true",
-                     help="grava o memorial de cálculo (LaTeX A4/SENAI, CSV dos gráficos e JSON) em <saida>/mc/<número>/")
+                     help="grava a memória de cálculo (LaTeX A4/SENAI, CSV dos gráficos e JSON) em <saida>/mc/<número>/")
     sub.add_argument("--pdf", action="store_true", help="com --mc: compila o memorial com latexmk")
     sub.add_argument("--data", help="data da folha de rosto do memorial (DD/MM/AAAA; padrão: hoje)")
 
@@ -321,7 +321,7 @@ def main(argv=None):
     b.add_argument("--ascii", action="store_true", help="texto só em ASCII (setas, bordas, acentos)")
     b.set_defaults(func=cmd_balanco)
 
-    m = sub.add_parser("memorial", help="memorial de cálculo do balanço em LaTeX (A4); com --caso, um por caso")
+    m = sub.add_parser("memorial", help="memória de cálculo do balanço em LaTeX (A4); com --caso, um por caso")
     m.add_argument("--casos", help="arquivo de casos (JSON do BOT; padrão: o da pasta corrente) ou 'todos' = "
                                    "um MC_CasoNN por caso, com o arquivo padrão")
     m.add_argument("--caso", help="memorial por caso: N, lista (1,4-7) ou 'todos' → MC_CasoNN")

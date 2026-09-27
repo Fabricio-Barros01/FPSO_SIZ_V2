@@ -1,1 +1,1 @@
-"""Memorial de cálculo por TAG (F11)."""
+"""Memória de cálculo por TAG (F11)."""

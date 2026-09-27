@@ -50,11 +50,11 @@ Da **mesma** conta saem três coisas, e essa é uma decisão de projeto do softw
 
 | Saída | Para quem serve |
 |---|---|
-| **Memorial de cálculo** (documento PDF) | o engenheiro que assina o projeto. Traz cada equação, cada número intermediário e a referência bibliográfica de onde a equação veio |
+| **Memória de cálculo** (documento PDF) | o engenheiro que assina o projeto. Traz cada equação, cada número intermediário e a referência bibliográfica de onde a equação veio |
 | **JSON** | outro programa que vá consumir os resultados |
 | **CSV** | planilha, para conferir número a número |
 
-Um **memorial de cálculo** é o documento que registra a conta de engenharia de forma que outra
+Uma **memória de cálculo** é o documento que registra a conta de engenharia de forma que outra
 pessoa possa repeti-la e discordar dela. Não é um relatório de resultados: é a prova do caminho.
 
 As três saídas vêm do mesmo registro interno de cálculo — o programa não recalcula nada para
@@ -78,7 +78,7 @@ milímetro — e, para cada valor, pergunta: *este tamanho atende a todos os cas
 resposta é uma faixa de tamanhos admissíveis, o **envelope**. O programa então escolhe o menor
 tamanho dentro dele, porque no mar peso e espaço custam.
 
-**Passo 4 — As três saídas.** O registro do cálculo vira memorial, JSON e CSV.
+**Passo 4 — As três saídas.** O registro do cálculo vira memória de cálculo, JSON e CSV.
 
 ---
 
@@ -172,7 +172,7 @@ uv run fpso-siz balanco --casos design_cases_bot.json --saida saida/
 # dimensiona a planta inteira, TAG por TAG
 uv run fpso-siz pfd --casos design_cases_bot.json --saida saida/pfd
 
-# um equipamento só, com memorial de cálculo em PDF
+# um equipamento só, com memória de cálculo em PDF
 uv run fpso-siz dimensionar --tag V-001 --casos design_cases_bot.json \
     --auto-balanco --saida saida/tag --mc --pdf
 

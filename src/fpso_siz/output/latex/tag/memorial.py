@@ -1,4 +1,4 @@
-"""Memorial de cálculo (MC) por TAG em LaTeX A4/SENAI (F11).
+"""Memória de cálculo (MC) por TAG em LaTeX A4/SENAI (F11).
 
 O conteúdo vem de `pfd.memorial.documento` (núcleo): aqui só se formata. Cada MC grava,
 na mesma pasta e pelo mesmo comando: o `.tex`, os CSV lidos pelo pgfplots (nenhum número

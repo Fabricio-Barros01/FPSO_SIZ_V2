@@ -50,8 +50,8 @@ sem fonte, refatoração não muda número, contrato de dimensionamento — cont
 2. **Constantes e premissas em TOML** (`src/fpso_siz/config/`, dentro do pacote), com a
    fonte citada. Nenhum literal numérico no código fora de {0, 1, 2, 10}; os fatores de
    conversão exatos ficam só em `core/unidades.py`.
-3. **Uma física, três saídas.** Toda equação avaliada emite `CalcTrace`, e o memorial, o
-   JSON e o CSV saem desse mesmo rastro, com bijeção equação↔rastro.
+3. **Uma física, três saídas.** Toda equação avaliada emite `CalcTrace`, e a memória de
+   cálculo, o JSON e o CSV saem desse mesmo rastro, com bijeção equação↔rastro.
 4. **A CLI não nomeia parâmetros.** Ela itera os `ParameterSpec` declarados por cada método.
    Isso vale para `cli.py`, `output/terminal/*` (modo interativo), `output/dimensionamento.py`,
    `output/pfd.py` e `output/ajustes.py`. O que aparece na tela e em que ordem vem de
@@ -104,7 +104,7 @@ uv run pytest -n 4 --dist loadscope         # rodada do dia a dia (~10 min nesta
 uv run pytest -n 4 --dist loadscope --cov=fpso_siz --cov-fail-under=90   # fechamento de fase (~52 min)
 uv run pytest -m latex                      # compila os memoriais (lento)
 tools/exportar_fixtures_julia.sh [commit]   # só à mão: reexporta as fixtures do Julia (git archive)
-uv run python tools/comparar_memorial.py    # paridade do memorial, template a template
+uv run python tools/comparar_memorial.py    # paridade da memória de cálculo, template a template
 uv run fpso-siz                             # modo interativo (num terminal); --ascii
 uv run fpso-siz balanco --casos design_cases_bot.json --saida saida/ [--regra-fwko referencia]
 uv run python tools/gerar_regressao_eficiencia.py   # regressão da regra padrão do FWKO (F10w)

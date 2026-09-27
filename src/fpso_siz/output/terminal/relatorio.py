@@ -204,7 +204,7 @@ def rastro_blocos(tr, titulos, estilo, colunas):
 
 
 def rastro(m, sr, estilo, colunas):
-    """Rastro de cálculo de um caso, bloco a bloco (mesma fonte do memorial)."""
+    """Rastro de cálculo de um caso, bloco a bloco (mesma fonte da memória de cálculo)."""
     out = rastro_blocos(sr.trace, dict(m.trace_blocks()), estilo, colunas)
     if not math.isfinite(sr.x) and sr.message:
         out += [""] + quebrar(estilo.t(sr.message), colunas)

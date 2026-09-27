@@ -1,4 +1,4 @@
-"""Memorial de cálculo do balanço preliminar em LaTeX.
+"""Memória de cálculo do balanço preliminar em LaTeX.
 
 O corpo (seções 1–18 e apêndices) é comum aos layouts; o layout define preâmbulo e
 capa: `original` reproduz byte a byte o main.tex do script de referência, `senai` usa o

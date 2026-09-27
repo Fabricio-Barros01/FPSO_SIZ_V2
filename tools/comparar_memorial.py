@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Compara o memorial gerado (layout original) com o main.tex de referência, por template."""
 import sys
+import tomllib
 from pathlib import Path
 
 from fpso_siz.balanco.dados import carregar_casos, premissas
@@ -16,6 +17,9 @@ def main():
     prem = premissas(dados)
     R = resolver_todos(dados, prem, REFERENCIA)
     ref = (FIX / "main_ref.tex").read_text(encoding="utf-8")
+    # mesma divergência lexical declarada que o teste de paridade aplica (ver o TOML)
+    for s in tomllib.loads((FIX / "lexico_memoria_calculo.toml").read_text(encoding="utf-8"))["substituicao"]:
+        ref = ref.replace(s["de"], s["para"])
     env, ctx = memorial.preparar(dados, prem, R, "original")
     ctx["premissas_memorial"] = [p for p in ctx["premissas_memorial"]
                                 if "original" in p.get("layouts", memorial.LAYOUTS)]

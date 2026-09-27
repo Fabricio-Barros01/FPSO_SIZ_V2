@@ -93,6 +93,34 @@ P-43 encontrada pela F15 (B-002 no vão da série de DN). Padrões dos TAGs, P-4
 continuam sujeitos à decisão do usuário. O usuário autorizou o `pymoo` (F15) e a F8 aplicada
 ao pré-aquecedor pós-SG (óleo tratado antes do cargo tank × óleo vivo da saída do SG).
 
+### Decisão de terminologia — "memória de cálculo" (2026-09-27)
+
+Decisão do usuário: o termo correto é **memória de cálculo**, não "memorial de cálculo". A troca
+vale para o programa inteiro — cabeçalhos SENAI (por TAG, do balanço e do balanço por caso), capa e
+cabeçalho do layout `original`, corpo do documento do balanço, modo interativo, ajuda da CLI,
+docstrings, README e CLAUDE.md. A concordância foi feita caso a caso, porque "memorial" é
+masculino e "memória" é feminino.
+
+O usuário autorizou **relaxar a paridade byte a byte do TEXTO** com o script de referência neste
+ponto. O relaxamento é cirúrgico e está documentado em
+[`docs/validacao/25-termo-memoria-de-calculo.md`](docs/validacao/25-termo-memoria-de-calculo.md):
+o `main_ref.tex` **não** foi editado (o SHA-256 dele é a proveniência do oráculo, conferida por
+`test_oraculo.py`); a divergência ficou declarada em dados
+(`tests/fixtures/python_ref/lexico_memoria_calculo.toml`, 21 pares com justificativa); e o teste
+aplica essas substituições ao texto de REFERÊNCIA antes de comparar o documento inteiro — logo, só
+o termo é tolerado, e um número, uma casa decimal ou uma vírgula fora de lugar continuam
+reprovando. O teste também reprova substituição obsoleta, para a tabela não apodrecer. A paridade
+dos **números** não foi relaxada: ela vive no `oraculo_balanco.json` e na regressão do FWKO.
+
+Não são o termo e ficaram como estão: variáveis de template (`premissas_memorial`,
+`envelopes_memorial`, `criticos_memorial`), o estilo `\fancypagestyle{memorial}`, os nomes de
+arquivo reais (`gerar_memorial.py`, `memorial_balanco.toml`, `memorial_tag.toml`, os módulos
+`memorial.py`) e o subcomando `fpso-siz memorial` — renomear o subcomando é quebra de interface e
+segue pendente de decisão do usuário.
+
+`tools/comparar_memorial.py` aplica a mesma tabela: a conferência template a template do layout
+`original` volta a dar **IDÊNTICO**.
+
 ### Decisão de escopo — a suíte deixa de executar o Julia (2026-09-27)
 
 Decisão do usuário: o código amadureceu e segue em outra direção, então **os testes seguem sem
