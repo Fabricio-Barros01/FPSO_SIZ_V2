@@ -72,7 +72,24 @@ a vazão volumétrica fica praticamente igual em todos os casos e o critério da
 dentro do método (passa a rotular como projeto o caso de maior temperatura de retorno) — mais uma
 razão para a variante não ser promovida a padrão sem decisão do usuário.
 
-Próxima etapa autorizada: fechar testes e PR. Padrões dos TAGs, P-44b, alertas P-45 e valores `proposto`
+**Etapa 3 — aceite:** tudo verde, na cópia e no repositório.
+
+- `tools/reotimizar_trocadores.py` reexecutado: **`docs/validacao/18-trocadores.md` byte a byte
+  igual** — os dois argumentos opcionais de estudo não mudaram nada nas chamadas de produção.
+- Suíte completa: **1.140 testes, cobertura 96,02 %** (mínimo 90 %).
+- `pytest -m latex`: **25 aprovados** (os memoriais compilam e o texto dos PDFs confere pelo
+  `pdftotext` do devShell).
+- `pytest -m julia`: **1 aprovado**, em cópia temporária do projeto com o repositório Julia
+  somente leitura e depot temporário — as fixtures regeneradas são **byte a byte** as
+  versionadas, incluindo a nova `analise-pinch.json` do pinch. As fixtures originais não foram
+  tocadas.
+- Balanço, fixtures do PFD F1 (topologia Julia, óleo morto, extensões desligadas) e a regressão
+  F10b seguem intactos — estão dentro da suíte.
+
+Pendências que ficam para a decisão do usuário: (1) exemplo numérico das correlações laminar/de
+transição, que é o que fecha os três alarmes; (2) adoção da circulação fixa e dos cascos em série
+no P-003; (3) P-44b; (4) alertas da P-45 e valores `proposto`; (5) a fronteira de viabilidade da
+P-43 encontrada pela F15 (B-002 no vão da série de DN). Padrões dos TAGs, P-44b, alertas P-45 e valores `proposto`
 continuam sujeitos à decisão do usuário. O usuário autorizou o `pymoo` (F15) e a F8 aplicada
 ao pré-aquecedor pós-SG (óleo tratado antes do cargo tank × óleo vivo da saída do SG).
 
