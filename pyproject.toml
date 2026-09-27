@@ -20,6 +20,7 @@ fpso-siz = "fpso_siz.cli:main"
 dev = [
     "pytest>=8",
     "pytest-cov>=5",
+    "pytest-xdist>=3",  # só a suíte: distribui os testes pelos núcleos (uv run pytest -n auto)
     "jsonschema>=4.23",
 ]
 

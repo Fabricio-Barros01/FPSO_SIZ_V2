@@ -16,6 +16,7 @@ import argparse
 import csv
 import json
 import math
+import os
 from pathlib import Path
 
 from fpso_siz import _otim
@@ -74,14 +75,15 @@ def linha_ponto(a, ids_var, ids_obj, sub=None):
     return f"| {xs} | {objs} | {viol} | {'viável' if a.viavel else 'inviável'} |"
 
 
-def secao(dados, sub, populacao, geracoes, semente, com_varredura, titulo, proposito):
+def secao(dados, sub, populacao, geracoes, semente, com_varredura, titulo, proposito, processos):
     """Uma rodada: declaração, ponto do projeto, frente e (opcional) conferência exaustiva.
     Devolve (linhas do relatório, dados para o JSON, avaliações para o CSV)."""
     ids_var = [v["id"] for v in ot.variaveis(sub)]
     ids_obj = [o["id"] for o in ot.objetivos(sub)]
     x0 = ponto_do_projeto(dados, sub)
     a0 = ot.avaliar(dados, x0, sub=sub)
-    frente, hist, meta = _otim.otimizar(dados, populacao=populacao, geracoes=geracoes, semente=semente, sub=sub)
+    frente, hist, meta = _otim.otimizar(dados, populacao=populacao, geracoes=geracoes, semente=semente,
+                                        sub=sub, processos=processos)
     viaveis = [a for a in hist if a.viavel]
     front_hist = ot.nao_dominados([a.objetivos for a in viaveis], ids_obj) if viaveis else []
     out = [f"## {titulo}", "", proposito, "", "### O que a rodada pôde mexer", ""]
@@ -89,7 +91,9 @@ def secao(dados, sub, populacao, geracoes, semente, com_varredura, titulo, propo
     out += ["", f"Recorte: **{meta['subproblema']}**. TAGs restringidos: "
             f"{', '.join(meta['tags_restritas'])}.", "",
             f"Algoritmo **{meta['algoritmo']}** (pymoo {meta['pymoo']}), população {meta['populacao']}, "
-            f"{meta['geracoes']} gerações, semente {meta['semente']}, {meta['avaliacoes']} avaliações.", "",
+            f"{meta['geracoes']} gerações, semente {meta['semente']}, {meta['avaliacoes']} avaliações "
+            f"(avaliadas em {meta['processos']} processo(s); o paralelismo não muda o resultado — o algoritmo "
+            "segue sequencial e a ordem é preservada).", "",
             "### O ponto do projeto atual", "",
             "| Variáveis | Objetivos | Violações | Estado |", "|---|---|---|---|",
             linha_ponto(a0, ids_var, ids_obj, sub), "",
@@ -116,7 +120,7 @@ def secao(dados, sub, populacao, geracoes, semente, com_varredura, titulo, propo
                     ""]
     avaliacoes = [a for a in hist]
     if com_varredura:
-        ref = ot.varredura(dados, sub)
+        ref = _otim.avaliar_pontos(dados, ot.grade(sub), sub=sub, processos=processos)
         ref_viaveis = [a for a in ref if a.viavel]
         frente_ref = ot.nao_dominados([a.objetivos for a in ref_viaveis], ids_obj)
         out += ["### Conferência contra varredura exaustiva (critério 2 do 0003)", "",
@@ -151,7 +155,7 @@ def secao(dados, sub, populacao, geracoes, semente, com_varredura, titulo, propo
     return out, dados_json, ids_var, ids_obj, avaliacoes
 
 
-def gerar(dados, populacao, geracoes, semente, destino_dados, rodadas=None):
+def gerar(dados, populacao, geracoes, semente, destino_dados, rodadas=None, processos=None):
     """O relatório inteiro: o problema completo (diagnóstico da pré-condição) e o subproblema
     declarado (validação contra varredura exaustiva)."""
     rodadas = rodadas if rodadas is not None else [
@@ -175,7 +179,7 @@ def gerar(dados, populacao, geracoes, semente, destino_dados, rodadas=None):
     pacote, todas = {}, []
     for sub, varredura, titulo, proposito in rodadas:
         linhas, dados_json, ids_var, ids_obj, avaliacoes = secao(dados, sub, populacao, geracoes, semente,
-                                                                varredura, titulo, proposito)
+                                                                varredura, titulo, proposito, processos)
         out += linhas
         pacote[sub or "completo"] = dados_json
         todas.append((sub or "completo", ids_var, ids_obj, avaliacoes))
@@ -210,6 +214,8 @@ def main():
     ap.add_argument("--geracoes", type=int, default=None)
     ap.add_argument("--semente", type=int, default=None)
     ap.add_argument("--varredura", action="store_true", help="confere a frente contra a grade exaustiva")
+    ap.add_argument("--processos", type=int, default=os.cpu_count(),
+                    help="processos que avaliam a população de cada geração (1 = sequencial)")
     ap.add_argument("--saida", type=Path, default=RAIZ / "docs" / "validacao" / "23-otimizacao.md")
     ap.add_argument("--dados", type=Path, default=None, help="base dos arquivos .json/.csv da frente")
     a = ap.parse_args()
@@ -218,8 +224,8 @@ def main():
     if a.sub is not None:
         s = ot.subproblema(a.sub)
         rodadas = [(a.sub, a.varredura, f"Rodada — {s['rotulo']}", s["fonte"])]
-    a.saida.write_text(gerar(carregar_casos(a.casos), a.populacao, a.geracoes, a.semente, destino, rodadas),
-                       encoding="utf-8")
+    a.saida.write_text(gerar(carregar_casos(a.casos), a.populacao, a.geracoes, a.semente, destino, rodadas,
+                             a.processos), encoding="utf-8")
     print(a.saida)
 
 
