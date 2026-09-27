@@ -1373,6 +1373,30 @@ relatório gerado `docs/validacao/15-termodinamica.md` (`tools/termodinamica_pre
 - **Aceite:** (1) porta única (teste de arquitetura existente, `_chedl.py`) ✓; (2) comparação
   caso a caso sem mudar balanço/paridade ✓; (3) fontes no relatório ✓; (4) cobertura ✓.
 
+### Gate de sanidade da saída ✅ (2026-09-27) — `docs/validacao/32-auditoria-de-saida.md`
+
+`tools/auditar_saida_pfd.py`: roda o dimensionamento real dos 11 TAGs pelo fluxo do usuário,
+grava em `saida/_auditoria_fase/` (fora do git) e compara **três níveis** — `SizingResult` →
+`dimensionamento.json` → JSON do memorial — por igualdade exata de float. Todo travessão do MC
+é classificado (`NAO_APLICAVEL`, `LACUNA`, `INVIAVEL`, `ERRO_NUMERICO`, `ERRO_OUTPUT`) e só
+passa com justificativa **declarada pelo resultado**; sem ela, reprova. Sai com código 1 no
+erro de aceite, para rodar ao fim de cada fase.
+
+**Dois defeitos achados e corrigidos na origem, sem mudar número nenhum:**
+1. **P-002 (8/10 casos) e P-003 (15/16):** o critério governante por caso saía vazio no MC. A
+   grade de cada caso e a do envelope têm o mesmo passo e origens diferentes, e o MC procurava
+   a linha da varredura individual por igualdade de float. Passou a chamar `governing_of` sobre
+   as restrições congeladas do caso — que não depende de grade. Mesmo tratamento nas
+   capacidades do diagrama.
+2. **V-001/V-002:** *Teto de decantação* saía NaN num vaso bifásico e sumia do MC por um filtro
+   `isfinite` sem motivo declarado. O cartão **não** mudou de forma (é o do Julia): entrou o
+   hook `MetodoDimensionamento.campos_nao_aplicaveis(r)`, e o MC omite só o que o método
+   declara. Invariante 5 aplicada ao dimensionamento.
+
+**Aceite:** gate aprovado (0 `ERRO_NUMERICO`, 0 `ERRO_OUTPUT`; 316 `NAO_APLICAVEL` e 22
+`INVIAVEL`, todas justificadas); 21 testes em `tests/pfd/test_auditoria_saida.py`, incluindo a
+reintrodução forçada dos dois defeitos.
+
 ### F5 — Integração termodinâmica em MODO SOMBRA ✅ (2026-09-27) — `docs/validacao/31-integracao-modo-sombra.md`
 
 O flash do fluido de poço roda **em paralelo** nos três pontos de equilíbrio (SG-001, V-001,

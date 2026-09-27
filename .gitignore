@@ -15,6 +15,9 @@ htmlcov/
 build/
 dist/
 
+# Saídas do programa (CLI e gate de auditoria de fim de fase)
+/saida/
+
 # Saídas LaTeX
 *.aux
 *.log

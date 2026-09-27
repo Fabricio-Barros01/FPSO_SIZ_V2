@@ -50,6 +50,7 @@ def vessel_volume(d_mm, l_m):
     return math.pi * (r * r) / 4 * l_m
 
 
+CAMPO_TETO = "Teto de decantação"
 SEM_FASE_AQUOSA = "sem_fase_aquosa"
 NAO_APLICAVEL_SEM_AGUA = ("não aplicável — sem fase aquosa (P-42): a decantação líquido-líquido não se "
                           "aplica e o caso não impõe teto; a fase aquosa é dimensionada pelos casos com água")
@@ -229,9 +230,18 @@ class MetodoVaso(MetodoTOML):
             ResultField("Volume (casco, entre tampos)", der(r, "volume"), unit="m³", digits=0),
             ResultField("Restrição governante", txt(self.governing_label(r.governing))),
             ResultField("Caso governante", txt(driver_case(r))),
-            ResultField("Teto de decantação", r.ceiling if math.isfinite(r.ceiling) else math.nan, unit="mm",
+            ResultField(CAMPO_TETO, r.ceiling if math.isfinite(r.ceiling) else math.nan, unit="mm",
                         digits=0, status=sob_teto),
         ]
+
+    def campos_nao_aplicaveis(self, r):
+        """Sem teto finito (vaso bifásico, ou trifásico cujos casos não têm fase aquosa) o
+        critério de decantação não existe para este equipamento. O campo continua no cartão,
+        porque a forma do cartão é a do Julia (oráculo), mas a ausência passa a ser DECLARADA
+        pelo método, com o mecanismo que ele mesmo publica — não um travessão mudo."""
+        if r is None or math.isfinite(getattr(r, "ceiling", math.nan)):
+            return {}
+        return {CAMPO_TETO: self.rotulo_mecanismo(getattr(r, "ceiling_mechanism", "none"))}
 
     def sweep_columns(self):
         return [SweepColumn("d (mm)", "x", 0), SweepColumn("Leff (m)", "y"), SweepColumn("Lss (m)", "lss"),

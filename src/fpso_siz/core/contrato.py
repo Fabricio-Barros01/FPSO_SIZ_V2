@@ -254,6 +254,18 @@ class MetodoDimensionamento:
     def result_fields(self, r):
         raise NotImplementedError
 
+    def campos_nao_aplicaveis(self, r):
+        """{rótulo do campo do cartão: motivo} dos campos que NÃO se aplicam a este
+        resultado (extensão do V2, sem par no Julia; padrão: nenhum).
+
+        A forma do cartão é a do Julia e não muda com o caso; mas um critério que não
+        existe para o equipamento (decantação num vaso bifásico) sai como NaN, e NaN vira
+        travessão na tela e no memorial. Invariante 5: ausência é estado declarado, não
+        campo vazio — quem sabe por que o campo não se aplica é o método, e é aqui que ele
+        diz. O que não estiver declarado aqui e mesmo assim faltar é defeito, e é o que o
+        gate de auditoria (`tools/auditar_saida_pfd.py`) cobra."""
+        return {}
+
     def sweep_columns(self):
         raise NotImplementedError
 

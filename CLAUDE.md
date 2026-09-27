@@ -121,6 +121,7 @@ uv run python tools/comparar_memorial.py    # paridade da memória de cálculo, 
 uv run fpso-siz                             # modo interativo (num terminal); --ascii
 uv run fpso-siz balanco --casos design_cases_bot.json --saida saida/ [--regra-fwko referencia]
 uv run python tools/gerar_regressao_eficiencia.py   # regressão da regra padrão do FWKO (F10w)
+uv run python tools/auditar_saida_pfd.py     # gate de fim de fase: dimensionamento × JSON × MC (sai != 0 no erro)
 uv run fpso-siz dimensionar --exemplo alves_komesu [--saida saida/]      # contrato Julia
 uv run fpso-siz dimensionar --tag V-001 --casos design_cases_bot.json --auto-balanco \
     [--ajustes ajustes_pfd.toml] [--saida saida/tag]
