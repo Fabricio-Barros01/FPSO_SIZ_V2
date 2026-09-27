@@ -7,7 +7,7 @@ Dittus-Boelter (case_admissible); o conjunto, pelos tetos de casco e de comprime
 Escolhe-se o feixe de MENOR área.
 """
 import math
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 
 from fpso_siz.core.configuracao import carregar
 from fpso_siz.core.contrato import Equipamento, ResultField, SweepAxis, SweepColumn, der
@@ -162,6 +162,26 @@ class ExchangerConstraints:
     razao_visc: float = 1.0
     t_tubo_med: float = math.nan
     t_casco_med: float = math.nan
+    # R2 — reaproveitamento do ÚLTIMO feixe calculado para esta restrição.
+    #
+    # NÃO é cache global, persistente nem compartilhado: o dicionário nasce e morre com ESTE
+    # objeto, que o motor cria por caso dentro de uma execução de dimensionamento e descarta ao
+    # terminá-la. Duas restrições diferentes — outro caso, outro nº de passes, outra geometria,
+    # outro arranjo de cascos — são objetos diferentes, com memórias diferentes: a identidade do
+    # estado é a identidade do objeto, e não uma chave que alguém precise manter correta.
+    #
+    # Guarda UM estado, o último `n`, porque é o que a estrutura do motor pede: `requirement`
+    # calcula o ponto, e `derived` e `case_admissible` o releem no MESMO ponto da malha, antes
+    # de a varredura andar (medido: 91.216 das 91.232 repetições do P-003 acontecem dentro de
+    # 17 chamadas da primeira). Guardar a malha inteira custaria ~110 MB por dimensionamento e
+    # não acrescentaria acerto nenhum.
+    #
+    # `init=False` é o que impede o pior erro possível aqui: sem ele, `dataclasses.replace()`
+    # copiaria a REFERÊNCIA da memória para a restrição nova, e um estado calculado com um
+    # número de passes poderia ser devolvido para outro. Com `init=False`, `replace()` não a
+    # copia — a restrição nova nasce com memória própria e vazia. Há teste para isso.
+    # `compare=False`: não entra na igualdade da restrição.
+    _ultimo_feixe: dict = field(default_factory=dict, compare=False, repr=False, init=False)
 
 
 VAZIO = dict(v=math.inf, re=math.nan, h_i=math.nan, h_o=math.nan, u=math.nan, area=math.inf, l=math.inf, n_total=0.0,
@@ -183,7 +203,27 @@ def _pelicula(c, l_caminho, re):
 
 
 def _tubo(c, n):
-    """O feixe com n tubos por passe: velocidade, h_i, h_o, U, área, L, casco."""
+    """O feixe com n tubos por passe: velocidade, h_i, h_o, U, área, L, casco.
+
+    Um mesmo ponto da malha é perguntado por vários critérios do motor — `requirement` pede o
+    comprimento, `derived` pede os derivados, `case_admissible` pede a velocidade e a validade
+    da correlação —, e todos falam do MESMO feixe. Calcula-se uma vez e reaproveita-se (R2,
+    docs/validacao/28-...). Tudo o que o cálculo lê está em `c` e em `n`; nada vem de fora
+    além das constantes do método, que não mudam durante a execução.
+
+    Devolve uma CÓPIA: antes do R2 cada chamada devolvia um dicionário novo, e manter isso custa
+    ~1 µs contra os ~78 µs do cálculo — barato demais para abrir mão da garantia de que ninguém
+    escreve no resultado de outro."""
+    ultimo = c._ultimo_feixe
+    if ultimo.get("n") == n:
+        return dict(ultimo["feixe"])
+    feixe = _feixe_calculado(c, n)
+    ultimo["n"], ultimo["feixe"] = n, feixe
+    return dict(feixe)
+
+
+def _feixe_calculado(c, n):
+    """O cálculo em si, sem reaproveitamento."""
     if not n >= 1:
         return dict(VAZIO)
     n_total = n * c.passes

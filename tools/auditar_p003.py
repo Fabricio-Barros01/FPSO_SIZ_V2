@@ -49,10 +49,8 @@ class Auditor:
         return m
 
     # ---------------------------------------------------------------- instrumentação
-    def ligar(self, metodo):
-        from fpso_siz.sizing import bell_delaware as bd
-        from fpso_siz.sizing import trocador
-
+    def ligar_fases(self, metodo):
+        """Só os ganchos do motor, para atribuir cada chamada a quem a pediu."""
         cls = type(metodo)
         for nome in ("requirement", "derived", "case_admissible", "admissible", "objective",
                      "operacao_por_caso", "bloqueios", "envelope_derived", "parcelas_u",
@@ -64,6 +62,11 @@ class Auditor:
                 continue
             self._envolver_fase(cls, nome, original)
 
+    def ligar(self, metodo):
+        from fpso_siz.sizing import bell_delaware as bd
+        from fpso_siz.sizing import trocador
+
+        self.ligar_fases(metodo)
         tubo = trocador._tubo
 
         def espiao_tubo(c, n):
@@ -380,6 +383,64 @@ def identidade_bell_delaware(ctx, ident):
     return {**cont, "fracao_bd_redundante": (cont["bd_redundantes"] / cont["bd"]) if cont["bd"] else None}
 
 
+def duplicatas(ctx, ident):
+    """De onde vêm as chamadas REPETIDAS de `_tubo`, e quão perto uma da outra.
+
+    Para cada estado (objeto de restrição, n) registra a sequência de fases que o calcularam e
+    a distância, em chamadas de `_tubo`, entre a primeira e cada repetição. A distância é o que
+    decide a forma da correção: se toda repetição vem logo depois da primeira, basta o estado
+    ser calculado uma vez e reutilizado ali mesmo — não é preciso guardar a varredura inteira."""
+    from fpso_siz.pfd import equipamento as servico
+    from fpso_siz.sizing import trocador
+
+    estado = servico.estado_inicial(ident)
+    entradas = servico.preparar(ctx, estado)
+    fases = Auditor()
+    fases.ligar_fases(entradas.metodo)
+    original = trocador._tubo
+    ordem, vistos, vivos = [0], {}, []
+    seq = defaultdict(list)
+    distancias, pares_por_origem = Counter(), Counter()
+
+    def espiao(c, n):
+        ordem[0] += 1
+        marca = vistos.get(id(c))
+        if marca is None:
+            marca = len(vistos)
+            vistos[id(c)] = marca
+            vivos.append(c)
+        chave = (marca, n)
+        fase = FASE["nome"]
+        anteriores = seq[chave]
+        if anteriores:
+            primeira_fase, primeira_ordem = anteriores[0]
+            pares_por_origem[f"{primeira_fase} → {fase}"] += 1
+            distancias[ordem[0] - primeira_ordem] += 1
+        anteriores.append((fase, ordem[0]))
+        return original(c, n)
+
+    trocador._tubo = espiao
+    try:
+        servico.dimensionar(entradas, estado)
+    finally:
+        trocador._tubo = original
+        fases.desligar()
+
+    total = ordem[0]
+    distintos = len(seq)
+    repetidas = total - distintos
+    # janela: quantas repetições caem dentro das últimas K chamadas desde a primeira
+    acumulado, janelas = 0, {}
+    for limite in (1, 2, 4, 8, 17, 34, 68, 10 ** 9):
+        acumulado = sum(v for d, v in distancias.items() if d <= limite)
+        janelas[str(limite)] = acumulado
+    return {"chamadas": total, "estados_distintos": distintos, "repetidas": repetidas,
+            "fator": total / distintos if distintos else None,
+            "repeticoes_por_origem": dict(pares_por_origem.most_common()),
+            "repeticoes_acumuladas_ate_distancia": janelas,
+            "distancia_maxima": max(distancias) if distancias else 0}
+
+
 # ----------------------------------------------------------------------------- auditoria
 
 
@@ -442,6 +503,7 @@ def auditar(dados, ident):
                                    out["posicao_do_otimo"], out["contagem"]["iteracoes_media"])
     out["ponto_fixo"] = invariantes_no_ponto_fixo(rt0)
     out["identidade_bell_delaware"] = identidade_bell_delaware(ctx, ident)
+    out["duplicatas"] = duplicatas(ctx, ident)
     return out
 
 

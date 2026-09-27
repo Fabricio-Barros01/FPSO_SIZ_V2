@@ -1400,6 +1400,54 @@ medir o swap. Se o SMT rende acima dos 6 núcleos físicos, **este benchmark nã
 para a Fase 10. Uma primeira varredura foi descartada por erro de método: com lote de 8 pontos o
 tempo de parede é `ceil(lote ÷ W)`, e a divisibilidade, não o hardware, produzia a curva.
 
+### R2 — o feixe é calculado uma vez por estado ✅ (2026-09-27) — `docs/validacao/28-r2-reaproveitamento-do-feixe.md`
+
+Segunda intervenção restrita. **Paridade bit a bit contra o estado ANTERIOR AO R1** (mesmo
+SHA-256 `409f1800…f16414`): as duas intervenções juntas não moveram um bit.
+
+**Origem das repetições, medida:** toda repetição tem `requirement` como primeira ocorrência —
+`requirement`→`case_admissible` 69.185, `requirement`→`derived` 22.031,
+`requirement`→`operacao_por_caso` 16 (P-003). Nenhuma fase repete dentro de si mesma: o motor
+faz três perguntas diferentes sobre o MESMO feixe. E 91.216 das 91.232 repetições acontecem
+dentro de 17 chamadas da primeira (17 = nº de casos + 1), logo basta guardar o último estado.
+
+**Forma da correção — não é cache global.** A memória vive no objeto de restrição
+(`_ultimo_feixe`, `init=False`, `compare=False`), que o motor cria por caso e descarta ao fim do
+dimensionamento. A chave é a **identidade do objeto**, não uma tupla de campos: outra restrição
+(outro caso, outros passes, outra geometria, outro arranjo de cascos) é outro objeto com outra
+memória — não há chave a manter correta quando a F15 ganhar variável nova. Guarda **um** estado;
+guardar a malha inteira custaria ~110 MB e não acertaria uma chamada a mais.
+
+**Um defeito real da primeira versão, pego pelo teste novo:** sem `init=False`,
+`dataclasses.replace()` copiava a REFERÊNCIA da memória, e um estado calculado com um número de
+passes podia ser devolvido para outro.
+
+| | baseline | pós-R1 | **pós-R2** | acumulado |
+|---|---|---|---|---|
+| `avaliar(dados, x)` | 21,713 s | 15,346 s | **8,924 s** | **2,43×** |
+| P-003 `dimensionar` | 20,570 s | 14,210 s | **7,950 s** | **2,59×** |
+| planta completa | 21,768 s | 15,313 s | **8,858 s** | 2,46× |
+| avaliações do feixe | 912.723 | 194.261 | **95.794** | **9,53×** |
+| chamadas de função | 86,7 M | 53,8 M | **29,1 M** | 2,98× |
+
+As 194.261 chamadas de `_tubo` continuam existindo — R2 não removeu chamadas, removeu
+**recomputações**: 98.467 são servidas pela memória e 95.794 calculam, contra 95.768 estados
+distintos medidos na auditoria (a diferença de 26 são os `operacao_por_caso` do fim, previstos).
+**A previsão da auditoria para R1+R2 era ~9,5×; o medido é 9,53×.**
+
+Perfil novo, **plano** (nenhum item acima de 15 %): o maior item isolado é a película do lado
+tubo (`filme_tubo`, 464.529 chamadas), e essas passagens são **necessárias** — no laminar/
+transição h_i depende de L. P-003 é 89,1 % de `avaliar()` (era 94,7 %).
+
+Suíte: **1.234 aprovados, cobertura 95,93 %**; a suíte inteira caiu de 14:19 para **8:25**.
+`performance-baseline.md` ganhou cabeçalho dizendo que é o "antes" e remetendo ao perfil atual.
+
+**Grades: registro fechado, sem mudança.** `n` = tubos por passe, fisicamente inteiro; Δn = 5 é
+granularidade numérica declarada, não restrição física; cada grade ancora no seu próprio
+`n_min`, o que explica a coincidência de 11,6 %; `per_case` não altera o projeto escolhido; no
+envelope conjunto a discretização pode deslocar a solução em até 4 tubos (~0,015 % de área).
+Política canônica única segue proposta, não feita.
+
 ### R1 — o feixe sai do laço de ponto fixo ✅ (2026-09-27) — `docs/validacao/27-r1-feixe-fora-do-laco.md`
 
 Intervenção restrita autorizada depois da auditoria: **só R1**. Nenhuma equação, tolerância,

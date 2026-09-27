@@ -1,5 +1,29 @@
 # Baseline de desempenho — onde o tempo está hoje
 
+
+> **ESTE BASELINE É O DE 2026-09-27, ANTES DE R1 E R2.** Ele continua valendo como o "antes"
+> contra o qual as duas intervenções foram medidas, e a metodologia (camadas, perfil, varredura
+> de workers, censo de recomputação) continua sendo a corrente. **Os números do P-003 e de
+> `avaliar()` não são mais os atuais:**
+>
+> | | baseline (aqui) | hoje, depois de R1+R2 |
+> |---|---|---|
+> | `avaliar(dados, x)` | 21,713 s | **8,924 s** (2,43×) |
+> | P-003 `dimensionar` | 20,570 s | **7,950 s** (2,59×) |
+> | planta completa | 21,768 s | **8,858 s** (2,46×) |
+> | avaliações completas do feixe | 912.723 | **95.794** (9,53×) |
+> | chamadas de função por avaliação | 86,7 M | **29,1 M** |
+> | P-003 como fração de `avaliar()` | 94,7 % | **89,1 %** |
+>
+> O perfil também mudou de dono: o maior item isolado passou a ser a película do lado tubo
+> (`filme_tubo`), e o perfil ficou plano — nenhum item acima de 15 %. Ver
+> `26-auditoria-p003.md`, `27-r1-feixe-fora-do-laco.md` e `28-r2-reaproveitamento-do-feixe.md`.
+> **Decisões novas de desempenho devem usar o perfil do documento 28, não este.**
+>
+> A varredura de workers e as camadas que não dependem do trocador (balanço, termodinâmica,
+> inicialização) não foram refeitas e continuam válidas — o que mudou foi o custo por avaliação,
+> não a forma como ele paraleliza.
+
 Gerado por `tools/benchmark.py`; os números brutos das três rodadas estão em
 `performance-baseline.json`. **Nada foi otimizado nesta fase.** O objetivo é medir o estado
 atual, já com as correções da Fase 1 aplicadas (commit `87e8c62`), para que qualquer otimização
