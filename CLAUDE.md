@@ -90,11 +90,12 @@ O paralelismo que rende de fato está DENTRO do cálculo caro: os testes de vali
 avaliam a população em processos (`_otim.py`), o que levou o `criterio_2` de 1441 s para 164 s sem
 mudar um único número — a equivalência é testada em `tests/pfd/test_otimizacao_paralela.py`.
 
-Se o cache Julia do usuário não for gravável, use um depot temporário no comando:
-`JULIA_DEPOT_PATH="$(mktemp -d)/depot:" uv run pytest -m julia`.
-O teste Julia regenera arquivos no diretório de fixtures: para preservar os originais,
-execute-o numa cópia temporária do projeto, mantendo o repositório Julia somente leitura
-como irmão dessa cópia. Compare os bytes regenerados; não atualize fixtures para passar.
+**A suíte não executa mais o Julia** (decisão do usuário em 2026-09-27: o código amadureceu e
+segue em outra direção). O marcador `julia` e o teste que reexecutava o FPSO_Siz para regenerar as
+fixtures saíram; `tests/fixtures/julia/` continua versionado e continua sendo o **oráculo
+numérico** dos equipamentos, com a proveniência em `manifesto.json` (commit `ab58fc6`) e o script
+`tools/exportar_fixtures_julia.sh` guardado para uma exportação manual. Rodar a suíte não exige
+mais Julia nem o repositório irmão.
 
 ## Comandos
 ```
@@ -102,8 +103,7 @@ uv sync
 uv run pytest -n 4 --dist loadscope         # rodada do dia a dia (~10 min nesta máquina)
 uv run pytest -n 4 --dist loadscope --cov=fpso_siz --cov-fail-under=90   # fechamento de fase (~52 min)
 uv run pytest -m latex                      # compila os memoriais (lento)
-uv run pytest -m julia                      # regenera as fixtures do Julia e compara
-tools/exportar_fixtures_julia.sh [commit]   # fixtures do Julia (git archive, só leitura)
+tools/exportar_fixtures_julia.sh [commit]   # só à mão: reexporta as fixtures do Julia (git archive)
 uv run python tools/comparar_memorial.py    # paridade do memorial, template a template
 uv run fpso-siz                             # modo interativo (num terminal); --ascii
 uv run fpso-siz balanco --casos design_cases_bot.json --saida saida/ [--regra-fwko referencia]

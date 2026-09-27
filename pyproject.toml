@@ -30,9 +30,11 @@ build-backend = "uv_build"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra -m 'not latex and not julia'"
+addopts = "-ra -m 'not latex'"
+# o marcador `julia` (reexecutar o FPSO_Siz Julia para regenerar as fixtures) foi retirado por
+# decisão do usuário em 2026-09-27: as fixtures seguem versionadas como oráculo, e a suíte não
+# depende mais do Julia nem do repositório irmão.
 markers = ["latex: compila o memorial com latexmk (lento; rode com -m latex)",
-           "julia: regenera as fixtures do Julia a partir de um git archive (lento; rode com -m julia)",
            "otim: roda o NSGA-II sobre o avaliador da F15 (dezenas de segundos; entra na suíte)"]
 
 [tool.coverage.run]

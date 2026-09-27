@@ -1,10 +1,17 @@
-"""F5 — as fixtures do Julia são rastreáveis (commit) e reproduzíveis."""
-import json
-import shutil
-import subprocess
-from pathlib import Path
+"""F5 — as fixtures do Julia são rastreáveis (commit) e continuam sendo o oráculo dos equipamentos.
 
-import pytest
+**Decisão do usuário em 2026-09-27: a suíte não executa mais o Julia.** O código amadureceu e
+segue em outra direção, então o teste que reexecutava o FPSO_Siz Julia para regenerar estas
+fixtures e comparar bytes (marcador `julia`) foi retirado, junto com o marcador.
+
+O que NÃO mudou: os arquivos de `tests/fixtures/julia/` seguem versionados e seguem sendo o
+oráculo numérico dos equipamentos — sete arquivos de teste comparam o Python contra eles, e é
+deles que vem a garantia de que refatoração não muda número. A proveniência está registrada em
+`manifesto.json` (commit `ab58fc6` do repositório Julia) e o script que os gerou continua no
+repositório (`tools/exportar_fixtures_julia.sh`), para quem precisar refazer a exportação à mão.
+"""
+import json
+from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parents[2]
 FJ = RAIZ / "tests" / "fixtures" / "julia"
@@ -23,13 +30,3 @@ def test_caso_de_referencia_alves_komesu():
     e = json.loads((FJ / "separador-3f.json").read_text(encoding="utf-8"))["envelope"]
     assert e["feasible"] and e["x"] == 6300.0 and round(e["y"], 2) == 18.59 and e["driver_case"] == "Fim de vida"
     assert len(e["case_names"]) == 10
-
-
-@pytest.mark.julia
-@pytest.mark.skipif(not (shutil.which("julia") and (RAIZ.parent / "FPSO_Siz" / ".git").exists()),
-                    reason="julia ou repositório FPSO_Siz ausente")
-def test_regeneracao_e_identica(tmp_path):
-    antes = {p.relative_to(FJ): p.read_bytes() for p in FJ.rglob("*") if p.is_file()}
-    subprocess.run([str(RAIZ / "tools" / "exportar_fixtures_julia.sh")], check=True, capture_output=True, timeout=900)
-    depois = {p.relative_to(FJ): p.read_bytes() for p in FJ.rglob("*") if p.is_file()}
-    assert depois == antes

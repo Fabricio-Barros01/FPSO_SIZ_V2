@@ -93,6 +93,21 @@ P-43 encontrada pela F15 (B-002 no vão da série de DN). Padrões dos TAGs, P-4
 continuam sujeitos à decisão do usuário. O usuário autorizou o `pymoo` (F15) e a F8 aplicada
 ao pré-aquecedor pós-SG (óleo tratado antes do cargo tank × óleo vivo da saída do SG).
 
+### Decisão de escopo — a suíte deixa de executar o Julia (2026-09-27)
+
+Decisão do usuário: o código amadureceu e segue em outra direção, então **os testes seguem sem
+Julia**. Saiu o marcador `julia` e o único teste que o usava (`test_regeneracao_e_identica`, que
+reexecutava o FPSO_Siz por `git archive` e comparava os bytes das fixtures regeneradas). Última
+execução antes da retirada, na árvore do merge `799adbb`: **1 aprovado**, fixtures **idênticas
+byte a byte** às versionadas, em cópia temporária com depot próprio e o repositório Julia somente
+leitura.
+
+O que **não** mudou: `tests/fixtures/julia/` continua versionado e continua sendo o oráculo
+numérico dos equipamentos — sete arquivos de teste comparam o Python contra ele, e é dele que vem
+a garantia de que refatoração não muda número. A proveniência fica no `manifesto.json` (commit
+`ab58fc6`) e em `tools/exportar_fixtures_julia.sh`, que permanece no repositório para exportação
+manual. Rodar a suíte não exige mais Julia nem o repositório irmão.
+
 ### Prioridade atual — fechamento dos alarmes estacionários (2026-09-26)
 
 **Decisões de escopo do usuário:** F12 **cancelada** (portabilidade Java/C e distribuição, fora
