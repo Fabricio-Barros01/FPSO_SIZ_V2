@@ -1426,7 +1426,7 @@ Duas correções de contabilidade, antes de qualquer rodada nova. A `23-otimizac
    varredura exaustiva separa "fronteira de viabilidade" de "pontos que não puderam ser
    julgados", e o CSV ganhou a coluna `situacao` (o booleano `viavel` continua, pelo formato).
 
-**Fechamento da fase (2026-09-27).** `uv run pytest -n 4 --dist loadscope --cov=fpso_siz
+**Fechamento da fase (2026-09-27), commit `87e8c62`.** `uv run pytest -n 4 --dist loadscope --cov=fpso_siz
 --cov-fail-under=90`: **1.186 aprovados, cobertura 95,86 %**, em 19:36 nesta máquina. São os
 1.177 de antes mais os 9 testes novos (6 da multiplicidade, 3 dos estados). Os 19:36 medidos
 ficam bem abaixo dos 51:54 anotados no `CLAUDE.md` para a rodada com cobertura; a diferença não
