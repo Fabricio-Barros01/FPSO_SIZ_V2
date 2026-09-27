@@ -30,14 +30,12 @@ Nenhum TAG inviável: não há alarme a investigar.
 | TAG | Estado | Casos com solução isolados | Casos sem solução isolados | Motivo do motor |
 |---|---|---|---|---|
 | P-001 | inviável (alarme) | — | — | Caso 'BOT 01 — Early Life': O arranjo 1-2 não fecha com estas temperaturas: o fator de correção F sai do domínio da Fig. 4.3. Em contracorrente puro (1 passe) o caso é viável — o cruzamento interno de um segundo passe é … |
-| P-002 | inviável (alarme) | BOT 01 (238), BOT 02 (283), BOT 03 (282), BOT 04 (34), BOT 05 (42), BOT 06 (13), BOT 07 (236), BOT 08 (275), BOT 09 (250), BOT 11 (305) | — | Não há equipamento que atenda simultaneamente aos 10 casos. Há feixes na banda de velocidade 1.0–3.0 m/s, dentro da faixa de Dittus-Boelter, com tubo até 6.0 m e casco até 2500.0 mm (o menor casco dá 677.0 mm). A recusa … |
-| P-003 | inviável (alarme) | — | BOT 01, BOT 02, BOT 03, BOT 04, BOT 05, BOT 06, BOT 07, BOT 08, BOT 09, BOT 10, BOT 11, BOT 12, BOT 13, BOT 14, BOT 15, BOT 16 | Não há equipamento que atenda simultaneamente aos 16 casos. Na banda de velocidade 1.0–3.0 m/s todos os feixes pedem tubo mais longo que o limite de 6.0 m — o mais curto dá 7.33 m. Amplie a grade para mais tubos, aceite … |
 
 ### Variantes executadas (mesmo motor)
 
 | TAG | Variante | Origem do valor | Resultado |
 |---|---|---|---|
-| P-001 | 1 passe no tubo (contracorrente pura) | limite inferior do descritor passes_tubo (Saari §4.2.1: contracorrente puro, F = 1), sugerido pela própria mensagem do motor | segue inviável: Não há equipamento que atenda simultaneamente aos 10 casos. Na banda de velocidade 1.0–3.0 m/s todos os feixes caem fora da faixa em que Saari declara a correla… |
+| P-001 | 1 passe no tubo (contracorrente pura) | limite inferior do descritor passes_tubo (Saari §4.2.1: contracorrente puro, F = 1), sugerido pela própria mensagem do motor | segue inviável: Não há equipamento que atenda simultaneamente aos 10 casos. Na banda de velocidade 1.0–3.0 m/s todos os feixes pedem tubo mais longo que o limite de 6.0 m — o m… |
 | P-001 | emulsão fria no casco, óleo tratado quente nos tubos | prática de alocar o fluido mais viscoso no casco (hipótese do alarme); k e incrustações do P-001 são as mesmas propostas nos dois lados | segue inviável: Caso 'BOT 01 — Early Life': O arranjo 1-2 não fecha com estas temperaturas: o fator de correção F sai do domínio da Fig. 4.3. Em contracorrente puro (1 passe) o… |
 
 ## Estudo da P-44 (banda de velocidade pelo caso de projeto)
@@ -67,28 +65,31 @@ Só no modo --oleo-morto: os casos 2 e 3 (Early Life, com água) são inviáveis
 - **modelo**: Um único vaso para todos os casos: com trens em paralelo a vazão por vaso cai e o comprimento exigido também; o teto (razão de vazões, µ, ΔSG) não muda.
 - **numérico**: Conferência numérica: (h_o)max, β e d_max refeitos à mão com os operandos do rastro reproduzem o resultado (teste da conta à mão); β por bisseção idêntico ao Julia.
 
-### P-001 — investigação lacuna metodológica
+### P-001 — investigação aberta
 
-Óleo/óleo: sem correlação válida para o óleo em escoamento laminar ou de transição no lado tubo. Decisão do usuário (2026-09-26): não implementar Sieder-Tate nem outra correlação laminar sem referência rastreável em references/. O TAG fica como lacuna metodológica até existir fonte; quando houver, a correlação laminar entra como ramo próprio do método, sem extrapolar Dittus-Boelter.
+Óleo/óleo. A LACUNA METODOLÓGICA FOI FECHADA: a película do lado tubo passou a ter correlação nos três regimes (Hausen em Re ≤ 2000, interpolação em 2000 < Re < 10⁴, Dittus-Boelter acima — Branan pp. 40-41), e todos os dez casos ativos agora CALCULAM. O que restou é físico e construtivo, não metodológico: com 2 passes o fator F do arranjo 1-2 sai do domínio da Fig. 4.3 (cruzamento interno); com 1 passe (contracorrente) o impedimento é a ÁREA. No platô laminar o h_i do óleo satura em cerca de 34 W/(m²·K) e o U em cerca de 25 W/(m²·K), contra um U·A exigido de 1,55 MW/K no caso de projeto: o feixe mais curto de toda a grade pede 186,4 m de tubo (o escolhido, 434,4 m) contra o limite de 6 m. No topo da banda de velocidade (3 m/s, teto de erosão de Saari) o óleo ainda está em transição, com U de cerca de 388 W/(m²·K) e área de cerca de 4.000 m². Nenhuma correlação resolve isto: é a troca óleo/óleo com aproximação de 10 K (P-32) que exige essa área. Ver docs/validacao/24-pelicula-baixo-reynolds.md.
 
-- **premissa**: Arranjo de 2 passes no tubo (default 'escolha' de Saari Tab. 3.1): com a aproximação de P-32 a troca óleo/óleo é quase simétrica (R ≈ 1) e P alto, fora do alcance de um casco 1-2. Contracorrente pura (1 passe) ou cascos em série resolvem o domínio de F.
-- **modelo**: LACUNA METODOLÓGICA: resolvido o domínio de F (1 passe), o óleo no tubo tem Re de 1.661 a 4.947, fora de Dittus-Boelter (Re ≥ 10⁴). Os dois lados são óleo, e trocar os lados não resolve: com a emulsão no casco e o óleo tratado quente nos tubos, o F segue fora do domínio com 2 passes, e com 1 passe o tubo continua laminar/de transição. Falta, no acervo, correlação laminar do lado tubo com fonte.
+- **premissa**: Arranjo de 2 passes no tubo (default 'escolha' de Saari Tab. 3.1): com a aproximação de P-32 a troca óleo/óleo é quase simétrica (R ≈ 1) e P alto, fora do alcance de um casco 1-2. Contracorrente pura (1 passe) resolve o domínio de F — e aí o impedimento passa a ser a área.
+- **modelo**: RESOLVIDA: faltava correlação do lado tubo fora da faixa de Dittus-Boelter. A fonte existia (Branan pp. 40-41) e está implementada e validada (caso-ouro independente em tests/fixtures/python_ref/golden_pelicula_tubo.json). Os dez casos calculam; o alarme deixou de ser metodológico.
+- **premissa**: A área exigida vem da APROXIMAÇÃO de 10 K da P-32 entre duas correntes de óleo. O teto de velocidade de 3 m/s (erosão, Saari Tab. 3.1) impede o óleo de chegar ao turbulento: a 3 m/s o Reynolds é de cerca de 7.000. Aumentar o ΔT de aproximação reduz a recuperação do pré-aquecedor e a área na mesma direção — é decisão de projeto, com efeito no balanço, e não foi tomada aqui.
+- **modelo**: No platô laminar o Nusselt é constante (3,66 mais o termo de entrada), então acrescentar tubos reduz o comprimento sem piorar o coeficiente: de 1.994 tubos/passe (piso de 1 m/s) a 50.000 tubos/passe o comprimento exigido cai de 266 m para 21 m, e a área fica em cerca de 60.000 m². Ou seja: nem relaxando o piso de velocidade o equipamento cabe no limite de 6 m — o impedimento é a área, não a banda.
 
-### P-002 — investigação aberta
+### P-002 — investigação fechada pela física
 
-Topologia P-46 (óleo no casco, água quente nos tubos), P-45 e reotimização F10x.7 (docs/validacao/18-trocadores.md). Com 2 cascos em série o comprimento cabe em 6 m. O que ainda governa é a faixa de Dittus-Boelter no caso de menor carga (BOT 06, 3,6 % da carga de projeto: v ≈ 0,08 m/s, Re ≈ 4.200 < 10⁴), que a P-45 manda exigir em todos os casos.
+FECHADO em 2026-09-26, sem premissa nova e sem mudar arquitetura. O único bloqueio era a faixa de Dittus-Boelter no caso de menor carga (BOT 06, 3,6 % da carga de projeto), e ele existia porque o programa não tinha correlação fora do turbulento. Com os três regimes (Branan pp. 40-41) o BOT 06 passa a ser calculado e o TAG fica VIÁVEL: na geometria que a reotimização escolhe ele cai no LAMINAR (Re = 1.416, Hausen), e quem cai na interpolação de transição são os BOT 04 (Re = 4.145) e BOT 05 (Re = 5.461). A reotimização reexecutada com a física correta escolhe UM CASCO: tubo de 12,7 mm, 1 passe, passo 1,25, arranjo 90°, chicana 0,2·Ds, 1.605 tubos/passe, L = 5,99 m, 383,8 m² — 21 dos 96 candidatos da grade são viáveis. Nem cascos em série nem circulação fixa foram necessários.
 
-- **premissa**: CONFIRMADA e adotada (P-46): a alocação com o óleo viscoso no tubo foi trocada; com a água nos tubos, a faixa de Dittus-Boelter só falha no turndown profundo.
-- **premissa**: Vazão da utilidade proporcional à carga: ṁ = q/(cp·ΔT) com o ΔT da utilidade fixo pelos insumos t_agua_in/t_agua_out em todos os casos. Num turndown de 28× a água de aquecimento fica laminar nos tubos. Manter a circulação da utilidade (ΔT menor no turndown) é outra premissa de operação; sem variante executável, a decidir.
-- **modelo**: Correlação do lado tubo só turbulenta (Dittus-Boelter, Re ≥ 10⁴): sem correlação laminar/de transição com fonte no acervo, o caso de turndown não é calculável.
+- **premissa**: CONFIRMADA e adotada (P-46): a alocação com o óleo viscoso no tubo foi trocada; com a água nos tubos, só o turndown profundo saía da faixa turbulenta.
+- **modelo**: RESOLVIDA: a correlação do lado tubo fora do turbulento existia no acervo e está implementada (Hausen eq. 2-10, interpolação eq. 2-12), com caso-ouro independente. Era o que faltava — não uma premissa de operação.
+- **premissa**: Vazão da utilidade proporcional à carga (ṁ = q/(cp·ΔT), com o ΔT fixo pelos insumos): com a física completa ela NÃO precisa mais ser revista para o TAG ter solução. A circulação fixa continua estudo em docs/validacao/21-circulacao-cascos.md, e agora é escolha de operação, não remédio de viabilidade.
 
-### P-003 — investigação aberta
+### P-003 — investigação fechada pela física
 
-Topologia P-46 (óleo no casco, água de resfriamento nos tubos), P-45 e reotimização F10x.7. O casco NÃO passa de 2.500 mm, então os cascos em paralelo não se aplicam (e reduziriam o Re por casco). O que ainda governa: a faixa de Dittus-Boelter nos casos de baixa carga (BOT 04, 05 e 06) e, no melhor feixe, o comprimento de tubo acima de 6 m.
+FECHADO em 2026-09-26, junto com o P-002 e pelo mesmo motivo. Os casos de baixa carga (BOT 04, BOT 05 e BOT 06) eram recusados por falta de correlação, não por limite físico: na geometria escolhida os três ficam no LAMINAR (Re = 1.449, 629 e 162; Hausen), e a interpolação de transição aparece nos BOT 11, 15 e 16 (Re = 6.111, 4.615 e 5.139). Com os três regimes eles calculam, e a reotimização reexecutada encontra UM CASCO viável: tubo de 12,7 mm, 1 passe, passo 1,25, arranjo 30°, chicana 0,2·Ds, 7.526 tubos/passe, L = 4,91 m, 1.473,4 m² — 32 dos 96 candidatos são viáveis. O bloqueio de comprimento que restava com tubo de 25,4 mm (7,33 m contra o limite de 6 m) desaparece com o tubo menor, que acomoda mais tubos no mesmo casco. NÃO foi preciso estender a série de cascos ao P-003, nem fixar a circulação: a premissa original (série só no P-002) segue intacta e o P-002 também não precisa mais dela.
 
 - **premissa**: CONFIRMADA e adotada (P-46): a alocação com o óleo viscoso no tubo foi trocada.
-- **premissa**: Vazão da utilidade proporcional à carga (ΔT da utilidade fixo pelos insumos): nos casos de baixa carga a água de resfriamento fica laminar nos tubos, como no P-002.
-- **premissa**: Comprimento: a decisão do usuário previu cascos em série só para o P-002. No P-003 o melhor feixe pede tubo acima de 6 m; cascos em série resolveriam esse bloqueio, mas não o de Dittus-Boelter. A decidir.
+- **modelo**: RESOLVIDA: os casos de baixa carga eram recusados por falta de correlação. Implementados os três regimes, com caso-ouro independente, nenhum caso ativo é mais recusado por correlação.
+- **modelo**: RESOLVIDA sem mudar arquitetura: o comprimento excedia o limite de estoque de 6 m com tubo de 25,4 mm; com 12,7 mm o melhor feixe cabe em 4,91 m num casco só. Os limites de 6 m e de 2.500 mm não foram alterados, e cascos em série/paralelo não foram acionados.
+- **premissa**: Vazão da utilidade proporcional à carga: não é mais necessária para o TAG ter solução. A circulação fixa segue como estudo, e a decisão é de operação.
 
 ### B-001 — investigação explicada
 

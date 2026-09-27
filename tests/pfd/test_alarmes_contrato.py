@@ -88,13 +88,15 @@ def test_variante_de_premissa_herda_o_modo_do_oleo(planta_oleo_morto, planta_bas
     assert rt.status == "inviavel" and rt.resultado.ceiling < planta_base.tag("SG-001").resultado.x
 
 
-def test_p001_um_passe_leva_ao_limite_de_dittus_boelter(planta_propostas):
-    """Cadeia de hipóteses do P-001: com 1 passe o domínio de F deixa de ser o impedimento e
-    aparece o da correlação do lado tubo (óleo laminar/transição)."""
+def test_p001_um_passe_troca_o_dominio_de_f_pela_area(planta_propostas):
+    """Cadeia de hipóteses do P-001, com a física completa: com 2 passes o impedimento é o domínio
+    do fator F; com 1 passe ele desaparece e o que resta é ÁREA — o comprimento de tubo exigido,
+    não mais a correlação do lado tubo, que agora existe nos três regimes."""
     rt = planta_propostas.tag("P-001")
     assert "fator de correção F" in rt.resultado.message
     r = inv.executar_variante(planta_propostas.contexto, "P-001", inv.variante("passes_1"), rt.estado).resultado
-    assert not r.feasible and "Dittus-Boelter" in r.message
+    assert not r.feasible
+    assert "tubo mais longo" in r.message and "Dittus-Boelter" not in r.message
 
 
 def test_alarme_no_documento_do_mc(planta_base, planta_oleo_morto):
@@ -117,8 +119,13 @@ def test_relatorio_de_alarmes_e_deterministico():
     spec.loader.exec_module(mod)
     texto = mod.gerar()
     assert texto == mod.gerar()
-    for tag in ("SG-001", "P-001", "P-002", "P-003"):
+    # P-002 e P-003 saíram da lista: os alarmes fecharam com a película nos três regimes, sem
+    # premissa nova, sem circulação fixa e sem dividir cascos. Restou o P-001 (área) e o SG-001
+    # com óleo morto (que a viscosidade de óleo vivo já explicava).
+    for tag in ("SG-001", "P-001"):
         assert f"| {tag} | inviável (alarme)" in texto
+    for tag in ("P-002", "P-003"):
+        assert f"| {tag} | inviável (alarme)" not in texto
     assert "| B-001 | DN 600 mm" in texto and "Estudo da P-44" in texto
     assert "(diferença 0.0e+00 mm)" in texto
     assert texto == (caminho.parents[1] / "docs" / "validacao" / "14-alarmes.md").read_text(encoding="utf-8")

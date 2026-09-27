@@ -1,0 +1,53 @@
+# F8 aplicada à planta do BOT — a rede térmica do PRÉ-AQUECEDOR depois do SG (pedido do
+# usuário, 2026-09-26): "o pré-aquecedor depois do SG, que tem as correntes de óleo tratado
+# antes de ir para o cargo tank e óleo vivo que sai do SG".
+#
+# São exatamente as duas correntes que o balanço já cruza no P-001 (balanco/modelo.py):
+#
+#   fria   C-06 → T_trat : óleo vivo que sai do SG-001 (saída de óleo do FWKO), que precisa
+#                          chegar à temperatura de tratamento; o balanço a aquece no P-001
+#                          (até C-07) e completa no P-002 (até C-08).
+#   quente C-22 → T_store: óleo tratado recalcado, antes do cargo tank, que precisa chegar à
+#                          temperatura de estocagem; o balanço o resfria no P-001 (até C-23) e
+#                          completa no P-003 (até C-24).
+#
+# O DESTINO de cada corrente é a PREMISSA, não a temperatura que o balanço realizou: é isso que
+# faz a pergunta do pinch ser independente do arranjo. O alvo responde quanto de utilidade a
+# rede exige no mínimo — e a comparação com as cargas do balanço diz se o pré-aquecedor do BOT
+# já alcança esse alvo, ou quanto deixa na mesa.
+#
+# ΔTmin = dT_app (P-32), a MESMA aproximação que o balanço usa no P-001. Não há ΔTmin novo
+# suposto aqui: usar outro valor seria comparar duas redes diferentes.
+
+dt_min_premissa = "dT_app"
+fonte_dt_min = "P-32 (dT_app): aproximação de temperatura do pré-aquecedor, premissa do balanço — a mesma que balanco/modelo.py usa em Q_pre"
+
+[[corrente]]
+rotulo = "óleo vivo do SG-001 (fria)"
+entrada = "C-06"
+destino_premissa = "T_trat"
+capacidade = "C-06"
+# T_trat é PISO, não destino exato: o balanço escreve T08 = max(T_trat, T07). Se o óleo já sai
+# do SG acima dela, não há exigência de aquecimento — e também não há de resfriamento, porque o
+# tratador o quer quente. A corrente então NÃO ENTRA na rede, com o motivo registrado; inverter
+# o seu sentido inventaria uma carga de resfriamento que o processo não pede.
+sentido = "aquecer"
+motivo_omissao = "o óleo já sai do SG-001 acima da temperatura de tratamento (T_trat é piso, P-11: o balanço usa T08 = max(T_trat, T07)); não há exigência de aquecimento nem de resfriamento desta corrente"
+fonte = "saída de óleo do FWKO (C-06) até a temperatura de tratamento (P-11, T_trat); CP = C(C-06) do balanço"
+
+[[corrente]]
+rotulo = "óleo tratado antes do cargo tank (quente)"
+entrada = "C-22"
+destino_premissa = "T_store"
+capacidade = "C-21"
+# T_store é TETO: o balanço escreve T24 = min(T23, T_store). Óleo que já chega abaixo dela não
+# precisa de resfriamento.
+sentido = "resfriar"
+motivo_omissao = "o óleo tratado já chega abaixo da temperatura de estocagem (T_store é teto, P-13: o balanço usa T24 = min(T23, T_store)); não há exigência de resfriamento"
+fonte = "recalque do óleo tratado (C-22) até a temperatura de estocagem (P-13, T_store); CP = C(C-21) do balanço, a mesma capacidade que o modelo usa no lado quente do P-001"
+
+# Cargas do balanço com que os alvos são comparados (não entram no cálculo do pinch).
+[comparacao]
+recuperacao = "Q_pre"
+utilidade_quente = "Q_H"
+utilidade_fria = "Q_C"

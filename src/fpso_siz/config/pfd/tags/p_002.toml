@@ -46,26 +46,26 @@ carga_nula = "Q_H"
 valor = 1.0
 fonte = "P-45 (decisão do usuário, 2026-09-26; específica de trocadores): teto de velocidade em todos os casos; banda inteira no caso de projeto (maior vazão volumétrica no tubo); abaixo do piso no turndown, alerta de operabilidade/incrustação; Dittus-Boelter exigido na faixa em cada caso"
 
-[recomendadas.cascos_serie]
-valor = 2.0
-fonte = "cascos em série para o comprimento de tubo ficar dentro de 6 m (l_tubo_max mantido); melhor candidato da reotimização discreta F10x.7 (tools/reotimizar_trocadores.py; docs/validacao/18-trocadores.md), dentro da faixa da fonte do descritor (config/pfd/reotimizacao.toml)"
-
 [recomendadas.d_externo]
-valor = 19.05
-fonte = "melhor candidato da reotimização discreta F10x.7 (tools/reotimizar_trocadores.py; docs/validacao/18-trocadores.md), dentro da faixa da fonte do descritor (config/pfd/reotimizacao.toml)"
+valor = 12.7
+fonte = "melhor candidato da reotimização discreta reexecutada com a película do lado tubo nos três regimes (tools/reotimizar_trocadores.py; docs/validacao/18-trocadores.md e 24-pelicula-baixo-reynolds.md), dentro da faixa da fonte do descritor (config/pfd/reotimizacao.toml)"
 
 [recomendadas.passes_tubo]
-valor = 2.0
-fonte = "melhor candidato da reotimização discreta F10x.7 (tools/reotimizar_trocadores.py; docs/validacao/18-trocadores.md), dentro da faixa da fonte do descritor (config/pfd/reotimizacao.toml)"
+valor = 1.0
+fonte = "melhor candidato da reotimização discreta reexecutada com a película do lado tubo nos três regimes (tools/reotimizar_trocadores.py; docs/validacao/18-trocadores.md e 24-pelicula-baixo-reynolds.md), dentro da faixa da fonte do descritor (config/pfd/reotimizacao.toml)"
 
 [recomendadas.razao_passo]
 valor = 1.25
-fonte = "melhor candidato da reotimização discreta F10x.7 (tools/reotimizar_trocadores.py; docs/validacao/18-trocadores.md), dentro da faixa da fonte do descritor (config/pfd/reotimizacao.toml)"
+fonte = "melhor candidato da reotimização discreta reexecutada com a película do lado tubo nos três regimes (tools/reotimizar_trocadores.py; docs/validacao/18-trocadores.md e 24-pelicula-baixo-reynolds.md), dentro da faixa da fonte do descritor (config/pfd/reotimizacao.toml)"
 
 [recomendadas.layout_tubos]
 valor = 90.0
-fonte = "melhor candidato da reotimização discreta F10x.7 (tools/reotimizar_trocadores.py; docs/validacao/18-trocadores.md), dentro da faixa da fonte do descritor (config/pfd/reotimizacao.toml)"
+fonte = "melhor candidato da reotimização discreta reexecutada com a película do lado tubo nos três regimes (tools/reotimizar_trocadores.py; docs/validacao/18-trocadores.md e 24-pelicula-baixo-reynolds.md), dentro da faixa da fonte do descritor (config/pfd/reotimizacao.toml)"
 
 [recomendadas.espacamento_chicana]
 valor = 0.2
-fonte = "melhor candidato da reotimização discreta F10x.7 (tools/reotimizar_trocadores.py; docs/validacao/18-trocadores.md), dentro da faixa da fonte do descritor (config/pfd/reotimizacao.toml)"
+fonte = "melhor candidato da reotimização discreta reexecutada com a película do lado tubo nos três regimes (tools/reotimizar_trocadores.py; docs/validacao/18-trocadores.md e 24-pelicula-baixo-reynolds.md), dentro da faixa da fonte do descritor (config/pfd/reotimizacao.toml)"
+
+[recomendadas.pelicula_baixo_re]
+valor = 1.0
+fonte = "Branan (2012), cap. 2, pp. 40-41: a película do lado tubo tem correlação declarada nos três regimes — Hausen (eq. 2-10) em Re ≤ 2000, interpolação (eq. 2-12) em 2000 < Re < 10⁴ e Dittus-Boelter (Saari eq. 6.23) em Re ≥ 10⁴. Este TAG opera em baixa carga fora da faixa turbulenta, e sem os três regimes os casos de turndown eram RECUSADOS por falta de correlação, não por limite físico (docs/validacao/24-pelicula-baixo-reynolds.md)"

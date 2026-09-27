@@ -25,6 +25,7 @@ from fpso_siz.core.casos import Case, CaseSet
 from fpso_siz.core.configuracao import carregar
 from fpso_siz.core.formato_julia import jl
 from fpso_siz.core.ieee import div
+from fpso_siz.core.parametros import group_instance, in_group, instance_key
 from fpso_siz.core.trace import Rastro
 from fpso_siz.core.unidades import (HORAS_POR_DIA, SEGUNDOS_POR_HORA, kj_para_j, kw_para_w, mm_para_m,
                                     sm3sm3_para_scf_stb)
@@ -38,6 +39,7 @@ USUARIO = "usuario"
 ARQUIVO = "arquivo"
 # estados de revisão de um valor (o cálculo não depende deles; só o destaque)
 PROPOSTA = "proposta"      # valor proposto pelo usuário para uma lacuna (pfd/propostas.py)
+AUSENTE = "ausente"        # instância de grupo repetível que este caso não descreve (F8: Nª corrente)
 PENDENTE, CONFIRMADA, DESATUALIZADA = "pendente", "confirmada", "desatualizada"
 REVISAO_ABERTA = (PENDENTE, DESATUALIZADA)
 
@@ -74,6 +76,12 @@ class Valor:
     def nao_aplicavel(self):
         """Entrada de um critério que não se aplica ao caso (P-42: sem fase aquosa)."""
         return self.origem == NAO_APLICAVEL
+
+    @property
+    def ausente(self):
+        """Campo de uma instância de grupo repetível que este caso não descreve (a 5ª corrente de
+        uma rede de 4). Não é lacuna — não falta informar nada — e não vai para o caso."""
+        return self.origem == AUSENTE
 
     @property
     def numero(self):
@@ -145,8 +153,12 @@ class EntradasTAG:
         return not self.lacunas
 
     def case_set(self):
-        return CaseSet([Case(c.nome, {k: list(v.faixa) if v.faixa else v.valor for k, v in c.valores.items()},
-                             c.ativo) for c in self.casos])
+        """Casos no formato do motor. Campo de instância AUSENTE não entra: a corrente que o caso
+        não descreve simplesmente não existe nele, e é assim que `case_input` a lê (um buraco no
+        meio das instâncias não é erro)."""
+        return CaseSet([Case(c.nome, {k: list(v.faixa) if v.faixa else v.valor
+                                      for k, v in c.valores.items() if not v.ausente}, c.ativo)
+                        for c in self.casos])
 
     def caso(self, num):
         return next(c for c in self.casos if c.num == num)
@@ -214,6 +226,8 @@ class _Caso:
         return self._memo[chave]
 
     def _resolver(self, chave):
+        if _instancia_ausente(self, chave):
+            return Valor(math.nan, AUSENTE, "instância não descrita por este caso")
         if chave in self.aj:
             return _informado(self.aj[chave], USUARIO, "ajustes do usuário")
         if self.manual and chave in self.imp:
@@ -705,11 +719,43 @@ def conferir_tag(tag, specs):
             raise ValueError(f"{tag.tag}: {k} é emulsão e precisa de 'continua' ({_subfases(regra['fase'])})")
 
 
+def _expandir_grupos(m, specs):
+    """Molde de grupo repetível → uma instância por índice declarado (F8: as N correntes da
+    Análise Pinch). O molde não é campo: quem preenche, valida e importa vê `corrente_3_t_in`,
+    pela mesma convenção de `instance_key` que o método usa em `case_input`."""
+    grupos = m.parameter_groups()
+    if not grupos:
+        return specs
+    out = {}
+    for chave, s in specs.items():
+        if not in_group(s):
+            out[chave] = s
+            continue
+        g = next(g for g in grupos if g["key"] == s.group)
+        for i in range(1, int(g["max"]) + 1):
+            inst = group_instance(s, i, prefixo=g["label"])
+            out[inst.key] = inst
+    return out
+
+
+def _instancia_ausente(ctx, chave):
+    """True se `chave` é campo de uma instância de grupo que este caso NÃO descreve — nenhum dos
+    campos da instância foi informado. Instância pela metade não é ausente: as que faltam ficam
+    pendentes, como `case_input` exige."""
+    s = ctx.specs.get(chave)
+    if s is None or not in_group(s) or s.instance == 0:
+        return False
+    informado = dict(ctx.aj)
+    informado.update(ctx.imp)
+    campos = [k for k, e in ctx.specs.items() if in_group(e) and e.group == s.group and e.instance == s.instance]
+    return not any(k in informado for k in campos)
+
+
 def especificacoes(tag, pfd=True):
     """(equipamento, método, {chave: ParameterSpec}) do TAG; `pfd` aplica as faixas de
     apresentação do PFD (salmoura), que não mudam o método."""
     eq, m = tag.resolver()
-    specs = {s.key: s for s in [*m.parameters(), *m.stream_parameters()]}
+    specs = _expandir_grupos(m, {s.key: s for s in [*m.parameters(), *m.stream_parameters()]})
     if pfd:
         for k, ajuste in cfg().get("faixas", {}).get(m.method_id, {}).items():
             specs[k] = replace(specs[k], max=ajuste["max"], note=specs[k].note + " " + ajuste["fonte"])

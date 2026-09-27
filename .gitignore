@@ -9,6 +9,8 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .coverage
+# um arquivo por worker quando a suíte roda com -n (pytest-xdist)
+.coverage.*
 htmlcov/
 build/
 dist/

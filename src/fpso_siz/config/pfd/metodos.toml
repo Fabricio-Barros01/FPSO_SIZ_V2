@@ -110,6 +110,8 @@ n_step = { tipo = "escolha", fonte = "passo da grade do método (5 tubos)" }
 banda_caso_projeto = { tipo = "escolha", fonte = "regra do Julia: banda de velocidade em todos os casos (0); os TAGs da planta adotam a P-45 (1) em [recomendadas]" }
 cascos_serie = { tipo = "escolha", fonte = "um casco (regra do Julia); cascos em série só pela reotimização do TAG (F10x.7)" }
 cascos_paralelo = { tipo = "escolha", fonte = "um casco (regra do Julia); cascos em paralelo só pela reotimização do TAG (F10x.7)" }
+pelicula_baixo_re = { tipo = "escolha", fonte = "só Dittus-Boelter (regra do Julia, 0); os TAGs de trocador da planta adotam os três regimes de Branan pp. 40-41 (1) em [recomendadas]" }
+razao_visc_parede = { tipo = "escolha", fonte = "fator (µ/µ_parede)^0,14 das eq. 2-10/2-11 do Branan omitido (razão 1,0): hipótese declarada, conservadora ao aquecer líquido; a temperatura de parede da eq. 2-9 vai ao rastro" }
 
 [saari_lmtd.dicas]
 k_tubo = "Condutividade térmica do fluido do tubo. Petróleo e emulsão: sem correlação no acervo nem no ChEDL; salmoura: o banco de Magomedov do thermo não tem NaCl."

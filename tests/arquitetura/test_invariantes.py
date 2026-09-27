@@ -25,8 +25,11 @@ REDE = {"socket", "urllib", "http", "requests", "httpx", "aiohttp", "ftplib", "s
 UI = {"tkinter", "PyQt5", "PyQt6", "PySide2", "PySide6", "flask", "fastapi", "streamlit", "dash"}
 # thermo/chemicals (ChEDL): dependência direta por decisão do usuário (2026-09-23), atrás de
 # uma porta única, como numpy/scipy — o port a C/Java troca só essa camada.
+# pymoo (F15): mesma regra — só `_otim.py` importa o algoritmo; o avaliador (pfd/otimizacao.py)
+# é puro e não conhece a biblioteca.
 SO_EM = {"numpy": {"_num.py"}, "scipy": {"_num.py"}, "jinja2": "output/", "thermo": {"pfd/_chedl.py"},
-         "chemicals": {"pfd/_chedl.py"}, "fluids": {"pfd/_chedl.py"}, "pandas": set()}
+         "chemicals": {"pfd/_chedl.py"}, "fluids": {"pfd/_chedl.py"}, "pandas": set(),
+         "pymoo": {"_otim.py"}}
 # 0,5 (vaso meio cheio, média), 4 (área πd²/4; casas decimais), 8 (área do segmento circular
 # d²/8) e 10 (base) são estruturais, não coeficientes empíricos; estes vão para TOML.
 LITERAIS_OK = {0, 0.5, 1, 2, 4, 8, 10}

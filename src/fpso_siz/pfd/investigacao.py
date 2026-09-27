@@ -6,8 +6,9 @@ numérico ou de modelo (config/pfd/alarmes.toml). Aqui:
 - `alarmes(planta)`: um alarme por TAG inviável, com a evidência do próprio resultado (o
   que falhou, que casos têm solução isolados e com que x) e as hipóteses registradas;
 - `executar_variante(ctx, ident, v)`: o mesmo serviço por TAG com a alteração declarada
-  (premissa do balanço, entrada geral do TAG ou vazão dividida por trens em paralelo). A
-  variante é estudo: não muda o contexto nem o resultado padrão.
+  (premissa do balanço, entrada geral do TAG, vazão dividida por trens em paralelo, outra
+  alocação das correntes ou a circulação fixa da utilidade, resolvida em `pfd/circulacao.py`).
+  A variante é estudo: não muda o contexto nem o resultado padrão.
 
 Nada aqui é física nova: só se escolhe o que o motor avalia.
 """
@@ -16,6 +17,7 @@ import math
 from dataclasses import dataclass
 
 from fpso_siz.core.configuracao import carregar
+from fpso_siz.pfd import circulacao
 from fpso_siz.pfd import equipamento as servico
 from fpso_siz.pfd.equipamento import INVIAVEL
 from fpso_siz.pfd.tags import topologia_alternativa
@@ -62,6 +64,8 @@ def executar_variante(ctx, ident, v, estado=None):
     if v.get("premissas"):
         ctx = servico.Contexto(ctx.dados, alteracoes={**ctx.alteracoes, **v["premissas"]}, propostas=ctx.propostas,
                                oleo_vivo=ctx.oleo_vivo, topologia_julia=ctx.topologia_julia)
+    if v.get("circulacao_fixa"):   # a utilidade mantém a vazão do caso de projeto (estudo)
+        return circulacao.executar(ctx, ident, v, estado)[0]
     base = copy.deepcopy(estado) if estado is not None else servico.estado_inicial(ident)
     for chave, valor in v.get("geral", {}).items():
         base.editar(chave, float(valor), None, {})

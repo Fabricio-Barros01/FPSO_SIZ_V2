@@ -1,0 +1,132 @@
+# F15 — otimização multiobjetivo do módulo (docs/decisoes/0003-otimizacao-pymoo.md).
+#
+# ESTADO DA PRÉ-CONDIÇÃO: o documento 0003 exige "nenhum alarme aberto" antes da primeira
+# rodada, e os alarmes do P-001, P-002 e P-003 CONTINUAM ABERTOS (docs/validacao/14-alarmes.md).
+# O usuário autorizou a implementação em 2026-09-26 mesmo assim; por isso toda rodada é ESTUDO,
+# e o relatório carrega esse aviso. Nenhum ponto da frente é recomendação de projeto.
+#
+# Tudo o que a otimização pode mexer está declarado aqui, com LIMITE DE ORIGEM DECLARADA (a
+# tabela do 0003). O código não nomeia variável nem objetivo: itera estas listas. Valor com
+# status "proposto" (config/pfd/pendencias_propostas.toml) NÃO é variável de decisão.
+
+# ---------------------------------------------------------------------------- variáveis
+# destino: "premissa" (altera o balanço) | "tag_geral" (entrada do método, todos os casos)
+#          | "fator_vazao" (divide a vazão do TAG por N trens iguais)
+# tipo: "real" | "inteiro"
+
+[[variavel]]
+id = "eta_F"
+rotulo = "η_padrão do SG-001 (P-43)"
+destino = "premissa"
+chave = "eta_F"
+tipo = "real"
+min = 0.80
+max = 0.90
+fonte = "faixa de 80–90 % declarada pelo usuário para a P-43 (F10w); não há valor suposto"
+
+[[variavel]]
+id = "trens_sg"
+rotulo = "número de trens do SG-001"
+destino = "fator_vazao"
+tag = "SG-001"
+chaves = ["q_oil", "q_water", "q_gas"]
+tipo = "inteiro"
+min = 1
+max = 3
+fonte = "divisão da vazão por um número inteiro de vasos iguais (mesma variante dos alarmes, trens_2/trens_3); arranjo, não valor suposto"
+
+[[variavel]]
+id = "passes_p002"
+rotulo = "passes no tubo do P-002"
+destino = "tag_geral"
+tag = "P-002"
+chave = "passes_tubo"
+tipo = "inteiro"
+min = 1
+max = 2
+fonte = "faixa do descritor passes_tubo (Saari: 1 contracorrente §4.2.1; 2 no arranjo 1-2, Fig. 4.3)"
+
+[[variavel]]
+id = "passes_p003"
+rotulo = "passes no tubo do P-003"
+destino = "tag_geral"
+tag = "P-003"
+chave = "passes_tubo"
+tipo = "inteiro"
+min = 1
+max = 2
+fonte = "faixa do descritor passes_tubo (Saari)"
+
+# ---------------------------------------------------------------------------- objetivos
+# tipo: "soma_derivado" (soma um derivado dos TAGs listados) | "carga_balanco" (soma cargas do
+# balanço no caso de projeto do critério declarado)
+# sentido: "minimizar" (o único usado; declarado para não ficar implícito)
+
+[[objetivo]]
+id = "volume_vasos"
+rotulo = "volume total dos vasos"
+unidade = "m³"
+tipo = "soma_derivado"
+derivado = "volume"
+tags = ["SG-001", "V-001", "V-002", "TO-001", "TO-002"]
+sentido = "minimizar"
+fonte = "proxy de peso e área de convés (0003); o volume é o derivado que os métodos de vaso já emitem"
+
+[[objetivo]]
+id = "carga_aquecimento"
+rotulo = "carga de aquecimento"
+unidade = "kW"
+tipo = "carga_balanco"
+cargas = ["Q_H", "Q_D"]
+agregacao = "maximo_entre_casos"
+sentido = "minimizar"
+fonte = "utilidade de aquecimento do módulo (BOT 3.4): P-002 (Q_H) e DWH-001 (Q_D); o dimensionamento da utilidade responde ao caso de maior carga"
+
+[[objetivo]]
+id = "area_trocadores"
+rotulo = "área total de troca"
+unidade = "m²"
+tipo = "soma_derivado"
+derivado = "area"
+derivado_v2 = "area_total"
+tags = ["P-001", "P-002", "P-003"]
+sentido = "minimizar"
+fonte = "área de troca é o proxy de custo dos trocadores (0003); com cascos divididos vale a área total (derivados_v2)"
+
+# ---------------------------------------------------------------------------- restrições
+[restricoes]
+# Cada TAG tem de ficar viável. A violação é MEDIDA DE DISTÂNCIA ao admissível, não grandeza
+# física: fração dos casos ativos sem solução isolada, mais um termo relativo quando o motor
+# publica um teto (o quanto o menor x da grade excede o teto). Assim um indivíduo "quase viável"
+# pontua melhor que um sem solução em caso nenhum, que é o que o NSGA-II precisa para caminhar.
+tags = ["SG-001", "V-001", "V-002", "TO-001", "TO-002", "P-001", "P-002", "P-003", "B-001", "B-002", "B-003"]
+# TAG que espera entrada (lacuna) ou que fica inativo não é violação de projeto: é estado de
+# dado. A rodada registra e a restrição os ignora — lacuna continua lacuna.
+estados_neutros = ["aguardando_entrada", "inativo"]
+fonte = "restrições do contrato de dimensionamento como estado (0003); a métrica de violação é critério numérico da otimização, não premissa física"
+
+[algoritmo]
+# NSGA-II para 2–3 objetivos; NSGA-III (direções de Das-Dennis) a partir de 4 (0003).
+objetivos_max_nsga2 = 3
+populacao = 40
+geracoes = 20
+semente = 1
+fonte = "0003: populações de 40–100 com avaliação cara; semente fixa para reprodutibilidade"
+
+# ---------------------------------------------------------------------------- subproblemas
+# Um subproblema restringe variáveis, objetivos e TAGs restringidos. Existe por duas razões
+# declaradas: (1) o critério de validação 2 do 0003 exige comparar a frente do NSGA-II com uma
+# varredura exaustiva da MESMA grade, e isso só é exaustível num subproblema pequeno; (2) com os
+# alarmes dos trocadores abertos, o problema completo não tem ponto viável — a rodada completa
+# serve para mostrar isso, não para recomendar projeto.
+
+[[subproblema]]
+id = "sg_001"
+rotulo = "SG-001: η_padrão × número de trens"
+variaveis = ["eta_F", "trens_sg"]
+objetivos = ["volume_vasos", "carga_aquecimento"]
+tags = ["SG-001", "V-001", "V-002", "TO-001", "TO-002", "B-001", "B-002", "B-003"]
+fonte = "critério de validação 2 do 0003 (docs/decisoes/0003-otimizacao-pymoo.md): subproblema pequeno cuja frente é conferível contra varredura exaustiva; os trocadores ficam fora porque os seus alarmes seguem abertos"
+# Passo da grade da varredura exaustiva com que a frente é conferida. É critério NUMÉRICO da
+# validação (resolução da conferência), não premissa física; variável inteira anda de 1 em 1.
+grade_passo = { eta_F = 0.02 }

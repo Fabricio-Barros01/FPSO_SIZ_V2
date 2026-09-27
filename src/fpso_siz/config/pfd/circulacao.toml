@@ -1,0 +1,58 @@
+# Estudo de CIRCULAÇÃO FIXA da utilidade (F13/Etapa 2) — autorizado pelo usuário em 2026-09-26
+# como ESTUDO. Não é regra do método nem premissa adotada: o cálculo padrão continua com a
+# vazão da utilidade proporcional à carga (ṁ = q/(cp·ΔT), com o ΔT fixo pelos insumos
+# t_agua_in/t_agua_out), como está em config/pfd/tags/p_002.toml e p_003.toml.
+#
+# A hipótese de operação do estudo: a bomba da utilidade mantém a MESMA vazão em todos os
+# casos (a do caso de projeto, critério da P-45: maior vazão volumétrica no tubo), e o que
+# varia com a carga é o ΔT da utilidade — no turndown a água sai menos aquecida (P-002) ou
+# menos resfriada (P-003), e o Reynolds no tubo deixa de cair com a carga.
+#
+# A temperatura de saída de cada caso é RESOLVIDA, não suposta: bisseção sobre o mesmo
+# fechamento de energia do cálculo padrão, ṁ_fixa = q/(cp(T̄)·|ΔT|), com cp, ρ, μ e k da água
+# reavaliados na temperatura média resultante (IAPWS, pfd/fluidos.agua_saturada). A entrada de
+# temperatura é mantida; a saída resolvida entra no próprio insumo t_agua_out, de modo que as
+# entradas e o rastro do TAG continuam consistentes entre si.
+#
+# Aqui só há CRITÉRIO NUMÉRICO (tolerância, iterações, expansão do intervalo de busca). Nenhum
+# valor físico é suposto: o intervalo inicial sai do ΔT do próprio caso de projeto e a
+# expansão para quando houver troca de sinal.
+
+[bissecao]
+# Tolerância da temperatura de saída resolvida, em K. Critério de parada, não valor físico.
+tol_temperatura = 1e-9
+# Tolerância relativa do fechamento da vazão (ṁ resolvido contra ṁ fixa), adimensional.
+tol_vazao = 1e-10
+# Teto de iterações da bisseção: com o intervalo inicial do ΔT do caso de projeto, a
+# tolerância acima é atingida muito antes disso; o teto existe para a falha ser estado.
+max_iteracoes = 200
+# O intervalo inicial é [t_entrada, t_entrada ± ΔT do caso de projeto]. Se não houver troca de
+# sinal (a carga do caso exige ΔT maior que o do caso de projeto), o extremo é multiplicado
+# por este fator, até `max_expansoes` vezes.
+fator_expansao = 2.0
+max_expansoes = 10
+# Recuo relativo do extremo junto à temperatura de entrada: em ΔT → 0 a vazão diverge, então o
+# extremo fica a esta fração do intervalo, e não exatamente na temperatura de entrada.
+recuo_relativo = 1e-6
+
+[mensagens]
+sem_caso_projeto = "{tag}: nenhum caso ativo com vazão e densidade no tubo — sem caso de projeto (P-45), não há circulação a fixar."
+sem_troca_de_sinal = "{tag}, caso {caso}: a circulação fixa de {vazao} kg/s não fecha a carga deste caso com nenhuma temperatura de saída do intervalo de busca (ΔT até {delta} K). Com a vazão do caso de projeto a utilidade sairia fora da faixa física da água."
+nao_convergiu = "{tag}, caso {caso}: a bisseção da temperatura de saída não convergiu em {iteracoes} iterações."
+propriedade_invalida = "{tag}, caso {caso}: as propriedades da água na temperatura média resultante não são calculáveis ({erro})."
+base_incompleta = "{tag}: a configuração-base não está pronta para dimensionar (lacuna ou caso inativo); sem ela não há caso de projeto nem carga por caso."
+
+# Nomes no rastro do método (invariante 3: o estudo LÊ o rastro que o método já emitiu, não
+# recalcula). As duas aproximações terminais do trocador saem da Eq. 4.7 de Saari.
+[rastro]
+bloco = "balanco"
+aproximacao_1 = "ΔT₁"
+aproximacao_2 = "ΔT₂"
+
+[p32]
+# Tolerância RELATIVA da conferência das aproximações terminais contra o ΔT de aproximação da
+# P-32. Existe porque a aproximação do lado frio do P-003 cai EXATAMENTE no ΔT_app por construção
+# (água de resfriamento a 30 °C, óleo a 40 °C): sem tolerância, o ruído de ponto flutuante da
+# cadeia reprovaria um caso que atende na igualdade. Critério numérico, não folga de projeto.
+tol_relativa = 1e-9
+fonte = "critério numérico da conferência (o projeto usa a mesma forma relativa em equipment/comum/trocador.toml e no resíduo do balanço do pinch)"

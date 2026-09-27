@@ -1,0 +1,130 @@
+label = "Kemp — Problem Table (alvos de energia)"
+equipment = "pinch"
+reference = "Kemp, I. C., \"Pinch Analysis and Process Integration: A User Guide on Process Integration for the Efficient Use of Energy\", 2. ed., Butterworth-Heinemann, 2007 (ISBN 978-0-7506-8260-2). Algoritmo da Problem Table: apêndice do cap. 3, §3.9.1, pp. 95-96. Balanço por intervalo: Eq. (2.3), p. 21. Exemplo resolvido e alvos: Tabelas 2.2 e 2.3 e Figura 2.9, pp. 21-24. Problema-limiar: §3.3.2, p. 54. Escolha de ΔTmin: §3.7.2 e §3.7.3, p. 82."
+
+# Análise Pinch — alvos de energia de uma REDE de correntes.
+#
+# ESTE ARQUIVO NÃO TEM [constants], E A AUSÊNCIA É DECISÃO REGISTRADA.
+# A regra do projeto é que constante de correlação mora em TOML, para ficar auditável.
+# O algoritmo da Problem Table não tem constante empírica nenhuma: o único literal
+# numérico com significado é o `2` de ΔTmin/2, que é estrutural (metade de um intervalo,
+# §3.9.1 passo 2) e não premissa revisável. Ver src/analysis/pinch.jl e §2.4 de
+# docs/validacao/06-pinch-kemp.md.
+#
+# O QUE ESTA APLICAÇÃO ENTREGA: alvos termodinâmicos — QHmin, QCmin, temperatura de
+# pinch e a tabela de intervalos —, antes de qualquer trocador existir.
+#
+# O QUE ELA NÃO ENTREGA, E NÃO ALEGA: síntese da rede de trocadores (§2.3), grand
+# composite curve (§2.1.5), alvo de área e de número de unidades (§3.6), utilidades
+# múltiplas (§3.4), ΔTcont por corrente (§3.3.1, p. 53) e CP polinomial em T (§3.1.3,
+# p. 45 — esta versão é CP constante por segmento, que é o método padrão do livro).
+#
+# NÃO HÁ TROCA ENERGIA × CAPITAL, LOGO NÃO HÁ ÓTIMO. O programa não modela área nem
+# custo, então não existe a curva da Figura 3.25 (p. 82) em que capital sobe, energia
+# desce e o total tem mínimo. O ΔTmin é CUMPRIDO, não escolhido — ver o `note` de
+# `dt_min_alvo` e §6.1 de docs/validacao/06-pinch-kemp.md.
+
+# ---------------------------------------------------------------------------
+# O grupo repetível: as correntes da rede
+#
+# `min = 2` porque com uma corrente não há integração a calcular — é o piso do que a
+# palavra "rede" quer dizer, não um número do livro. `max = 12` é limite de tela: o
+# formulário cresce três caixas por corrente, e além disso a coluna deixa de ser
+# legível. Os dois são premissa revisável, e é por isso que estão aqui e não no .jl.
+# ---------------------------------------------------------------------------
+
+[[group]]
+key   = "corrente"
+label = "Corrente"
+min   = 2
+max   = 12
+
+# ---------------------------------------------------------------------------
+# Os três campos de cada corrente.
+#
+# NÃO HÁ CAMPO "QUENTE OU FRIA", e não pode haver: o sentido é consequência do sinal de
+# (entrada − saída), e perguntá-lo criaria um dado que pode contradizer os dois números
+# logo acima. É a mesma decisão que o trocador tomou ao chamar os lados de "tubo" e
+# "casco" em vez de "quente" e "frio".
+#
+# Os três defaults descrevem UMA corrente quente plausível, e todas as instâncias
+# nascem iguais — um descritor é um molde, e um molde tem um default só. A tela em
+# branco mostra, portanto, uma rede só de correntes quentes: QHmin = 0, QCmin = ΣQ e
+# nenhum pinch interior. Isso é um problema-limiar legítimo (§3.3.2, p. 54), o cartão
+# diz que é, e o exemplo de referência com as quatro correntes da Tabela 2.2 está em
+# config/cases/exemplo_pinch_kemp.toml.
+# ---------------------------------------------------------------------------
+
+[[parameter]]
+key     = "t_in"
+group   = "corrente"
+label   = "Temperatura de entrada"
+unit    = "°C"
+default = 150.0
+min     = -200.0
+max     = 1000.0
+note    = "Tabela 2.2, p. 21 — a temperatura de suprimento da corrente. Que a corrente seja quente ou fria é consequência do sinal de (entrada − saída), e não um campo à parte: o passo 2 de §3.9.1 (p. 95) desloca pelo sentido, e um rótulo de tipo poderia contradizer estes dois números. A faixa é limite de tela, não do algoritmo: §3.7.3 (p. 82) vai de criogenia a serviços de alta temperatura."
+
+[[parameter]]
+key     = "t_out"
+group   = "corrente"
+label   = "Temperatura de saída"
+unit    = "°C"
+default = 60.0
+min     = -200.0
+max     = 1000.0
+note    = "Tabela 2.2, p. 21 — a temperatura de destino da corrente. Mudança de fase NÃO entra como CP infinito: §3.1.3, p. 44, manda manter a temperatura de suprimento e deslocar a de destino em ~0,1 °C — para cima se a corrente é fria (vaporizando), para baixo se é quente (condensando). Segmento isotérmico é recusado, com essa receita na mensagem."
+
+[[parameter]]
+key     = "mcp"
+group   = "corrente"
+label   = "Capacidade calorífica de fluxo ṁ·cp"
+unit    = "kW/°C"
+default = 2.0
+min     = 0.001
+max     = 10000.0
+note    = "Tabela 2.2, p. 21 — o CP da corrente. É uma TAXA (ṁ·cp), não uma propriedade: multiplicado pelo ΔT do intervalo dá o ΔH da Eq. (2.3), p. 21. Constante por trecho; quando o CP real varia com a temperatura, §3.1.3 (p. 45) manda linearizar em seções, que é o remédio que o livro recomenda e o que os segmentos existem para permitir."
+
+# ---------------------------------------------------------------------------
+# Decisão de projeto: o ΔTmin. Estes quatro vão para o painel de ajustes (global_keys),
+# e não para cada cenário — a rede é uma só, e uma grade por corrente não faz sentido.
+# ---------------------------------------------------------------------------
+
+[[parameter]]
+key     = "dt_min_alvo"
+label   = "ΔTmin adotado"
+unit    = "°C"
+default = 10.0
+min     = 1.0
+max     = 100.0
+note    = "§3.7.3, p. 82: para serviços correntes de líquidos de escoamento livre, 20 °C é um ΔTmin razoável; para altas vazões ou operação contínua em três turnos — que é literalmente o caso de um FPSO — 10 °C é mais apropriado. Duas ressalvas que a página faz e que é fácil deturpar: para criogenia a fonte dá 2–3 K (não 3–5 °C), e ela explica o ΔTmin ALTO por U baixo e capital caro (o ótimo migra para 30 °C com U pela metade e 50 °C com U a um quinto), NÃO por energia barata. SELEÇÃO POR DECLARAÇÃO: o programa cumpre este valor, não o escolhe — sem modelo de área e capital não há a curva de custo total do §3.7 (Figura 3.25) e não há ótimo a procurar."
+
+[[parameter]]
+key      = "dt_min_min"
+label    = "ΔTmin mínimo da grade"
+unit     = "°C"
+default  = 5.0
+min      = 1.0
+max      = 100.0
+advanced = true
+note     = "Ponta inferior da faixa do §3.7.2, p. 82: o custo total fica a cerca de 10 % do ótimo entre aproximadamente 5 °C e 50 °C. A varredura percorre justamente essa faixa, que é onde a fonte declara a escolha ser barata — dez para um em ΔTmin, dentro de 10 % em custo."
+
+[[parameter]]
+key      = "dt_min_max"
+label    = "ΔTmin máximo da grade"
+unit     = "°C"
+default  = 50.0
+min      = 1.0
+max      = 100.0
+advanced = true
+note     = "Ponta superior da mesma faixa do §3.7.2, p. 82 (cerca de 5 °C a 50 °C, dentro de ~10 % do ótimo). Acima dela o §3.7.3 só registra os casos de U baixo, em que o ótimo migra para 30–50 °C; o teto de 100 °C do descritor existe para não impedi-los."
+
+[[parameter]]
+key      = "dt_min_step"
+label    = "Passo da grade de ΔTmin"
+unit     = "°C"
+default  = 1.0
+min      = 0.1
+max      = 10.0
+advanced = true
+note     = "Resolução da varredura — escolha NUMÉRICA, e a fonte não publica grade nenhuma. 1 °C é fino o bastante para percorrer os 5–50 °C do §3.7.2 (p. 82) e grosso o bastante para a tabela continuar legível. Um limiar como os 5,55 °C do §3.3.2 (p. 54) cai ENTRE dois pontos da grade: ele se lê na coluna de QHmin, que zera, e não na de ΔTmin."

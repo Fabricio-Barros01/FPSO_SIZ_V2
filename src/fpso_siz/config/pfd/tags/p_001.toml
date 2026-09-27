@@ -27,3 +27,7 @@ carga_nula = "Q_pre"
 [recomendadas.banda_caso_projeto]
 valor = 1.0
 fonte = "P-45 (decisão do usuário, 2026-09-26; específica de trocadores): teto de velocidade em todos os casos; banda inteira no caso de projeto (maior vazão volumétrica no tubo); abaixo do piso no turndown, alerta de operabilidade/incrustação; Dittus-Boelter exigido na faixa em cada caso"
+
+[recomendadas.pelicula_baixo_re]
+valor = 1.0
+fonte = "Branan (2012), cap. 2, pp. 40-41: a película do lado tubo tem correlação declarada nos três regimes — Hausen (eq. 2-10) em Re ≤ 2000, interpolação (eq. 2-12) em 2000 < Re < 10⁴ e Dittus-Boelter (Saari eq. 6.23) em Re ≥ 10⁴. Este TAG opera em baixa carga fora da faixa turbulenta, e sem os três regimes os casos de turndown eram RECUSADOS por falta de correlação, não por limite físico (docs/validacao/24-pelicula-baixo-reynolds.md)"

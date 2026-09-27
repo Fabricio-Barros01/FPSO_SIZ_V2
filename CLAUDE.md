@@ -74,12 +74,33 @@ numpy/scipy só via `fpso_siz/_num.py`, para manter o port a C/Java mapeável; j
 `fpso_siz/pfd/_chedl.py`, com import preguiçoso. **Regra das fontes:** correlação ou valor
 sem fonte citável (acervo `references/` ou referência da docstring do ChEDL) é lacuna de
 entrada, nunca número suposto. No NixOS, os testes precisam do `LD_LIBRARY_PATH` do flake.
+Entre pelo devShell (`nix develop`, ou direnv): ele também fornece `pdftotext`
+(`poppler-utils`), necessário para comparar o texto dos PDFs nos testes LaTeX.
+**Custo da suíte, medido (i7-10750H: 6 núcleos físicos/12 threads, 7 GB de RAM).** O que domina
+não é o número de processos, é a **cobertura de branch**: ela custa cerca de 3,2× (o mesmo teste
+vai de 164 s para 527 s), e o `COVERAGE_CORE=sysmon` NÃO ajuda, porque o `sys.monitoring` só
+cobre branch a partir do Python 3.14 e a coverage.py volta ao tracing. Por isso a cobertura é
+verificação de **fechamento de fase**, não de cada rodada. Medições da suíte inteira: sem
+cobertura, 9:45 com `-n 4 --dist loadscope` e 21:22 sequencial; com cobertura, 51:54 e 1:06:07.
+Mais workers pioram: `-n 12` (são 6 núcleos físicos, e cada worker carrega uma planta) deu 50 min
+com `loadscope` e 1:07 com `load`, porque `load` faz cada worker reconstruir as fixtures de
+sessão. `loadscope` mantém o módulo no mesmo worker; a cobertura sob `-n` é combinada pelo
+pytest-cov, e cada worker grava um `.coverage.*` (ignorado pelo git).
+O paralelismo que rende de fato está DENTRO do cálculo caro: os testes de validação da F15
+avaliam a população em processos (`_otim.py`), o que levou o `criterio_2` de 1441 s para 164 s sem
+mudar um único número — a equivalência é testada em `tests/pfd/test_otimizacao_paralela.py`.
+
+Se o cache Julia do usuário não for gravável, use um depot temporário no comando:
+`JULIA_DEPOT_PATH="$(mktemp -d)/depot:" uv run pytest -m julia`.
+O teste Julia regenera arquivos no diretório de fixtures: para preservar os originais,
+execute-o numa cópia temporária do projeto, mantendo o repositório Julia somente leitura
+como irmão dessa cópia. Compare os bytes regenerados; não atualize fixtures para passar.
 
 ## Comandos
 ```
 uv sync
-uv run pytest
-uv run pytest --cov=fpso_siz --cov-fail-under=90
+uv run pytest -n 4 --dist loadscope         # rodada do dia a dia (~10 min nesta máquina)
+uv run pytest -n 4 --dist loadscope --cov=fpso_siz --cov-fail-under=90   # fechamento de fase (~52 min)
 uv run pytest -m latex                      # compila os memoriais (lento)
 uv run pytest -m julia                      # regenera as fixtures do Julia e compara
 tools/exportar_fixtures_julia.sh [commit]   # fixtures do Julia (git archive, só leitura)
@@ -97,6 +118,10 @@ uv run python tools/reotimizar_trocadores.py   # reotimização discreta P-002/P
 uv run fpso-siz pfd --casos design_cases_bot.json --saida saida/pfd --mc [--pdf]   # MC de cada TAG (F11)
 uv run fpso-siz dimensionar --tag V-001 --casos design_cases_bot.json --auto-balanco --saida saida/tag --mc [--pdf]
 uv run fpso-siz memorial --casos todos [--layout original|senai|ambos] [--pdf]    # MC_Caso01…16 (F11b)
+uv run fpso-siz dimensionar --exemplo pinch_kemp             # Análise Pinch (F8), exemplo do livro
+uv run python tools/pinch_planta.py          # alvos do pré-aquecedor pela rede do balanço (F8)
+uv run python tools/estudo_circulacao.py     # circulação fixa e cascos em série (estudo; muito lenta)
+uv run python tools/otimizar.py [--sub sg_001 --varredura]   # otimização NSGA-II (F15; lenta)
 FPSO_SNAPSHOTS=1 uv run pytest tests/test_terminal_pfd.py   # regenera os snapshots de tela
 ```
 

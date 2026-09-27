@@ -227,15 +227,18 @@ P42_CHAVES = {"dm_water", "dm_oil", "tr_water", "rho_water", "mu_water"}
 P44_TAGS = {"B-001", "B-002", "B-003"}
 P44_CHAVES = {"piso_caso_projeto", "transicao_turndown"}   # extensões do V2 (F10x.6)
 P45_TAGS = {"P-001", "P-002", "P-003"}
-P45_CHAVES = {"banda_caso_projeto", "cascos_serie", "cascos_paralelo"}   # extensões do V2 (F10x.7)
-MARCAS_V2 = ("P-44", "P-45", "F10x.7")
+# extensões do V2 no trocador: F10x.7 (P-45, cascos) e a película do lado tubo nos três regimes
+P45_CHAVES = {"banda_caso_projeto", "cascos_serie", "cascos_paralelo", "pelicula_baixo_re", "razao_visc_parede"}
+MARCAS_V2 = ("P-44", "P-45", "F10x.7", "três regimes")
 
 
 def _sem_p44(monkeypatch):
-    """Desliga as extensões F10x.6–F10x.7 (P-44/P-44b das bombas; P-45, cascos em série e
-    paralelo e a reotimização dos trocadores): sem os descritores de extensão e sem as
-    recomendações correspondentes nos TAGs (o código que a F10b tinha). A alocação do PFD F1
-    (P-46 desligada) vem de topologia_julia=True."""
+    """Desliga as extensões do V2 no PFD: F10x.6–F10x.7 (P-44/P-44b das bombas; P-45, cascos em
+    série e paralelo e a reotimização dos trocadores) e a **película do lado tubo nos três
+    regimes** — sem os descritores de extensão e sem as recomendações correspondentes nos TAGs, que
+    é o código que a F10b tinha. A alocação do PFD F1 (P-46 desligada) vem de topologia_julia=True.
+    Com isso a fixture da F10b conserva a sua proveniência: ela não é regerada quando o V2 completa
+    física nenhuma."""
     from fpso_siz.pfd.tags import tags
     from fpso_siz.sizing.bomba import MoranPumpSizing
     from fpso_siz.sizing.trocador import SaariLMTD

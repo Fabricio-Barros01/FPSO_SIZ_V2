@@ -14,7 +14,171 @@ aquela fase).
 
 ## Estado atual
 
-**FASE ATUAL: resolução dos alarmes de inviabilidade (pré-condição da F15) ← ATUAL; F10x (até F10x.7), F13, F14 e o planejamento da F15 entregues em 2026-09-26. Alarmes do SG-001 (óleo vivo) e das bombas (P-44) explicados; P-002/P-003 abertos (Dittus-Boelter no turndown, após P-45/P-46 e reotimização); P-001 é lacuna metodológica.**
+### Retomada dos alarmes — etapas 0–3 (2026-09-26)
+
+Plano revisado aprovado pelo usuário: branch `fases/f11-alarmes` a partir de
+`origin/main` (`e7ce6a6`), PR para revisão sem merge. WIP `59e0bf1` preservado em
+`backup-local-f11`, sem reaplicação (já reorganizado na F11, decisões R1–R3).
+Arquivos locais não rastreados preservados.
+
+**Etapa 0 — ambiente e verificação local:** 20 testes do oráculo/memorial aprovados
+(incluindo o acervo); 1 teste de regeneração Julia aprovado, byte a byte, numa cópia
+temporária. A primeira tentativa Julia falhou ao escrever o cache protegido em
+`~/.julia`; `JULIA_DEPOT_PATH` temporário resolveu, sem alterar ferramentas ou fixtures.
+`poppler-utils` incluído no devShell; comandos de ambiente documentados no CLAUDE.md.
+Validação completa desta etapa: em execução.
+
+**Etapa 1 — fontes e pendência do P-001:** o diagnóstico "falta correlação laminar com
+fonte no acervo" estava **errado** e foi corrigido em toda parte. As correlações existem por
+duas vias: Branan pp. 40–41 (eq. 2-9 temperatura de parede, 2-10 Hausen laminar Re ≤ 2000,
+2-11 Sieder-Tate turbulento, 2-12 interpolação de transição 2000 < Re < 10⁴) e Saari §6.3,
+pp. 68–72 (eq. 6.28 laminar desenvolvido, 6.31 Sieder-Tate laminar com µ/µ_s, 6.32 Bhatti &
+Shah). O que falta é o **exemplo numérico resolvido** do aceite: o Branan remete à planilha
+"Tubes htc" do livro e Saari não fecha exemplo — o mesmo buraco de `golden_saari`. Nada foi
+implementado: o P-001 segue lacuna metodológica e os alarmes do P-002/P-003 seguem abertos.
+Registrados os requisitos da futura implementação (ramo próprio por regime, temperatura de
+parede iterativa da eq. 2-9 sem assumir µ/µ_w = 1, faixas não cobertas voltando como
+inviabilidade com mensagem) e uma errata aparente de sinal na eq. 6.27 de Saari. Documento:
+`docs/validacao/20-correlacao-tubo-laminar.md`; `14-alarmes.md` regenerado do catálogo.
+O usuário autorizou subir Serth & Lestina e a planilha do Branan para fechar o caso-ouro.
+
+**Etapa 2 — estudos isolados (circulação fixa e cascos em série):** ambos declarados como
+ESTUDO; o cálculo padrão, as recomendações dos TAGs e a política de divisão em cascos não
+mudaram.
+
+- `pfd/circulacao.py` + `config/pfd/circulacao.toml` + duas variantes em `config/pfd/alarmes.toml`:
+  a utilidade mantém a vazão do **caso de projeto** (critério da P-45, medido na
+  configuração-base completa) em todos os casos, e a temperatura de saída de cada caso é
+  **resolvida** por bisseção sobre o mesmo fechamento de energia do cálculo padrão
+  (ṁ_fixa = q/(cp(T̄)·|ΔT|)), com cp, ρ, μ e k da água reavaliados na temperatura média
+  resultante. A saída resolvida entra no próprio insumo `t_agua_out`, e as entradas são
+  preparadas **outra vez** — é aí que a grade de tubos por passe consome a vazão fixa e a
+  densidade reavaliada. Só há critério numérico no TOML; nenhum valor físico suposto. Falha
+  física ou de convergência volta como inviabilidade com mensagem; caso inativo continua
+  inativo.
+- `pfd/reotimizacao.buscar` ganhou dois argumentos **opcionais** de estudo (`politica_estudo`,
+  `variante`), com as chamadas de produção idênticas — é assim que o P-003 foi perguntado com a
+  política de cascos em série que a decisão original previu só para o P-002.
+- Condição dos estudos: as **duas aproximações terminais** de cada caso ativo são conferidas
+  contra o ΔT_app da **P-32**, lendo o rastro que o método já emitiu (invariante 3). A regra
+  padrão do método continua sem impô-la.
+
+**Resultado (`tools/estudo_circulacao.py` → `docs/validacao/21-circulacao-cascos.md`):** com a
+circulação mantida, **P-002 e P-003 passam a ter solução**, e com um casco só — o bloqueio de
+Dittus-Boelter no turndown desaparece porque o Reynolds deixa de cair com a carga. Com a
+circulação original, os cascos em série resolvem o **comprimento** nos dois TAGs, mas não a faixa
+de Dittus-Boelter (BOT 06 no P-002; BOT 04, 05 e 06 no P-003). **Achado:** com a circulação fixa
+a vazão volumétrica fica praticamente igual em todos os casos e o critério da P-45 **degenera**
+dentro do método (passa a rotular como projeto o caso de maior temperatura de retorno) — mais uma
+razão para a variante não ser promovida a padrão sem decisão do usuário.
+
+**Etapa 3 — aceite:** tudo verde, na cópia e no repositório.
+
+- `tools/reotimizar_trocadores.py` reexecutado: **`docs/validacao/18-trocadores.md` byte a byte
+  igual** — os dois argumentos opcionais de estudo não mudaram nada nas chamadas de produção.
+- Suíte completa: **1.140 testes, cobertura 96,02 %** (mínimo 90 %).
+- `pytest -m latex`: **25 aprovados** (os memoriais compilam e o texto dos PDFs confere pelo
+  `pdftotext` do devShell).
+- `pytest -m julia`: **1 aprovado**, em cópia temporária do projeto com o repositório Julia
+  somente leitura e depot temporário — as fixtures regeneradas são **byte a byte** as
+  versionadas, incluindo a nova `analise-pinch.json` do pinch. As fixtures originais não foram
+  tocadas.
+- Balanço, fixtures do PFD F1 (topologia Julia, óleo morto, extensões desligadas) e a regressão
+  F10b seguem intactos — estão dentro da suíte.
+
+Pendências que ficam para a decisão do usuário: (1) exemplo numérico das correlações laminar/de
+transição, que é o que fecha os três alarmes; (2) adoção da circulação fixa e dos cascos em série
+no P-003; (3) P-44b; (4) alertas da P-45 e valores `proposto`; (5) a fronteira de viabilidade da
+P-43 encontrada pela F15 (B-002 no vão da série de DN). Padrões dos TAGs, P-44b, alertas P-45 e valores `proposto`
+continuam sujeitos à decisão do usuário. O usuário autorizou o `pymoo` (F15) e a F8 aplicada
+ao pré-aquecedor pós-SG (óleo tratado antes do cargo tank × óleo vivo da saída do SG).
+
+### Prioridade atual — fechamento dos alarmes estacionários (2026-09-26)
+
+**Decisões de escopo do usuário:** F12 **cancelada** (portabilidade Java/C e distribuição, fora
+de escopo em definitivo); F9 **adiada** (separador dinâmico segue válido, mas fora do caminho
+crítico até o núcleo estacionário fechar). A prioridade é a física estacionária em baixa carga.
+
+**Princípio adotado:** não se introduz premissa operacional nem arquitetura adicional para forçar
+viabilidade numérica enquanto houver lacuna física ou metodológica no modelo.
+
+**Película do lado tubo nos três regimes — implementada e validada.** O programa só tinha o
+regime turbulento (Dittus-Boelter na forma de Saari): fora de 10⁴ ≤ Re ≤ 1,2·10⁵ o caso era
+**recusado**, e era essa recusa — não um limite físico — que mantinha abertos os alarmes dos
+trocadores em baixa carga. Entraram, da fonte primária do acervo (Branan, cap. 2, pp. 40-41):
+Hausen (eq. 2-10) em Re ≤ 2000, a interpolação da eq. 2-12 em 2000 < Re < 10⁴, e a temperatura de
+parede da eq. 2-9. A ponta turbulenta da interpolação é a **própria eq. 6.23 já validada**, então
+a interpolação encosta no ramo validado em Re = 10⁴ e **o comportamento turbulento não muda**
+(regressão testada; paridade Julia e fixtures F10b intactas — a extensão é desligada na regressão
+da F10b pela convenção já existente, preservando a proveniência daquela fixture).
+
+**O aceite NÃO dependeu de um exemplo numérico publicado idêntico.** Ele está em
+`tests/fixtures/python_ref/golden_pelicula_tubo.json`, gerado por
+`tools/gerar_golden_pelicula.py` — script independente que digita as equações e os coeficientes
+da página e não importa nada de `fpso_siz.sizing` —, com 17 testes em
+`tests/sizing/test_golden_pelicula.py`: caso-ouro ponto a ponto, conta à mão, verificação
+dimensional, limites de validade, os três regimes, continuidade nas duas fronteiras, regressão do
+turbulento, arbitragem da errata e verificação cruzada com a segunda fonte.
+
+**Errata da fonte, arbitrada com números:** a p. 40 imprime `1 + 0,40·Gz^(2/3)` no denominador de
+Hausen; a forma clássica tem **0,04**. A assíntota do termo de entrada é (0,0668/C)·Gz^(1/3): com
+0,04 dá 1,670·Gz^(1/3), a 11 % da segunda fonte do acervo (Saari eq. 6.31, 1,860·Gz^(1/3), via
+Incropera); com 0,40 dá 0,167·Gz^(1/3), **11,1 vezes abaixo**. Adotou-se 0,04, com o valor
+impresso registrado no TOML. A segunda fonte tem errata própria (define Gz = (x/d_h)·Re·Pr, que
+cresceria com a distância), também registrada.
+
+**Resultado nos alarmes** (`docs/validacao/24-pelicula-baixo-reynolds.md`, gerado):
+
+| TAG | Antes | Depois | Restrição que governa agora |
+|---|---|---|---|
+| P-002 | inviável: faixa de Dittus-Boelter no BOT 06 | **viável, UM casco** | nenhuma — sem circulação fixa e sem mudar arquitetura: 12,7 mm, 1 passe, passo 1,25, arranjo 90°, chicana 0,2·Ds, 1.605 tubos/passe, L = 5,99 m, 383,8 m² (21 dos 96 candidatos viáveis) |
+| P-003 | inviável: faixa de Dittus-Boelter nos BOT 04/05/06 **e** comprimento | **viável, UM casco** | nenhuma — 12,7 mm, 1 passe, passo 1,25, arranjo 30°, chicana 0,2·Ds, 7.526 tubos/passe, L = 4,91 m, 1.473,4 m² (32 dos 96 viáveis). O bloqueio de comprimento só reaparece com o tubo de 25,4 mm (7,33 m contra o limite de 6 m) |
+| P-001 | inviável: domínio do fator F (2 passes) e faixa de Dittus-Boelter (1 passe) | inviável | **área**: no platô laminar h_i satura em ~34 e U em ~25 W/(m²·K), contra U·A exigido de 1,55 MW/K; o melhor feixe da grade pede 186,4 m de tubo (o escolhido, 434,4 m). Com 2 passes, o domínio do fator F ainda vem antes |
+
+**Regime de cada caso, medido na geometria escolhida** (tabela completa em
+`docs/validacao/24-pelicula-baixo-reynolds.md`): no P-002 os três casos de maior carga e o BOT 11
+ficam turbulentos, BOT 04 (Re = 4.145) e BOT 05 (Re = 5.461) na transição e o BOT 06 (Re = 1.416)
+no laminar; no P-003 os BOT 04, 05 e 06 (Re = 1.449, 629 e 162) ficam no laminar e a transição
+aparece nos BOT 11, 15 e 16 (Re = 6.111, 4.615 e 5.139); no P-001, com um passe, seis casos ficam
+na transição e quatro no laminar, nenhum turbulento. Com o tubo de 12,7 mm e um passe a velocidade
+por tubo cai, e por isso os casos de menor carga ficam abaixo de Re = 2000 — é por isso que os
+regimes NÃO são os da geometria que a física antiga escolhia (19,05 mm/2 passes, 25,4 mm).
+
+Os dez casos ativos do P-001 e os dezesseis do P-003 **calculam**: nenhum é mais recusado por
+falta de correlação. No P-001 a varredura mostra que **não é a banda de velocidade** que impede:
+de 1.994 para 50.000 tubos por passe o comprimento exigido cai de 266 m para 21 m e a área fica
+em ~60.000 m² — é a área, e o teto de 3 m/s (erosão, Saari) impede o óleo de chegar ao turbulento.
+
+**As quatro premissas em aberto, reavaliadas com o modelo corrigido:**
+- **Circulação fixa da utilidade: NÃO é necessária.** O P-002 é viável com a circulação
+  proporcional à carga, que é o cálculo padrão. A variante continua estudo e passa a ser escolha
+  de operação, não remédio de viabilidade — e por isso **não foi promovida**.
+- **Cascos em série: NÃO são necessários em nenhum dos dois.** Com a grade reexecutada sobre a
+  física corrigida, o P-002 e o P-003 fecham **com um casco só** (12,7 mm). O bloqueio de
+  comprimento do P-003 era da geometria que a física antiga escolhia (25,4 mm: 7,33 m contra o
+  limite de 6 m) e desaparece com o tubo menor, que acomoda mais tubos no mesmo casco. A premissa
+  original — série prevista só para o P-002 — segue **intacta e sem uso**, e não se estendeu nada
+  ao P-003. Dividir em cascos continua sendo escolha de otimização do usuário, não remédio de
+  viabilidade.
+- **P-44b: continua necessária, e só para o B-001** (sem ela o B-001 fica inviável; B-002 e B-003
+  não mudam). É política de **atrito** na faixa 2300 < Re < 4000, que o acervo não cobre
+  (Hagen-Poiseuille exata até 2300, Colebrook-White a partir de 4000) — grandeza e equipamento
+  diferentes da película, logo **não há duplicação de conservadorismo**. Critério para retirá-la:
+  uma fonte que declare o fator de atrito na transição.
+- **P-45: continua necessária e não degenerou.** Com a banda exigida em todos os casos (P-45
+  desligada) o P-002 e o P-003 voltam a ser inviáveis por `v_min` no turndown. A degeneração do
+  critério só aparecia sob circulação fixa — que não foi adotada —, então a formulação da P-45
+  segue válida e nenhum valor `proposto` foi promovido.
+
+**Fronteira P-43 (achado da F15), caracterizada:** é **resultado legítimo do modelo**, não erro. O
+caso de projeto do B-002 (BOT 11) tem DN 200 com v = 1,0023 m/s em η = 0,8990 e v = 0,9966 m/s em
+η = 0,8995; o DN vizinho (150) dá 1,7718 m/s, acima do teto de 1,5. A banda de 1,0–1,5 m/s é mais
+estreita que o salto de área entre DN 150 e DN 200 (1,78×), então existe uma **janela de vazões
+sem DN admissível** — de 95,4 a 113,1 m³/h. Não é bug, discretização artificial, tolerância nem
+lógica do seletor: é série comercial discreta combinada com banda de velocidade. A fronteira fica
+**preservada e documentada**, e a F15 deve reconhecer regiões inviáveis em vez de forçar solução.
+
+**FASE ATUAL: resolução dos alarmes de inviabilidade ← ATUAL; F8 (Pinch de Kemp, com a aplicação ao pré-aquecedor) e F15 (otimização com pymoo, como estudo) implementadas em 2026-09-26; F10x (até F10x.7), F13 e F14 entregues em 2026-09-26. Alarmes do SG-001 (óleo vivo) e das bombas (P-44) explicados; P-002 e P-003 FECHADOS pela física em 2026-09-27 (película do lado tubo nos três regimes, um casco cada, sem premissa nova); o P-001 segue inviável, agora pela ÁREA — a lacuna metodológica dele está fechada. F12 CANCELADA; F9 ADIADA. 10 dos 11 TAGs dimensionados.**
 **F11 (MC por TAG) e F11b (MC do balanço por caso) entregues em 2026-09-26, em sessão autônoma
 autorizada pelo usuário, no branch `fases/f11` (sem merge; integração pelo usuário). Ver
 [`docs/validacao/13-memorial-tag.md`](docs/validacao/13-memorial-tag.md).**
@@ -328,10 +492,66 @@ menu e no `dimensionar`. O Pinch precisa de exemplo em `config/exemplos/` (copia
 `exemplo_pinch_kemp.toml`) e talvez de resumo próprio: não tem varredura de diâmetro, e a
 tabela de caso usa `sweep_columns()[0]`.
 
-### F8 — Pinch (Kemp) (depois da F11)
-**Aceite:** `golden_kemp`, `pinch_encaixe`; cobertura ≥ 90 %.
+### F8 — Pinch (Kemp) ✅ (2026-09-26)
+**Aceite:** `golden_kemp`, `pinch_encaixe`; cobertura ≥ 90 %. **Entregue.**
 
-### F9 — Separador dinâmico (Song)
+Porte em duas camadas, como no Julia:
+- `analysis/pinch.py` — núcleo PURO da Problem Table (Kemp §3.9.1, pp. 95-96): deslocamento de
+  ΔTmin/2 num único ponto, tabela de intervalos, as duas cascatas, QHmin/QCmin, temperaturas de
+  pinch (lista, porque o passo 9 diz "point(s)"), problema-limiar e curvas compostas (§2.3).
+  Não conhece contrato, caso nem TOML; nenhum caminho levanta exceção (entrada recusada vira
+  resultado inviável com diagnóstico).
+- `sizing/pinch_kemp.py` — encaixe no contrato: eixo ΔTmin, exigência QHmin (não-decrescente, o
+  que autoriza chamá-la de exigência), grupo repetível de correntes, `admissible` sempre
+  verdadeiro (afirmação: todo ΔTmin descreve uma rede possível) e `objective` = distância ao
+  ΔTmin declarado — **seleção por declaração, não otimização**: sem modelo de área e capital não
+  há a curva de custo total do §3.7 e não há ótimo a procurar.
+- `config/equipment/pinch/kemp.toml` é cópia literal do Julia; os critérios numéricos que o
+  Julia deixava no código (tolerância de fluxo nulo, do resíduo do balanço e casas da linha de
+  conferência) foram para `config/equipment/comum/pinch.toml`, pela invariante 2.
+
+**Paridade:** o pinch entrou em `test_paridade_julia` com tolerância **0,0** — bit a bit, porque
+o algoritmo é aritmética sobre os dados, sem correlação empírica no meio.
+**Caso-ouro (`test_golden_kemp`):** os números publicados, um por um — Tab. 2.2 (temperaturas
+deslocadas e o tipo derivado), Tab. 2.3 (fronteiras, CP líquido e ΔH dos cinco intervalos),
+Fig. 2.9 (as duas cascatas, nó a nó), p. 24 (QHmin = 20 kW, QCmin = 60 kW, pinch 85/90/80 °C e
+as duas conferências cruzadas), §3.3.2 (o limiar publicado de 5,55 °C, com a forma fechada
+QHmin = max(0; 4,5·ΔTmin − 25)) e §2.3 (as curvas compostas, pelos cinco invariantes).
+**Encaixe (`test_pinch_encaixe`):** 15 testes — grupo/molde/instância, `case_input` recusando
+instância pela metade (e aceitando buraco no meio), a exceção da fronteira virando inviabilidade
+com o nome do caso, o envelope tomando o pior cenário, o cartão dizendo o que a tela NÃO faz e a
+apresentação conservando o cálculo do núcleo.
+
+**Camada de entradas:** o V2 ganhou suporte a grupo repetível no adaptador manual
+(`pfd/entradas.py`): o molde é expandido em instâncias (`corrente_3_t_in`), e instância que o
+caso não descreve tem origem nova **`ausente`** — não é lacuna (não falta informar nada) e não
+vai para o caso, que é como `case_input` lê um buraco no meio.
+
+#### F8 aplicada à planta — o pré-aquecedor depois do SG (pedido do usuário)
+`pfd/pinch.py` + `config/pfd/pinch.toml` montam do balanço a rede que o usuário pediu: o **óleo
+vivo que sai do SG-001** (C-06, a aquecer até `T_trat`) e o **óleo tratado antes do cargo tank**
+(C-22, a resfriar até `T_store`), com ΔTmin = a própria premissa **P-32** (`dT_app`) do
+pré-aquecedor. O destino de cada corrente é a premissa, não a temperatura que o balanço
+realizou — usar a realizada embutiria o arranjo na resposta.
+
+**Resultado (`tools/pinch_planta.py` → `docs/validacao/22-pinch-planta.md`):** nos 10 casos em
+que a rede se aplica, QHmin, QCmin e a recuperação alvo **coincidem com Q_H, Q_C e Q_pre do
+balanço** (folga máxima da ordem de 1e-10 kW). É validação cruzada genuína: o alvo vem da
+cascata de calor da Problem Table e as cargas vêm da regra
+Q_pre = min(C_frio, C_quente)·(ΔT − ΔT_app) de `balanco/modelo.py` — dois caminhos
+independentes, o mesmo número. O alvo **não** promete mais recuperação do que o único trocador
+já entrega; ele prova que não há mais a recuperar nesta rede.
+Nos 6 casos restantes o óleo já sai do SG acima de `T_trat` (que é **piso**, P-11: o balanço
+escreve T08 = max(T_trat, T07)): a corrente fria não tem exigência, sai da rede com o motivo
+registrado, e o caso fica sem alvo em vez de receber um alvo inventado — inverter o sentido da
+corrente criaria uma carga de resfriamento que o processo não pede.
+
+### F9 — Separador dinâmico (Song) — **ADIADA, fora do caminho crítico**
+**Decisão do usuário (2026-09-26): permanece válida, mas adiada.** Não se inicia a
+implementação enquanto o **núcleo estacionário** não estiver fechado. O oráculo
+(`controle-separador.json` e os testes do Julia) continua no repositório, e o escopo abaixo
+segue valendo quando a fase for retomada.
+
 Portar o Euler próprio do Julia, para ter paridade de trajetória. scipy.integrate só como
 verificação cruzada, fora do núcleo.
 **Aceite:** trajetórias iguais às fixtures; oráculo de convergência por refino de malha;
@@ -1110,7 +1330,56 @@ relatório gerado `docs/validacao/15-termodinamica.md` (`tools/termodinamica_pre
 - **Aceite:** (1) porta única (teste de arquitetura existente, `_chedl.py`) ✓; (2) comparação
   caso a caso sem mudar balanço/paridade ✓; (3) fontes no relatório ✓; (4) cobertura ✓.
 
-### F15 — Otimização com `pymoo` (só planejamento) ✅ (planejamento)
+### F15 — Otimização com `pymoo` ✅ implementada (2026-09-26), como ESTUDO
+**Dependência autorizada pelo usuário em 2026-09-26**; `pymoo` 0.6.2 (Apache-2.0) fixado no
+`uv.lock`.
+
+**A pré-condição do 0003 — nenhum alarme aberto — NÃO está satisfeita**: P-001, P-002 e P-003
+seguem em alarme (falta a correlação laminar/de transição, cuja fonte já existe mas ainda não tem
+exemplo numérico). O usuário autorizou implementar mesmo assim; por isso **toda rodada é estudo e
+nenhum ponto da frente é recomendação de projeto**, e o relatório abre com esse aviso.
+
+Entregue:
+- `fpso_siz/_otim.py` — **porta única do `pymoo`**, com import preguiçoso e teste de arquitetura
+  (a regra do `pfd/_chedl.py`). Não importa nem `numpy`: as fronteiras entram como listas, porque
+  `numpy` está reservado à porta `_num.py` pela invariante 1 e isso mantém a camada mapeável no
+  port a C/Java. NSGA-II até três objetivos, NSGA-III (Das-Dennis) a partir de quatro.
+- `pfd/otimizacao.py` — **avaliador puro**, que não conhece `pymoo`:
+  `avaliar(dados, x) → (objetivos, restrições, estados)`, decodificando o vetor nas alterações
+  declaradas (premissa do balanço, entrada de um TAG, divisão da vazão em trens) e chamando o
+  **mesmo serviço por TAG** de sempre. Inviabilidade continua estado e vira violação (g > 0);
+  lacuna e caso inativo **não** são violação de projeto (são dado).
+- `config/pfd/otimizacao.toml` — variáveis, objetivos, restrições, subproblemas e parâmetros do
+  algoritmo, cada um com a origem do limite. O código não nomeia variável nem objetivo.
+  Valor apenas `proposto` não é variável de decisão (há teste).
+- `tools/otimizar.py` → `docs/validacao/23-otimizacao.md` + frente em JSON/CSV.
+
+**Critérios de validação do 0003 (`tests/pfd/test_otimizacao.py`, marcador `otim`):**
+1. o avaliador reproduz o ponto do projeto atual — mesmos estados por TAG que o `pfd` publica;
+2. a frente do NSGA-II não é dominada pela varredura exaustiva da mesma grade (subproblema do
+   SG-001: η × número de trens);
+3. mesma semente → mesma frente;
+4. o dimensionamento padrão não muda ao avaliar pontos fora do projeto.
+
+**Resultado das rodadas:** no **problema completo** não há indivíduo viável — com os alarmes dos
+trocadores abertos, todo ponto tem pelo menos um TAG inviável. **Isso é o resultado**, e é
+exatamente a razão da pré-condição do 0003: otimizar ali seria otimizar um erro. A rodada segue
+útil como diagnóstico, porque a violação mostra qual TAG barra cada ponto e quanto falta. No
+**subproblema do SG-001** a frente existe e é conferida contra a grade; ela degenera num ponto
+só, porque os dois objetivos melhoram na mesma direção (mais trens reduzem o volume por vaso, e
+η maior reduz a carga de aquecimento) — não há troca a mostrar, e dizer isso é mais honesto que
+exibir uma curva inexistente.
+
+**Achado novo da rodada, para decisão do usuário:** a otimização encontrou uma **fronteira de
+viabilidade dentro da faixa que a fonte declara admissível**. Com η_padrão ≳ 0,8995 — dentro da
+faixa de 80–90 % declarada pelo usuário para a P-43 — o **B-002 fica inviável**: com mais água
+livre removida, a vazão de água produzida do caso de projeto cai no vão da série comercial de DN,
+entre DN 150 e DN 200, que é o mesmo efeito já documentado em `docs/validacao/17-banda-bombas.md`.
+O ótimo do subproblema fica, portanto, encostado nessa fronteira (η ≈ 0,899), e não no limite
+superior da faixa. A otimização **não** escolhe entre ampliar a série de DN, aceitar velocidade
+fora da banda ou limitar η: isso é decisão de projeto, e fica registrada como pendência.
+
+### F15 — planejamento ✅ (o documento de decisão)
 **Entregue (2026-09-26):** `docs/decisoes/0003-otimizacao-pymoo.md` — variáveis com limites de
 origem declarada, objetivos, restrições como estado, NSGA-II/III, porta única `_otim.py`,
 critério de validação; **pré-condição: nenhum alarme aberto** (docs/validacao/14-alarmes.md).
@@ -1122,9 +1391,13 @@ vêm os limites), objetivos, restrições (as do contrato de dimensionamento, co
 algoritmo (NSGA-II/III) justificado, a porta única para `pymoo` e o critério de validação;
 nenhuma dependência nova instalada sem aprovação.
 
-### F12 — Portabilidade (Java/C) e distribuição
-Baseline medido com Nuitka/PyInstaller (tamanho, startup, deps) no Linux e passos para
-Windows. Comparativo Python empacotado × Java (JVM/GraalVM) × C por módulo, com o mapa de
-`_num.py`. Pode ser antecipada para logo depois da F5.
-**Aceite:** `docs/portabilidade/` responde que problema cada linguagem resolve e que o
-Python empacotado não resolve.
+### F12 — Portabilidade (Java/C) e distribuição — **CANCELADA / FORA DE ESCOPO**
+**Decisão do usuário (2026-09-26): cancelada definitivamente.** O comparativo Python empacotado
+× Java (JVM/GraalVM) × C, o baseline com Nuitka/PyInstaller e o estudo de distribuição saem do
+caminho futuro do projeto e **não serão implementados**. Não há aceite a cumprir, e nada aqui
+deve ser retomado sem uma decisão nova e explícita do usuário.
+
+Consequência registrada: a porta única `_num.py` prevista para numpy/scipy **nunca existiu**,
+porque o núcleo não importa numpy — ele entra só por `pfd/_chedl.py` (ChEDL) e o `pymoo` por
+`_otim.py`. A invariante de porta única continua valendo e testada; o que sai de escopo é o
+documento comparativo, não a disciplina de isolamento.
