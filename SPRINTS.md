@@ -1373,6 +1373,33 @@ relatório gerado `docs/validacao/15-termodinamica.md` (`tools/termodinamica_pre
 - **Aceite:** (1) porta única (teste de arquitetura existente, `_chedl.py`) ✓; (2) comparação
   caso a caso sem mudar balanço/paridade ✓; (3) fontes no relatório ✓; (4) cobertura ✓.
 
+### Baseline de desempenho ✅ medida (2026-09-27) — `docs/validacao/performance-baseline.md`
+
+**Nada foi otimizado nesta fase**: o objetivo era medir o estado atual, já com a Fase 1
+aplicada, para que qualquer otimização posterior tenha um antes. Ferramenta:
+`tools/benchmark.py` (emite JSON; o `.md` é escrito a partir dele). Dados brutos das cinco
+rodadas em `docs/validacao/performance-baseline.json`, regeneráveis com `--merge`.
+
+**O gargalo é um só.** `avaliar(dados, x)` custa 21,7 s, e **o envelope térmico do P-003 é 20,6 s
+disso (95 %)** — cerca de 913 mil avaliações de Bell-Delaware em Python escalar. O balanço dos 16
+casos custa 19,5 ms (0,09 %), a termodinâmica menos de 0,5 s, e o overhead da otimização 0,07 ms.
+
+**Candidatos registrados, não implementados** (cada um com o número medido atrás):
+1. dimensionar só os TAGs que o recorte usa — no `sg_001`, **99,6 % do tempo vai para P-002 e
+   P-003, que o recorte não restringe nem pontua**;
+2. separar `x_processo` de `x_equipamento` — variando só `passes_p002`, o P-003 é recalculado
+   3 vezes com entrada idêntica (80,8 s jogados fora em 4 avaliações);
+3. memoizar `sizing/trocador._tubo` — 194.261 chamadas para 95.768 pares (caso, n) distintos,
+   fator 2,03×;
+4. cache termodinâmico **não** vale a pena: a camada inteira soma 0,26 s em 4 avaliações.
+
+**Paralelismo (só medido).** Lote de 24 pontos divisível por todo W testado: vazão 0,0456 →
+0,2203 aval./s de 1 a 6 workers, eficiência 1,00 → 0,81; PSS de ≈ 0,23 GiB por worker. **8 e 12
+workers não foram medidos**: a projeção de memória não cabia nos 2,4 GiB livres, e medir seria
+medir o swap. Se o SMT rende acima dos 6 núcleos físicos, **este benchmark não respondeu** — fica
+para a Fase 10. Uma primeira varredura foi descartada por erro de método: com lote de 8 pontos o
+tempo de parede é `ceil(lote ÷ W)`, e a divisibilidade, não o hardware, produzia a curva.
+
 ### F15 — Otimização com `pymoo` ✅ implementada (2026-09-26), como ESTUDO
 **Dependência autorizada pelo usuário em 2026-09-26**; `pymoo` 0.6.2 (Apache-2.0) fixado no
 `uv.lock`.

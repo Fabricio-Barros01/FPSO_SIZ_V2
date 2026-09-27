@@ -1,0 +1,813 @@
+{
+  "casos": "tests/fixtures/python_ref/design_cases_bot.json",
+  "recursos": {
+    "cpus_logicas": 12,
+    "cpus_na_afinidade": 12,
+    "nucleos_fisicos": 6,
+    "plataforma": "Linux-6.18.48-x86_64-with-glibc2.42",
+    "processador": "—",
+    "python": "3.13.15",
+    "ram_disponivel_gib": 2.910369873046875,
+    "ram_total_gib": 7.625041961669922,
+    "swap_total_gib": 8.799999237060547
+  },
+  "rodadas": {
+    "b_nucleo_workers": {
+      "etapas": [
+        "nucleo",
+        "workers"
+      ],
+      "nucleo_quente": {
+        "casos_distintos": 52,
+        "chamadas": 194261,
+        "fator_recomputacao": 2.028454180937265,
+        "funcao": "fpso_siz.sizing.trocador._tubo",
+        "pares_distintos": 95768,
+        "tempo_da_avaliacao_s": 21.79619293101132,
+        "tempo_na_funcao_s": 20.888199226377765
+      },
+      "quando": "2026-09-27 13:30:04-0300",
+      "rotulo": "b_nucleo_workers",
+      "workers": {
+        "aquecimento_pai_s": 22.704010354995262,
+        "linhas": [
+          {
+            "avaliacoes": 12,
+            "eficiencia": 1.0,
+            "pico_memoria_gib": 0.2412872314453125,
+            "speedup": 1.0,
+            "tempo_s": 263.12984885802143,
+            "vazao_aval_por_s": 0.045604860307866146,
+            "workers": 1
+          },
+          {
+            "avaliacoes": 12,
+            "eficiencia": 0.9656557548280883,
+            "pico_memoria_gib": 0.6805019378662109,
+            "speedup": 1.9313115096561766,
+            "tempo_s": 136.24412609898718,
+            "vazao_aval_por_s": 0.08807719160884402,
+            "workers": 2
+          },
+          {
+            "avaliacoes": 12,
+            "eficiencia": 0.9274331478645291,
+            "pico_memoria_gib": 0.8800058364868164,
+            "speedup": 2.7822994435935873,
+            "tempo_s": 94.5728000139934,
+            "vazao_aval_por_s": 0.12688637745973924,
+            "workers": 3
+          },
+          {
+            "avaliacoes": 12,
+            "eficiencia": 0.8770294091484326,
+            "pico_memoria_gib": 1.0891399383544922,
+            "speedup": 3.5081176365937305,
+            "tempo_s": 75.00599355998565,
+            "vazao_aval_por_s": 0.1599872147604186,
+            "workers": 4
+          },
+          {
+            "avaliacoes": 12,
+            "eficiencia": 0.6937549759454489,
+            "pico_memoria_gib": 1.2778759002685547,
+            "speedup": 3.4687748797272446,
+            "tempo_s": 75.85670964000747,
+            "vazao_aval_por_s": 0.1581929938293962,
+            "workers": 5
+          },
+          {
+            "avaliacoes": 12,
+            "eficiencia": 0.8086417285835442,
+            "pico_memoria_gib": 1.466700553894043,
+            "speedup": 4.851850371501265,
+            "tempo_s": 54.232886158977635,
+            "vazao_aval_por_s": 0.22126795842698363,
+            "workers": 6
+          },
+          {
+            "avaliacoes": 12,
+            "eficiencia": null,
+            "nao_medido": "projeção de 2,01 GiB acima do orçamento de 1,57 GiB (2,37 GiB disponíveis menos a margem de 0,80 GiB)",
+            "pico_memoria_gib": null,
+            "speedup": null,
+            "tempo_s": null,
+            "vazao_aval_por_s": null,
+            "workers": 9
+          },
+          {
+            "avaliacoes": 12,
+            "eficiencia": null,
+            "nao_medido": "projeção de 2,68 GiB acima do orçamento de 1,57 GiB (2,37 GiB disponíveis menos a margem de 0,80 GiB)",
+            "pico_memoria_gib": null,
+            "speedup": null,
+            "tempo_s": null,
+            "vazao_aval_por_s": null,
+            "workers": 12
+          }
+        ],
+        "lote": 12,
+        "margem_ram_gib": 0.8,
+        "melhor_vazao": 0.22126795842698363,
+        "melhor_workers": 6,
+        "memoria_base_gib": 0.23310279846191406,
+        "memoria_por_worker_gib": 0.22369956970214844,
+        "metrica_memoria": "pss",
+        "sub": "sg_001",
+        "tem_base_w1": true,
+        "visiveis": 12
+      }
+    },
+    "bench_a": {
+      "camadas": {
+        "avaliar_decomposto_s": {
+          "contexto_e_balanco_s": 0.019475877023069188,
+          "decodificar_e_propostas_s": 0.006828572979429737,
+          "dimensionar_planta_s": 21.62492633398506,
+          "estados_violacoes_objetivos_s": 7.292002555914223e-05,
+          "montar_ajustes_s": 9.679992217570543e-06,
+          "soma_das_etapas_s": 21.651313384005334
+        },
+        "avaliar_decomposto_sub_s": {
+          "contexto_e_balanco_s": 0.01941011002054438,
+          "decodificar_e_propostas_s": 0.006829578982433304,
+          "dimensionar_planta_s": 21.53698882300523,
+          "estados_violacoes_objetivos_s": 7.209097384475172e-05,
+          "montar_ajustes_s": 1.6900012269616127e-06,
+          "soma_das_etapas_s": 21.56330229298328
+        },
+        "avaliar_total": {
+          "frio_s": 21.635780828015413,
+          "quente_media_s": 21.713947821001057,
+          "quente_min_s": 21.713947821001057,
+          "repeticoes_quentes": 1
+        },
+        "avaliar_total_sub": {
+          "frio_s": 21.623069185996428,
+          "quente_media_s": 21.67022348899627,
+          "quente_min_s": 21.67022348899627,
+          "repeticoes_quentes": 1
+        },
+        "config_toml": {
+          "arquivos": 62,
+          "frio_s": 0.03530964799574576,
+          "quente_media_s": 4.086497938260436e-06,
+          "quente_min_s": 3.777997335419059e-06,
+          "repeticoes_quentes": 2
+        },
+        "importacao_s": {
+          "fpso_siz": 0.00014969799667596817,
+          "fpso_siz.pfd.otimizacao": 0.05617898699711077,
+          "fpso_siz.pfd.planta": 0.054672597005264834,
+          "pymoo (porta _otim)": 0.05539881598087959,
+          "thermo+chemicals (porta _chedl)": 0.14623708900762722
+        },
+        "n_casos": 16,
+        "planta_completa": {
+          "frio_s": 21.903248135989998,
+          "quente_media_s": 21.76807225801167,
+          "quente_min_s": 21.76807225801167,
+          "repeticoes_quentes": 1
+        },
+        "populacao": {
+          "avaliacoes_da_rodada": 800,
+          "geracao_sequencial_s": 868.5579128400423,
+          "geracoes": 20,
+          "populacao": 40,
+          "rodada_sequencial_s": 17371.158256800845,
+          "s_por_avaliacao": 21.713947821001057
+        },
+        "por_tag": {
+          "B-001": {
+            "dimensionar_s": 0.01400053600082174,
+            "preparar_s": 0.010791701002744958,
+            "status": "dimensionado",
+            "total_s": 0.024792237003566697
+          },
+          "B-002": {
+            "dimensionar_s": 0.009488874988164753,
+            "preparar_s": 0.010451328998897225,
+            "status": "dimensionado",
+            "total_s": 0.019940203987061977
+          },
+          "B-003": {
+            "dimensionar_s": 0.009752356010721996,
+            "preparar_s": 0.010232530999928713,
+            "status": "dimensionado",
+            "total_s": 0.01998488701065071
+          },
+          "P-001": {
+            "dimensionar_s": 0.0005587759951595217,
+            "preparar_s": 0.017524914990644902,
+            "status": "inviavel",
+            "total_s": 0.018083690985804424
+          },
+          "P-002": {
+            "dimensionar_s": 0.9079629379848484,
+            "preparar_s": 0.013824469002429396,
+            "status": "dimensionado",
+            "total_s": 0.9217874069872778
+          },
+          "P-003": {
+            "dimensionar_s": 20.570172346982872,
+            "preparar_s": 0.01418852899223566,
+            "status": "dimensionado",
+            "total_s": 20.584360875975108
+          },
+          "SG-001": {
+            "dimensionar_s": 0.021470632986165583,
+            "preparar_s": 0.5726342110137921,
+            "status": "dimensionado",
+            "total_s": 0.5941048439999577
+          },
+          "TO-001": {
+            "dimensionar_s": 0.007203715009381995,
+            "preparar_s": 0.008791961008682847,
+            "status": "dimensionado",
+            "total_s": 0.01599567601806484
+          },
+          "TO-002": {
+            "dimensionar_s": 0.007893628004239872,
+            "preparar_s": 0.008701504993950948,
+            "status": "dimensionado",
+            "total_s": 0.01659513299819082
+          },
+          "V-001": {
+            "dimensionar_s": 0.009748242009663954,
+            "preparar_s": 0.07376001501688734,
+            "status": "dimensionado",
+            "total_s": 0.08350825702655129
+          },
+          "V-002": {
+            "dimensionar_s": 0.009997884015319869,
+            "preparar_s": 0.0632574489864055,
+            "status": "dimensionado",
+            "total_s": 0.07325533300172538
+          }
+        },
+        "resolver_caso": {
+          "frio_s": 0.000627216009888798,
+          "quente_media_s": 0.0005127469994476996,
+          "quente_min_s": 0.0005068719910923392,
+          "repeticoes_quentes": 4
+        },
+        "resolver_caso_por_caso_s": {
+          "1": 0.0005093080108053982,
+          "10": 0.0016296569956466556,
+          "11": 0.0016195399803109467,
+          "12": 0.0016242220008280128,
+          "13": 0.0016167790163308382,
+          "14": 0.0016199999954551458,
+          "15": 0.0011288730020169169,
+          "16": 0.0011509880132507533,
+          "2": 0.0015384459984488785,
+          "3": 0.001573194982483983,
+          "4": 0.0005082860006950796,
+          "5": 0.0005107180040795356,
+          "6": 0.0005015410133637488,
+          "7": 0.000506184995174408,
+          "8": 0.0015224890084937215,
+          "9": 0.0015293269825633615
+        },
+        "resolver_todos": {
+          "frio_s": 0.019848455005558208,
+          "quente_media_s": 0.020108184500713833,
+          "quente_min_s": 0.019460220995824784,
+          "repeticoes_quentes": 2
+        },
+        "termodinamica": {
+          "condicao": {
+            "P_kPa": 2500.0,
+            "T_C": 65.0
+          },
+          "fluidos.agua": {
+            "frio_s": 0.00010529402061365545,
+            "quente_media_s": 4.4877256426077926e-05,
+            "quente_min_s": 4.295597318559885e-05,
+            "repeticoes_quentes": 19
+          },
+          "fluidos.agua_saturada": {
+            "frio_s": 4.7826993977651e-05,
+            "quente_media_s": 3.1397422150659716e-05,
+            "quente_min_s": 3.0502007575705647e-05,
+            "repeticoes_quentes": 19
+          },
+          "fluidos.salmoura_fracao": {
+            "frio_s": 0.1341332300216891,
+            "quente_media_s": 0.000305667260698484,
+            "quente_min_s": 0.0002944860025309026,
+            "repeticoes_quentes": 19
+          }
+        }
+      },
+      "perfil": {
+        "chamadas": 86689073,
+        "cumulative": "         86689073 function calls (86332689 primitive calls) in 48.196 seconds\n\n   Ordered by: cumulative time\n   List reduced from 753 to 25 due to restriction <25>\n\n   ncalls  tottime  percall  cumtime  percall filename:lineno(function)\n        1    0.000    0.000   54.147   54.147 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/pfd/otimizacao.py:208(avaliar)\n        1    0.000    0.000   54.091   54.091 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/pfd/planta.py:63(dimensionar)\n       11    0.000    0.000   54.091    4.917 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/pfd/equipamento.py:185(executar)\n       11    0.000    0.000   53.523    4.866 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/pfd/equipamento.py:171(dimensionar)\n       11    0.000    0.000   53.517    4.865 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/core/motor.py:97(size_envelope)\n       11    0.066    0.006   53.517    4.865 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/core/motor.py:105(_size_envelope)\n   194261    0.353    0.000   52.652    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/trocador.py:184(_tubo)\n   194261    4.843    0.000   52.233    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/trocador.py:230(_tubo_bell_delaware)\n   912723    4.915    0.000   29.853    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/bell_delaware.py:198(bell_delaware)\n    95768    0.067    0.000   27.268    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/trocador.py:412(requirement)\n    74162    0.054    0.000   22.748    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/trocador.py:429(case_admissible)\n918734/564854    0.886    0.000   22.036    0.000 {built-in method builtins.all}\n    65714    0.048    0.000   20.581    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/core/motor.py:149(<genexpr>)\n   885326    1.277    0.000   12.926    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/trocador.py:172(_pelicula)\n   885326    3.722    0.000   11.649    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/pelicula.py:113(filme_tubo)\n      144    0.000    0.000    7.112    0.049 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/core/contrato.py:188(size_equipment)\n      144    0.001    0.000    7.112    0.049 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/core/motor.py:39(size_single)\n      144    0.012    0.000    7.097    0.049 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/core/motor.py:49(_size_single)\n    26456    0.096    0.000    6.973    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/core/motor.py:31(sweep_row)\n   912723    5.118    0.000    6.520    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/bell_delaware.py:72(colburn_ideal)\n   912723    2.260    0.000    3.836    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/bell_delaware.py:110(leakage_areas)\n    24305    0.111    0.000    2.880    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/trocador.py:418(derived)\n   885326    0.772    0.000    2.502    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/pelicula.py:135(com)\n   912723    0.730    0.000    2.342    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/bell_delaware.py:59(crossflow_area)\n 25413157    2.299    0.000    2.299    0.000 {built-in method math.isfinite}\n\n\n",
+        "total_s": 48.19582261400009,
+        "tottime": "         86689073 function calls (86332689 primitive calls) in 48.196 seconds\n\n   Ordered by: internal time\n   List reduced from 753 to 25 due to restriction <25>\n\n   ncalls  tottime  percall  cumtime  percall filename:lineno(function)\n   912723    5.118    0.000    6.520    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/bell_delaware.py:72(colburn_ideal)\n   912723    4.915    0.000   29.853    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/bell_delaware.py:198(bell_delaware)\n   194261    4.843    0.000   52.233    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/trocador.py:230(_tubo_bell_delaware)\n   885326    3.722    0.000   11.649    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/pelicula.py:113(filme_tubo)\n 25413157    2.299    0.000    2.299    0.000 {built-in method math.isfinite}\n   912723    2.260    0.000    3.836    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/bell_delaware.py:110(leakage_areas)\n  1106984    1.726    0.000    1.924    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/bell_delaware.py:50(layout_pitches)\n   912723    1.337    0.000    1.705    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/bell_delaware.py:139(j_bypass)\n   885326    1.277    0.000   12.926    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/trocador.py:172(_pelicula)\n   912723    1.262    0.000    2.161    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/bell_delaware.py:100(j_baffle_cut)\n  5476338    1.136    0.000    1.483    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/bell_delaware.py:217(<genexpr>)\n   912723    1.032    0.000    1.364    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/bell_delaware.py:128(j_leakage)\n   774497    0.935    0.000    1.290    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/pelicula.py:62(nusselt_hausen)\n918734/564854    0.886    0.000   22.036    0.000 {built-in method builtins.all}\n  2738169    0.878    0.000    1.511    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/bell_delaware.py:39(_clamp)\n   581152    0.863    0.000    1.091    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/trocador.py:79(nusselt_dittus_boelter)\n   912723    0.828    0.000    1.100    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/bell_delaware.py:91(h_ideal)\n   885326    0.772    0.000    2.502    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/pelicula.py:135(com)\n   912723    0.730    0.000    2.342    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/bell_delaware.py:59(crossflow_area)\n   912723    0.713    0.000    0.877    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/trocador.py:93(overall_u)\n   912723    0.674    0.000    0.674    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/bell_delaware.py:155(j_spacing)\n   194261    0.607    0.000    0.820    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/bell_delaware.py:43(baffle_clearance)\n  4272768    0.570    0.000    0.571    0.000 {built-in method builtins.max}\n  3656172    0.546    0.000    0.546    0.000 {built-in method math.acos}\n  1825446    0.522    0.000    0.522    0.000 /home/fabricio/Documentos/SENAI/TCC/Code_TCC/FPSO_Siz_V2/src/fpso_siz/sizing/bell_delaware.py:81(<genexpr>)\n\n\n"
+      },
+      "quando": "2026-09-27 12:40:39-0300",
+      "repeticoes": {
+        "individuos": 4,
+        "mini_populacao": {
+          "fpso_siz.balanco.modelo.resolver_caso": {
+            "chamadas": 64,
+            "distintas": 64,
+            "repetidas": 0,
+            "tempo_s": 0.08034732911619358
+          },
+          "fpso_siz.pfd._chedl.agua_saturada_iapws": {
+            "chamadas": 128,
+            "distintas": 2,
+            "repetidas": 126,
+            "tempo_s": 0.004794632957782596
+          },
+          "fpso_siz.pfd._chedl.estado_gas": {
+            "chamadas": 192,
+            "distintas": 89,
+            "repetidas": 103,
+            "tempo_s": 0.7786053840827662
+          },
+          "fpso_siz.pfd._chedl.salmoura_laliberte": {
+            "chamadas": 768,
+            "distintas": 316,
+            "repetidas": 452,
+            "tempo_s": 0.2602509672869928
+          },
+          "fpso_siz.pfd.equipamento.size_envelope": {
+            "chamadas": 44,
+            "distintas": 44,
+            "repetidas": 0,
+            "tempo_s": 84.99782881306601
+          },
+          "fpso_siz.pfd.fluidos.agua_saturada": {
+            "chamadas": 128,
+            "distintas": 25,
+            "repetidas": 103,
+            "tempo_s": 0.006274864019360393
+          },
+          "fpso_siz.pfd.fluidos.emulsao": {
+            "chamadas": 308,
+            "distintas": 303,
+            "repetidas": 5,
+            "tempo_s": 0.002077276643831283
+          },
+          "fpso_siz.pfd.fluidos.gas": {
+            "chamadas": 192,
+            "distintas": 174,
+            "repetidas": 18,
+            "tempo_s": 0.7834702399850357
+          },
+          "fpso_siz.pfd.fluidos.oleo": {
+            "chamadas": 832,
+            "distintas": 826,
+            "repetidas": 6,
+            "tempo_s": 0.013727076031500474
+          },
+          "fpso_siz.pfd.fluidos.oleo_vivo": {
+            "chamadas": 832,
+            "distintas": 826,
+            "repetidas": 6,
+            "tempo_s": 0.003204617998562753
+          },
+          "fpso_siz.pfd.fluidos.salmoura_fracao": {
+            "chamadas": 768,
+            "distintas": 741,
+            "repetidas": 27,
+            "tempo_s": 0.2714867105241865
+          }
+        },
+        "pontos": [
+          [
+            0.8,
+            1.0
+          ],
+          [
+            0.8200000000000001,
+            1.0
+          ],
+          [
+            0.8400000000000001,
+            1.0
+          ],
+          [
+            0.8600000000000001,
+            1.0
+          ]
+        ],
+        "uma_avaliacao": {
+          "fpso_siz.balanco.modelo.resolver_caso": {
+            "chamadas": 16,
+            "distintas": 16,
+            "repetidas": 0,
+            "tempo_s": 0.019581724045565352
+          },
+          "fpso_siz.pfd._chedl.agua_saturada_iapws": {
+            "chamadas": 32,
+            "distintas": 2,
+            "repetidas": 30,
+            "tempo_s": 0.0012054340622853488
+          },
+          "fpso_siz.pfd._chedl.estado_gas": {
+            "chamadas": 48,
+            "distintas": 38,
+            "repetidas": 10,
+            "tempo_s": 0.19662888086168095
+          },
+          "fpso_siz.pfd._chedl.salmoura_laliberte": {
+            "chamadas": 192,
+            "distintas": 111,
+            "repetidas": 81,
+            "tempo_s": 0.06439038878306746
+          },
+          "fpso_siz.pfd.equipamento.size_envelope": {
+            "chamadas": 11,
+            "distintas": 11,
+            "repetidas": 0,
+            "tempo_s": 21.149884122016374
+          },
+          "fpso_siz.pfd.fluidos.agua_saturada": {
+            "chamadas": 32,
+            "distintas": 6,
+            "repetidas": 26,
+            "tempo_s": 0.0015613800205755979
+          },
+          "fpso_siz.pfd.fluidos.emulsao": {
+            "chamadas": 77,
+            "distintas": 77,
+            "repetidas": 0,
+            "tempo_s": 0.0005100720736663789
+          },
+          "fpso_siz.pfd.fluidos.gas": {
+            "chamadas": 48,
+            "distintas": 44,
+            "repetidas": 4,
+            "tempo_s": 0.19784078598604538
+          },
+          "fpso_siz.pfd.fluidos.oleo": {
+            "chamadas": 208,
+            "distintas": 208,
+            "repetidas": 0,
+            "tempo_s": 0.003404974180739373
+          },
+          "fpso_siz.pfd.fluidos.oleo_vivo": {
+            "chamadas": 208,
+            "distintas": 208,
+            "repetidas": 0,
+            "tempo_s": 0.0007959411886986345
+          },
+          "fpso_siz.pfd.fluidos.salmoura_fracao": {
+            "chamadas": 192,
+            "distintas": 186,
+            "repetidas": 6,
+            "tempo_s": 0.06717000380740501
+          }
+        }
+      }
+    },
+    "c_geometria_smt": {
+      "etapas": [
+        "geometria",
+        "workers"
+      ],
+      "quando": "2026-09-27 13:43:25-0300",
+      "rotulo": "c_geometria_smt",
+      "so_geometria": {
+        "individuos": 4,
+        "pontos": [
+          [
+            0.85,
+            1.0,
+            1.0,
+            1.0
+          ],
+          [
+            0.85,
+            1.0,
+            2.0,
+            1.0
+          ],
+          [
+            0.85,
+            1.0,
+            1.0,
+            1.0
+          ],
+          [
+            0.85,
+            1.0,
+            2.0,
+            1.0
+          ]
+        ],
+        "por_tag": {
+          "B-001": {
+            "chamadas": 4,
+            "distintas": 1,
+            "repetidas": 3,
+            "tempo_s": 0.05459829303435981
+          },
+          "B-002": {
+            "chamadas": 4,
+            "distintas": 1,
+            "repetidas": 3,
+            "tempo_s": 0.037613296968629584
+          },
+          "B-003": {
+            "chamadas": 4,
+            "distintas": 1,
+            "repetidas": 3,
+            "tempo_s": 0.037739148014225066
+          },
+          "P-001": {
+            "chamadas": 4,
+            "distintas": 1,
+            "repetidas": 3,
+            "tempo_s": 0.0008988579793367535
+          },
+          "P-002": {
+            "chamadas": 4,
+            "distintas": 2,
+            "repetidas": 2,
+            "tempo_s": 3.4994589959969744
+          },
+          "P-003": {
+            "chamadas": 4,
+            "distintas": 1,
+            "repetidas": 3,
+            "tempo_s": 80.79292658501072
+          },
+          "SG-001": {
+            "chamadas": 4,
+            "distintas": 1,
+            "repetidas": 3,
+            "tempo_s": 0.037879559997236356
+          },
+          "TO-001": {
+            "chamadas": 4,
+            "distintas": 1,
+            "repetidas": 3,
+            "tempo_s": 0.026948578015435487
+          },
+          "TO-002": {
+            "chamadas": 4,
+            "distintas": 1,
+            "repetidas": 3,
+            "tempo_s": 0.026208389026578516
+          },
+          "V-001": {
+            "chamadas": 4,
+            "distintas": 1,
+            "repetidas": 3,
+            "tempo_s": 0.0404892890364863
+          },
+          "V-002": {
+            "chamadas": 4,
+            "distintas": 1,
+            "repetidas": 3,
+            "tempo_s": 0.036106461979215965
+          }
+        },
+        "tag_da_variavel": "P-002",
+        "variavel_variada": "passes_p002"
+      },
+      "workers": {
+        "aquecimento_pai_s": 22.88230774900876,
+        "linhas": [
+          {
+            "avaliacoes": 8,
+            "eficiencia": null,
+            "pico_memoria_gib": 1.4303932189941406,
+            "speedup": null,
+            "tempo_s": 49.11865651898552,
+            "vazao_aval_por_s": 0.16287090419315137,
+            "workers": 6
+          },
+          {
+            "avaliacoes": 8,
+            "eficiencia": null,
+            "pico_memoria_gib": 1.6190519332885742,
+            "speedup": null,
+            "tempo_s": 50.38399540600949,
+            "vazao_aval_por_s": 0.15878057973635432,
+            "workers": 7
+          },
+          {
+            "avaliacoes": 8,
+            "eficiencia": null,
+            "pico_memoria_gib": 1.8152408599853516,
+            "speedup": null,
+            "tempo_s": 39.87608451899723,
+            "vazao_aval_por_s": 0.2006215027503201,
+            "workers": 8
+          }
+        ],
+        "lote": 8,
+        "margem_ram_gib": 0.8,
+        "melhor_vazao": 0.2006215027503201,
+        "melhor_workers": 8,
+        "memoria_base_gib": 0.23242950439453125,
+        "memoria_por_worker_gib": 0.1996606190999349,
+        "metrica_memoria": "pss",
+        "sub": "sg_001",
+        "tem_base_w1": false,
+        "visiveis": 12
+      }
+    },
+    "d_workers_lote24": {
+      "etapas": [
+        "workers"
+      ],
+      "quando": "2026-09-27 13:48:46-0300",
+      "rotulo": "d_workers_lote24",
+      "workers": {
+        "aquecimento_pai_s": 22.82559971101,
+        "linhas": [
+          {
+            "avaliacoes": 24,
+            "eficiencia": 1.0,
+            "pico_memoria_gib": 0.23999404907226562,
+            "speedup": 1.0,
+            "tempo_s": 526.8877953129995,
+            "vazao_aval_por_s": 0.045550495216429746,
+            "workers": 1
+          },
+          {
+            "avaliacoes": 24,
+            "eficiencia": 0.9551514743027372,
+            "pico_memoria_gib": 0.6868467330932617,
+            "speedup": 1.9103029486054743,
+            "tempo_s": 275.8137371340126,
+            "vazao_aval_por_s": 0.08701524532238529,
+            "workers": 2
+          },
+          {
+            "avaliacoes": 24,
+            "eficiencia": 0.9194147270920614,
+            "pico_memoria_gib": 0.883387565612793,
+            "speedup": 2.758244181276184,
+            "tempo_s": 191.02289742499124,
+            "vazao_aval_por_s": 0.12563938838496602,
+            "workers": 3
+          },
+          {
+            "avaliacoes": 24,
+            "eficiencia": 0.8753367562829429,
+            "pico_memoria_gib": 1.096536636352539,
+            "speedup": 3.5013470251317718,
+            "tempo_s": 150.48145514601492,
+            "vazao_aval_por_s": 0.1594880909193253,
+            "workers": 4
+          },
+          {
+            "avaliacoes": 24,
+            "eficiencia": 0.8060323742044674,
+            "pico_memoria_gib": 1.5063905715942383,
+            "speedup": 4.836194245226804,
+            "tempo_s": 108.94678100099554,
+            "vazao_aval_por_s": 0.22029104283292858,
+            "workers": 6
+          },
+          {
+            "avaliacoes": 24,
+            "eficiencia": null,
+            "nao_medido": "projeção de 1,83 GiB acima do orçamento de 1,65 GiB (2,45 GiB disponíveis menos a margem de 0,80 GiB)",
+            "pico_memoria_gib": null,
+            "speedup": null,
+            "tempo_s": null,
+            "vazao_aval_por_s": null,
+            "workers": 8
+          },
+          {
+            "avaliacoes": 24,
+            "eficiencia": null,
+            "nao_medido": "projeção de 2,75 GiB acima do orçamento de 1,65 GiB (2,45 GiB disponíveis menos a margem de 0,80 GiB)",
+            "pico_memoria_gib": null,
+            "speedup": null,
+            "tempo_s": null,
+            "vazao_aval_por_s": null,
+            "workers": 12
+          }
+        ],
+        "lote": 24,
+        "margem_ram_gib": 0.8,
+        "melhor_vazao": 0.22029104283292858,
+        "melhor_workers": 6,
+        "memoria_base_gib": 0.22906970977783203,
+        "memoria_por_worker_gib": 0.22888851165771484,
+        "metrica_memoria": "pss",
+        "sub": "sg_001",
+        "tem_base_w1": true,
+        "visiveis": 12
+      }
+    },
+    "e_portag": {
+      "etapas": [
+        "portag"
+      ],
+      "por_tag_entre_individuos": {
+        "individuos": 4,
+        "pontos": [
+          [
+            0.8,
+            1.0
+          ],
+          [
+            0.8333333333333334,
+            1.0
+          ],
+          [
+            0.8666666666666667,
+            1.0
+          ],
+          [
+            0.9,
+            1.0
+          ]
+        ],
+        "por_tag": {
+          "B-001": {
+            "chamadas": 4,
+            "distintas": 4,
+            "repetidas": 0,
+            "tempo_s": 0.05847208801424131,
+            "usado_pelo_recorte": true
+          },
+          "B-002": {
+            "chamadas": 4,
+            "distintas": 4,
+            "repetidas": 0,
+            "tempo_s": 0.04045818294980563,
+            "usado_pelo_recorte": true
+          },
+          "B-003": {
+            "chamadas": 4,
+            "distintas": 4,
+            "repetidas": 0,
+            "tempo_s": 0.03825017003691755,
+            "usado_pelo_recorte": true
+          },
+          "P-001": {
+            "chamadas": 4,
+            "distintas": 4,
+            "repetidas": 0,
+            "tempo_s": 0.0009558009915053844,
+            "usado_pelo_recorte": false
+          },
+          "P-002": {
+            "chamadas": 4,
+            "distintas": 4,
+            "repetidas": 0,
+            "tempo_s": 3.729852499993285,
+            "usado_pelo_recorte": false
+          },
+          "P-003": {
+            "chamadas": 4,
+            "distintas": 4,
+            "repetidas": 0,
+            "tempo_s": 84.10448318204726,
+            "usado_pelo_recorte": false
+          },
+          "SG-001": {
+            "chamadas": 4,
+            "distintas": 4,
+            "repetidas": 0,
+            "tempo_s": 0.039107960008550435,
+            "usado_pelo_recorte": true
+          },
+          "TO-001": {
+            "chamadas": 4,
+            "distintas": 4,
+            "repetidas": 0,
+            "tempo_s": 0.028251468000235036,
+            "usado_pelo_recorte": true
+          },
+          "TO-002": {
+            "chamadas": 4,
+            "distintas": 4,
+            "repetidas": 0,
+            "tempo_s": 0.02883100201142952,
+            "usado_pelo_recorte": true
+          },
+          "V-001": {
+            "chamadas": 4,
+            "distintas": 4,
+            "repetidas": 0,
+            "tempo_s": 0.04423959300038405,
+            "usado_pelo_recorte": true
+          },
+          "V-002": {
+            "chamadas": 4,
+            "distintas": 4,
+            "repetidas": 0,
+            "tempo_s": 0.0827701169764623,
+            "usado_pelo_recorte": true
+          }
+        },
+        "sub": "sg_001"
+      },
+      "quando": "2026-09-27 14:11:37-0300",
+      "rotulo": "e_portag"
+    }
+  }
+}
