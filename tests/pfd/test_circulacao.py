@@ -173,11 +173,14 @@ def test_variante_nao_altera_o_calculo_padrao(planta_propostas, estudos):
     assert _mesmo_numero(antes.resultado.x, depois.resultado.x)
 
 
-def test_p002_viavel_com_circulacao_fixa_e_inviavel_sem_ela(planta_propostas, estudos):
-    """O que o estudo mostra: mantida a circulação, o turndown do P-002 deixa de sair da faixa de
-    Dittus-Boelter e o TAG passa a ter solução — com a mesma física e os mesmos limites."""
+def test_p002_ja_e_viavel_sem_circulacao_fixa(planta_propostas, estudos):
+    """A CIRCULAÇÃO FIXA NÃO É MAIS NECESSÁRIA. Enquanto o programa só tinha Dittus-Boelter, manter
+    a circulação era o único jeito de o turndown do P-002 ficar dentro da faixa da correlação.
+    Implementados os três regimes (Branan pp. 40-41), o TAG é viável com a circulação proporcional
+    à carga, que é o cálculo padrão; a circulação fixa continua viável e continua ESTUDO, agora uma
+    escolha de operação e não um remédio de viabilidade."""
     rt, _ = estudos["P-002"]
-    assert _base(planta_propostas, "P-002").status == servico.INVIAVEL
+    assert _base(planta_propostas, "P-002").status == servico.DIMENSIONADO
     assert rt.status == servico.DIMENSIONADO and rt.resultado.feasible
 
 

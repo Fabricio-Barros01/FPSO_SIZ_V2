@@ -21,13 +21,13 @@
   pares_veda                 1  –        default
   folga_furo_chicana       0,8  mm       default
   faixas_divisoras           0  –        default
-  d_externo              19,05  mm       recomendada
+  d_externo               12,7  mm       recomendada
   espessura               2,11  mm       default
   k_parede                   —  W/m·K    lacuna
   rf_tubo                    —  m²·K/W   lacuna
   rf_casco                   —  m²·K/W   lacuna
   razao_passo             1,25  –        recomendada
-  passes_tubo                2  –        recomendada
+  passes_tubo                1  –        recomendada
   n_min                      —  –        lacuna
   n_max                      —  –        lacuna
   n_step                     5  –        default
@@ -36,8 +36,10 @@
   d_casco_max             2500  mm       default
   l_tubo_max                 6  m        default
   banda_caso_projeto         1  –        recomendada
-  cascos_serie               2  –        recomendada
+  cascos_serie               1  –        default
   cascos_paralelo            1  –        default
+  pelicula_baixo_re          1  –        recomendada
+  razao_visc_parede          1  –        default
     m_tubo · Entrada: Vazão mássica no tubo
     m_tubo · Fonte: t_agua_in, t_agua_out
     cp_tubo · Entrada: Calor específico no tubo
@@ -77,16 +79,20 @@
     chicana / diâmetro do casco
     espacamento_chicana · Revisão: revisão pendente
     espacamento_chicana · Fonte: melhor candidato da
-    reotimização discreta F10x.7
+    reotimização discreta reexecutada com a película do
+    lado tubo nos três regimes
     (tools/reotimizar_trocadores.py;
-    docs/validacao/18-trocadores.md), dentro da faixa da
+    docs/validacao/18-trocadores.md e
+    24-pelicula-baixo-reynolds.md), dentro da faixa da
     fonte do descritor (config/pfd/reotimizacao.toml)
     layout_tubos · Entrada: Arranjo do feixe
     layout_tubos · Revisão: revisão pendente
     layout_tubos · Fonte: melhor candidato da
-    reotimização discreta F10x.7
+    reotimização discreta reexecutada com a película do
+    lado tubo nos três regimes
     (tools/reotimizar_trocadores.py;
-    docs/validacao/18-trocadores.md), dentro da faixa da
+    docs/validacao/18-trocadores.md e
+    24-pelicula-baixo-reynolds.md), dentro da faixa da
     fonte do descritor (config/pfd/reotimizacao.toml)
     pares_veda · Entrada: Pares de faixas de vedação
     pares_veda · Revisão: revisão pendente
@@ -105,8 +111,10 @@
     d_externo · Entrada: Diâmetro externo do tubo
     d_externo · Revisão: revisão pendente
     d_externo · Fonte: melhor candidato da reotimização
-    discreta F10x.7 (tools/reotimizar_trocadores.py;
-    docs/validacao/18-trocadores.md), dentro da faixa da
+    discreta reexecutada com a película do lado tubo nos
+    três regimes (tools/reotimizar_trocadores.py;
+    docs/validacao/18-trocadores.md e
+    24-pelicula-baixo-reynolds.md), dentro da faixa da
     fonte do descritor (config/pfd/reotimizacao.toml)
     espessura · Entrada: Espessura da parede do tubo
     espessura · Revisão: revisão pendente
@@ -119,16 +127,20 @@
     tubo
     razao_passo · Revisão: revisão pendente
     razao_passo · Fonte: melhor candidato da
-    reotimização discreta F10x.7
+    reotimização discreta reexecutada com a película do
+    lado tubo nos três regimes
     (tools/reotimizar_trocadores.py;
-    docs/validacao/18-trocadores.md), dentro da faixa da
+    docs/validacao/18-trocadores.md e
+    24-pelicula-baixo-reynolds.md), dentro da faixa da
     fonte do descritor (config/pfd/reotimizacao.toml)
     passes_tubo · Entrada: Passes no lado tubo
     passes_tubo · Revisão: revisão pendente
     passes_tubo · Fonte: melhor candidato da
-    reotimização discreta F10x.7
+    reotimização discreta reexecutada com a película do
+    lado tubo nos três regimes
     (tools/reotimizar_trocadores.py;
-    docs/validacao/18-trocadores.md), dentro da faixa da
+    docs/validacao/18-trocadores.md e
+    24-pelicula-baixo-reynolds.md), dentro da faixa da
     fonte do descritor (config/pfd/reotimizacao.toml)
     n_min · Entrada: Tubos por passe — mínimo
     n_min · Fonte: t_agua_in, t_agua_out
@@ -165,16 +177,32 @@
     faixa em cada caso
     cascos_serie · Entrada: Cascos em série
     cascos_serie · Revisão: revisão pendente
-    cascos_serie · Fonte: cascos em série para o
-    comprimento de tubo ficar dentro de 6 m (l_tubo_max
-    mantido); melhor candidato da reotimização discreta
-    F10x.7 (tools/reotimizar_trocadores.py;
-    docs/validacao/18-trocadores.md), dentro da faixa da
-    fonte do descritor (config/pfd/reotimizacao.toml)
+    cascos_serie · Fonte: um casco (regra do Julia);
+    cascos em série só pela reotimização do TAG (F10x.7)
     cascos_paralelo · Entrada: Cascos em paralelo
     cascos_paralelo · Revisão: revisão pendente
     cascos_paralelo · Fonte: um casco (regra do Julia);
     cascos em paralelo só pela reotimização do TAG
     (F10x.7)
+    pelicula_baixo_re · Entrada: Película do lado tubo
+    nos três regimes
+    pelicula_baixo_re · Revisão: revisão pendente
+    pelicula_baixo_re · Fonte: Branan (2012), cap. 2,
+    pp. 40-41: a película do lado tubo tem correlação
+    declarada nos três regimes — Hausen (eq. 2-10) em Re
+    ≤ 2000, interpolação (eq. 2-12) em 2000 < Re < 10⁴ e
+    Dittus-Boelter (Saari eq. 6.23) em Re ≥ 10⁴. Este
+    TAG opera em baixa carga fora da faixa turbulenta, e
+    sem os três regimes os casos de turndown eram
+    RECUSADOS por falta de correlação, não por limite
+    físico
+    (docs/validacao/24-pelicula-baixo-reynolds.md)
+    razao_visc_parede · Entrada: Razão µ_médio/µ_parede
+    no lado tubo
+    razao_visc_parede · Revisão: revisão pendente
+    razao_visc_parede · Fonte: fator (µ/µ_parede)^0,14
+    das eq. 2-10/2-11 do Branan omitido (razão 1,0):
+    hipótese declarada, conservadora ao aquecer líquido;
+    a temperatura de parede da eq. 2-9 vai ao rastro
   ! C-07: viscosidade do óleo limitado a 70 °C (tabela do
   BOT; P-40)

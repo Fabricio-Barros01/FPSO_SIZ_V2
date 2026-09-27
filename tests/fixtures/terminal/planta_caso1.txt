@@ -95,7 +95,7 @@
     revisão pendente: Espaçamento de chicana / diâmetro do casco = 0,4 – (default); casos 1–9,
     11
     revisão pendente: Arranjo do feixe = 30 ° (default); casos 1–9, 11
-    … +15
+    … +17
     Casos inativos: 10, 12–16
     7 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
 
@@ -111,7 +111,7 @@
     revisão pendente: Espaçamento de chicana / diâmetro do casco = 0,2 – (recomendada); casos
     1–9, 11
     revisão pendente: Arranjo do feixe = 90 ° (recomendada); casos 1–9, 11
-    … +15
+    … +17
     Casos inativos: 10, 12–16
     1 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
 
@@ -127,8 +127,8 @@
     revisão pendente: Corte da chicana / diâmetro do casco = 0,25 – (default); casos 1–16
     revisão pendente: Espaçamento de chicana / diâmetro do casco = 0,2 – (recomendada); casos
     1–16
-    revisão pendente: Arranjo do feixe = 90 ° (recomendada); casos 1–16
-    … +15
+    revisão pendente: Arranjo do feixe = 30 ° (recomendada); casos 1–16
+    … +17
     4 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
 
   SG-001 — Separador trifásico de água livre (FWKO)
