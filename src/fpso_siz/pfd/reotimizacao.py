@@ -63,11 +63,17 @@ def grade(ident, sobrescrever=None):
 
 
 def _parametros(rt):
+    """(método, restrições por caso, parâmetros por caso, parâmetros do envelope). Caso que não
+    fecha as restrições entra como None e os parâmetros por caso não são montados: os hooks do V2
+    (P-45, bloqueios, operação) leem as restrições de todos os casos, como o memorial já faz em
+    `melhor_feixe`."""
     m = rt.entradas.metodo
     conss = [c for _, c in mc.restricoes(rt)]
     params = [with_defaults(m.parameters(), vals) for _, vals in rt.entradas.case_set().expand()]
     ok, p_env = m.envelope_params(params)
-    return m, conss, (m.envelope_case_params(conss, p_env) if ok else None), p_env if ok else None
+    if not ok or any(c is None for c in conss):
+        return m, conss, None, p_env if ok else None
+    return m, conss, m.envelope_case_params(conss, p_env), p_env
 
 
 def avaliar(ctx, ident, valores, variante=None):
@@ -82,7 +88,10 @@ def avaliar(ctx, ident, valores, variante=None):
     if r.feasible:
         return Candidato(valores, True, r.derivados_v2.get("area_total", r.derivados.get("area", math.nan)), r.x, r.y,
                          (), rt)
-    _, _, _, p_env = _parametros(rt)
+    _, conss, pcs, p_env = _parametros(rt)
+    if pcs is None:
+        # algum caso não chega ao lado tubo (arranjo/F, balanço): não há feixe a diagnosticar
+        return Candidato(valores, False, math.inf, math.nan, math.nan, (("preparacao", -1),), rt)
     melhor = mc.melhor_feixe(rt, p_env, valores.get("cascos_serie", 1.0) * valores.get("cascos_paralelo", 1.0))
     if melhor is None:
         return Candidato(valores, False, math.inf, math.nan, math.nan, (("preparacao", -1),), rt)

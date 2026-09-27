@@ -1,0 +1,73 @@
+# Coeficiente de película do LADO TUBO nos três regimes de escoamento (extensão do V2; o Julia
+# só tem o regime turbulento). Fonte primária: Branan, *Rules of Thumb for Chemical Engineers*,
+# cap. 2, pp. 40-41 — o procedimento completo, com as equações, as variáveis, as propriedades, as
+# unidades, as hipóteses e o domínio de cada correlação:
+#
+#   eq. 2-9  T_parede = t + (U_i/h_i)·(T − t)      (iterativa; U referido à área INTERNA)
+#   eq. 2-10 Hausen, laminar (N_Re ≤ 2000)
+#   eq. 2-11 Sieder-Tate, turbulento (N_Re ≥ 10⁴)
+#   eq. 2-12 transição (2000 < N_Re < 10⁴): interpolação linear entre as duas
+#
+# O ramo TURBULENTO deste programa continua sendo Dittus-Boelter na forma de Saari (eq. 6.23,
+# equipment/exchanger/saari_lmtd.toml), que é o que está validado contra o Julia e contra o
+# caso-ouro de Saari. A 2-11 NÃO substitui a 6.23: ela é a ponta turbulenta que a própria 2-12
+# usa, e aqui esse papel é da 6.23 — com isso a interpolação encosta EXATAMENTE no ramo
+# turbulento já validado em Re = 10⁴, e o comportamento turbulento não muda em nada.
+
+[hausen]
+# eq. 2-10: Nu = 3,66 + 0,0668·Gz / (1 + coef_denominador·Gz^(2/3)),  Gz = N_Re·N_Pr·(d_i/L)
+nu_desenvolvido = 3.66
+coef_entrada = 0.0668
+expoente_denominador = 0.6666666666666666
+re_max = 2000.0
+# ERRATA DA FONTE, arbitrada por segunda referência. O Branan IMPRIME 0,40 no denominador; a
+# forma clássica de Hausen (e a que fecha com a outra via do acervo) tem 0,04. A arbitragem é
+# quantitativa e está no teste `test_errata_do_denominador_de_hausen`:
+#   • com 0,04 o termo de entrada tende a (0,0668/0,04)·Gz^(1/3) = 1,670·Gz^(1/3);
+#   • com 0,40 tende a 0,167·Gz^(1/3);
+#   • Saari eq. 6.31 (Sieder-Tate laminar, via Incropera 2002 p. 490) dá 1,860·Gz^(1/3).
+# Ou seja: 0,04 concorda com a segunda fonte em 11 %, e 0,40 fica 11,1 vezes abaixo dela. Adota-se
+# 0,04 e registra-se o valor impresso, para quem conferir contra a página.
+coef_denominador = 0.04
+coef_denominador_impresso = 0.40
+# O Branan declara para a 2-10 apenas o limite de Reynolds e que as propriedades são avaliadas na
+# temperatura MÉDIA do fluido; não declara faixa de Prandtl nem de Gz. Isso fica registrado: o que
+# a fonte não limita, o programa não inventa limite — e o que ela não cobre continua não coberto.
+faixa_prandtl_declarada = false
+fonte = "Branan (2012), cap. 2, p. 40, eq. 2-10 (Hausen); coeficiente do denominador arbitrado contra Saari eq. 6.31 (Incropera 2002, p. 490) — ver docs/validacao/24-pelicula-baixo-reynolds.md"
+
+[sieder_tate_laminar]
+# Saari eq. 6.31, a SEGUNDA via do acervo, usada como verificação cruzada (metodologia diferente:
+# é correlação de comprimento de entrada com T de superfície constante, não a forma combinada de
+# Hausen). Não entra no dimensionamento; existe para o teste de arbitragem.
+coeficiente = 1.86
+expoente = 0.3333333333333333
+fonte = "Saari, Heat Exchanger Dimensioning, §6.3.3, p. 71, eq. 6.31 (atribuída a Incropera 2002, p. 490). ERRATA da fonte: o texto define Gz = (x/d_h)·Re·Pr, que cresce com x e faria Nu crescer ao longo do tubo; a forma consistente (e a usada aqui) é Gz = Re·Pr·(d/L)."
+
+[transicao]
+# eq. 2-12: h_T = h_lam + (h_turb − h_lam)·(N_Re − 2000)/8000, com as DUAS correlações avaliadas
+# no MESMO Reynolds do caso (é o argumento de limitação da própria fonte: o coeficiente de
+# transição fica entre o laminar e o turbulento).
+re_min = 2000.0
+re_max = 10000.0
+divisor = 8000.0
+politica = "interpolacao_linear_entre_as_duas_correlacoes"
+# A fonte é explícita em dois pontos que o programa precisa carregar adiante: a 2-12 é "a
+# plausible equation", e o item 4 da p. 41 recomenda EVITAR a região de transição (coeficiente
+# imprevisível, possibilidade de oscilação de escoamento). Por isso um caso resolvido na transição
+# é marcado como tal no resultado e no relatório: é cálculo com aviso, não projeto fechado.
+recomendacao_da_fonte = "evitar a região de transição; o coeficiente é imprevisível e pode haver oscilação de escoamento (Branan p. 41, item 4)"
+fonte = "Branan (2012), cap. 2, p. 41, eq. 2-12"
+
+[parede]
+# eq. 2-10 e 2-11 trazem o fator (µ/µ_parede)^0,14, com µ_parede avaliada na temperatura de parede
+# da eq. 2-9. A temperatura de parede É calculada e vai para o rastro; a RAZÃO de viscosidades é
+# entrada declarada do método (`razao_visc_parede`), porque avaliá-la exigiria a curva µ(T) do
+# fluido, que é da camada de propriedades e não do método.
+expoente = 0.14
+# Com a razão em 1,0 o fator é omitido — e isso é hipótese declarada, não silêncio: o descritor
+# entra como "escolha" (revisão pendente no TAG), a temperatura de parede aparece no rastro, e o
+# sentido do erro é conhecido: aquecendo um líquido, µ_parede < µ_médio, o fator seria > 1, e o
+# h_i calculado é CONSERVADOR (menor que o real).
+razao_padrao = 1.0
+fonte = "Branan (2012), cap. 2, pp. 40-41, eq. 2-9/2-10/2-11; mesma hipótese que Bell-Delaware já declara no lado casco (Branan eq. 2-18)"

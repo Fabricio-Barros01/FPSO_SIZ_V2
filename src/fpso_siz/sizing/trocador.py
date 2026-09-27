@@ -19,6 +19,7 @@ from fpso_siz.core.unidades import cp_para_pas, m_para_mm, mm_para_m
 from fpso_siz.sizing.base import MetodoTOML, driver_case
 from fpso_siz.sizing.bell_delaware import ShellGeometry, baffle_clearance, bell_delaware, layout_pitches
 from fpso_siz.sizing.hidraulica import reynolds_pipe
+from fpso_siz.sizing.pelicula import depende_do_comprimento, filme_tubo, temperatura_parede
 
 EXCHANGER_KEYS = ("m_tubo", "cp_tubo", "t_tubo_in", "t_tubo_out", "rho_tubo", "mu_tubo", "k_tubo",
                   "m_casco", "cp_casco", "t_casco_in", "mu_casco", "k_casco")
@@ -153,12 +154,31 @@ class ExchangerConstraints:
     k: dict
     n_serie: int = 1       # extensões do V2 (F10x.7): cascos iguais em série e em paralelo
     n_paralelo: int = 1
+    # extensão do V2: película do lado tubo nos três regimes (Branan pp. 40-41). Com
+    # `baixo_re = False` o cálculo é o do Julia — só Dittus-Boelter, e fora da faixa o caso é
+    # recusado. `t_tubo_med`/`t_casco_med` servem à temperatura de parede da eq. 2-9.
+    baixo_re: bool = False
+    razao_visc: float = 1.0
+    t_tubo_med: float = math.nan
+    t_casco_med: float = math.nan
 
 
 VAZIO = dict(v=math.inf, re=math.nan, h_i=math.nan, h_o=math.nan, u=math.nan, area=math.inf, l=math.inf, n_total=0.0,
              d_casco=math.inf, d_shell=math.inf, re_casco=math.nan, jc=math.nan, jl=math.nan, jb=math.nan,
              js=math.nan, jr=math.nan, j_produto=math.nan, h_ideal=math.nan, n_chicanas=math.nan, nu_valido=False,
-             ok=False)
+             ok=False, regime="", correlacao="", motivo="", peso_transicao=math.nan, t_parede=math.nan)
+
+
+def _pelicula(c, l_caminho, re):
+    """(h_i, válido?, diagnóstico) do lado tubo. Sem a extensão, é o Dittus-Boelter do Julia; com
+    ela, o regime que o Reynolds indicar (laminar/transição/turbulento), e o comprimento do caminho
+    entra na correlação laminar — por isso ele é argumento, como o próprio Reynolds do feixe (a
+    restrição é congelada e compartilhada por toda a varredura: nada por feixe entra nela)."""
+    if not c.baixo_re:
+        nu, valido = nusselt_dittus_boelter(re, c.pr_tubo, c.aquecendo, c.k)
+        return nu * c.k_tubo / c.d_i, valido, {}
+    f = filme_tubo(re, c.pr_tubo, c.k_tubo, c.d_i, l_caminho, c.aquecendo, c.k, c.razao_visc)
+    return f.h, f.valido, dict(regime=f.regime, correlacao=f.correlacao, motivo=f.motivo, peso_transicao=f.peso)
 
 
 def _tubo(c, n):
@@ -168,20 +188,49 @@ def _tubo(c, n):
     n_total = n * c.passes
     v = c.m_tubo / (c.rho_tubo * n * c.area_tubo)
     re = reynolds_pipe(c.rho_tubo, v, c.d_i, c.mu_tubo)
-    nu, nu_valido = nusselt_dittus_boelter(re, c.pr_tubo, c.aquecendo, c.k)
-    h_i = nu * c.k_tubo / c.d_i
     d_feixe = math.sqrt(4 * n_total * c.area_celula * (c.passo_m * c.passo_m) / math.pi)
     if not c.bd_ativo:
-        u = overall_u(h_i, c.h_casco, c.rf_tubo, c.rf_casco, c.d_i, c.d_o, c.k_parede)
-        area = c.ua_exigido / u
-        l = area / (n_total * math.pi * c.d_o)
+        # sem Bell-Delaware h_o é dado; com a película laminar, h_i depende de L e L de h_i:
+        # ponto fixo com a mesma tolerância do laço de comprimento
+        padrao = _t()["laco_comprimento"]
+        tol, maxit = float(padrao["tolerancia"]), int(padrao["max_iteracoes"])
+        l = math.inf
+        por_iteracao = c.baixo_re and depende_do_comprimento(re, c.k)
+        h_i, nu_valido, diag = _pelicula(c, l, re)
+        u = area = math.nan
+        for it in range(1, (maxit if por_iteracao else 1) + 1):
+            if por_iteracao:
+                h_i, nu_valido, diag = _pelicula(c, _caminho(c, l), re)
+            u = overall_u(h_i, c.h_casco, c.rf_tubo, c.rf_casco, c.d_i, c.d_o, c.k_parede)
+            if not (math.isfinite(u) and u > 0):
+                break
+            area = c.ua_exigido / u
+            novo = area / (n_total * math.pi * c.d_o)
+            if math.isfinite(l) and abs(novo - l) <= tol * max(1.0, abs(novo)):
+                l = novo
+                break
+            l = novo
         return dict(VAZIO, v=v, re=re, h_i=h_i, h_o=c.h_casco, u=u, area=area, l=l, n_total=float(n_total),
-                    d_casco=d_feixe, d_shell=d_feixe + 2 * c.d_o, nu_valido=nu_valido, ok=math.isfinite(u) and u > 0)
-    return _tubo_bell_delaware(c, n_total, v, re, h_i, d_feixe, nu_valido)
+                    d_casco=d_feixe, d_shell=d_feixe + 2 * c.d_o, nu_valido=nu_valido,
+                    ok=math.isfinite(u) and u > 0, t_parede=_t_parede(c, u, h_i), **diag)
+    return _tubo_bell_delaware(c, n_total, v, re, d_feixe)
 
 
-def _tubo_bell_delaware(c, n_total, v, re, h_i, d_feixe, nu_valido):
-    """Bell-Delaware depende de L (nº de chicanas) e L depende de h_o: ponto fixo em L."""
+def _caminho(c, l):
+    """Comprimento do caminho de um tubo: passes × comprimento por passe (Branan p. 40). Enquanto
+    L não é conhecido, o caminho é infinito, que dá o limite plenamente desenvolvido da 2-10 — o
+    piso da correlação, e o ponto de partida do laço."""
+    return c.passes * l if math.isfinite(l) and l > 0 else math.inf
+
+
+def _t_parede(c, u, h_i):
+    return temperatura_parede(c.t_tubo_med, c.t_casco_med, u, h_i, c.d_i, c.d_o) if c.baixo_re else math.nan
+
+
+def _tubo_bell_delaware(c, n_total, v, re, d_feixe):
+    """Bell-Delaware depende de L (nº de chicanas) e L depende de h_o: ponto fixo em L. Com a
+    película de baixo Reynolds ligada, h_i também depende de L (correlação laminar de Hausen) e
+    entra no mesmo ponto fixo — sem a extensão, h_i é constante e o laço é o do Julia."""
     kbd = c.kbd
     padrao = _t()["laco_comprimento"]
     tol = float(kbd.get("tolerancia", padrao["tolerancia"]))
@@ -197,16 +246,22 @@ def _tubo_bell_delaware(c, n_total, v, re, h_i, d_feixe, nu_valido):
     fat = None
     n_b = 1.0
     ok = False
+    # no turbulento h_i não depende de L: calcula-se uma vez, como antes da extensão. No laminar e
+    # na transição (Hausen, Gz = Re·Pr·d/L) ele depende, e entra no ponto fixo.
+    por_iteracao = c.baixo_re and depende_do_comprimento(re, c.k)
+    h_i, nu_valido, diag = _pelicula(c, _caminho(c, l), re)
     for it in range(1, maxit + 1):
+        if por_iteracao:
+            h_i, nu_valido, diag = _pelicula(c, _caminho(c, l), re)
         n_b = max(l / l_bc - 1, 1.0) if (math.isfinite(l) and l > 0 and l_bc > 0) else 1.0
         h_o, fat, bd_ok = bell_delaware(geo, c.m_casco, c.cp_casco, c.mu_casco, c.k_casco, n_b, l_bc, l_bc, kbd)
         if not bd_ok:
             return dict(VAZIO, v=v, re=re, h_i=h_i, n_total=float(n_total), d_casco=d_feixe, d_shell=d_s,
-                        re_casco=fat.re, h_ideal=fat.h_ideal, nu_valido=nu_valido)
+                        re_casco=fat.re, h_ideal=fat.h_ideal, nu_valido=nu_valido, **diag)
         u = overall_u(h_i, h_o, c.rf_tubo, c.rf_casco, c.d_i, c.d_o, c.k_parede)
         if not (math.isfinite(u) and u > 0):
             return dict(VAZIO, v=v, re=re, h_i=h_i, h_o=h_o, n_total=float(n_total), d_casco=d_feixe, d_shell=d_s,
-                        nu_valido=nu_valido)
+                        nu_valido=nu_valido, **diag)
         area = c.ua_exigido / u
         novo = area / (n_total * math.pi * c.d_o)
         if math.isfinite(l) and abs(novo - l) <= tol * max(1.0, abs(novo)):
@@ -216,9 +271,10 @@ def _tubo_bell_delaware(c, n_total, v, re, h_i, d_feixe, nu_valido):
         l = novo
         if it == maxit:
             ok = False
-    return dict(v=v, re=re, h_i=h_i, h_o=h_o, u=u, area=area, l=l, n_total=float(n_total), d_casco=d_feixe,
+    return dict(VAZIO, v=v, re=re, h_i=h_i, h_o=h_o, u=u, area=area, l=l, n_total=float(n_total), d_casco=d_feixe,
                 d_shell=d_s, re_casco=fat.re, jc=fat.jc, jl=fat.jl, jb=fat.jb, js=fat.js, jr=fat.jr,
-                j_produto=fat.produto, h_ideal=fat.h_ideal, n_chicanas=n_b, nu_valido=nu_valido, ok=ok)
+                j_produto=fat.produto, h_ideal=fat.h_ideal, n_chicanas=n_b, nu_valido=nu_valido, ok=ok,
+                t_parede=_t_parede(c, u, h_i), **diag)
 
 
 class SaariLMTD(MetodoTOML):
@@ -323,12 +379,28 @@ class SaariLMTD(MetodoTOML):
         layout = layout if layout in [int(x) for x in padrao["layouts"]] else int(padrao["layouts"][0])
         razoes = [float(x) for x in kbd.get("area_celula_sobre_pt2", padrao["area_celula_sobre_pt2"])]
         area_celula = razoes[layouts.index(layout)] if layout in layouts else float(padrao["area_celula_sobre_pt2"][0])
+        # extensão do V2: película do lado tubo nos três regimes (Branan pp. 40-41). Com o default
+        # (0), o cálculo é o do Julia: só Dittus-Boelter, e fora da faixa o caso é recusado.
+        baixo_re = bool(p.get("pelicula_baixo_re", 0.0))
+        razao_visc = float(p.get("razao_visc_parede", 1.0))
+        t_tubo_med = (e.t_tubo_in + e.t_tubo_out) / 2
+        t_casco_med = (e.t_casco_in + t_casco_out) / 2
+        if baixo_re:
+            kp = carregar("equipment/comum/pelicula_tubo.toml")
+            tr.trace("tubo", "Br. 2-10/2-12", "regimes do lado tubo",
+                     "Hausen até Re = {:g}; interpolação até Re = {:g}; Dittus-Boelter acima".format(
+                         kp["hausen"]["re_max"], kp["transicao"]["re_max"]), 1.0, "–")
+            tr.trace("tubo", "Br. 2-9", "T média do tubo", "(T_entrada + T_saída)/2 do lado tubo", t_tubo_med, "°C")
+            tr.trace("tubo", "Br. 2-9", "T média do casco", "(T_entrada + T_saída)/2 do lado casco", t_casco_med, "°C")
+            tr.trace("tubo", "Br. 2-10", "hipótese", "(µ/µ_parede)^0,14 com razão declarada — a curva µ(T) é da "
+                     "camada de propriedades, não do método", razao_visc, "–")
         cons = ExchangerConstraints(
             abs(q), dtlm, fator, ua, t_casco_out, aquecendo, e.m_tubo, e.rho_tubo, e.mu_tubo, pr, e.k_tubo, d_i, d_o,
             passes, p["h_casco"], p["rf_tubo"], p["rf_casco"], p["k_parede"], math.pi * (d_i * d_i) / 4,
             p["razao_passo"] * d_o, area_celula, e.m_casco, e.cp_casco, e.mu_casco, e.k_casco, layout,
             p["corte_chicana"], p["espacamento_chicana"], p["pares_veda"], mm_para_m(p["folga_furo_chicana"]),
-            p["faixas_divisoras"], bd_ativo, kbd, dict(k), n_ser, n_par)
+            p["faixas_divisoras"], bd_ativo, kbd, dict(k), n_ser, n_par, baixo_re, razao_visc, t_tubo_med,
+            t_casco_med)
         return True, cons, tr
 
     def sweep_axis(self, p):
@@ -401,7 +473,13 @@ class SaariLMTD(MetodoTOML):
             t = _tubo(c, n)
             out.append(dict(papel="projeto" if i == projeto else "turndown", v=t["v"], re=t["re"],
                             nu_valido=bool(t["nu_valido"]), h_i=t["h_i"], h_o=t["h_o"], u=t["u"], l=t["l"], q=c.q,
-                            abaixo_v_min=t["v"] < v_min))
+                            abaixo_v_min=t["v"] < v_min,
+                            # extensão do V2: o regime do lado tubo, a correlação que produziu h_i,
+                            # o peso da interpolação na transição e a temperatura de parede da
+                            # eq. 2-9 — é o que o relatório e o MC citam ao lado do coeficiente
+                            regime=t.get("regime", ""), correlacao=t.get("correlacao", ""),
+                            motivo=t.get("motivo", ""), peso_transicao=t.get("peso_transicao", math.nan),
+                            t_parede=t.get("t_parede", math.nan)))
         return out
 
     def bloqueios(self, n, conss, pcs, p_env):

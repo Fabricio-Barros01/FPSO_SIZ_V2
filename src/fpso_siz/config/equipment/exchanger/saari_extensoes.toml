@@ -40,3 +40,33 @@ min      = 1.0
 max      = 10.0
 advanced = true
 note     = "N cascos iguais em paralelo: cada um recebe 1/N das vazões dos dois lados e 1/N da carga térmica, com as mesmas temperaturas terminais. Saari Tab. 3.1: casco de chapa enrolada vai a 2500 mm; acima disso o serviço é dividido em cascos em paralelo."
+
+# Película do lado tubo nos TRÊS regimes (Branan, cap. 2, pp. 40-41; constantes, domínios,
+# política de transição e a errata do denominador de Hausen em
+# config/equipment/comum/pelicula_tubo.toml). Com o default (0) a física é a do Julia: só
+# Dittus-Boelter, e fora de 10⁴ ≤ Re ≤ 1,2·10⁵ o caso é RECUSADO — era essa recusa que mantinha
+# abertos os alarmes do P-001, do P-002 e do P-003 em baixa carga.
+[[parameter]]
+key      = "pelicula_baixo_re"
+label    = "Película do lado tubo nos três regimes"
+unit     = "–"
+default  = 0.0
+min      = 0.0
+max      = 1.0
+advanced = true
+note     = "1 = Hausen (Branan eq. 2-10) em Re ≤ 2000, interpolação da eq. 2-12 em 2000 < Re < 10⁴ e Dittus-Boelter (Saari eq. 6.23) em Re ≥ 10⁴, com a ponta turbulenta da interpolação sendo a própria 6.23 (a interpolação encosta no ramo validado, e o turbulento não muda). Faixa de Prandtl fora da declarada por Dittus-Boelter continua recusada: correlação de baixo Reynolds não resolve isso. 0 = só Dittus-Boelter (regra do Julia)."
+
+# Fator (µ/µ_parede)^0,14 das eq. 2-10 e 2-11. A temperatura de parede é CALCULADA pela eq. 2-9 e
+# vai ao rastro; a razão de viscosidades é entrada declarada, porque avaliá-la exige a curva µ(T)
+# do fluido, que é da camada de propriedades e não do método. Em 1,0 o fator é omitido — hipótese
+# declarada (o descritor é "escolha", logo revisão pendente no TAG), e o erro tem sentido
+# conhecido: aquecendo um líquido, µ_parede < µ_médio, o fator seria > 1 e o h_i fica CONSERVADOR.
+[[parameter]]
+key      = "razao_visc_parede"
+label    = "Razão µ_médio/µ_parede no lado tubo"
+unit     = "–"
+default  = 1.0
+min      = 0.01
+max      = 100.0
+advanced = true
+note     = "Fator (µ/µ_parede)^0,14 das eq. 2-10/2-11 do Branan. Em 1,0 o fator é omitido, o que é conservador ao aquecer líquido; a temperatura de parede da eq. 2-9 aparece no rastro e no MC para quem quiser fechar a razão com a curva µ(T)."
