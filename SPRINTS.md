@@ -1373,6 +1373,39 @@ relatório gerado `docs/validacao/15-termodinamica.md` (`tools/termodinamica_pre
 - **Aceite:** (1) porta única (teste de arquitetura existente, `_chedl.py`) ✓; (2) comparação
   caso a caso sem mudar balanço/paridade ✓; (3) fontes no relatório ✓; (4) cobertura ✓.
 
+### F5 — Integração termodinâmica em MODO SOMBRA ✅ (2026-09-27) — `docs/validacao/31-integracao-modo-sombra.md`
+
+O flash do fluido de poço roda **em paralelo** nos três pontos de equilíbrio (SG-001, V-001,
+V-002), com T e P lidos do próprio balanço. **O processo continua no caminho legado**: paridade
+bit a bit (`409f1800…f16414`).
+
+**Invariante 5 nova no CLAUDE.md** (regra pedida pelo usuário): *backend devolver número ≠
+propriedade validada para engenharia*. Toda propriedade fica em (a) ausente, (b) calculada em
+domínio validado, ou (c) devolvida pelo backend porém extrapolada/não validada — e a situação é
+declarada, não presumida.
+
+**Mapa de proveniência** (`config/pfd/integracao_termodinamica.toml`): 11 propriedades, cada uma
+com origem atual, origem proposta, consumidores e status. 3 liberadas (Z, MW, ρ_vapor), 3 em
+sombra (β, x, y), 5 bloqueadas (ρ_líquido, h, cp, μ, k). **O guarda `exigir_liberada` levanta
+erro** ao consumir propriedade não liberada — não é documentação, é falha em tempo de execução.
+
+**Fechamentos, nos 16 casos × 3 pontos (48/48 convergiram), no épsilon de máquina:**
+z_i = β·y_i + (1−β)·x_i → 1,11e-16; somas → 5,73e-13; balanço molar → 0,00; mássico → 2,22e-16;
+coerência molar × mássica → 1,11e-16.
+
+**Desempenho:** 48 flashes, 38 condições (T,P,z) distintas, **fator de recomputação 1,263**;
+28,4 ms por flash, 1,365 s no total. O caminho produtivo não paga nada: `resolver_caso`
+0,52 ms e `resolver_todos` 19,7 ms inalterados. Medido, não otimizado.
+
+**O achado que trava a ativação.** As únicas propriedades cuja troca mudaria a planta são β e y,
+e ambas propagam para as vazões de gás, que alimentam as cargas térmicas — o balanço de energia
+que a fase proíbe ativar. E Z, MW e ρ_vapor, embora liberadas, são hoje calculadas por
+`fluidos.gas` a partir da composição FIXA: consumi-las do flash significa consumir o `y` do
+flash, que está em sombra. **Logo o conjunto liberado não é ligável sem antes liberar `y`, e
+liberar `y` muda o dimensionamento por capacidade de gás.** Decisão do usuário.
+
+Suíte: **1.299 aprovados, cobertura 95,88 %** (14 testes novos).
+
 ### F4 — Caracterização do fluido de poço ✅ (2026-09-27) — `docs/validacao/30-caracterizacao-fluido-de-poco.md`
 
 **Não há surrogate n-alcano.** A investigação mudou a solução duas vezes, com aprovação a cada
@@ -1391,7 +1424,7 @@ e Tbr = 0,996 em M = 1382): calculados 1,0087 bar e 0,9959.
    ω = **0,0000** para n-C37–C43. Com n-C33, o pseudo-componente mais LEVE teria Tc MAIOR que o
    mais pesado — fisicamente invertido;
 3. com Riazi no acervo, o surrogate deixou de ser necessário: as frações plus são
-   caracterizadas **pelo MW do próprio BOT** (570 e 468, exatos), e a densidade fica a ~2,5 %
+   caracterizadas **pelo MW declarado pelo BOT** (570 e 468, usados sem alteração), e a densidade fica a ~2,5 %
    da declarada, contra ~15 % de uma parafina.
 
 **Regra da transformação: a identidade.** Cada componente mantém a sua fração molar; o que muda

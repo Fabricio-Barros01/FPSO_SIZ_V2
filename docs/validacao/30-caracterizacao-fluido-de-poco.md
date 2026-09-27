@@ -45,7 +45,7 @@ Fonte da caracterização: Riazi, M. R.; Al-Sahhaf, T. A. Physical properties of
 | C20+ | plus | **570,0** | 801,40 | 0,9323 | 920,53 | 4,424 | 1,5634 |
 | C20++ | plus | **468,0** | 750,99 | 0,9165 | 890,10 | 5,848 | 1,3293 |
 
-MW das frações plus em negrito: é **dado do BOT**, usado exatamente como veio. Todas as demais colunas são calculadas pelas correlações; nenhuma é valor tabelado da fonte.
+MW das frações plus em negrito: é **dado de entrada do BOT**, usado sem alteração. Com isso o MW da mistura **fecha exatamente em relação aos MW adotados** nas entradas e na caracterização — o que não é o mesmo que ser o MW verdadeiro do petróleo real, que ninguém mediu. Todas as demais colunas são calculadas pelas correlações; nenhuma é valor tabelado da fonte.
 
 ### Densidade contra o dado do BOT
 

@@ -88,7 +88,9 @@ def _de_M(nome, tipo, nc, M, origem_mw):
 
 def caracterizar(nome, mw_plus=None):
     """O pseudo-componente de um rótulo do BOT. `mw_plus` é o MW do BOT das frações plus —
-    ele é DADO, e é usado exatamente como veio."""
+    ele é DADO de entrada, e é usado sem alteração. Isso faz o MW da mistura fechar exatamente
+    em relação aos MW ADOTADOS (entradas + caracterização); não é afirmação sobre o MW
+    verdadeiro do corte real, que ninguém mediu."""
     tipo = classificar(nome, mws_plus={nome: mw_plus} if mw_plus is not None else None)
     if tipo == REAL:
         raise ValueError(f"{nome!r} é componente real: use o identificador do banco, não a correlação")

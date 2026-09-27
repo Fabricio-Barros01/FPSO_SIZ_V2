@@ -1,0 +1,151 @@
+# Fase 5 — integração do serviço termodinâmico ao processo, com ATIVAÇÃO SELETIVA.
+#
+# Este arquivo é o MAPA DE PROVENIÊNCIA: para cada propriedade, de onde ela vem hoje, de onde
+# poderia passar a vir, quem a consome, e se está liberada. Nada é substituído sem constar aqui.
+#
+# Regra que governa o arquivo (invariante 5 do CLAUDE.md): backend devolver número não é o
+# mesmo que propriedade validada para engenharia. `status` é a classificação declarada:
+#   liberada  — validada, pode ser consumida pelo processo
+#   sombra    — calculada e registrada em paralelo, NÃO consumida
+#   bloqueada — não pode ser consumida; se alguém tentar, o guarda levanta erro
+#
+# O estado que o processo usa é HÍBRIDO por construção nesta fase, e isso é declarado: parte
+# das propriedades vem do caminho legado e parte poderia vir do flash. Nenhum resumo deve
+# apresentar o conjunto como produzido por um modelo termodinâmico único.
+
+[fase]
+modo = "sombra"
+nota = "o flash roda em paralelo nos pontos de equilíbrio e é comparado; o processo continua consumindo o caminho legado. Trocar uma propriedade de origem exige mudar o `status` dela aqui e registrar o efeito na tabela antigo × novo."
+
+# ---------------------------------------------------------------------------- pontos de equilíbrio
+# Onde o flash deveria ser usado. T e P saem do próprio balanço, corrente a corrente.
+
+[[ponto]]
+id = "SG-001"
+corrente_gas = "C-04"
+pressao = "P_FWKO"
+descricao = "separador de água livre: primeira liberação de gás"
+legado = "ΔRs de Standing entre (P_FWKO, T03) e a condição padrão, multiplicado pela vazão de óleo"
+
+[[ponto]]
+id = "V-001"
+corrente_gas = "C-09"
+pressao = "P_D1"
+descricao = "primeiro desgaseificador"
+legado = "ΔRs de Standing entre (P_D1, T_D1) e a condição padrão"
+
+[[ponto]]
+id = "V-002"
+corrente_gas = "C-17"
+pressao = "P_D2"
+descricao = "segundo desgaseificador"
+legado = "derivado do mesmo ΔRs do V-001 (regra do script de referência)"
+
+# ---------------------------------------------------------------------------- mapa de proveniência
+# propriedade | origem atual | origem proposta | consumidores | status
+
+[[propriedade]]
+id = "beta"
+rotulo = "fração de fase (vapor/líquido)"
+origem_atual = "não existe como fração: o gás liberado sai de ΔRs de Standing × vazão de óleo (P-39/P-40)"
+origem_proposta = "flash_tp(fluido='poco'): fração molar e mássica de vapor"
+consumidores = ["balanco/modelo.py: vazão de gás de C-04, C-09 e C-17", "todas as correntes a jusante", "cargas térmicas (via vazões)", "dimensionamento de todos os TAGs"]
+status = "sombra"
+motivo = "substituir muda a vazão de gás de todos os estágios e, por ela, o balanço de energia — que a Fase 5 não pode ativar (item 9). Fica medido e comparado."
+
+[[propriedade]]
+id = "y"
+rotulo = "composição da fase vapor"
+origem_atual = "corte N2–nC4 da composição de alimentação, renormalizado e CONSTANTE em toda a planta (P-03)"
+origem_proposta = "flash_tp: composição da fase vapor em cada estágio, que muda de estágio para estágio"
+consumidores = ["pfd/fluidos.gas → Z, μ, k do gás", "balanco/propriedades.gas_props → MW, cp, γ, ρ_std", "balanco/indicadores → CO2 e H2S molares", "entradas do PFD: capacidade de gás dos vasos"]
+status = "sombra"
+motivo = "é a diferença física mais visível: hoje o gás tem a mesma composição no FWKO e no segundo desgaseificador, o que o equilíbrio contradiz. Trocar altera Z, ρ_g e o dimensionamento por capacidade de gás."
+
+[[propriedade]]
+id = "x"
+rotulo = "composição da fase líquida"
+origem_atual = "não existe: o líquido é tratado por pseudo-componentes O/W/D/G com propriedades fixas"
+origem_proposta = "flash_tp: composição da fase líquida"
+consumidores = ["nenhum hoje"]
+status = "sombra"
+motivo = "não há consumidor no caminho atual; é entrada para a fase que reformular o líquido."
+
+[[propriedade]]
+id = "Z"
+rotulo = "fator de compressibilidade do gás"
+origem_atual = "balanço: Z = 1 (gás ideal, P-39). PFD: Z pela EOS de Peng-Robinson sobre a composição FIXA (pfd/fluidos.gas)"
+origem_proposta = "flash_tp: Z da fase vapor com a composição de equilíbrio do estágio"
+consumidores = ["pfd/fluidos.gas → ρ_g = P·MW/(Z·R·T)", "capacidade de gás dos vasos (SG-001, V-001, V-002)"]
+status = "liberada"
+motivo = "propriedade validada: PR é adequada para fase vapor, e o serviço já reproduz bit a bit o Z do caminho atual quando recebe a mesma composição (há teste na F3)."
+
+[[propriedade]]
+id = "MW"
+rotulo = "massa molar das fases"
+origem_atual = "MW do corte leve, constante (balanco/propriedades.gas_props)"
+origem_proposta = "flash_tp: MW de cada fase, dentro da caracterização adotada"
+consumidores = ["ρ_std do gás", "densidade relativa γ (Standing)", "indicadores molares", "ρ_g no PFD"]
+status = "liberada"
+motivo = "liberada DENTRO DA CARACTERIZAÇÃO ADOTADA: fecha em relação aos MW das entradas e da caracterização, não é o MW verdadeiro do corte real."
+
+[[propriedade]]
+id = "rho_vapor"
+rotulo = "densidade da fase vapor"
+origem_atual = "P·MW/(Z·R·T) com MW e R do balanço (S&A eq. 1.8)"
+origem_proposta = "flash_tp: ρ da fase vapor pela EOS"
+consumidores = ["capacidade de gás dos vasos", "velocidade do gás", "arraste de gotas"]
+status = "liberada"
+motivo = "fase vapor não sofre do problema volumétrico do líquido."
+
+[[propriedade]]
+id = "rho_liquido"
+rotulo = "densidade da fase líquida"
+origem_atual = "óleo: correlação de API (P-07); água: premissa; sem correção por T nem Bo"
+origem_proposta = "flash_tp: ρ da fase líquida pela EOS"
+consumidores = ["velocidades", "holdup", "tempo de residência", "perda de carga", "hidráulica de bombas", "dimensionamento de vasos e tratadores", "otimização"]
+status = "bloqueada"
+motivo = "Peng-Robinson sem translação de volume subestima o volume de líquido: razão medida 0,541 contra mistura ideal (474,3 contra 877,3 kg/m³ na condição padrão). NÃO propagar. A fonte validada continua sendo a correlação de API; a proveniência fica marcada."
+
+[[propriedade]]
+id = "h"
+rotulo = "entalpia"
+origem_atual = "cp constante por pseudo-componente (P-10 a P-12), gás ideal a 25 °C, sem calor de flash"
+origem_proposta = "flash_tp: entalpia das fases"
+consumidores = ["cargas térmicas Q_H, Q_C, Q_D", "P-001, P-002, P-003", "temperaturas de mistura"]
+status = "bloqueada"
+motivo = "não existe: sem Cp_ig dos pseudo-componentes o pacote não calcula entalpia. A rota energética atual é preservada (item 9)."
+
+[[propriedade]]
+id = "cp"
+rotulo = "calor específico"
+origem_atual = "constante por pseudo-componente (P-10 a P-12)"
+origem_proposta = "flash_tp: cp das fases"
+consumidores = ["cargas térmicas", "temperatura de mistura", "LMTD dos trocadores"]
+status = "bloqueada"
+motivo = "idem: ausente por falta de Cp_ig com fonte."
+
+[[propriedade]]
+id = "mu"
+rotulo = "viscosidade"
+origem_atual = "óleo: tabela do BOT + Beggs & Robinson (óleo vivo); água: Laliberté; gás: thermo sobre a composição fixa"
+origem_proposta = "flash_tp: μ das fases"
+consumidores = ["película dos trocadores", "decantação de gotas", "hidráulica"]
+status = "bloqueada"
+motivo = "o pacote de pseudo-componentes é montado sem correlações de transporte; μ das fases do fluido de poço volta NaN. A fonte validada continua sendo a atual."
+
+[[propriedade]]
+id = "k"
+rotulo = "condutividade térmica"
+origem_atual = "óleo: entrada proposta; água: lacuna; gás: thermo"
+origem_proposta = "flash_tp: k das fases"
+consumidores = ["película dos trocadores"]
+status = "bloqueada"
+motivo = "k da fase líquida de hidrocarboneto é caso (c) da invariante 5 — devolvido pelo backend, extrapolado, não validado. Somado a isso, o pacote de pseudo-componentes não o calcula."
+
+# ---------------------------------------------------------------------------- fechamento
+[fechamento]
+# Erros de fechamento que o modo sombra registra numericamente em cada flash.
+tolerancia_componente = 1.0e-9
+tolerancia_soma = 1.0e-9
+nota = "critérios NUMÉRICOS de verificação do flash, não premissas físicas. z_i = β·y_i + (1−β)·x_i componente a componente; soma das composições; balanço molar e mássico; e desaparecimento de fase no monofásico."

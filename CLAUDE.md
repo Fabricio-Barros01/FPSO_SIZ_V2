@@ -58,6 +58,19 @@ sem fonte, refatoração não muda número, contrato de dimensionamento — cont
    `config/interativo.toml` (menus por id de ação). A interface também não fixa TAG, bloco
    nem corrente (os desenhos saem de `config/topologia_db.toml`) e não monta entradas nem
    chama o motor: isso é do serviço por TAG.
+5. **Backend devolver número ≠ propriedade validada para engenharia.** Que uma biblioteca
+   retorne um valor não o torna utilizável em projeto. Toda propriedade que o processo consome
+   fica numa de três situações, e a situação é **declarada**, não presumida:
+   **(a) ausente** — não existe e não é estimada: vira NaN e lacuna declarada;
+   **(b) calculada dentro do domínio validado** — com fonte, faixa conferida e teste;
+   **(c) devolvida pelo backend, porém extrapolada ou não validada** — pode ser exposta para
+   rastreabilidade, sempre com o método ao lado e com aviso, e **não pode ser promovida a
+   propriedade de projeto** nem consumida por cálculo de dimensionamento ou de otimização.
+   Casos vivos: `ρ` da fase líquida por Peng-Robinson sem translação de volume (razão medida
+   0,541 contra mistura ideal de volumes) e `k` da fase líquida de hidrocarboneto — ambos em
+   (c); `h` e `cp` dos pseudo-componentes — em (a). Ver `docs/validacao/30-caracterizacao-fluido-de-poco.md`.
+   Corolário: um estado que mistura proveniências **não** se apresenta como produzido por um
+   modelo só — cada propriedade carrega de onde veio.
 
 ## Contrato de dimensionamento
 Todo método herda `core.contrato.MetodoDimensionamento` e implementa os hooks com os

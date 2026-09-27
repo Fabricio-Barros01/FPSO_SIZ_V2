@@ -106,7 +106,7 @@ nota = "C6-C19 do BOT são CORTES SCN, não n-alcanos. A caracterização é a d
 # Fração plus: o MW é DADO DO BOT, não da correlação. As demais propriedades saem das mesmas
 # correlações, aplicadas a esse M.
 mw_de = "arquivo de casos, c20_pseudo.C20+.mw"
-nota = "MW do BOT preservado EXATAMENTE; densidade da correlação conferida contra a do BOT"
+nota = "o MW declarado pelo BOT é usado sem alteração — o MW da mistura fecha exatamente em relação aos MW ADOTADOS nas entradas e na caracterização, o que não é o mesmo que ser o MW verdadeiro do corte real. Densidade da correlação conferida contra a do BOT"
 
 [plus.'C20++']
 mw_de = "arquivo de casos, c20_pseudo.C20++.mw"
