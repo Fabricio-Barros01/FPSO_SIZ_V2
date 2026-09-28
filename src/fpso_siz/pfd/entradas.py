@@ -464,7 +464,7 @@ def r_viscosidade_fase(ctx, alvo, corrente, fase, t=None, continua=None, rs=None
     return Valor(mu, "propriedade", f"{corrente}: emulsão, {sub_c} contínuo (Branan eq. 27-4){nota}")
 
 
-def _vapor(ctx, corrente, alvo, valor, rotulo, prop, unidade):
+def _vapor(ctx, corrente, valor, rotulo, prop, unidade):
     """Propriedade da fase vapor de equilíbrio do estágio (caso avaliável), com a proveniência
     do trem; anotada no rastro do TAG."""
     v = ctx.r.vapor(corrente)
@@ -476,7 +476,7 @@ def _vapor(ctx, corrente, alvo, valor, rotulo, prop, unidade):
 
 def r_densidade_gas(ctx, alvo, corrente):
     if ctx.r.vapor(corrente) is not None:
-        return _vapor(ctx, corrente, alvo, lambda v: v.rho, "ρ_g", "rho_vapor_estagio", "kg/m³")
+        return _vapor(ctx, corrente, lambda v: v.rho, "ρ_g", "rho_vapor_estagio", "kg/m³")
     return Valor(_gas(ctx, corrente).rho, "propriedade", f"{corrente}: ρ do gás na condição (EOS)")
 
 
@@ -487,7 +487,7 @@ def r_viscosidade_gas(ctx, alvo, corrente):
 
 def r_compressibilidade_gas(ctx, alvo, corrente):
     if ctx.r.vapor(corrente) is not None:
-        return _vapor(ctx, corrente, alvo, lambda v: v.Z, "Z", "Z_vapor_estagio", "–")
+        return _vapor(ctx, corrente, lambda v: v.Z, "Z", "Z_vapor_estagio", "–")
     return Valor(_gas(ctx, corrente).Z, "propriedade", f"{corrente}: Z do gás na condição (EOS)")
 
 

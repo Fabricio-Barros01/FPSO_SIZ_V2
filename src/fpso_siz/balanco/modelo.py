@@ -128,7 +128,7 @@ def resolver_caso(caso, dados, prem=None):
     TD1 = p["T_trat"]
     TD2 = p["T_trat"]
     tr = None
-    refazer_trem, passos_trem = True, 0
+    refazer_trem = True
 
     for it in range(num["reciclo_max_iter"]):
         # ---------------- M-01
@@ -144,7 +144,7 @@ def resolver_caso(caso, dados, prem=None):
                 cond = {"C-04": (TF, p["P_FWKO"]), "C-09": (TD1, p["P_D1"]), "C-17": (TD2, p["P_D2"])}
                 tr = trem_mod.resolver(rec, [(e["id"], e["corrente_gas"], *cond[e["corrente_gas"]])
                                              for e in trem_mod.cfg()["estagio"]], mws, dados.T_std_C, dados.P_std_kPa)
-                refazer_trem, passos_trem = False, passos_trem + 1
+                refazer_trem = False
                 if not tr.completo:
                     raise ValueError(f"caso {caso['num']}: o trem não percorreu os três estágios ({tr.interrompido})")
                 est = {e.corrente_gas: e for e in tr.estagios}
