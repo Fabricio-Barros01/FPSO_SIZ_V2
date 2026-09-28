@@ -43,6 +43,7 @@ def ponto(dados, p_d1, p_d2):
              "casos_TVP_acima": sum(v > lim for v in tvps.values()),
              "Q_G_V001_max_Sm3_d": max(r.gas["G_D1"] for r in b), "Q_G_V002_max_Sm3_d": max(r.gas["G_D2"] for r in b),
              "Q_G_VRU_max_Sm3_d": max(r.gas["G_D1"] + r.gas["G_D2"] for r in b),
+             "oleo_tratado_Sm3_d": sum(r.q("C-21", "O") for r in aval),
              "W_B001_max_kW": max(r.duties["W_Bo"] for r in b), "W_B002_max_kW": max(r.duties["W_B1"] for r in b),
              "W_B003_max_kW": max(r.duties["W_B2"] for r in b)}
     volume = 0.0
@@ -78,8 +79,9 @@ def gerar(dados, saida):
           "Gerado por `tools/mapa_pressao.py` (estudo; P_D1 e P_D2 como premissas, pelo mesmo serviço). "
           f"TVP nos casos avaliáveis, na estocagem; limite do BOT {n(lim, 0)} kPa.", "",
           "| P_D1 | P_D2 | TVP máx | TVP mín | casos > limite | Q_G V-001 máx | Q_G V-002 máx | V-001 d / Leff / vol | "
-          "V-002 d / Leff / vol | gás/líquido V-001 | gás/líquido V-002 | SG-001 d / Leff | vol. total | W B-001 máx |",
-          "|---:|---:|---:|---:|---:|---:|---:|---|---|---:|---:|---|---:|---:|"]
+          "V-002 d / Leff / vol | gás/líquido V-001 | gás/líquido V-002 | SG-001 d / Leff | vol. total | W B-001 máx | "
+          "óleo tratado Σ avaliáveis (m³/d) |",
+          "|---:|---:|---:|---:|---:|---:|---:|---|---|---:|---:|---|---:|---:|---:|"]
     for li in linhas:
         md.append(f"| {n(li['P_D1_kPa'], 0)} | {n(li['P_D2_kPa'], 0)} | {n(li['TVP_max_kPa'])} | {n(li['TVP_min_kPa'])} | "
                   f"{li['casos_TVP_acima']} | {n(li['Q_G_V001_max_Sm3_d'], 0)} | {n(li['Q_G_V002_max_Sm3_d'], 0)} | "
@@ -87,7 +89,7 @@ def gerar(dados, saida):
                   f"{n(li['V002_d_mm'], 0)} / {n(li['V002_Leff_m'], 2)} / {n(li['V002_volume_m3'])} | "
                   f"{n(li['V001_gas_sobre_liquido'], 3)} | {n(li['V002_gas_sobre_liquido'], 3)} | "
                   f"{n(li['SG001_d_mm'], 0)} / {n(li['SG001_Leff_m'], 3)} | {n(li['volume_total_m3'])} | "
-                  f"{n(li['W_B001_max_kW'])} |")
+                  f"{n(li['W_B001_max_kW'])} | {n(li['oleo_tratado_Sm3_d'])} |")
     (saida / "mapa_pressao.md").write_text("\n".join(md) + "\n", encoding="utf-8")
     return linhas
 
