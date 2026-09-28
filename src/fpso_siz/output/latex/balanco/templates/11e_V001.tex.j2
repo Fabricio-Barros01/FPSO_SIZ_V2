@@ -1,19 +1,19 @@
 \subsection{V-001 --- Vaso desgaseificador 1}
 \paragraph{Função:} liberar o gás que sai de solução após o aquecimento e a redução de pressão de << RD.P['C-08']|br >> para << P['P_D1']|br >>~\si{\kilo\pascal}, enviando-o ao 2º estágio da VRU. Forma conjunto com o pré-tratador (BOT 2.7.1.7: ``degasser/electrostatic pre-treater'').
-\paragraph{Entradas:} C-08: << ind.m(RD, 'C-08')|br(2) >>~\si{\kilogram\per\second}, gás dissolvido << (RD.gas['G_D1'] + RD.gas['G_D2'])|br >> Sm³/d, << RD.T['C-08']|br(2) >>~\si{\celsius}, << RD.P['C-08']|br >>~\si{\kilo\pascal} (Caso << DEMO >>).
-\paragraph{Premissas:} P-18, P-23, P-26, P-27, P-15 (válvula de nível isentálpica $\Rightarrow$ isotérmica no modelo sensível).
-\paragraph{Modelo de cálculo:} válvula de entrada com $h_{\mathrm{in}}\approx h_{\mathrm{out}}$ e gás de \eqref{eq:gasstages}:
+\paragraph{Entradas:} C-08: << ind.m(RD, 'C-08')|br(2) >>~\si{\kilogram\per\second}, gás dissolvido << ind.q(RD, 'C-08', 'G')|br >> Sm³/d, << RD.T['C-08']|br(2) >>~\si{\celsius}, << RD.P['C-08']|br >>~\si{\kilo\pascal} (Caso << DEMO >>).
+\paragraph{Premissas:} P-18, P-23 (casos não avaliáveis), P-26, P-27, P-15 (válvula de nível isentálpica $\Rightarrow$ isotérmica no modelo sensível).
+\paragraph{Modelo de cálculo:} válvula de entrada com $h_{\mathrm{in}}\approx h_{\mathrm{out}}$. <% if RD.avaliavel %><% set e1 = RD.trem.estagios[1] %>Caso avaliável: flash do líquido do SG-001, eq.~\eqref{eq:flashstage} e \eqref{eq:gasflash}, a $<< e1.T_C|mb(1) >>$~\si{\celsius} e $<< e1.P_kPa|mb >>$~\si{\kilo\pascal}:
 \begin{equation}
-<% set rsF, rs0, rsD1 = ind.standing_exemplo(RD, P, dados) %>
-Q_{G,C09}=\left[<< (rsF - rs0)|mb(3) >>-<< (rsD1 - rs0)|mb(3) >>\right]\times<< RD.caso['oil_sm3d']|mb >>=<< RD.gas['G_D1']|mb >>\ \mathrm{Sm^3/d},\qquad \eta_{G,\mbox{V-001}}=\frac{Q_{G,C09}}{Q_{G,\mathrm{dissolvido},C08}}=<< ind.eta_gas_v001(RD)|mb(4) >>.
+Q_{G,C09}=\beta\,\dot n_F\,V_M=<< e1.beta|mb(5) >>\times<< e1.n_entrada_kmol_d|mb(1) >>\times<< RD.VM|mb(4) >>=<< RD.gas['G_D1']|mb >>\ \mathrm{Sm^3/d},\qquad \eta_{G,\mbox{V-001}}=\frac{Q_{G,C09}}{Q_{G,C09}+Q_{G,C17}}=<< ind.eta_gas_v001(RD)|mb(4) >>,
 \end{equation}
+com $MW_v=<< e1.vapor.MW|mb(3) >>$~\si{\kilogram\per\kilo\mole}, $Z_v=<< e1.vapor.Z|mb(4) >>$ e $\rho_v=<< e1.vapor.rho|mb(3) >>$~\si{\kilogram\per\cubic\metre}.<% endif %> Nos casos não avaliáveis o gás é o de \eqref{eq:gasstages}.
 Vazão real de gás com $Z=1$ (P-39): $Q_{G,\mathrm{real}}=Q_{G,\mathrm{std}}\frac{P_{\mathrm{std}}}{P}\frac{T}{T_{\mathrm{std}}}$.
 
 \paragraph{Saídas:} C-09 gás << RD.gas['G_D1']|br >> Sm³/d; C-10 líquido << ind.m(RD, 'C-10')|br(2) >>~\si{\kilogram\per\second}; ambas a << RD.T['C-08']|br(2) >>~\si{\celsius} e << P['P_D1']|br >>~\si{\kilo\pascal}.
 \paragraph{Balanço de massa:} <% set b = bb(RD, blocos['V-001']) %>$\varepsilon_m=$<< b['em']|sci >>.
 \paragraph{Balanço de energia:} $\varepsilon_E=$<< b['eE']|sci >> (sem resfriamento por flash, P-15).
 \paragraph{Resultado preliminar:} <% set mx, idx = maximo("r.gas['G_D1']") %>maior gás ao 2º estágio da VRU: << mx|br >> Sm³/d (caso << idx|ids >>).
-\paragraph{Validação recomendada em etapa posterior:} pressão de operação (variável de decisão da futura otimização multiobjetivo); liberação real de gás por flash; temperatura após flash.
+\paragraph{Validação recomendada em etapa posterior:} pressão de operação (variável de decisão da futura otimização multiobjetivo); temperatura após flash (sem entalpia do fluido de poço, P-15).
 {\footnotesize\setlength{\tabcolsep}{3.5pt}\begin{longtable}{rrrrrrrr}
 \caption{V-001 --- desgaseificador 1 (todos os casos).\label{tab:b05}}\\\toprule
 Caso & $Q_{G,C09}$ & $Q_{G,real}$ & $\eta_{G}$ & $\dot m_{C10}$ & $T$ & $\varepsilon_m$ & $\varepsilon_E$\\

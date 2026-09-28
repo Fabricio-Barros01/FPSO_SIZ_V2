@@ -7,9 +7,10 @@ from fpso_siz.core.trace import CalcTrace
 CATALOGO = carregar("equacoes_balanco.toml")
 
 
-def pares_declarados():
-    """Pares (equação, escopo) que o catálogo declara."""
-    return {(eq, esc) for eq, e in CATALOGO.items() for esc in e["escopos"]}
+def pares_declarados(avaliavel):
+    """Pares (equação, escopo) que o catálogo declara para a classe do caso."""
+    classe = "avaliaveis" if avaliavel else "nao_avaliaveis"
+    return {(eq, esc) for eq, e in CATALOGO.items() for esc in e["escopos"] if e.get("casos", classe) == classe}
 
 
 def test_catalogo_bem_formado():
@@ -19,7 +20,8 @@ def test_catalogo_bem_formado():
 
 def test_bijecao_catalogo_trace_em_todos_os_casos(resultados):
     for r in resultados:
-        assert r.trace.pares() == pares_declarados(), r.num
+        assert r.trace.pares() == pares_declarados(r.avaliavel), r.num
+    assert {r.avaliavel for r in resultados} == {True, False}
 
 
 def test_trace_corresponde_ao_resultado_final(resultados):
@@ -32,7 +34,7 @@ def test_trace_corresponde_ao_resultado_final(resultados):
         assert passo("carga_diluicao", "DWH-001") == r.duties["Q_D"]
         assert passo("potencia_bomba", "B-001") == r.duties["W_Bo"]
         assert passo("agua_diluicao", "C-14") == r.gas["Dv"]
-        assert passo("gas_por_estagio", "C-04") == r.gas["G_F"]
+        assert passo("gas_estagio_flash" if r.avaliavel else "gas_por_estagio", "C-04") == r.gas["G_F"]
         assert passo("mistura", "C-02") == r.streams["C-02"]
         assert passo("temperatura_mistura", "C-02") == r.T["C-02"]
         assert passo("temperatura_mistura", "C-16") == r.T["C-16"]

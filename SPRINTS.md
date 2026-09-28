@@ -23,15 +23,19 @@ arquivo do BOT + premissas
 - **Balanço:** uma regra de FWKO (eficiência, P-43), congelada por `regressao_eficiencia.json`.
 - **Termodinâmica:** uma API (`termo/servico.py`); ChEDL só em `termo/backend.py`; proveniência
   única em `config/termo/proveniencia.toml` (validade × origem × consumidores).
-- **Trem SG-001 → V-001 → V-002:** parte do `EstadoProcesso`, **diagnóstico** — a vazão de gás
-  por estágio consumida é a de Standing.
+- **Trem SG-001 → V-001 → V-002: produtivo nos 12 casos avaliáveis** — composição do caso pela
+  Nota 4 (referência do FWKO, premissa de modelagem, `docs/validacao/38`) e flash em cascata; o
+  gás de cada estágio é o do flash. Casos 9, 11, 15, 16 (gás de lift sem composição): não
+  avaliáveis, Standing (`docs/validacao/39`).
 - **Planta produtiva (16 casos, propostas do pacote):** 10 TAGs dimensionados; **P-001 inviável**
-  (alarme aberto, área). Instantâneo bit a bit `409f1800…f16414`; gate aprovado.
+  (alarme aberto). Gate aprovado.
 
 ## Entregue
 
 | etapa | commit | resumo |
 |---|---|---|
+| Trem produtivo | (este) | recombinação da Nota 4 + flash no gás de SG-001/V-001/V-002 nos 12 casos avaliáveis; Standing só nos 4 com lift — `docs/validacao/39` |
+| Etapas A–C e nota 38 | `046eb3f`, `593f7d9` | casos do BOT, P-001, faixas de P_D1/P_D2, recombinação F — `docs/validacao/35`–`38` |
 | Consolidação arquitetural | (este) | um resolvedor de processo, uma API termo, trem no estado, proveniência única, sem modos de paridade; memorial só lê — `docs/arquitetura/` |
 | Gate de sanidade da saída | `426c667` | `tools/auditar_saida_pfd.py` — `docs/validacao/32-auditoria-de-saida.md` |
 | F3–F5.1 termodinâmica | `70179dc`…`bd87be0` | flash com pseudo-componentes (Riazi), fechamentos, trem — hoje fundidos em `termo/` e `balanco/trem.py` |
@@ -44,13 +48,10 @@ arquivo do BOT + premissas
    contra 6 m; nenhuma correlação resolve. Decisão de projeto (P-32, arranjo, ou aceitar).
    Diagnóstico e árvore de alternativas: `docs/validacao/36-p001-diagnostico.md` (no modelo atual,
    por Standing, a sensibilidade do P-001 a P_D1/P_D2 é desprezível, ~0,2 %; a reconferir com o flash).
-2. **O trem não reconcilia com o BOT** — a composição é por tipo de fluido; GOR(flash)/GOR(BOT)
-   de 0,62 a 2,16. Enquanto isso, β/x/y ficam `nao_validada` e sem consumidor. Consumi-los muda
-   o dimensionamento por capacidade de gás e exige decidir o que os 16 casos representam
-   (envelope de projeto × estado composicional). Leitura da fonte: o BOT (Tab. 2.2.2.3, Nota 4)
-   prevê flash + recombinação para ajustar o GOR de cada caso — `docs/validacao/35-casos-bot.md`
-   (condição de referência comparada em `docs/validacao/38-recombinacao-nota4.md`: recomendada a do
-   FWKO, 2.500 kPa(a) e T do caso, por consistência com Nota 3 e Tab. 2.5.2; aguarda aprovação).
+2. ~~O trem não reconcilia com o BOT~~ — **resolvida** pela recombinação da Nota 4 (nota 38,
+   aprovada) e pelo trem produtivo (nota 39). Decisão pendente dela: aceitar ou não a propagação
+   do Rs do trem à μ do óleo vivo (Beggs & Robinson), que muda SG-001 (teto), P-001, P-002 e
+   TO-001 (nota 39 §8).
 3. **Composição do gás de lift** — ausente na fonte (BOT §2.3.3 só dá especificação); casos 9, 11,
    15 e 16.
 4. **h e cp dos pseudo-componentes** — sem Cp_ig com fonte (a rota PNA para H/C não fecha).
@@ -58,10 +59,10 @@ arquivo do BOT + premissas
 6. **Discretização das grades** do trocador (caso × envelope) — `docs/validacao/33-…`; muda número.
 7. **Faixas de P_D1 e P_D2** para a otimização — sem fonte ainda; a arquitetura já as aceita por
    configuração (`destino = "premissa"`), e o trem as lê do estado. O BOT não dá pressão de
-   degaseificador; a TVP ≤ 70 kPa (§2.3.1.1/§2.7.1.10) é o critério do teto de P_D2. No modelo
-   diagnóstico atual (composição não reconciliada, x `nao_validada`) o teto preliminar sai
-   ≈ 137–162 kPa(a) e a P-19 = 200 kPa o excede — não é verificação de projeto nem limite de
-   otimização antes da recombinação da Nota 4; o piso depende da VRU, fora do BOT —
+   degaseificador; a TVP ≤ 70 kPa (§2.3.1.1/§2.7.1.10) é o critério do teto de P_D2. Com z_caso e
+   o trem produtivo (nota 39 §9), a 40 °C: P-19 = 200 kPa dá TVP de 93–111 kPa, e a TVP atinge
+   70 kPa com P_D2 entre 133,4 e 157,3 kPa(a) — ainda diagnóstico, não bound; o piso depende da
+   VRU, fora do BOT —
    `docs/validacao/37-faixas-pressao-degaseificadores.md`.
 8. **Otimização F15** — `docs/validacao/23-otimizacao.md` desatualizado; rodar de novo depois de
    decidir 1 e 7.
@@ -72,6 +73,7 @@ esse formato; R3/R4 do P-003 (mudam o que o MC mostra).
 
 ## Próximo marco
 
-**Fechar o laço P → flash → dimensionamento → otimização** (a contribuição central do TCC).
-Depende de decisão do usuário sobre as pendências 2 e 7: o que os casos do BOT representam para
-o trem e com que faixa, e com que fonte, P_D1/P_D2 entram como variáveis.
+**Fechar o laço P → flash → dimensionamento → otimização** (a contribuição central do TCC). O
+trecho P → flash → dimensionamento está ativo (nota 39). Próxima decisão do usuário: autorizar ou
+não P_D1/P_D2 como variáveis da otimização (subproblema de pressão/separação: SG-001, V-001,
+V-002), com a TVP como restrição e a faixa da pendência 7.

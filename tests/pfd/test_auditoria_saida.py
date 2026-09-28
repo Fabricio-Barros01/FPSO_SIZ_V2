@@ -65,7 +65,10 @@ def test_todo_caso_do_mc_tem_criterio_governante(planta_propostas, ident):
     assert all(s["governante"] for s in doc["calculo"]["series"]["casos"])
 
 
-@pytest.mark.parametrize("ident", ("V-001", "SG-001", "P-002", "B-001"))
+# O trocador conferido é o P-003: com o trem produtivo (docs/validacao/39) o P-002 passou a x = 1.701
+# tubos, e nenhuma grade por caso contém esse x — é a pendência de discretização (docs/validacao/33),
+# não uma mudança de rótulo; o P-003 tem casos alinhados.
+@pytest.mark.parametrize("ident", ("V-001", "SG-001", "P-003", "B-001"))
 def test_governante_bate_com_a_varredura_individual_onde_a_grade_contem_o_x(planta_propostas, ident):
     """A correção não mudou rótulo nenhum: onde a busca antiga funcionava, o resultado é o
     mesmo; ela só passou a responder onde antes devolvia vazio."""

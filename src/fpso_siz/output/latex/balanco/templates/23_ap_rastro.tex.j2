@@ -20,11 +20,11 @@ $T_{C01}$ & << r.caso['T_C']|br >> & °C & << r.num >> & JSON \texttt{cases[].T\
 $Q_{O}$ & << r.caso['oil_sm3d']|br >> & m³/d & << r.num >> & JSON \texttt{oil\_sm3d} & \tipo{DADO DE FONTE}\\
 $Q_{L}$ & << r.caso['liquid_sm3d']|br >> & m³/d & << r.num >> & JSON \texttt{liquid\_sm3d} & \tipo{DADO DE FONTE}\\
 $Q_{A}$ & << r.Wv|br >> & m³/d & << r.num >> & Calculado $Q_L-Q_O$ & \tipo{DADO DERIVADO}\\
-$Q_{G,in}$ & << r.gas['G_in']|br >> & Sm³/d & << r.num >> & JSON produzido + lift, eq.~\eqref{eq:gin} & \tipo{DADO DERIVADO}\\
+<% if r.avaliavel %>$Q_{G,in}$ & << r.gas['G_in']|br >> & Sm³/d & << r.num >> & Recombinação (Nota 4), eq.~\eqref{eq:recomb} & \tipo{PREMISSA}\\<% else %>$Q_{G,in}$ & << r.gas['G_in']|br >> & Sm³/d & << r.num >> & JSON produzido + lift, eq.~\eqref{eq:gin} & \tipo{DADO DERIVADO}\\<% endif %>
 $Q_{G,transf}$ & << r.caso['transferred_gas_sm3d']|br >> & Sm³/d & << r.num >> & JSON \texttt{transferred\_gas\_sm3d} (fora do módulo) & \tipo{DADO DE FONTE}\\
 $x_{CO_2}$ & << D['fluid_compositions'][r.fluid]['CO2']|mb(4) >> & mol/mol & << r.num >> & JSON \texttt{fluid\_compositions} & \tipo{DADO DE FONTE}\\
 H$_2$S & << D['h2s_ppmv'][r.fluid]|br >> & ppmv & << r.num >> & JSON \texttt{h2s\_ppmv} & \tipo{DADO DE FONTE}\\
-$Q_{G,C04}$ & << r.gas['G_F']|br >> & Sm³/d & << r.num >> & Calculado, eq.~\eqref{eq:gasstages} & \tipo{CORRELAÇÃO}\\
+<% if r.avaliavel %>$Q_{G,C04}$ & << r.gas['G_F']|br >> & Sm³/d & << r.num >> & Calculado, eq.~\eqref{eq:gasflash} & \tipo{CÁLCULO}\\<% else %>$Q_{G,C04}$ & << r.gas['G_F']|br >> & Sm³/d & << r.num >> & Calculado, eq.~\eqref{eq:gasstages} & \tipo{CORRELAÇÃO}\\<% endif %>
 $Q_{D}$ & << r.gas['Dv']|br >> & m³/d & << r.num >> & Calculado, eq.~\eqref{eq:dil} & \tipo{DADO DERIVADO}\\
 $T_{C03}$ & << r.T['C-03']|br(2) >> & °C & << r.num >> & Calculado, M-01 & \tipo{DADO DERIVADO}\\
 $\dot Q_{\mbox{P-002}}$ & << (r.duties['Q_H'] / 1e3)|br(2) >> & MW & << r.num >> & Calculado, eq.~\eqref{eq:heater} & \tipo{DADO DERIVADO}\\

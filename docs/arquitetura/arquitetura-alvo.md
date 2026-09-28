@@ -62,27 +62,29 @@ resolver_todos(dados, prem=None) -> list[EstadoProcesso]
 `EstadoProcesso` é o **único** estado oficial. Campos: `streams` (kg/s por componente O/W/D/G),
 `T`, `P`, `duties` (cargas e potências), `gas` (vazão de gás por estágio), `rho`, `cp`, `gp`
 (propriedades do gás do corte leve), `fwko` (regra de eficiência, η), `composicao` (z₀ do
-fluido), `mws_plus`, `trace` (rastro das equações), `proveniencia` (o que o balanço consumiu,
-por propriedade) e `trem` (a cascata SG-001 → V-001 → V-002, avaliada sob demanda e guardada no
-próprio estado). Há **uma** regra de FWKO — a de eficiência (P-43); a regra do script de
+fluido, z_base do BOT), `mws_plus`, `trace` (rastro das equações), `proveniencia` (o que o
+balanço consumiu naquele caso, por propriedade), `trem` (a recombinação da Nota 4 e a cascata
+SG-001 → V-001 → V-002, resolvidas dentro do balanço; ou o motivo de o caso não ser avaliável) e
+`gas_padrao` (Sm³/d do gás de cada corrente no caso avaliável; `q(corrente, componente)` lê). Há **uma** regra de FWKO — a de eficiência (P-43); a regra do script de
 referência saiu com o seu oráculo.
 
 ### Trem de separação — `balanco/trem.py`
 
-`z₀ → SG-001 → x_F → V-001 → x₁ → V-002 → x₂`, com `ṅ_V = β·ṅ_F` e `ṅ_L = (1−β)·ṅ_F`. A base
-molar é a regra declarada na F5.1 (`ṅ_F = ṁ_HC,in / MW_z`), com `MW_z = Σ zᵢ·MWᵢ` direto da
-caracterização — sem depender do primeiro flash. Fechamento:
+`z_base --Nota 4--> z_caso → SG-001 → x_F → V-001 → x₁ → V-002 → x₂`, com `ṅ_V = β·ṅ_F` e
+`ṅ_L = (1−β)·ṅ_F`. A composição e a base molar do caso vêm da recombinação da Nota 4 na
+referência do FWKO (premissa de modelagem, `docs/validacao/38`): reproduzem o `produced_gas_sm3d`
+no FWKO e o `oil_sm3d` de óleo morto. Fechamento:
 
 - `FechamentoTrem.ok` exige o trem **completo** (os três estágios) **e** o fechamento global e
   por componente;
 - `FechamentoTrem.ok_parcial` cobre só os estágios executados.
 
-**O trem é diagnóstico dentro do estado oficial, não um segundo modelo.** A vazão de gás por
-estágio que o dimensionamento consome continua sendo a do ΔRs de Standing, e a proveniência diz
-isso. Os casos do BOT são **envelopes de projeto** (vazões e condições combinadas, com uma
-composição por tipo de fluido), não estados composicionais autocoerentes: a F5.1 mediu que a
-composição não reproduz o GOR do caso (razão 0,62–2,16). A arquitetura não tenta reconciliá-los;
-um estudo de flash/pressão parte do mesmo estado, mas não altera o envelope.
+**O trem é produtivo nos casos termodinamicamente avaliáveis** (sem gás de lift): o gás de cada
+estágio que o balanço e o dimensionamento consomem é o do flash (β, y, x, MW_v, Z_v, ρ_v), e a
+proveniência de cada caso diz isso (`docs/validacao/39`). Nos casos com gás de lift (9, 11, 15,
+16) a composição do lift não existe na fonte: eles são "não avaliáveis termodinamicamente para
+integração completa" e seguem no envelope do BOT por Standing. É um caminho só, com a classe do
+caso como dado — não dois modelos.
 
 ### Termodinâmica — `termo/servico.py`
 
@@ -92,6 +94,7 @@ Uma API pública:
 flash_tp(T, P, z, fluido) -> EstadoTermodinamico
 flash_poco(T, P, z, mws_plus) -> EstadoTermodinamico
 mw_mistura(z, mws_plus) -> float
+pressao_bolha(T, z, mws_plus) -> float          # leitura do mesmo flash (TVP, diagnóstico)
 conferir(estado) -> Fechamento
 gas(...), gas_cp(...), agua(...), agua_saturada(...), salmoura_fracao(...), fracao_sal(...),
 oleo(...), oleo_vivo(...), emulsao(...), pressao_vapor_saturado(...), versoes()

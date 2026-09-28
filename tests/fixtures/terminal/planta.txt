@@ -23,7 +23,7 @@
   · bloco sem dimensionamento; permanece no balanço
 
   TAG     Estado              Casos ativos  Resultado             Caso governante
-  ──────  ──────────────────  ────────────  ────────────────────  ─────────────────────────
+  ──────  ──────────────────  ────────────  ────────────────────  ───────────────────
   B-001   aguardando entrada            16  —                     —
   B-002   aguardando entrada            11  —                     —
   B-003   aguardando entrada            11  —                     —
@@ -33,8 +33,8 @@
   SG-001  dimensionado                  16  Diâmetro d: 6.050 mm  BOT 12 — Late Life
   TO-001  aguardando entrada            16  —                     —
   TO-002  aguardando entrada            16  —                     —
-  V-001   dimensionado                  16  Diâmetro d: 4.700 mm  BOT 03 — Early Life Blend
-  V-002   dimensionado                  16  Diâmetro d: 4.700 mm  BOT 03 — Early Life Blend
+  V-001   dimensionado                  16  Diâmetro d: 4.700 mm  BOT 02 — Early Life
+  V-002   dimensionado                  16  Diâmetro d: 4.700 mm  BOT 02 — Early Life
 
   B-001 — Bomba de transferência de óleo
     ! h_geometrica — Desnível geométrico [m]; casos 1–16
@@ -134,7 +134,7 @@
     revisão pendente: Retenção do óleo = 10 min (recomendada); casos 1–16
     revisão pendente: Passo da grade = 150 mm (default); casos 1–16
     … +6
-    1 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
+    4 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
 
   TO-001 — Desidratador (pré-tratador eletrostático)
     ! dm_water — Gotícula de água após coalescência [µm]; casos 2–3, 8–16
@@ -142,7 +142,7 @@
     revisão pendente: Passo da grade = 150 mm (default); casos 1–16
     revisão pendente: Esbeltez mínima = 3 – (default); casos 1–16
     … +4
-    6 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
+    4 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
 
   TO-002 — Dessalinizador (tratador eletrostático)
     ! dm_water — Gotícula de água após coalescência [µm]; casos 2–3, 8–16

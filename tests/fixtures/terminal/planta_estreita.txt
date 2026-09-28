@@ -59,12 +59,12 @@
     TO-002 · Casos ativos: 16
     V-001 · Casos ativos: 16
     V-001 · Resultado: Diâmetro d: 4.700 mm
-    V-001 · Caso governante: BOT 03 — Early
-    Life Blend
+    V-001 · Caso governante: BOT 02 — Early
+    Life
     V-002 · Casos ativos: 16
     V-002 · Resultado: Diâmetro d: 4.700 mm
-    V-002 · Caso governante: BOT 03 — Early
-    Life Blend
+    V-002 · Caso governante: BOT 02 — Early
+    Life
 
   B-001 — Bomba de transferência de óleo
     ! h_geometrica — Desnível geométrico
@@ -236,7 +236,7 @@
     revisão pendente: Passo da grade = 150
     mm (default); casos 1–16
     … +6
-    1 aviso(s) de propriedades/faixas;
+    4 aviso(s) de propriedades/faixas;
     detalhe no JSON do TAG e no rastro.
 
   TO-001 — Desidratador (pré-tratador eletrostático)
@@ -249,7 +249,7 @@
     revisão pendente: Esbeltez mínima = 3 –
     (default); casos 1–16
     … +4
-    6 aviso(s) de propriedades/faixas;
+    4 aviso(s) de propriedades/faixas;
     detalhe no JSON do TAG e no rastro.
 
   TO-002 — Dessalinizador (tratador eletrostático)

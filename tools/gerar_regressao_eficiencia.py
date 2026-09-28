@@ -3,7 +3,9 @@
 
 O balanço não tem oráculo externo: esta fixture congela o resultado que o usuário conferiu em
 2026-09-25 (tabela dos 16 casos em docs/validacao/12-eficiencia-fwko.md), para que uma
-refatoração não mude número sem ser notada. Saída determinística (sem data nem caminho).
+refatoração não mude número sem ser notada. Revista em 2026-09-28 pela mudança física
+deliberada do trem produtivo (docs/validacao/39): os 12 casos avaliáveis mudam, os 4 com gás de
+lift ficam idênticos. Saída determinística (sem data nem caminho).
 
 Uso:
     uv run python tools/gerar_regressao_eficiencia.py [--saida tests/fixtures/python_ref]
@@ -19,7 +21,7 @@ from fpso_siz.balanco.modelo import resolver_todos
 RAIZ = Path(__file__).resolve().parent.parent
 ENTRADA = RAIZ / "tests" / "fixtures" / "python_ref" / "design_cases_bot.json"
 NOME = "regressao_eficiencia.json"
-ESQUEMA = 1
+ESQUEMA = 2
 
 
 def gerar():
@@ -31,7 +33,8 @@ def gerar():
     return dict(esquema=ESQUEMA, regra_fwko="eficiencia",
                 proveniencia=dict(entrada_sha256=hashlib.sha256(ENTRADA.read_bytes()).hexdigest(),
                                   gerador="tools/gerar_regressao_eficiencia.py",
-                                  conferencia="tabela dos 16 casos confirmada pelo usuário em 2026-09-25"),
+                                  conferencia="tabela dos 16 casos confirmada pelo usuário em 2026-09-25",
+                                  revisao="2026-09-28: trem produtivo nos casos avaliáveis (docs/validacao/39)"),
                 premissas=prem, casos=casos)
 
 

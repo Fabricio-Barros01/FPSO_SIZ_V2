@@ -24,8 +24,8 @@ def tabela_correntes(resultados):
                 "T_C": r.T[c["id"]], "P_kPa": r.P[c["id"]],
                 "m_O_kg_s": s["O"], "m_W_kg_s": s["W"], "m_D_kg_s": s["D"], "m_G_kg_s": s["G"],
                 "m_total_kg_s": sum(s.values()),
-                "Q_O_m3_d": r.vol(s, "O"), "Q_W_m3_d": r.vol(s, "W"), "Q_D_m3_d": r.vol(s, "D"),
-                "Q_G_Sm3_d": r.vol(s, "G"),
+                "Q_O_m3_d": r.q(c["id"], "O"), "Q_W_m3_d": r.q(c["id"], "W"), "Q_D_m3_d": r.q(c["id"], "D"),
+                "Q_G_Sm3_d": r.q(c["id"], "G"),
             })
     return linhas
 
@@ -53,6 +53,25 @@ def cargas(r):
             **trocadores, **{k: r.duties[k] for b in blocos for k in b["W"]}}
 
 
+def termodinamica(r):
+    """Avaliabilidade do caso, composição do BOT (z_base) e do caso (Nota 4) e os estágios do trem."""
+    tr, rec = r.trem, r.recombinacao
+    return {
+        "avaliavel": r.avaliavel, "motivo": tr.motivo if tr is not None else "", "z_base": dict(r.composicao),
+        "z_caso": dict(rec.z_caso) if rec else None,
+        "recombinacao": None if rec is None else {
+            "T_ref_C": rec.T_ref_C, "P_ref_kPa": rec.P_ref_kPa, "n_gas_kmol_d": rec.n_gas_kmol_d,
+            "n_liquido_kmol_d": rec.n_liquido_kmol_d, "massa_kg_d": rec.massa_kg_d,
+            "q_gas_fwko_Sm3_d": rec.reproducao.q_gas_fwko_sm3d, "q_oleo_tanque_m3_d": rec.reproducao.q_oleo_tanque_m3d,
+            "erro_gas_rel": rec.reproducao.erro_gas_rel, "erro_oleo_rel": rec.reproducao.erro_oleo_rel},
+        "estagios": [] if rec is None else [
+            {"ponto": e.ponto, "corrente_gas": e.corrente_gas, "T_C": e.T_C, "P_kPa": e.P_kPa, "beta": e.beta,
+             "n_vapor_kmol_d": e.n_vapor_kmol_d, "Q_G_Sm3_d": e.q_vapor_sm3d, "m_vapor_kg_d": e.m_vapor_kg_d,
+             "MW_v": e.vapor.MW, "Z_v": e.vapor.Z, "rho_v_kg_m3": e.vapor.rho, "y": e.y, "x": e.x}
+            for e in tr.estagios],
+    }
+
+
 def rastro(r):
     return [dict(equacao=p.equacao, escopo=p.escopo, valor=_puro(p.valor), entradas=_puro(p.entradas))
             for p in r.trace]
@@ -74,7 +93,7 @@ def estrutura_balanco(dados, prem, resultados, auditoria):
             "rho": r.rho, "cp": r.cp, "gas_props": r.gp,
             "correntes": {sid: {"T_C": r.T[sid], "P_kPa": r.P[sid], "vazao_massica_kg_s": s}
                           for sid, s in r.streams.items()},
-            "cargas": cargas(r), "gas": r.gas,
+            "cargas": cargas(r), "gas": r.gas, "termodinamica": termodinamica(r),
             "balancos_bloco": balancos_por_bloco(r), "balanco_global": balanco_global(r),
             "rastro": rastro(r),
         } for r in resultados],

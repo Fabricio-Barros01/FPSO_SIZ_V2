@@ -13,3 +13,12 @@ fonte_tolerancia = "critério de validação de entrada do serviço (a composiç
 # a coerência entre as bases (β_mássica = β·MW_v/MW_mistura).
 tolerancia_componente = 1.0e-9
 tolerancia_soma = 1.0e-9
+
+[bolha]
+# Pressão de ponto de bolha de um líquido (termo/servico.pressao_bolha): bisseção geométrica na
+# pressão sobre o próprio flash_tp, até β = 0. Critério NUMÉRICO (intervalo e número de passos),
+# não premissa física; o intervalo cobre da quase-vácuo até acima da pressão do FWKO (2.500 kPa).
+P_min_kPa = 1.0
+P_max_kPa = 5000.0
+iteracoes = 30
+fonte = "definição termodinâmica de ponto de bolha (β → 0⁺); critério numérico de convergência do projeto"

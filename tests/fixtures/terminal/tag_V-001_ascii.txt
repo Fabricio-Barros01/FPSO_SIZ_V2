@@ -33,35 +33,35 @@
   ok Viavel
 
      Diametro d                    4.700 mm
-     Comprimento efetivo Leff      11,74 m
-     Comprimento real Lss          16,44 m
-  ok Esbeltez SR                   3,50
+     Comprimento efetivo Leff      11,72 m
+     Comprimento real Lss          16,42 m
+  ok Esbeltez SR                   3,49
      Volume (casco, entre tampos)  285 m3
      Restricao governante          capacidade de liquido
-     Caso governante               BOT 03 - Early Life Blend
+     Caso governante               BOT 02 - Early Life
      Teto de decantacao            -
 
-  Governa: capacidade de liquido, pelo caso 'BOT 03 - Early Life Blend'.
+  Governa: capacidade de liquido, pelo caso 'BOT 02 - Early Life'.
 
   Casos
   Caso                       Sozinho  d (mm)  Folga (m)
   -------------------------  -------  ------  ---------
-  BOT 01 - Early Life        viavel    4.700       0,29
+  BOT 01 - Early Life        viavel    4.700       0,27
   BOT 02 - Early Life        viavel    4.700       0,00
   BOT 03 - Early Life Blend  viavel    4.700       0,00
-  BOT 04 - Early Life        viavel    2.300      10,25
-  BOT 05 - Low CO2           viavel    2.600       9,80
-  BOT 06 - Mid Life          viavel    1.700      11,24
-  BOT 07 - Mid Life          viavel    4.700       0,29
+  BOT 04 - Early Life        viavel    2.300      10,23
+  BOT 05 - Low CO2           viavel    2.600       9,77
+  BOT 06 - Mid Life          viavel    1.700      11,22
+  BOT 07 - Mid Life          viavel    4.700       0,27
   BOT 08 - Mid Life          viavel    4.250       3,15
-  BOT 09 - Mid Life          viavel    3.950       4,49
-  BOT 10 - Late Life         viavel    3.800       5,88
-  BOT 11 - Late Life         viavel    3.500       6,82
-  BOT 12 - Late Life         viavel    3.500       6,79
-  BOT 13 - High CO2          viavel    3.650       6,26
-  BOT 14 - High CO2          viavel    3.650       6,26
-  BOT 15 - Highest CO2       viavel    2.750       9,39
-  BOT 16 - Highest CO2       viavel    2.900       9,12
+  BOT 09 - Mid Life          viavel    3.950       4,47
+  BOT 10 - Late Life         viavel    3.800       5,86
+  BOT 11 - Late Life         viavel    3.500       6,80
+  BOT 12 - Late Life         viavel    3.500       6,76
+  BOT 13 - High CO2          viavel    3.650       6,24
+  BOT 14 - High CO2          viavel    3.650       6,24
+  BOT 15 - Highest CO2       viavel    2.750       9,36
+  BOT 16 - Highest CO2       viavel    2.900       9,10
   Folga = comprimento efetivo Leff do envelope - o que o caso exige; 0 no caso governante.
 
   Resultado preliminar: 6 recomendacao(oes)/default(s) sem revisao (ver Revisar).

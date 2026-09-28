@@ -350,6 +350,25 @@ def flash_tp(T, P, z, mws_plus):
     return EstadoTermodinamico(T=T, P=P, z=dict(z), fases=fases)
 
 
+def pressao_bolha(T, z, mws_plus):
+    """Pressão de ponto de bolha [Pa] do líquido `z` a T [K]: a maior pressão em que o flash
+    ainda prevê vapor (β > 0), por bisseção geométrica sobre `flash_tp` (config/termo/flash.toml
+    [bolha]). É uma leitura do mesmo equilíbrio, não correlação nova. Fora do intervalo: NaN."""
+    c = cfg_flash()["bolha"]
+    lo, hi = kpa_para_pa(c["P_min_kPa"]), kpa_para_pa(c["P_max_kPa"])
+
+    def ferve(P):
+        f = flash_tp(T, P, z, mws_plus)
+        return f.ok and f.vapor is not None and f.vapor.fracao_molar > 0
+
+    if not ferve(lo) or ferve(hi):
+        return math.nan
+    for _ in range(c["iteracoes"]):
+        meio = math.sqrt(lo * hi)
+        lo, hi = (meio, hi) if ferve(meio) else (lo, meio)
+    return hi
+
+
 def mw_mistura(z, mws_plus):
     """MW da mistura, Σ zᵢ·MWᵢ, com os MW ADOTADOS (banco para os reais, caracterização para
     os pseudo): os mesmos que o flash usa. Não é o MW verdadeiro do petróleo real."""

@@ -1,13 +1,12 @@
 """O estado de processo oficial: o que `balanco.modelo.resolver_caso` devolve e o que TODO o
 resto consome — entradas dos TAGs, dimensionamento, otimização, saídas, memoriais e gate.
 
-Não existe outro. O trem de separação (`balanco/trem.py`) é parte deste estado, avaliado sob
-demanda (é caro: um flash por estágio) e guardado no próprio objeto na primeira leitura.
+Não existe outro. O trem de separação (`balanco/trem.py`) é parte deste estado: nos casos
+termodinamicamente avaliáveis é ele que dá o gás de cada estágio; nos demais o estado diz por que
+não é avaliável.
 """
 from dataclasses import dataclass, field
-from functools import cached_property
 
-from fpso_siz.balanco import trem as _trem
 from fpso_siz.balanco.dados import constantes
 from fpso_siz.core.trace import CalcTrace
 from fpso_siz.core.unidades import SEGUNDOS_POR_DIA
@@ -49,6 +48,23 @@ class EstadoProcesso:
     composicao: dict = field(default_factory=dict)  # z₀ do fluido (fração molar, só os componentes presentes)
     mws_plus: dict = field(default_factory=dict)    # MW das frações plus (BOT, c20_pseudo)
     proveniencia: dict = field(default_factory=dict)
+    trem: object = None                             # balanco/trem.TremSeparacao (produtivo ou não avaliável)
+    gas_padrao: dict = field(default_factory=dict)  # Sm³/d do componente G por corrente (casos avaliáveis)
+
+    @property
+    def avaliavel(self):
+        """O caso entrou no trem produtivo (recombinação + flash)?"""
+        return self.trem is not None and self.trem.avaliavel
+
+    @property
+    def recombinacao(self):
+        return self.trem.recombinacao if self.avaliavel else None
+
+    def vapor(self, corrente):
+        """Fase vapor do estágio cuja corrente de gás é `corrente` (None fora do trem produtivo)."""
+        if not self.avaliavel:
+            return None
+        return next((e.vapor for e in self.trem.estagios if e.corrente_gas == corrente), None)
 
     @property
     def num(self):
@@ -67,10 +83,13 @@ class EstadoProcesso:
         return sum(s[c] * self.cp[c] for c in COMP) * (t - self.T_ref)
 
     def vol(self, s, c):
-        """Vazão volumétrica padrão do componente, m³/d (Sm³/d para gás)."""
+        """Vazão volumétrica padrão do componente, m³/d (Sm³/d para gás, com a ρ padrão do corte
+        leve: só vale para o gás de um caso não avaliável — use `q`)."""
         return s[c] / self.rho[c] / K_DIA
 
-    @cached_property
-    def trem(self):
-        """O trem SG-001 → V-001 → V-002 deste caso (`balanco/trem.TremSeparacao`)."""
-        return _trem.resolver(self)
+    def q(self, sid, c):
+        """Vazão volumétrica padrão do componente c na corrente sid (m³/d; Sm³/d para gás). O gás
+        de um caso avaliável tem o volume que o trem deu à corrente (`gas_padrao`)."""
+        if c == "G" and sid in self.gas_padrao:
+            return self.gas_padrao[sid]
+        return self.vol(self.streams[sid], c)

@@ -9,10 +9,10 @@
   rho_tubo                   -  kg/m3    lacuna
   mu_tubo                    -  cP       lacuna
   k_tubo                     -  W/m.K    lacuna
-  m_casco              298,555  kg/s     balanco
-  cp_casco             1993,99  J/kg.K   balanco
-  t_casco_in           80,3181  degC     balanco
-  mu_casco             4,95063  cP       correlacao
+  m_casco              308,304  kg/s     balanco
+  cp_casco             1980,16  J/kg.K   balanco
+  t_casco_in           79,7723  degC     balanco
+  mu_casco             3,10591  cP       correlacao
   k_casco                    -  W/m.K    lacuna
   h_casco                  500  W/m2.K   default
   corte_chicana           0,25  -        default      revisao pendente

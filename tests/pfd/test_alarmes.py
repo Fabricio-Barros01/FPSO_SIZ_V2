@@ -33,8 +33,11 @@ def test_p001_um_passe_troca_o_dominio_de_f_pela_area(planta_propostas):
     rt = planta_propostas.tag("P-001")
     assert "fator de correção F" in rt.resultado.message
     r = inv.executar_variante(planta_propostas.contexto, "P-001", inv.variante("passes_1"), rt.estado).resultado
-    assert not r.feasible
-    assert "tubo mais longo" in r.message and "Dittus-Boelter" not in r.message
+    assert not r.feasible and "Dittus-Boelter" not in r.message
+    # Com Standing o bloqueio era o comprimento ("tubo mais longo"). Com o trem produtivo
+    # (docs/validacao/39) o lado tubo leva mais gás dissolvido (ṁ +8 %) e μ menor (Rs maior no
+    # Beggs & Robinson), e a variante para antes, na banda de velocidade da grade de tubos.
+    assert "velocidade no tubo na banda" in r.message
 
 
 # ------------------------------------------------------------------ P-44 (F10x.6)

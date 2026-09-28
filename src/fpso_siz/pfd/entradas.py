@@ -253,7 +253,7 @@ class _Caso:
         if not math.isfinite(v.valor):
             return Valor(math.nan, LACUNA, v.fonte + "; resultado não finito", pendente=(chave,))
         prop = proveniencia.da_regra(regra["regra"])
-        return replace(v, propriedade=prop) if prop else v
+        return replace(v, propriedade=prop) if prop and not v.propriedade else v
 
     def _proposta(self, chave):
         """Valor do pendencias_propostas.toml para a lacuna, se carregado (origem própria)."""
@@ -408,9 +408,11 @@ def r_cp_corrente(ctx, alvo, corrente):
 
 def r_vazao_gas_padrao(ctx, alvo, corrente):
     """Vazão de gás na condição PADRÃO (Sm³/h): a Eq. 3.8b de Stewart & Arnold usa Qg em
-    'MMscfd (scmh)'; T, Z e P da própria equação levam à condição de operação."""
-    return _balanco(ctx.r.vol(ctx.r.streams[corrente], "G") / HORAS_POR_DIA,
-                    f"{corrente}: gás na condição padrão (S&A Eq. 3.8b: Qg em scm/h)")
+    'MMscfd (scmh)'; T, Z e P da própria equação levam à condição de operação. No caso
+    avaliável é ṅ_V·V_M do trem."""
+    trem = "n_V·V_M do flash do estágio" if ctx.r.vapor(corrente) is not None else "ΔRs de Standing"
+    return _balanco(ctx.r.q(corrente, "G") / HORAS_POR_DIA,
+                    f"{corrente}: gás na condição padrão, {trem} (S&A Eq. 3.8b: Qg em scm/h)")
 
 
 def r_vazao_fase(ctx, alvo, corrente, fase, t=None):
@@ -462,15 +464,30 @@ def r_viscosidade_fase(ctx, alvo, corrente, fase, t=None, continua=None, rs=None
     return Valor(mu, "propriedade", f"{corrente}: emulsão, {sub_c} contínuo (Branan eq. 27-4){nota}")
 
 
+def _vapor(ctx, corrente, alvo, valor, rotulo, prop, unidade):
+    """Propriedade da fase vapor de equilíbrio do estágio (caso avaliável), com a proveniência
+    do trem; anotada no rastro do TAG."""
+    v = ctx.r.vapor(corrente)
+    ctx.rastro.trace(termo.BLOCO, "Peng-Robinson (trem, Nota 4)", f"{rotulo} ({corrente})",
+                     f"fase vapor do flash do estágio: MW_v = {v.MW:.4f} g/mol, Z_v = {v.Z:.6f}", valor(v), unidade)
+    return Valor(valor(v), "propriedade", f"{corrente}: {rotulo} do vapor de equilíbrio do estágio (PR, trem)",
+                 propriedade=prop)
+
+
 def r_densidade_gas(ctx, alvo, corrente):
+    if ctx.r.vapor(corrente) is not None:
+        return _vapor(ctx, corrente, alvo, lambda v: v.rho, "ρ_g", "rho_vapor_estagio", "kg/m³")
     return Valor(_gas(ctx, corrente).rho, "propriedade", f"{corrente}: ρ do gás na condição (EOS)")
 
 
 def r_viscosidade_gas(ctx, alvo, corrente):
-    return Valor(_gas(ctx, corrente).mu, "propriedade", f"{corrente}: μ do gás na condição")
+    corte = ", corte leve do balanço (sem método validado para a composição y)" if ctx.r.vapor(corrente) else ""
+    return Valor(_gas(ctx, corrente).mu, "propriedade", f"{corrente}: μ do gás na condição{corte}")
 
 
 def r_compressibilidade_gas(ctx, alvo, corrente):
+    if ctx.r.vapor(corrente) is not None:
+        return _vapor(ctx, corrente, alvo, lambda v: v.Z, "Z", "Z_vapor_estagio", "–")
     return Valor(_gas(ctx, corrente).Z, "propriedade", f"{corrente}: Z do gás na condição (EOS)")
 
 

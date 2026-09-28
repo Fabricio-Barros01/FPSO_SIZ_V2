@@ -438,8 +438,9 @@ def _conferir_niveis(rt, cartao, envelope, mc_json):
 IDENTIDADE_OBRIGATORIA = ("commit", "casos", "modelo", "propostas", "premissas_alteradas", "modos_dos_tags")
 # O modelo de processo é um só desde a consolidação (docs/arquitetura/arquitetura-alvo.md): a
 # identidade o declara em vez de listar modos que não existem mais.
-MODELO = ("regra de eficiência do FWKO (P-43); óleo vivo (Beggs & Robinson sobre o óleo morto do BOT); "
-          "alocação de correntes do projeto (P-46)")
+MODELO = ("regra de eficiência do FWKO (P-43); gás de SG-001/V-001/V-002 pelo trem (Nota 4 + flash) nos casos "
+          "sem gás de lift e por Standing nos demais (docs/validacao/39); óleo vivo (Beggs & Robinson sobre o óleo "
+          "morto do BOT); alocação de correntes do projeto (P-46)")
 
 
 def identidade(ctx, planta, casos=""):
