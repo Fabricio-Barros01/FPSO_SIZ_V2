@@ -49,7 +49,8 @@ arquivo do BOT + premissas
    o dimensionamento por capacidade de gás e exige decidir o que os 16 casos representam
    (envelope de projeto × estado composicional). Leitura da fonte: o BOT (Tab. 2.2.2.3, Nota 4)
    prevê flash + recombinação para ajustar o GOR de cada caso — `docs/validacao/35-casos-bot.md`
-   (decisão pendente: condição de referência — padrão ou FWKO — a testar antes de ativar).
+   (condição de referência comparada em `docs/validacao/38-recombinacao-nota4.md`: recomendada a do
+   FWKO, 2.500 kPa(a) e T do caso, por consistência com Nota 3 e Tab. 2.5.2; aguarda aprovação).
 3. **Composição do gás de lift** — ausente na fonte (BOT §2.3.3 só dá especificação); casos 9, 11,
    15 e 16.
 4. **h e cp dos pseudo-componentes** — sem Cp_ig com fonte (a rota PNA para H/C não fecha).
