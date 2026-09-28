@@ -216,7 +216,8 @@ def oleo_vivo(mu_od, rs_scf_stb, api, T_C, rastro=None):
         avisos.append(f"API {api:g} fora da faixa de Beggs & Robinson ({c['faixa_api'][0]:g}–{c['faixa_api'][1]:g})")
     if not c["faixa_t_f"][0] <= t_f <= c["faixa_t_f"][1]:
         avisos.append(f"T = {t_f:.0f} °F fora da faixa de Beggs & Robinson ({c['faixa_t_f'][0]:g}–{c['faixa_t_f'][1]:g} °F)")
-    _anotar(rastro, c["rotulo"], "Rs", "gás dissolvido da corrente (balanço, Standing)", rs_scf_stb, "scf/STB")
+    _anotar(rastro, c["rotulo"], "Rs", "gás dissolvido da corrente (balanço: trem nos casos avaliáveis, Standing nos "
+            "demais)", rs_scf_stb, "scf/STB")
     _anotar(rastro, c["rotulo"], "μ_o", "óleo vivo: A·μ_od^B", mu, "cP")
     return mu, avisos
 
