@@ -43,7 +43,7 @@ declarada** da composição por caso.
 
 - Flashar z₀ (tipo de fluido) direto — o que o trem faz hoje — **não** é o estado de nenhum caso;
   é por isso que as duas bases molares possíveis discordam de 0,7 % a 116 %.
-- Com a recombinação da Nota 4 **numa condição de referência fixa**, a composição do caso
+- Com a recombinação da Nota 4 **numa condição de referência fixa** (ainda a escolher, §5), a composição do caso
   `z_caso = (ṅ_g·y_ref + ṅ_o·x_ref)/(ṅ_g + ṅ_o)`, com `ṅ_g = Q_g/V_M` e `ṅ_o = Q_o·ρ_o/MW_x`,
   reproduz os dois volumes do BOT **por construção**, e a base molar fica única (a discordância
   0,7–116 % desaparece). Recombinar não é otimizar componentes: é a regra de mistura de duas
@@ -64,12 +64,17 @@ nenhum caso sai do dimensionamento por esta nota.
 
 ## 5. Decisão recomendada para o modelo (requer aprovação)
 
-1. **Adotar a Nota 4 como regra declarada**, com a recombinação **na condição padrão**
-   (15,6 °C; 101,3 kPa(a)) — a mesma em que o BOT define o Sm³ e o óleo morto (Nota 2, §1.4.2);
-   leitura (i) de "Produced Gas". Premissa nova do usuário, com fonte (Nota 4) e parâmetro
-   escolhido (a condição) — **não** é dado do BOT.
-   *Alternativa*: recombinar na condição do FWKO (2.500 kPa(a), T do caso), leitura (ii).
-   Muda a partição do gás, e com ela o SG-001.
+1. **Adotar a Nota 4 como regra declarada**, sem escolher ainda a condição de referência. Há duas
+   candidatas, nenhuma prescrita pelo BOT:
+   - **condição padrão** (15,6 °C; 101,3 kPa(a)) — coerente com a base Sm³ e com o óleo morto
+     (Nota 2, §1.4.2), leitura (i) de "Produced Gas"; não prescrita pelo BOT;
+   - **condição do FWKO** (2.500 kPa(a), T do caso) — alternativa compatível com a leitura (ii),
+     em que "Produced Gas" é o gás do primeiro estágio; muda a partição do gás, e com ela o SG-001.
+
+   A próxima etapa deve **testar a consistência das duas interpretações** (volumes do BOT
+   reproduzidos, partição por estágio, efeito no envelope) **antes de qualquer ativação
+   produtiva**. A escolha é premissa nova do usuário, com fonte (Nota 4) e parâmetro escolhido
+   (a condição) — não é dado do BOT.
 2. Casos 9, 11, 15 e 16: fluido produzido recombinado; o lift fica **fora** do flash e a
    lacuna continua declarada. Tratar o lift como gás que sai inteiro no SG-001 seria
    premissa nova — não adotada aqui.

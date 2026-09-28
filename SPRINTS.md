@@ -42,14 +42,14 @@ arquivo do BOT + premissas
 
 1. **P-001 inviável** — troca óleo/óleo com aproximação de 10 K (P-32) exige ~186 m de tubo
    contra 6 m; nenhuma correlação resolve. Decisão de projeto (P-32, arranjo, ou aceitar).
-   Diagnóstico e árvore de alternativas: `docs/validacao/36-p001-diagnostico.md` (o P-001 não
-   depende de P_D1/P_D2).
+   Diagnóstico e árvore de alternativas: `docs/validacao/36-p001-diagnostico.md` (no modelo atual,
+   por Standing, a sensibilidade do P-001 a P_D1/P_D2 é desprezível, ~0,2 %; a reconferir com o flash).
 2. **O trem não reconcilia com o BOT** — a composição é por tipo de fluido; GOR(flash)/GOR(BOT)
    de 0,62 a 2,16. Enquanto isso, β/x/y ficam `nao_validada` e sem consumidor. Consumi-los muda
    o dimensionamento por capacidade de gás e exige decidir o que os 16 casos representam
    (envelope de projeto × estado composicional). Leitura da fonte: o BOT (Tab. 2.2.2.3, Nota 4)
    prevê flash + recombinação para ajustar o GOR de cada caso — `docs/validacao/35-casos-bot.md`
-   (decisão pendente: condição de referência da recombinação).
+   (decisão pendente: condição de referência — padrão ou FWKO — a testar antes de ativar).
 3. **Composição do gás de lift** — ausente na fonte (BOT §2.3.3 só dá especificação); casos 9, 11,
    15 e 16.
 4. **h e cp dos pseudo-componentes** — sem Cp_ig com fonte (a rota PNA para H/C não fecha).
@@ -57,8 +57,10 @@ arquivo do BOT + premissas
 6. **Discretização das grades** do trocador (caso × envelope) — `docs/validacao/33-…`; muda número.
 7. **Faixas de P_D1 e P_D2** para a otimização — sem fonte ainda; a arquitetura já as aceita por
    configuração (`destino = "premissa"`), e o trem as lê do estado. O BOT não dá pressão de
-   degaseificador; a TVP ≤ 70 kPa (§2.3.1.1/§2.7.1.10) dá um teto para P_D2 (≈ 137–162 kPa(a)
-   pelo flash, que a P-19 = 200 kPa excede); o piso depende da VRU, fora do BOT —
+   degaseificador; a TVP ≤ 70 kPa (§2.3.1.1/§2.7.1.10) é o critério do teto de P_D2. No modelo
+   diagnóstico atual (composição não reconciliada, x `nao_validada`) o teto preliminar sai
+   ≈ 137–162 kPa(a) e a P-19 = 200 kPa o excede — não é verificação de projeto nem limite de
+   otimização antes da recombinação da Nota 4; o piso depende da VRU, fora do BOT —
    `docs/validacao/37-faixas-pressao-degaseificadores.md`.
 8. **Otimização F15** — `docs/validacao/23-otimizacao.md` desatualizado; rodar de novo depois de
    decidir 1 e 7.

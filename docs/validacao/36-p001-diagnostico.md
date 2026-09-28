@@ -14,7 +14,8 @@ Q_pre = min(C_frio, C_quente) · (T_22 − T_06 − ΔT_app)          (balanco/m
 ```
 
 Com C_frio ≈ C_quente (R = 0,99–1,05 nos casos 1–7), a troca é quase **balanceada**: em
-contracorrente ΔT_ml ≈ ΔT_app em todo o trocador, logo **UA ≈ Q_pre/ΔT_app**. A P-32 fixa a área.
+contracorrente ΔT_ml ≈ ΔT_app em todo o trocador, logo **UA ≈ Q_pre/ΔT_app** — com Q_pre também
+função de ΔT_app. A P-32 fixa, ao mesmo tempo, a recuperação e a área.
 
 | caso | Q_pre (kW) | T frio in→out (°C) | T quente in→out (°C) | ΔT_ml (K) | P | R | NTU | UA (kW/K) |
 |---:|---:|---|---|---:|---:|---:|---:|---:|
@@ -39,8 +40,10 @@ contracorrente ΔT_ml ≈ ΔT_app em todo o trocador, logo **UA ≈ Q_pre/ΔT_ap
 | limite construtivo | L ≤ 6 m (Branan p. 38, default do método), D_casco ≤ 2.500 mm e v ≤ 3 m/s (Saari Tab. 3.1) |
 | natureza do problema | **combinação**: (a) abordagem térmica (P-32) × troca balanceada → UA alto; (b) óleo viscoso que não chega ao turbulento sob o teto de 3 m/s → U baixo; (c) **turndown** de até ~24× em capacidade térmica (C_frio de 627 a 26 kW/K) numa geometria única → laminar (U ≈ 25) nos casos de baixa vazão; (d) arranjo 1-2 incompatível com P ≈ 0,7–0,8. Não é vazão nem numérico |
 
-**O P-001 não depende de P_D1/P_D2.** Com Standing, o gás dissolvido em C-06 é fixado pela
-pressão do FWKO; P_D1 e P_D2 só entram via aquecimento nas bombas. Caso 2: Q_pre vai de
+**No modelo produtivo atual baseado em Standing, a sensibilidade direta do P-001 a P_D1/P_D2 é
+desprezível (~0,2 % no teste realizado). Isso não implica independência no futuro modelo integrado
+por flash.** Com Standing, o gás dissolvido em C-06 é fixado pela pressão do FWKO; P_D1 e P_D2 só
+entram via aquecimento nas bombas. Caso 2: Q_pre vai de
 16.532 a 16.570 kW (0,2 %) com (P_D1, P_D2) de (700, 200) a (400, 120) kPa.
 
 ## 3. Árvore de alternativas (hipóteses, não autorização)
@@ -50,7 +53,7 @@ generalizada para N cascos): caso 2 → 3 cascos; caso 4 → 4; casos 5 e 6 → 
 
 | alternativa | o que muda | fonte necessária | impacto no balanço | impacto no resto da planta | muda a contribuição do TCC? |
 |---|---|---|---|---|---|
-| **A1. Rever P-32** (ΔT_app) | UA cai com 1/ΔT_app: caso 2 → 517 kW/K (20 K) e 153 kW/K (30 K) | valor de aproximação para troca líquido-líquido de óleo com fonte (acervo) | Q_pre ↓, **Q_H ↑** (caso 2: 6,9 → 12,8 → 18,8 MW), Q_C ↑ | P-002 e P-003 maiores; objetivo "carga de aquecimento" piora | não; e P-32 poderia ser **variável** (troca área × utilidade) |
+| **A1. Rever P-32** (ΔT_app) | aumentar ΔT_app reduz simultaneamente a recuperação térmica e o UA requerido nos cenários avaliados: caso 2 → Q_pre 16,5 → 10,6 → 4,6 MW e UA 1.547 → 517 → 153 kW/K (10, 20, 30 K) | valor de aproximação para troca líquido-líquido de óleo com fonte (acervo) | Q_pre ↓, **Q_H ↑** (caso 2: 6,9 → 12,8 → 18,8 MW), Q_C ↑ | P-002 e P-003 maiores; objetivo "carga de aquecimento" piora | não; e P-32 poderia ser **variável** (troca área × utilidade) |
 | **A2. Cascos 1-2 em série** | resolve o domínio de F (3–5 cascos) | Saari (já no acervo); método já tem `cascos_serie` | nenhum | só o P-001 | não. **Sozinha não resolve**: a área (~4.000 m² no projeto, ~17.600 m² no turndown laminar) continua |
 | **A3. Contracorrente pura** (1 passe, ou grampo/tubo duplo) | F = 1 | Saari §4.2.1 (1 passe já existe); tubo duplo exigiria método novo | nenhum | só o P-001 | não. Mesma limitação de área |
 | **A4. Inverter os lados** | óleo tratado quente no tubo | — | nenhum | — | já testada (14-alarmes): segue inviável |
@@ -62,6 +65,7 @@ generalizada para N cascos): caso 2 → 3 cascos; caso 4 → 4; casos 5 e 6 → 
 
 **Leitura:** nenhuma alternativa é um ajuste numérico. As que resolvem de fato atacam a
 **abordagem (A1)**, o **modo de operação no turndown (A5/A6)** ou o **tipo de equipamento (A7)**.
-A2/A3 só trocam o primeiro impedimento pelo segundo. Como o P-001 é independente de P_D1/P_D2,
-a decisão sobre ele **não** bloqueia o laço pressão → flash → vasos; bloqueia a otimização da
-planta **inteira** (a área dos trocadores é objetivo).
+A2/A3 só trocam o primeiro impedimento pelo segundo. Como, no modelo atual, a sensibilidade do
+P-001 a P_D1/P_D2 é desprezível, a decisão sobre ele **não parece** bloquear o laço pressão →
+flash → vasos — o que precisa ser reconferido no modelo integrado por flash; bloqueia a
+otimização da planta **inteira** (a área dos trocadores é objetivo).
