@@ -149,3 +149,43 @@ motivo = "k da fase líquida de hidrocarboneto é caso (c) da invariante 5 — d
 tolerancia_componente = 1.0e-9
 tolerancia_soma = 1.0e-9
 nota = "critérios NUMÉRICOS de verificação do flash, não premissas físicas. z_i = β·y_i + (1−β)·x_i componente a componente; soma das composições; balanço molar e mássico; e desaparecimento de fase no monofásico."
+
+# ---------------------------------------------------------------------------- F5.1 — cascata
+# A F5 avaliou os três pontos como flashes INDEPENDENTES da mesma composição global. A F5.1
+# encadeia-os: o líquido de um estágio é a alimentação do próximo, e a quantidade absoluta de
+# hidrocarboneto é propagada. Continua tudo em SOMBRA: nenhuma propriedade muda de status aqui.
+
+[cascata]
+modo = "sombra"
+sequencia = ["SG-001", "V-001", "V-002"]
+alimentacao = "z_0 = fluid_compositions[fluid_type] no primeiro estágio; x do estágio anterior nos seguintes"
+propagacao = "n_V = β·n_F e n_L = (1−β)·n_F, estágio a estágio"
+nota = "o estágio seguinte recebe o LÍQUIDO do anterior. Se um estágio perder a fase líquida, a cascata termina ali e isso é registrado: não se inventa alimentação."
+
+# --------------------------------------------------------------- base molar absoluta
+# REGRA DECLARADA, não suposta. O arquivo de casos NÃO traz vazão molar, e as três grandezas
+# que existem (oil_sm3d, produced_gas_sm3d e fluid_compositions) são INCOMPATÍVEIS entre si:
+# a composição é por TIPO DE FLUIDO e os sete tipos aparecem em casos com GOR diferentes, de
+# modo que nenhum split de fases na condição padrão reproduz os dois volumes de todos os casos
+# (medido: a razão GOR do flash / GOR do BOT vai de 0,62 a 2,16). Por isso a base molar NÃO é
+# derivada de um split: é derivada da MASSA, que é a grandeza que o balanço produtivo conserva.
+[base_molar]
+regra = "n_F = m_HC,in / MW_z"
+massa = "m_HC,in = oil_sm3d·ρ_óleo(API) + produced_gas_sm3d·ρ_gás,padrão — os MESMOS dois termos, com as MESMAS duas massas específicas, que o balanço produtivo põe em C-01"
+mw = "MW_z = Σ_fases (fração molar · MW da fase) do flash do primeiro estágio: o MW da mistura pelos MW ADOTADOS nas entradas e na caracterização (F4), não o MW verdadeiro do petróleo real"
+rho_oleo = "ρ = (141,5/(131,5 + API))·ρ_água,15,6 °C — API do poço, dado do BOT (o mesmo do balanço)"
+rho_gas = "ρ = MW_corte_leve / V_M, com V_M = R·T_padrão/P_padrão — a definição de sm³ (o mesmo V_M e o mesmo corte leve do balanço)"
+unidade = "kmol/d"
+inclui_gas_de_lift = false
+por_que_nao_o_split = "usar o split de fases na condição padrão para fixar a base exigiria escolher entre a base do gás (n_gás/β) e a base do óleo (n_óleo/(1−β)), que discordam entre 0,7 % e 116 % nos 16 casos. Escolher uma delas seria inventar quantidade molar para fechar o flash."
+conserva = "a massa total de hidrocarboneto é a mesma do balanço produtivo (menos o gás de lift, ver a lacuna), então a cascata e o modelo legado partem dos mesmos quilogramas"
+
+[[lacuna_cascata]]
+id = "composicao_gas_de_lift"
+grandeza = "composição do gás de lift"
+situacao = "ausente"
+fonte_procurada = "BOT I-ET-3010.2K-1200-941-P4X-001 rev. C, §2.3.3 (Service and Lift Gas)"
+o_que_a_fonte_da = "apenas ESPECIFICAÇÃO de envelope — máximo 5 ppmv de H2S, máximo 3 % mol de CO2, máximo 1 ppmv de H2O —, que são limites superiores, não uma composição"
+o_que_existe_na_fonte = "a composição do gás TRANSFERIDO (GT30/GT40/GT50) está na Tabela 2.3.5.1; ela é de outra corrente, que não entra em C-01, e não pode ser usada como se fosse a do gás de lift"
+efeito = "nos casos com lift_gas_sm3d > 0 o balanço produtivo soma o lift ao gás de entrada (Gin = produced + lift) e converte a massa com a ρ_padrão do CORTE LEVE DO FLUIDO DE POÇO, isto é, atribui ao gás de lift a composição do poço. A cascata em sombra NÃO faz isso: ela exclui o lift da base molar e declara a lacuna."
+decisao = "não supor composição. A base molar da cascata usa só o gás produzido; a diferença em relação ao balanço é reportada caso a caso."

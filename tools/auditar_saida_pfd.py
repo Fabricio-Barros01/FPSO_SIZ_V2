@@ -33,6 +33,7 @@ import re
 import sys
 from pathlib import Path
 
+from fpso_siz import __version__
 from fpso_siz.balanco.dados import carregar_casos
 from fpso_siz.output import pfd as saida_pfd
 from fpso_siz.output.latex.tag import memorial as saida_mc
@@ -445,6 +446,42 @@ def _conferir_niveis(rt, cartao, envelope, mc_json):
 
 
 # ------------------------------------------------------------------ execução e relatório
+# Chaves da identidade que NÃO podem faltar: sem elas o relatório não é atribuível a uma
+# execução, e um gate que não se sabe de onde veio não serve de gate.
+IDENTIDADE_OBRIGATORIA = ("commit", "casos", "oleo", "propostas", "topologia", "regra_fwko",
+                          "premissas_alteradas", "modos_dos_tags")
+
+
+def identidade(ctx, planta, casos=""):
+    """Identidade da execução: o que foi dimensionado, com qual código e sob quais opções.
+
+    Tudo o que muda dimensionamento entra aqui — o arquivo de casos e seu SHA, a regra do
+    FWKO (que muda o balanço), a viscosidade do óleo, a alocação de correntes, as propostas
+    que preencheram lacunas, as premissas alteradas e o modo de cada TAG. A proveniência do
+    código vem da mesma função que os memoriais usam (`proveniencia_git`), não de outra."""
+    commit, sujo = saida_mc.proveniencia_git()
+    prop = ctx.propostas
+    balanco = ctx.resultados_balanco if ctx.balanco_resolvido else []
+    ident = {
+        "commit": commit,
+        "arvore_suja": sujo,
+        "fpso_siz": __version__,
+        "casos": {"arquivo": str(casos) or ctx.dados.origem, "origem": ctx.dados.origem,
+                  "sha256": ctx.dados.sha256, "n_casos": len(ctx.dados.casos)},
+        "oleo": "vivo" if ctx.oleo_vivo else "morto",
+        "propostas": ({"arquivo": prop.arquivo, "sha256": prop.sha256} if prop else "não usadas"),
+        "topologia": "pfd_f1_julia" if ctx.topologia_julia else "projeto_p46",
+        "regra_fwko": balanco[0].fwko["regra"] if balanco else None,
+        "premissas_alteradas": dict(ctx.alteracoes),
+        "modos_dos_tags": {rt.tag.tag: rt.entradas.modo for rt in planta.tags},
+        "versoes_propriedades": ctx.versoes,
+    }
+    faltando = [k for k in IDENTIDADE_OBRIGATORIA if ident.get(k) is None]
+    ident["completa"] = not faltando
+    ident["faltando"] = faltando
+    return ident
+
+
 def auditar_planta(ctx, planta, pasta, casos=""):
     """Audita uma planta já dimensionada (o gate e a suíte usam a mesma função)."""
     pasta = Path(pasta)
@@ -455,8 +492,11 @@ def auditar_planta(ctx, planta, pasta, casos=""):
         linhas.append(li)
         achados += ac
     contagem = {c: sum(1 for a in achados if a["categoria"] == c) for c in CATEGORIAS}
-    return dict(casos=str(casos), sha256=ctx.dados.sha256, tags=linhas, achados=achados, contagem=contagem,
-                erros=[a for a in achados if a["erro"]], aprovada=not any(a["erro"] for a in achados))
+    ident = identidade(ctx, planta, casos)
+    erros = [a for a in achados if a["erro"]]
+    return dict(identidade=ident, casos=ident["casos"]["arquivo"], sha256=ctx.dados.sha256, tags=linhas,
+                achados=achados, contagem=contagem, erros=erros,
+                aprovada=not erros and ident["completa"])
 
 
 def auditar(casos, pasta, propostas=True, oleo_vivo=True):
@@ -484,11 +524,32 @@ def limpar(obj):
     return obj
 
 
+def _identidade_md(ident):
+    alteradas = ", ".join(f"{k} = {v}" for k, v in ident["premissas_alteradas"].items()) or "nenhuma"
+    prop = ident["propostas"]
+    modos = ", ".join(sorted({m for m in ident["modos_dos_tags"].values()}))
+    linhas = [("commit", f"`{ident['commit']}`" + (" (árvore suja)" if ident["arvore_suja"] else "")),
+              ("versão", ident["fpso_siz"]),
+              ("casos", f"`{ident['casos']['arquivo']}` — sha256 `{ident['casos']['sha256'][:12]}`, "
+                        f"{ident['casos']['n_casos']} casos"),
+              ("regra do FWKO", ident["regra_fwko"]),
+              ("viscosidade do óleo", ident["oleo"]),
+              ("alocação de correntes", ident["topologia"]),
+              ("propostas", prop if isinstance(prop, str) else
+               f"`{prop['arquivo']}` — sha256 `{prop['sha256'][:12]}`"),
+              ("premissas alteradas", alteradas),
+              ("modo dos TAGs", modos),
+              ("propriedades", "; ".join(f"{k} {v}" for k, v in ident["versoes_propriedades"].items()))]
+    fora = "" if ident["completa"] else f"\n\n**Identidade incompleta:** falta {', '.join(ident['faltando'])}."
+    return ["## Identidade da execução", "", "| item | valor |", "|---|---|",
+            *(f"| {k} | {v} |" for k, v in linhas), fora, ""]
+
+
 def resumo_md(rel):
     aprovada = "APROVADA" if rel["aprovada"] else "REPROVADA"
     out = [f"# Auditoria de saída do PFD — {aprovada}", "",
-           f"Casos: `{rel['casos']}` (sha256 `{rel['sha256'][:12]}`). "
-           f"Gerado por `tools/auditar_saida_pfd.py`; todos os números vêm do fluxo real.", "",
+           "Gerado por `tools/auditar_saida_pfd.py`; todos os números vêm do fluxo real.", "",
+           *_identidade_md(rel["identidade"]),
            "| TAG | estado | viável | caso governante | principais | ausências | lacunas | avisos | MC |",
            "|---|---|---|:--:|---|--:|--:|--:|:--:|"]
     for t in rel["tags"]:

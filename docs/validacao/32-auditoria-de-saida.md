@@ -10,6 +10,17 @@ dimensionamento: a auditoria só lê o que o fluxo de produção produziu.
 uv run python tools/auditar_saida_pfd.py            # 0 = aprovada, 1 = erro de aceite, 2 = a auditoria não rodou
 ```
 
+## Identidade da execução (obrigatória)
+
+`resumo.json` e `resumo.md` abrem pela identidade, e **um relatório sem identidade completa
+reprova**, mesmo sem nenhum achado: auditoria que não se sabe de que commit e de que entrada
+veio não é gate. São registrados o **commit** (e se a árvore estava suja, pela mesma
+`proveniencia_git()` que os memoriais usam), a versão do pacote, o **arquivo de casos com
+SHA-256** e o número de casos, e tudo o que muda dimensionamento: **regra do FWKO**,
+**viscosidade do óleo** (vivo/morto), **alocação de correntes** (projeto P-46 / PFD F1 do
+Julia), **propostas** usadas (arquivo e SHA-256) ou «não usadas», **premissas alteradas** e o
+**modo de cada TAG** (automático/manual), além das versões das bibliotecas de propriedades.
+
 ## O que é conferido
 
 **Três níveis, antes de qualquer formatação.** `SizingResult`/`EnvelopeResult` (memória) →
@@ -70,9 +81,11 @@ quebra deixaram de ser uma busca linear por linha da varredura.
 teste `test_governante_bate_com_a_varredura_individual_onde_a_grade_contem_o_x` prova, caso a
 caso, em quatro métodos. A correção só passou a responder onde antes devolvia vazio.
 
-**Nota:** o desalinhamento das grades continua existindo (registrado desde a R1). Ele não é
-mais um defeito de saída, mas segue sendo uma escolha de discretização a revisar; o MC agora
-descreve o mesmo ponto para todos os casos, que é o que o envelope de fato dimensiona.
+**Nota:** o desalinhamento das grades continua existindo. Ele não é mais um defeito de saída,
+mas segue sendo uma escolha de discretização a revisar, registrada como pendência própria em
+`33-discretizacao-das-grades.md` — **separada da R1 e da R2**, que estão encerradas e não
+mudaram número. O MC agora descreve o mesmo ponto para todos os casos, que é o que o envelope
+de fato dimensiona.
 
 ## Segundo achado: campo vazio sem declaração (V-001, V-002)
 
@@ -156,6 +169,7 @@ justificada.
 - A não aplicabilidade de um critério a um **caso** ainda é declarada por texto (o rótulo do
   mecanismo começando por «não aplicável»); a de um **campo do cartão** já é hook. Unificar as
   duas num hook do contrato.
-- Grades desalinhadas entre caso e envelope: continua em aberto (R1).
+- Grades desalinhadas entre caso e envelope: pendência **própria** de discretização, em
+  `33-discretizacao-das-grades.md`. Não é R1 nem R2; resolvê-la muda número e exige aprovação.
 - O gate confere o JSON do MC, que é o contrato do `.tex` (o template só formata); a
   conferência PDF × JSON continua sendo do teste marcado `latex`.

@@ -1373,6 +1373,45 @@ relatório gerado `docs/validacao/15-termodinamica.md` (`tools/termodinamica_pre
 - **Aceite:** (1) porta única (teste de arquitetura existente, `_chedl.py`) ✓; (2) comparação
   caso a caso sem mudar balanço/paridade ✓; (3) fontes no relatório ✓; (4) cobertura ✓.
 
+### F5.1 — cascata composicional em MODO SOMBRA ✅ (2026-09-27) — `docs/validacao/34-cascata-composicional.md`
+
+Os três pontos de equilíbrio deixam de ser flashes independentes da mesma composição global e
+viram um **trem**: `z₀ →SG-001→ x_F →V-001→ x₁ →V-002→ x₂`, com a quantidade absoluta propagada
+(`ṅ_V = β·ṅ_F`, `ṅ_L = (1−β)·ṅ_F`). **Nada saiu da sombra**: `β`, `x`, `y` seguem em sombra;
+`h`, `cp`, `ρ_líquido`, `μ`, `k` seguem bloqueados; paridade bit a bit (`409f1800…f16414`).
+
+**Base molar declarada, não suposta.** O arquivo de casos não traz vazão molar e as três
+grandezas que existem são incompatíveis: `fluid_compositions` é por TIPO DE FLUIDO, e o mesmo
+tipo aparece em casos com GOR diferentes — a razão GOR(flash)/GOR(BOT) vai de 0,62 a 2,16, e as
+duas bases possíveis por split discordam de 0,7 % a 116,2 %. Por isso a base vem da MASSA:
+`ṅ_F = ṁ_HC,in/MW_z`, com `ṁ_HC,in = oil_sm3d·ρ_API + produced_gas_sm3d·ρ_gás,padrão` (os mesmos
+dois termos do balanço produtivo em C-01) e `MW_z` pelos MW **adotados** (F4), tirado do flash
+do primeiro estágio. Declarada em `config/pfd/integracao_termodinamica.toml`, `[base_molar]`.
+
+**Gás de lift: lacuna declarada.** A composição não existe na fonte — o BOT §2.3.3 dá só o
+envelope de especificação (≤ 5 ppmv H2S, ≤ 3 % mol CO2, ≤ 1 ppmv H2O). A Tabela 2.3.5.1 traz a
+composição do gás TRANSFERIDO (GT30/GT40/GT50), que é outra corrente e não entra em C-01. O
+balanço produtivo soma o lift ao gás de entrada e lhe atribui a composição do poço; a cascata
+em sombra exclui o lift da base e reporta a diferença nos casos 9, 11, 15 e 16 (20,0 %, 22,2 %,
+30,8 % e 28,6 % do gás de entrada). **Nenhuma composição foi suposta.**
+
+**Fechamento do trem** (16/16 completas): molar ≤ 1,74e-16, mássico ≤ 2,15e-16, componente a
+componente ≤ 1,27e-16, pior flash isolado 1,11e-16. **Desempenho medido, sem cache:** 48 flashes,
+48 condições distintas (recomputação 1,000 — na F5 era 1,263, porque lá os três pontos usavam o
+mesmo z₀), 1,165 s no total, 24,3 ms por flash.
+
+**Aceite:** gate de sanidade aprovado sem alteração numérica; 27 testes novos.
+
+### Pendência de discretização das grades ⏳ ABERTA — `docs/validacao/33-discretizacao-das-grades.md`
+
+Pendência **própria**, **separada da R1 e da R2** (encerradas, de desempenho, sem mudar número).
+`n` é discretizado com âncoras diferentes no ramo por caso (`n_min` do caso) e no ramo conjunto
+(`min_i n_min,i`): só 11,6 % dos pontos coincidem no P-003, 28,8 % no P-002. Custa até 4 tubos
+por passe no ótimo (0,0187 % de área por passo) e nenhum caso se perde pelo passo 5. Deixou de
+ter efeito na apresentação com o gate de sanidade. Resolver exige **política canônica única de
+discretização**, que **muda número** — decisão do usuário, com tabela dos 16 casos e revisão do
+oráculo.
+
 ### Gate de sanidade da saída ✅ (2026-09-27) — `docs/validacao/32-auditoria-de-saida.md`
 
 `tools/auditar_saida_pfd.py`: roda o dimensionamento real dos 11 TAGs pelo fluxo do usuário,

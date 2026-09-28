@@ -20,6 +20,13 @@ RAIZ = Path(__file__).resolve().parents[2]
 TROCADORES = ("P-002", "P-003")
 
 
+def _identidade_falsa(gate):
+    return dict(commit="0" * 12, arvore_suja=False, fpso_siz="0", faltando=[], completa=True,
+                casos=dict(arquivo="x", origem="x", sha256="0" * 64, n_casos=0), oleo="vivo",
+                propostas="não usadas", topologia="projeto_p46", regra_fwko="eficiencia",
+                premissas_alteradas={}, modos_dos_tags={}, versoes_propriedades={})
+
+
 def _gate():
     spec = importlib.util.spec_from_file_location("auditar_saida_pfd", RAIZ / "tools" / "auditar_saida_pfd.py")
     mod = importlib.util.module_from_spec(spec)
@@ -155,10 +162,37 @@ def test_o_gate_grava_resumo_e_sai_com_codigo(gate, planta_propostas, tmp_path):
     assert (tmp_path / "P-002.json").is_file() and (tmp_path / "mc").is_dir()
 
 
+# ------------------------------------------------------------------ identidade da execução
+def test_a_identidade_registra_tudo_que_muda_dimensionamento(relatorio, gate, planta_propostas):
+    ident = relatorio["identidade"]
+    assert ident["completa"] and not ident["faltando"]
+    assert set(gate.IDENTIDADE_OBRIGATORIA) <= set(ident)
+    assert ident["commit"] and ident["regra_fwko"]
+    assert ident["casos"]["sha256"] == planta_propostas.contexto.dados.sha256
+    assert ident["oleo"] == "vivo" and ident["topologia"] == "projeto_p46"
+    assert ident["propostas"]["sha256"] == planta_propostas.contexto.propostas.sha256
+    assert set(ident["modos_dos_tags"]) == {t.tag.tag for t in planta_propostas.tags}
+    assert "commit" in gate.resumo_md(relatorio)
+
+
+def test_identidade_acompanha_as_opcoes(gate, planta_oleo_morto, tmp_path):
+    """Trocar a opção troca a identidade: o relatório não pode dizer o que não foi rodado."""
+    ident = gate.identidade(planta_oleo_morto.contexto, planta_oleo_morto)
+    assert ident["oleo"] == "morto" and ident["propostas"] == "não usadas"
+
+
+def test_identidade_incompleta_reprova(gate, planta_propostas, tmp_path, monkeypatch):
+    """Auditoria que não se sabe de que commit veio não é gate: reprova mesmo sem achado."""
+    monkeypatch.setattr(gate.saida_mc, "proveniencia_git", lambda: (None, None))
+    rel = gate.auditar_planta(planta_propostas.contexto, planta_propostas, tmp_path)
+    assert not rel["aprovada"] and rel["identidade"]["faltando"] == ["commit"] and not rel["erros"]
+
+
 @pytest.mark.parametrize("resultado,codigo", [(True, 0), (False, 1)])
 def test_codigo_de_saida_do_gate(gate, tmp_path, monkeypatch, resultado, codigo):
     """O gate existe para rodar sozinho ao fim de cada fase: erro de aceite tem de sair != 0."""
     falso = dict(casos="x", sha256="0" * 64, tags=[], achados=[], aprovada=resultado,
+                 identidade=_identidade_falsa(gate),
                  contagem=dict.fromkeys(gate.CATEGORIAS, 0),
                  erros=[] if resultado else [gate.achado("ERRO_OUTPUT", "c", None, "porque sim") | {"tag": "T"}])
     monkeypatch.setattr(gate, "auditar", lambda *a, **k: falso)
