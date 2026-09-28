@@ -2,20 +2,39 @@
 # ESTUDO DE SENSIBILIDADE autorizado pelo usuário em 2026-09-28: P_D1 e P_D2 como variáveis de
 # estudo, AINDA NÃO como variáveis do algoritmo multiobjetivo. P-001 fora do subproblema.
 #
-# A grade é a RESOLUÇÃO do estudo, não faixa de projeto: os limites com fonte são os de [limite].
-P_D1_kPa = [350.0, 500.0, 700.0, 1000.0, 1500.0, 2000.0]
+# A grade é uma GRADE DE SENSIBILIDADE — a resolução do estudo —, não uma faixa de projeto nem
+# bound de otimização: os seus extremos não são limites. Os limites e a sua natureza estão em
+# [[limite]]. P_D1 = 200 kPa entra de propósito para que a região inválida P_D2 ≥ P_D1 apareça
+# classificada, e não omitida.
+P_D1_kPa = [200.0, 350.0, 500.0, 700.0, 1000.0, 1500.0, 2000.0]
 P_D2_kPa = [110.0, 130.0, 150.0, 175.0, 200.0, 250.0]
 tags = ["SG-001", "V-001", "V-002"]
 fonte = "grade de estudo declarada; cobre P-18 = 700 e P-19 = 200 kPa e vai até perto da sucção do compressor principal (P_D1) e da pressão atmosférica (P_D2)"
 
-# Limites e o que sustenta cada um (docs/validacao/37, 39 §9). `fonte` vazia = sem fonte.
+# ------------------------------------------------------------------ classificação da sensibilidade
+# Critério NUMÉRICO e transparente: Δ relativo = (máximo − mínimo) / |valor no ponto de
+# referência (premissas P-18/P-19)|, sobre os pontos válidos da grade.
+#   Δrel <  insensivel_max                 → INSENSÍVEL
+#   insensivel_max ≤ Δrel < sensivel_min   → FRACAMENTE SENSÍVEL
+#   Δrel ≥ sensivel_min                    → SENSÍVEL
+# Grandeza discreta (diâmetro, governante, caso governante): INSENSÍVEL se não muda em ponto
+# nenhum; SENSÍVEL se muda.
+[sensibilidade]
+insensivel_max = 0.01
+sensivel_min = 0.05
+fonte = "critério numérico do estudo (1 % e 5 % do valor de referência), declarado antes de ver os resultados; não é tolerância física"
+
+# ------------------------------------------------------------------ limites (docs/validacao/37, 39 §9)
+# natureza: "fonte" (dado ou requisito citável), "processo" (inferido pela topologia/física do
+# processo), "diagnostico" (calculado pelo modelo, sem valor de projeto), "sem_fonte".
 [[limite]]
 id = "tvp"
 grandeza = "TVP do óleo tratado na estocagem"
 valor = 70.0
 unidade = "kPa"
 tipo = "maximo"
-fonte = "BOT I-ET-3010.2K-1200-941-P4X-001 rev. C, §2.3.1.1 e §2.7.1.10"
+natureza = "fonte"
+fonte = "BOT I-ET-3010.2K-1200-941-P4X-001 rev. C, §2.3.1.1 e §2.7.1.10 (o critério é da fonte; o P_D2 que o satisfaz é diagnóstico do modelo)"
 
 [[limite]]
 id = "p_d1_compressor"
@@ -23,7 +42,17 @@ grandeza = "P_D1 abaixo da sucção do compressor principal (o gás do V-001 vai
 valor = 2200.0
 unidade = "kPa"
 tipo = "maximo"
+natureza = "fonte"
 fonte = "BOT §2.7.3.9.20.1 (valor ESTIMADO pelo próprio BOT) e Fig. 2.7.1.17"
+
+[[limite]]
+id = "p_d2_menor_que_p_d1"
+grandeza = "P_D2 < P_D1 (o líquido do TO-001 segue ao V-002 sem bomba)"
+valor = 0.0
+unidade = "kPa"
+tipo = "diferenca_minima"
+natureza = "processo"
+fonte = "topologia do BOT (Fig. 2.7.1.17); o ΔP mínimo de transferência não tem fonte"
 
 [[limite]]
 id = "p_d2_minimo"
@@ -31,4 +60,5 @@ grandeza = "piso de P_D2 (sucção do 1º estágio da VRU)"
 valor = 101.3
 unidade = "kPa"
 tipo = "minimo"
+natureza = "sem_fonte"
 fonte = ""

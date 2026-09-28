@@ -90,7 +90,10 @@ dois extremos: óleo morto (limite conservador) e o Rs de Standing (referência,
   (`14-alarmes.md`), que a correção de óleo vivo resolveu; nada novo.
 - **TO-001**: não muda em nenhum cenário. Com Rs baixo (≤ ×0,75) a correlação fica abaixo da faixa e
   a regra mantém o óleo morto (conservador).
-- **Conclusão**: o dimensionamento dos vasos não depende da μ do óleo vivo na faixa de incerteza
-  estudada; a limitação de aplicabilidade não afeta o resultado. P-001 e P-002 também recebem a
-  μ (lado óleo) e ela entra no coeficiente de película; o P-001 está fora do subproblema e o P-002
-  não foi estudado aqui — a sensibilidade deles fica pendente.
+- **Conclusão**: no intervalo estudado — Rs de 0,5× a 1,5× o Rs do trem, com o Rs de Standing
+  apenas como referência comparativa —, SG-001 e TO-001 mantêm diâmetro, comprimento e caso
+  governante; só o teto de decantação do SG-001 muda. O cenário de óleo morto fica **fora** dessa
+  conclusão: ele torna o SG-001 novamente inviável. **P-001 e P-002 ficam explicitamente fora
+  desta sensibilidade** (também recebem a μ do óleo vivo, no coeficiente de película).
+- O caminho produtivo continua único: Rs do trem → Beggs & Robinson. Standing não é entrada
+  produtiva da viscosidade.
