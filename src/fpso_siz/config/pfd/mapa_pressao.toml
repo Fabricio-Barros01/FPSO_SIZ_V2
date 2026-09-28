@@ -1,0 +1,34 @@
+# Mapa determinístico pressão → flash → dimensionamento → TVP (tools/mapa_pressao.py).
+# ESTUDO DE SENSIBILIDADE autorizado pelo usuário em 2026-09-28: P_D1 e P_D2 como variáveis de
+# estudo, AINDA NÃO como variáveis do algoritmo multiobjetivo. P-001 fora do subproblema.
+#
+# A grade é a RESOLUÇÃO do estudo, não faixa de projeto: os limites com fonte são os de [limite].
+P_D1_kPa = [350.0, 500.0, 700.0, 1000.0, 1500.0, 2000.0]
+P_D2_kPa = [110.0, 130.0, 150.0, 175.0, 200.0, 250.0]
+tags = ["SG-001", "V-001", "V-002"]
+fonte = "grade de estudo declarada; cobre P-18 = 700 e P-19 = 200 kPa e vai até perto da sucção do compressor principal (P_D1) e da pressão atmosférica (P_D2)"
+
+# Limites e o que sustenta cada um (docs/validacao/37, 39 §9). `fonte` vazia = sem fonte.
+[[limite]]
+id = "tvp"
+grandeza = "TVP do óleo tratado na estocagem"
+valor = 70.0
+unidade = "kPa"
+tipo = "maximo"
+fonte = "BOT I-ET-3010.2K-1200-941-P4X-001 rev. C, §2.3.1.1 e §2.7.1.10"
+
+[[limite]]
+id = "p_d1_compressor"
+grandeza = "P_D1 abaixo da sucção do compressor principal (o gás do V-001 vai à VRU)"
+valor = 2200.0
+unidade = "kPa"
+tipo = "maximo"
+fonte = "BOT §2.7.3.9.20.1 (valor ESTIMADO pelo próprio BOT) e Fig. 2.7.1.17"
+
+[[limite]]
+id = "p_d2_minimo"
+grandeza = "piso de P_D2 (sucção do 1º estágio da VRU)"
+valor = 101.3
+unidade = "kPa"
+tipo = "minimo"
+fonte = ""

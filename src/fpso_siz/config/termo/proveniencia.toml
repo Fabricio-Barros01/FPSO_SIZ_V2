@@ -161,7 +161,7 @@ consumidores = ["dimensionamento"]
 regra = "viscosidade_fase"
 funcao = "emulsao"
 fonte = ["oleo.fonte_viscosidade", "oleo_vivo.fonte", "salmoura.fonte", "emulsao.fonte"]
-nota = "óleo morto do BOT corrigido para óleo vivo pelo Rs da corrente (Beggs & Robinson; fora da faixa, aviso); emulsão por Zanker. O Rs é o gás dissolvido da corrente: nos casos avaliáveis, o que o líquido do estágio ainda libera até a condição padrão pelo trem; nos não avaliáveis, Standing. A correlação não muda; muda a sua entrada (docs/validacao/39)"
+nota = "óleo morto do BOT corrigido para óleo vivo pelo Rs da corrente (Beggs & Robinson; fora da faixa, aviso); emulsão por Zanker. O Rs é o gás dissolvido da corrente: nos casos avaliáveis, o que o líquido do estágio ainda libera até a condição padrão pelo trem; nos não avaliáveis, Standing. A correlação não muda; muda a sua entrada (docs/validacao/39). Limitação: Beggs & Robinson não tem variável de composição do gás, e a aplicabilidade a gás dissolvido rico em CO2 não é demonstrada pela fonte; sensibilidade em docs/validacao/40"
 
 [[propriedade]]
 id = "pressao_vapor_saturado"

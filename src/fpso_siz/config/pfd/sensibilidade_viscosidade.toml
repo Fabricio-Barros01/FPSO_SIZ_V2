@@ -1,0 +1,19 @@
+# Sensibilidade da μ de óleo vivo (Beggs & Robinson) ao Rs do trem — tools/sensibilidade_viscosidade.py.
+# ESTUDO, não caminho produtivo: o produto usa o Rs do trem (decisão do usuário, 2026-09-28).
+# Os fatores são a resolução do estudo (quanto o Rs do trem teria de errar para mudar o vaso),
+# não incerteza medida: não há PVT que a dê.
+fatores_rs = [0.5, 0.75, 1.0, 1.25, 1.5]
+fonte = "estudo de sensibilidade declarado; faixa ±50 % escolhida para cobrir o Rs de Standing (−60 a −75 % do Rs do trem nos casos avaliáveis) pela metade"
+# critério numérico: a μ recalculada pela função do serviço com o Rs do trem tem de reproduzir a
+# entrada que a regra do TAG entregou
+tolerancia_reproducao = 1.0e-12
+
+[[alvo]]
+tag = "SG-001"
+chave = "mu_oil"
+corrente_rs = "C-06"
+
+[[alvo]]
+tag = "TO-001"
+chave = "mu_oil"
+corrente_rs = "C-10"
