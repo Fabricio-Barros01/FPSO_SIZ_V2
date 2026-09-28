@@ -64,6 +64,10 @@ lugar da medição.
 
 ## 4. Recomendação
 
+> **Decisão (2026-09-28):** aprovada pelo usuário como **premissa de modelagem** — sustentada pelo
+> conjunto de evidências do BOT abaixo, **não** prescrita pelo texto (a Nota 4 diz "may be
+> adjusted" e não fixa condição). Aplicada só aos casos sem gás de lift.
+
 **F — recombinar na condição do FWKO: 2.500 kPa(a) e a temperatura do caso da Tab. 2.2.2.3**,
 com o óleo levado a óleo morto pela série FWKO → condição padrão.
 
