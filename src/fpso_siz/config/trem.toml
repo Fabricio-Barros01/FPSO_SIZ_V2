@@ -1,41 +1,86 @@
 # Trem de separação SG-001 → V-001 → V-002 (balanco/trem.py): parte do EstadoProcesso.
 #
-# z₀ → SG-001 → x_F → V-001 → x₁ → V-002 → x₂, com ṅ_V = β·ṅ_F e ṅ_L = (1−β)·ṅ_F. A condição
+# z_caso → SG-001 → x_F → V-001 → x₁ → V-002 → x₂, com ṅ_V = β·ṅ_F e ṅ_L = (1−β)·ṅ_F. A condição
 # (T, P) de cada estágio é a da corrente de gás do vaso NO PRÓPRIO ESTADO — mudar P_D1 ou P_D2
 # nas premissas move o estágio, sem código novo.
 #
-# O que o trem calcula é DIAGNÓSTICO: a vazão de gás por estágio que o processo e o
-# dimensionamento consomem é a de Standing (termo/proveniencia.toml, gas_liberado_por_estagio).
+# PRODUTIVO nos casos termodinamicamente avaliáveis (sem gás de lift): a vazão de gás de cada
+# estágio que o balanço e o dimensionamento consomem é ṅ_V·V_M do flash, com MW, Z e ρ da fase
+# vapor (termo/proveniencia.toml). Nos casos não avaliáveis vale Standing, declarado por caso.
 
 [[estagio]]
 id = "SG-001"
 corrente_gas = "C-04"
+corrente_liquido = "C-06"
 descricao = "separador de água livre: primeira liberação de gás"
 
 [[estagio]]
 id = "V-001"
 corrente_gas = "C-09"
+corrente_liquido = "C-10"
 descricao = "primeiro desgaseificador"
 
 [[estagio]]
 id = "V-002"
 corrente_gas = "C-17"
+corrente_liquido = "C-18"
 descricao = "segundo desgaseificador"
 
-# --------------------------------------------------------------- base molar absoluta
-# REGRA DECLARADA (F5.1), não suposta. O arquivo de casos NÃO traz vazão molar, e as três
-# grandezas que existem (oil_sm3d, produced_gas_sm3d e fluid_compositions) são incompatíveis
-# entre si: a composição é por TIPO DE FLUIDO e os sete tipos aparecem em casos com GOR
-# diferentes (razão GOR do flash / GOR do BOT de 0,62 a 2,16). Por isso a base não sai de um
-# split de fases: sai da MASSA, que é a grandeza que o balanço conserva.
-[base_molar]
-regra = "n_F = m_HC,in / MW_z"
-massa = "m_HC,in = oil_sm3d·ρ_óleo + produced_gas_sm3d·ρ_gás,padrão — os MESMOS dois termos, com as MESMAS massas específicas (lidas do EstadoProcesso), que o balanço põe em C-01"
-mw = "MW_z = Σ zᵢ·MWᵢ com os MW ADOTADOS (banco para os reais, caracterização para os pseudo): não depende de flash nenhum"
-unidade = "kmol/d"
-inclui_gas_de_lift = false
-por_que_nao_o_split = "fixar a base pelo split de fases na condição padrão exigiria escolher entre a base do gás (n_gás/β) e a do óleo (n_óleo/(1−β)), que discordam entre 0,7 % e 116 % nos 16 casos; escolher uma seria inventar quantidade molar para fechar o flash"
-conserva = "a massa de hidrocarboneto é a do balanço (menos o gás de lift, ver a lacuna): o trem e o balanço partem dos mesmos quilogramas"
+# --------------------------------------------------------------- composição do caso (Nota 4)
+# PREMISSA DE MODELAGEM (docs/validacao/38-recombinacao-nota4.md), aprovada pelo usuário em
+# 2026-09-28: sustentada pelo conjunto de evidências do BOT, NÃO prescrita pelo texto — a Nota 4
+# da Tab. 2.2.2.3 diz que a simulação "may be adjusted by subjecting Well Fluids through a series
+# of flashes, and recombining the gas and oil rates to match the flowrates", sem fixar condição.
+[recombinacao]
+regra = "z_caso = (ṅ_g·y_ref + ṅ_L·x_ref) / (ṅ_g + ṅ_L)"
+referencia = "flash de z_base a P_FWKO (premissa P_FWKO, BOT §2.7.1.2) e à T do CASO (Tab. 2.2.2.3, nota 1)"
+gas = "ṅ_g = produced_gas_sm3d / V_M: 'Produced Gas' = gás na saída do FWKO (Nota 3; Tab. 2.5.2, nota 1)"
+oleo = "ṅ_L tal que a série x_ref → condição padrão dê oil_sm3d de óleo morto (Nota 2): ṅ_L = Q_o·ρ_o / [(1 − β_std)·MW_std]"
+serie = "FWKO (P_FWKO, T do caso) → condição padrão (15,6 °C; 101,3 kPa, BOT §1.4.2)"
+nao_faz = "não ajusta componente nenhum: a única mudança de composição é a mistura das duas fases de um mesmo flash na proporção que o BOT fixa"
+fonte = "BOT I-ET-3010.2K-1200-941-P4X-001 rev. C, Tab. 2.2.2.3 (Notas 2, 3 e 4), Tab. 2.5.2 (nota 1), §2.2.3.3; decisão: docs/validacao/38-recombinacao-nota4.md"
+# Critério NUMÉRICO da verificação: o z_caso é re-flashado na referência e na série, e as vazões
+# do BOT têm de voltar dentro desta tolerância relativa (re-convergência do flash, não física).
+tolerancia_reproducao = 1.0e-8
+# Fechamentos da própria mistura (Σz, molar, mássico, por componente): precisão de máquina.
+tolerancia_fechamento = 1.0e-12
+
+# --------------------------------------------------------------- acoplamento trem × reciclo
+# O gás de cada estágio muda a massa e a capacidade térmica das correntes, e o reciclo de água
+# quente muda a T do SG-001. Ponto fixo em dois níveis: o trem fica congelado enquanto o laço
+# de reciclo converge, e é refeito nas temperaturas convergidas até que elas não mudem mais do
+# que esta tolerância (critério NUMÉRICO, °C). Mesmo ponto fixo do laço único, com menos flashes.
+[acoplamento]
+tolerancia_condicao_C = 1.0e-9
+
+# --------------------------------------------------------------- volume padrão do gás por corrente
+# Num caso avaliável cada massa de gás (componente G) tem o volume padrão do reservatório de
+# onde veio: o gás de entrada (C-01, recombinação), o vapor de um estágio (a própria corrente de
+# gás) ou o gás que o líquido de um estágio ainda libera até a condição padrão. Estas são as
+# correntes que herdam o reservatório de C-01 ou do líquido de cada estágio (topologia do balanço).
+[reservatorio_gas]
+"C-01" = ["C-03"]
+"SG-001" = ["C-06", "C-07", "C-08"]
+"V-001" = ["C-10", "C-11", "C-16"]
+"V-002" = ["C-18", "C-21", "C-22", "C-23", "C-24", "C-25", "C-26"]
+
+# --------------------------------------------------------------- avaliabilidade do caso
+[avaliacao]
+estado_nao_avaliavel = "não avaliável termodinamicamente para integração completa"
+regra = "o caso é avaliável se não tem gás de lift (lift_gas_sm3d = 0): o gás de lift entra em C-01 e não tem composição na fonte"
+nao_avaliavel = "casos com gás de lift: continuam no envelope do BOT pelo caminho de Standing, sem flash, e a proveniência do caso diz isso"
+
+# --------------------------------------------------------------- TVP (diagnóstico)
+[tvp]
+# Pressão de vapor verdadeira do líquido final do trem (x₂) na temperatura de estocagem (BOT
+# §2.7.1.10) e o limite do BOT §2.3.1.1 (TVP ≤ 70 kPa). DIAGNÓSTICO: não é restrição nem bound.
+limite_kPa = 70.0
+premissa_T = "T_store"
+fonte = "BOT I-ET-3010.2K-1200-941-P4X-001 rev. C, §2.3.1.1 (TVP máx. 70 kPa) e §2.7.1.10 (TVP na estocagem)"
+# busca, na ferramenta, do P_D2 em que a TVP atinge o limite (critério numérico)
+P_D2_min_kPa = 101.3
+P_D2_max_kPa = 400.0
+iteracoes = 16
 
 [[lacuna]]
 id = "composicao_gas_de_lift"
@@ -44,5 +89,5 @@ situacao = "ausente"
 fonte_procurada = "BOT I-ET-3010.2K-1200-941-P4X-001 rev. C, §2.3.3 (Service and Lift Gas)"
 o_que_a_fonte_da = "apenas ESPECIFICAÇÃO de envelope — máximo 5 ppmv de H2S, máximo 3 % mol de CO2, máximo 1 ppmv de H2O —, que são limites superiores, não uma composição"
 o_que_existe_na_fonte = "a composição do gás TRANSFERIDO (GT30/GT40/GT50) está na Tabela 2.3.5.1; ela é de outra corrente, que não entra em C-01"
-efeito = "nos casos com lift_gas_sm3d > 0 o balanço soma o lift ao gás de entrada e o converte com a ρ padrão do corte leve do fluido de poço, isto é, atribui ao lift a composição do poço. O trem exclui o lift da base molar e declara a lacuna"
-decisao = "não supor composição; a diferença em relação ao balanço é reportada caso a caso"
+efeito = "casos 9, 11, 15 e 16: não avaliáveis termodinamicamente para integração completa. Continuam no envelope do BOT pelo caminho de Standing (o balanço soma o lift ao gás de entrada e o converte com a ρ padrão do corte leve)"
+decisao = "não supor composição, não usar a do gás produzido nem a do transferido, não supor que o lift sai inteiro no SG-001"

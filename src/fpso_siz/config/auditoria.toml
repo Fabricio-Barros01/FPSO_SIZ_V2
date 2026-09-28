@@ -39,8 +39,18 @@ unidade = 'kmol/h'
 
 [gas_por_estagio]
 verificacao = 'gás liberado por estágio (C-04, C-09, C-17)'
-base = 'Standing na forma logarítmica'
+base = 'Standing na forma logarítmica (casos não avaliáveis); $\beta\,\dot n_F\,V_M$ e $\dot n_V\,MW_v$ das fases do trem (avaliáveis)'
 unidade = 'Sm³/d'
+
+[recombinacao_nota4]
+verificacao = 'composição do caso (Nota 4): $Q_G$ no FWKO, $Q_O$ de óleo morto, $\Sigma z$, mol, massa e componente'
+base = 're-flash do $z_{caso}$ e fases da referência'
+unidade = '--'
+
+[fechamento_trem]
+verificacao = 'trem SG-001 $\to$ V-001 $\to$ V-002: mol, massa e componente'
+base = '$\dot n_F = \sum \dot n_V + \dot n_{L,final}$'
+unidade = '--'
 
 [massa_global]
 verificacao = 'balanço de massa global'
@@ -69,7 +79,7 @@ unidade = 'kg/s'
 
 [molar_CO2_H2S]
 verificacao = 'balanço molar de CO$_2$ e H$_2$S'
-base = '$y_i\dot m_G/\bar M_G$'
+base = '$y_i\dot m_G/\bar M_G$; $\dot n z_i = \sum \dot n_V y_i + \dot n_L x_i$ nos casos avaliáveis'
 unidade = 'kmol/h'
 
 [bsw_saida]

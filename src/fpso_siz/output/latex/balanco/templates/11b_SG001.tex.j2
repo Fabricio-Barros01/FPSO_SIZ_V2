@@ -3,7 +3,22 @@
 \paragraph{Entradas:} C-03 (Caso << DEMO >>): óleo << ind.q(RD, 'C-03', 'O')|br >> m³/d, água << ind.q_agua(RD, 'C-03')|br >> m³/d, gás << RD.gas['G_in']|br >> Sm³/d, $T=<< RD.T['C-03']|br(2) >>$~\si{\celsius}, $P=<< RD.P['C-03']|br >>$~\si{\kilo\pascal}; composição do gás na Tabela~\ref{tab:fluidprops}.
 \paragraph{Premissas:} F-02, F-06, F-12, P-23, P-24, P-43, P-25, P-26, P-27, P-34, P-15 (isotérmico).
 \paragraph{Modelo de cálculo:} foram utilizadas três eficiências distintas.
-\emph{(i) Separação gás/líquido.} A liberação de gás foi estimada pela razão de solubilidade de Standing (\tipo{CORRELAÇÃO}, P-23), com $P$ em psia, $T$ em °F, $R_s$ em scf/STB e $1$~scf/STB$=0{,}178108$~Sm³/Sm³:
+\emph{(i) Separação gás/líquido.} Dois modelos, conforme o caso seja termodinamicamente avaliável.
+
+\emph{Casos avaliáveis (sem gás de lift: << R|selectattr('avaliavel')|map(attribute='num')|list|ids >>).} A composição do BOT é por tipo de fluido e não reproduz as vazões de cada caso; a Nota~4 da Tab.~2.2.2.3 prevê ajustá-la por flash e recombinação. Adotou-se (\tipo{PREMISSA} de modelagem sustentada pelo BOT, não prescrita por ele) a referência do FWKO: o fluido do BOT ($z_{\mathrm{base}}$) é flashado a $P_{\mbox{SG-001}}$ e à $T$ do caso, e as fases são recombinadas de modo que o vapor seja o \emph{Produced Gas} do caso e o líquido, levado à condição padrão, seja o óleo morto:
+\begin{equation}\label{eq:recomb}
+\dot n_g=\frac{Q_{G}}{V_M},\qquad \dot n_L=\frac{Q_O\,\rho_O}{(1-\beta_{\mathrm{std}})\,MW_{\mathrm{std}}},\qquad z_{\mathrm{caso}}=\frac{\dot n_g\,y_{\mathrm{ref}}+\dot n_L\,x_{\mathrm{ref}}}{\dot n_g+\dot n_L}.
+\end{equation}
+<% set rc = RD.recombinacao %>Caso << DEMO >>: $\dot n_g=<< rc.n_gas_kmol_d|mb(1) >>$ e $\dot n_L=<< rc.n_liquido_kmol_d|mb(1) >>$~kmol/d; re-flashado, $z_{\mathrm{caso}}$ devolve $Q_G=<< rc.reproducao.q_gas_fwko_sm3d|mb >>$~Sm³/d e $Q_O=<< rc.reproducao.q_oleo_tanque_m3d|mb >>$~m³/d. O trem SG-001 $\to$ V-001 $\to$ V-002 é uma sequência de flashes (Peng-Robinson, pseudo-componentes de Riazi \& Al-Sahhaf), cada estágio alimentado pelo líquido do anterior, nas condições do próprio balanço:
+\begin{equation}\label{eq:flashstage}
+z_{\mbox{SG-001}}=z_{\mathrm{caso}},\quad z_{\mbox{V-001}}=x_{\mbox{SG-001}},\quad z_{\mbox{V-002}}=x_{\mbox{V-001}};\qquad \dot n_V=\beta\,\dot n_F,\quad \dot n_L=(1-\beta)\,\dot n_F,
+\end{equation}
+\begin{equation}\label{eq:gasflash}
+Q_{G}=\dot n_V\,V_M .
+\end{equation}
+<% set e0 = RD.trem.estagios[0] %>No SG-001 do caso << DEMO >> ($T=<< e0.T_C|mb(1) >>$~\si{\celsius}, $P=<< e0.P_kPa|mb >>$~\si{\kilo\pascal}): $\beta=<< e0.beta|mb(5) >>$, $Q_{G,C04}=<< RD.gas['G_F']|mb >>$~Sm³/d, com $MW_v=<< e0.vapor.MW|mb(3) >>$~\si{\kilogram\per\kilo\mole}, $Z_v=<< e0.vapor.Z|mb(4) >>$ e $\rho_v=<< e0.vapor.rho|mb(3) >>$~\si{\kilogram\per\cubic\metre}. Cada líquido é levado à condição padrão: o que fica líquido é o óleo morto (componente O), o que vaporiza é gás dissolvido (G); o vapor de um estágio leva como O a parte do óleo morto da alimentação que vaporizou. As propriedades de líquido (massa específica, viscosidade, cp) seguem as correlações validadas.
+
+<% set naoav = R|rejectattr('avaliavel')|list %><% if naoav %><% set RL = naoav[0] %>\emph{Casos não avaliáveis (com gás de lift: << naoav|map(attribute='num')|list|ids >>).} A composição do gás de lift não existe na fonte; esses casos seguem no envelope do BOT pela razão de solubilidade de Standing (\tipo{CORRELAÇÃO}, P-23), com $P$ em psia, $T$ em °F, $R_s$ em scf/STB e $1$~scf/STB$=0{,}178108$~Sm³/Sm³:
 \begin{equation}\label{eq:standing}
 R_s=\gamma_g\left[\left(\frac{P}{18{,}2}+1{,}4\right)10^{\,0{,}0125\,\mathrm{API}-0{,}00091\,T}\right]^{1{,}2048},\qquad \Delta R_s(P,T)=R_s(P,T)-R_s(P_{\mathrm{std}},T_{\mathrm{std}}).
 \end{equation}
@@ -12,11 +27,12 @@ Q_{G,C17}&=\Delta R_s(P_{\mbox{V-001}},T_{\mbox{V-001}})\,Q_O,\label{eq:gasstage
 Q_{G,C09}&=\left[\Delta R_s(P_{\mbox{SG-001}},T_{\mbox{SG-001}})-\Delta R_s(P_{\mbox{V-001}},T_{\mbox{V-001}})\right]Q_O,\nonumber\\
 Q_{G,C04}&=Q_{G,\mathrm{in}}-Q_{G,C09}-Q_{G,C17}.\nonumber
 \end{align}
-<% set rsF, rs0, rsD1 = ind.standing_exemplo(RD, P, dados) %>
-Caso << DEMO >> ($\gamma_g=<< RD.gp['gamma']|mb(3) >>$, API $=<< RD.api|mb(1) >>$): $\Delta R_s(<< P['P_FWKO']|mb >>\,\mathrm{kPa};<< RD.T['C-03']|mb(1) >>\,^\circ\mathrm{C})=<< rsF|mb(2) >>-<< rs0|mb(2) >>=<< (rsF - rs0)|mb(2) >>$~Sm³/Sm³ e $\Delta R_s(<< P['P_D1']|mb >>\,\mathrm{kPa};<< RD.T['C-08']|mb(1) >>\,^\circ\mathrm{C})=<< (rsD1 - rs0)|mb(3) >>$~Sm³/Sm³, logo
+<% set rsF, rs0, rsD1 = ind.standing_exemplo(RL, P, dados) %>
+Caso << RL.num >> ($\gamma_g=<< RL.gp['gamma']|mb(3) >>$, API $=<< RL.api|mb(1) >>$): $\Delta R_s(<< P['P_FWKO']|mb >>\,\mathrm{kPa};<< RL.T['C-03']|mb(1) >>\,^\circ\mathrm{C})=<< rsF|mb(2) >>-<< rs0|mb(2) >>=<< (rsF - rs0)|mb(2) >>$~Sm³/Sm³ e $\Delta R_s(<< P['P_D1']|mb >>\,\mathrm{kPa};<< RL.T['C-08']|mb(1) >>\,^\circ\mathrm{C})=<< (rsD1 - rs0)|mb(3) >>$~Sm³/Sm³, logo
 \begin{equation}
-Q_{G,C04}=<< RD.gas['G_in']|mb >>-<< RD.gas['G_D1']|mb >>-<< RD.gas['G_D2']|mb >>=<< RD.gas['G_F']|mb >>\ \mathrm{Sm^3/d}.
+Q_{G,C04}=<< RL.gas['G_in']|mb >>-<< RL.gas['G_D1']|mb >>-<< RL.gas['G_D2']|mb >>=<< RL.gas['G_F']|mb >>\ \mathrm{Sm^3/d}.
 \end{equation}
+<% endif %>
 A eficiência de separação gás/líquido do FWKO, no sentido de gás liberado recuperado na fase gás, é $\eta_{G}=Q_{G,C04}/Q_{G,\mathrm{in}}=<< ind.eta_gas_fwko(RD)|mb(4) >>$; o restante não é ineficiência mecânica, e sim gás em solução nas condições do vaso. A eficiência de remoção de líquido do gás é definida pelo arraste (P-26):
 \begin{equation}
 Q_{L,\mathrm{arraste}}=c_{\mathrm{arr}}\,Q_{G,C04},\qquad c_{\mathrm{arr}}=\frac{0{,}1\times3{,}785\times10^{-3}}{28\,316{,}8}=<< (P['carry'] * 1e8)|mb(4) >>\times10^{-8}\ \mathrm{m^3/Sm^3}.

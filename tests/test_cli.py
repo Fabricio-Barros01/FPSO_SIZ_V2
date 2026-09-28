@@ -39,7 +39,7 @@ def test_fwko_pela_eficiencia(saida):
     assert [n for n, f in fw.items() if f["exigido_acima"]] == [15, 16]
     assert fw[2]["eta"] == 0.85 and fw[1]["eta"] is None and fw[1]["eta_req"] is None
     assert fw[1]["estado"] == "não aplicável — sem fase aquosa" and fw[15]["estado"].startswith("exigido acima")
-    assert j["esquema"] == 3 and {"Q_H", "Q_C", "P-001", "P-002", "DWH-001", "P-003"} <= set(j["casos"][1]["cargas"])
+    assert j["esquema"] == 4 and {"Q_H", "Q_C", "P-001", "P-002", "DWH-001", "P-003"} <= set(j["casos"][1]["cargas"])
     assert "eficiencia_fwko" in {a["id"] for a in j["auditoria"]}
 
 

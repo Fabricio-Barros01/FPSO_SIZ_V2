@@ -24,7 +24,7 @@
     }
   },
   "properties": {
-    "esquema": {"const": 3},
+    "esquema": {"const": 4},
     "gerador": {
       "type": "object", "required": ["pacote", "versao"],
       "properties": {"pacote": {"const": "fpso-siz"}, "versao": {"type": "string"}}
@@ -52,7 +52,7 @@
         "type": "object",
         "required": ["num", "nome", "fluido", "poco", "api", "convergiu", "iteracoes", "residuo_reciclo",
                      "viscosidade_oleo_cP", "BSW_chegada", "BSW_FWKO", "rho", "cp", "gas_props",
-                     "correntes", "cargas", "gas", "balancos_bloco", "balanco_global", "rastro"],
+                     "correntes", "cargas", "gas", "termodinamica", "balancos_bloco", "balanco_global", "rastro"],
         "additionalProperties": false,
         "properties": {
           "num": {"type": "integer"}, "nome": {"type": "string"}, "fluido": {"type": "string"},
@@ -93,7 +93,18 @@
           },
           "gas": {
             "type": "object", "required": ["G_in", "G_F", "G_D1", "G_D2", "Dv", "dRsF", "dRsD1"],
-            "additionalProperties": {"type": "number"}
+            "additionalProperties": {"type": ["number", "null"]}
+          },
+          "termodinamica": {
+            "type": "object", "required": ["avaliavel", "motivo", "z_base", "z_caso", "recombinacao", "estagios"],
+            "additionalProperties": false,
+            "properties": {
+              "avaliavel": {"type": "boolean"}, "motivo": {"type": "string"},
+              "z_base": {"type": "object", "additionalProperties": {"type": "number"}},
+              "z_caso": {"type": ["object", "null"], "additionalProperties": {"type": "number"}},
+              "recombinacao": {"type": ["object", "null"]},
+              "estagios": {"type": "array", "items": {"type": "object"}}
+            }
           },
           "balancos_bloco": {"type": "object", "minProperties": 16, "additionalProperties": {"$ref": "#/$defs/balanco"}},
           "balanco_global": {"$ref": "#/$defs/balanco"},

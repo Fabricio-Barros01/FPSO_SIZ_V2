@@ -12,7 +12,17 @@ livre no SG-001: a regra de eficiência (P-43, F10w).
 
 Correntes: dict componente → kg/s, componentes O (óleo), W (água produzida),
 D (água de diluição), G (gás), sempre nesta ordem (a ordem de soma importa).
+
+Gás por estágio (SG-001, V-001, V-002): nos casos termodinamicamente avaliáveis (sem gás de
+lift) sai do trem (`balanco/trem.py`): a composição do caso pela Nota 4 do BOT e a cascata de
+flashes nas condições do próprio estado. O componente O de um líquido é o seu conteúdo de óleo
+morto (o líquido levado à condição padrão) e G o gás que ele ainda libera. O vapor de um estágio
+leva, como O, a parte do óleo morto da alimentação que vaporizou (componentes que condensariam na
+condição padrão) e, como G, o resto: O e G se conservam cada um, e a energia sensível (P-14,
+cp constante por componente) fecha sem calor latente, que o modelo não tem. A vazão de gás do
+estágio é o vapor inteiro, ṅ_V·V_M. Nos casos não avaliáveis, o ΔRs de Standing (docs/validacao/39).
 """
+from fpso_siz.balanco import trem as trem_mod
 from fpso_siz.balanco.dados import constantes, pocos, premissas
 from fpso_siz.balanco.estado import COMP, K_DIA, EstadoProcesso
 from fpso_siz.balanco.propriedades import (gas_props, poco_do_fluido, split_eficiencia, split_water,
@@ -66,7 +76,30 @@ def resolver_caso(caso, dados, prem=None):
     cp = {"O": p["cp_O"], "W": p["cp_W"], "D": p["cp_D"], "G": gp["cp"]}
     Ov = caso["oil_sm3d"]
     Wv = caso["liquid_sm3d"] - Ov
-    Gin_v = caso["produced_gas_sm3d"] + caso["lift_gas_sm3d"]
+    mws = {k: v["mw"] for k, v in dados.c20.items()}
+    z_base = {k: v for k, v in dados.composicoes[fl].items() if v > 0}
+    aval, motivo = trem_mod.avaliavel(caso)
+    rec = None
+    if aval:
+        rec = trem_mod.recombinar(z_base, mws, caso["produced_gas_sm3d"], Ov, rhoO, VM, caso["T_C"], p["P_FWKO"],
+                                  dados.T_std_C, dados.P_std_kPa)
+        pior, erro_c = rec.componente
+        t.reg("recombinacao", "caso",
+              dict(n_gas=rec.n_gas_kmol_d, n_liquido=rec.n_liquido_kmol_d, n_total=rec.n_total_kmol_d,
+                   massa=rec.massa_kg_d, q_gas_fwko=rec.reproducao.q_gas_fwko_sm3d,
+                   q_oleo_tanque=rec.reproducao.q_oleo_tanque_m3d, q_gas_padrao=rec.q_gas_padrao_sm3d),
+              Q_G=caso["produced_gas_sm3d"], Q_O=Ov, T_ref=caso["T_C"], P_ref=p["P_FWKO"], rho_O=rhoO, V_M=VM,
+              beta_ref=rec.vapor_ref.fracao_molar, MW_v=rec.vapor_ref.MW, MW_l=rec.liquido_ref.MW,
+              beta_std=rec.beta_std, erro_soma_z=rec.erro_soma_z, erro_molar=rec.erro_molar,
+              erro_massico=rec.erro_massico, erro_componente=erro_c, componente_pior=pior,
+              erro_gas=rec.reproducao.erro_gas_rel, erro_oleo=rec.reproducao.erro_oleo_rel)
+        if not rec.ok:
+            raise ValueError(f"caso {caso['num']}: a recombinação da Nota 4 não fecha")
+        Gin_v = rec.q_gas_padrao_sm3d
+        G01 = rec.massa_gas_padrao_kg_d * K_DIA
+    else:
+        Gin_v = caso["produced_gas_sm3d"] + caso["lift_gas_sm3d"]
+        G01 = Gin_v * rho["G"] * K_DIA
 
     def m(comp, v):  # m³/d → kg/s
         return v * rho[comp] * K_DIA
@@ -87,31 +120,58 @@ def resolver_caso(caso, dados, prem=None):
     BSW01 = t.reg("bsw_chegada", "caso", Wv / (Wv + Ov) if Wv + Ov > 0 else 0.0, Q_A=Wv, Q_O=Ov)
 
     s01 = t.reg("vazao_massica_entrada", "C-01",
-                corrente(O=m("O", Ov), W=m("W", Wv), G=m("G", Gin_v)), Q_O=Ov, Q_A=Wv, Q_G=Gin_v)
+                corrente(O=m("O", Ov), W=m("W", Wv), G=G01), Q_O=Ov, Q_A=Wv, Q_G=Gin_v)
     T01 = caso["T_C"]
     carry = p["carry"]
-    rec = corrente()
+    reciclo = corrente()
     T02 = p["T_trat"]
     TD1 = p["T_trat"]
+    TD2 = p["T_trat"]
+    tr = None
+    refazer_trem = True
 
     for it in range(num["reciclo_max_iter"]):
         # ---------------- M-01
-        s03 = t.reg("mistura", "C-03", {c: s01[c] + rec[c] for c in COMP}, C01=s01, C02=rec)
+        s03 = t.reg("mistura", "C-03", {c: s01[c] + reciclo[c] for c in COMP}, C01=s01, C02=reciclo)
         T03 = t.reg("temperatura_mistura", "C-03",
-                    (C(s01) * T01 + C(rec) * T02) / C(s03) if C(rec) > 0 else T01, T01=T01, T02=T02)
+                    (C(s01) * T01 + C(reciclo) * T02) / C(s03) if C(reciclo) > 0 else T01, T01=T01, T02=T02)
         # ---------------- SG-001 (FWKO)
         TF = T03
-        dRsF = t.reg("rs_liberado", "SG-001", dRs(p["P_FWKO"], TF), P=p["P_FWKO"], T=TF)
-        dRsD1 = t.reg("rs_liberado", "V-001", dRs(p["P_D1"], TD1), P=p["P_D1"], T=TD1)
-        G_D2v = t.reg("gas_por_estagio", "C-17", dRsD1 * Ov, dRs=dRsD1, Q_O=Ov)
-        G_D1v = t.reg("gas_por_estagio", "C-09", max(0.0, dRsF * Ov - G_D2v), dRs=dRsF, Q_O=Ov, Q_G_D2=G_D2v)
-        G_Fv = t.reg("gas_por_estagio", "C-04", Gin_v - G_D1v - G_D2v, Q_G_in=Gin_v, Q_G_D1=G_D1v, Q_G_D2=G_D2v)
+        if rec is not None:
+            if refazer_trem:
+                # o trem fica congelado enquanto o reciclo converge e é refeito nas condições
+                # convergidas, até que elas parem de mudar (ponto fixo externo; trem.toml [acoplamento])
+                cond = {"C-04": (TF, p["P_FWKO"]), "C-09": (TD1, p["P_D1"]), "C-17": (TD2, p["P_D2"])}
+                tr = trem_mod.resolver(rec, [(e["id"], e["corrente_gas"], *cond[e["corrente_gas"]])
+                                             for e in trem_mod.cfg()["estagio"]], mws, dados.T_std_C, dados.P_std_kPa)
+                refazer_trem = False
+                if not tr.completo:
+                    raise ValueError(f"caso {caso['num']}: o trem não percorreu os três estágios ({tr.interrompido})")
+                est = {e.corrente_gas: e for e in tr.estagios}
+                for cid, e in est.items():
+                    v = e.vapor
+                    t.reg("flash_estagio", cid, dict(beta=e.beta, MW_v=v.MW, Z_v=v.Z, rho_v=v.rho),
+                          T=e.T_C, P=e.P_kPa, n_F=e.n_entrada_kmol_d, n_V=e.n_vapor_kmol_d, n_L=e.n_liquido_kmol_d,
+                          m_V=e.m_vapor_kg_d, oleo_tanque_L=e.m_oleo_tanque_kg_d, gas_dissolvido_L=e.m_gas_dissolvido_kg_d)
+                G_Fv, G_D1v, G_D2v = (t.reg("gas_estagio_flash", cid, est[cid].q_vapor_sm3d, n_V=est[cid].n_vapor_kmol_d,
+                                            V_M=VM) for cid in ("C-04", "C-09", "C-17"))
+                # óleo morto de cada líquido: o que vaporizou dele vai no vapor do estágio como O
+                morto = [s01["O"]] + [e.m_oleo_tanque_kg_d * K_DIA for e in tr.estagios]
+                oleo_vap = {e.corrente_gas: morto[i] - morto[i + 1] for i, e in enumerate(tr.estagios)}
+                gas_vap = {cid: est[cid].m_vapor_kg_d * K_DIA - oleo_vap[cid] for cid in est}
+        else:
+            dRsF = t.reg("rs_liberado", "SG-001", dRs(p["P_FWKO"], TF), P=p["P_FWKO"], T=TF)
+            dRsD1 = t.reg("rs_liberado", "V-001", dRs(p["P_D1"], TD1), P=p["P_D1"], T=TD1)
+            G_D2v = t.reg("gas_por_estagio", "C-17", dRsD1 * Ov, dRs=dRsD1, Q_O=Ov)
+            G_D1v = t.reg("gas_por_estagio", "C-09", max(0.0, dRsF * Ov - G_D2v), dRs=dRsF, Q_O=Ov, Q_G_D2=G_D2v)
+            G_Fv = t.reg("gas_por_estagio", "C-04", Gin_v - G_D1v - G_D2v, Q_G_in=Gin_v, Q_G_D1=G_D1v, Q_G_D2=G_D2v)
         carryF = t.reg("arraste_liquido", "C-04", m("O", carry * G_Fv), carry=carry, Q_G=G_Fv)
+        oleo_gas_v = carry * G_Fv + (oleo_vap["C-04"] / rho["O"] / K_DIA if rec is not None else 0.0)
         wat_in_v = vol(s03, "W") + vol(s03, "D")
         wat06_v, wat05_v, oil05_v, eta_A, eta_req = split_eficiencia(
             vol(s03, "O"), wat_in_v, p["eta_F"], p["BSW_F"], p["C_OiW"], rho["O"], n_split,
-            extra_oil_v=carry * G_Fv)
-        O06_v = vol(s03, "O") - carry * G_Fv - oil05_v
+            extra_oil_v=oleo_gas_v)
+        O06_v = vol(s03, "O") - oleo_gas_v - oil05_v
         BSW_F = wat06_v / (wat06_v + O06_v) if wat06_v + O06_v > 0 else 0.0
         t.reg("eficiencia_fwko", "SG-001", eta_A, eta_padrao=p["eta_F"], eta_req=eta_req,
               BSW_lim=p["BSW_F"], Q_A_e=wat_in_v, Q_O=O06_v)
@@ -120,15 +180,18 @@ def resolver_caso(caso, dados, prem=None):
               Q_O=vol(s03, "O"), Q_agua=wat_in_v, BSW=BSW_F)
         fW = vol(s03, "W") / wat_in_v if wat_in_v > 0 else 1.0
         oil05 = m("O", oil05_v)
-        s04 = t.reg("corrente_separada", "C-04", corrente(O=carryF, G=m("G", G_Fv)))
+        s04 = t.reg("corrente_separada", "C-04", _vapor_do_estagio(carryF, "C-04", tr and oleo_vap, tr and gas_vap,
+                                                                    m("G", G_Fv)))
         s05 = t.reg("corrente_separada", "C-05",
                     corrente(O=oil05, W=m("W", wat05_v * fW), D=m("D", wat05_v * (1 - fW))), f_W=fW)
+        G06 = s03["G"] - s04["G"] if tr else m("G", G_D1v + G_D2v)
         s06 = t.reg("corrente_separada", "C-06",
-                    corrente(O=s03["O"] - carryF - oil05, W=m("W", wat06_v * fW),
-                             D=m("D", wat06_v * (1 - fW)), G=m("G", G_D1v + G_D2v)), f_W=fW)
+                    corrente(O=s03["O"] - s04["O"] - oil05, W=m("W", wat06_v * fW),
+                             D=m("D", wat06_v * (1 - fW)), G=G06), f_W=fW)
         # ---------------- V-001
         carry1 = t.reg("arraste_liquido", "C-09", m("O", carry * G_D1v), carry=carry, Q_G=G_D1v)
-        s09 = t.reg("corrente_separada", "C-09", corrente(O=carry1, G=m("G", G_D1v)))
+        s09 = t.reg("corrente_separada", "C-09", _vapor_do_estagio(carry1, "C-09", tr and oleo_vap, tr and gas_vap,
+                                                                    m("G", G_D1v)))
         s10 = t.reg("corrente_diferenca", "C-10", {c: s06[c] - s09[c] for c in COMP}, entrada="C-08", outras=("C-09",))
         # ---------------- TO-001
         O10v = vol(s10, "O")
@@ -152,7 +215,8 @@ def resolver_caso(caso, dados, prem=None):
         s16 = t.reg("mistura", "C-16", {c: s11[c] + s15[c] for c in COMP}, C11=s11, C15=s15)
         # ---------------- V-002
         carry2 = t.reg("arraste_liquido", "C-17", m("O", carry * G_D2v), carry=carry, Q_G=G_D2v)
-        s17 = t.reg("corrente_separada", "C-17", corrente(O=carry2, G=m("G", G_D2v)))
+        s17 = t.reg("corrente_separada", "C-17", _vapor_do_estagio(carry2, "C-17", tr and oleo_vap, tr and gas_vap,
+                                                                    m("G", G_D2v)))
         s18 = t.reg("corrente_diferenca", "C-18", {c: s16[c] - s17[c] for c in COMP}, entrada="C-16", outras=("C-17",))
         # ---------------- TO-002
         O18v = vol(s18, "O")
@@ -204,13 +268,16 @@ def resolver_caso(caso, dados, prem=None):
         newT02 = (C(s12) * T13 + C(s19) * T20) / C(new_rec) if C(new_rec) > 0 else p["T_trat"]
         t.reg("mistura", "C-02", new_rec, C13=s12, C20=s19)
         t.reg("temperatura_mistura", "C-02", newT02, T13=T13, T20=T20)
-        diff = max(abs(new_rec[c] - rec[c]) for c in COMP) + abs(newT02 - T02) + abs(T08 - TD1)
+        diff = max(abs(new_rec[c] - reciclo[c]) for c in COMP) + abs(newT02 - T02) + abs(T08 - TD1)
         t.reg("convergencia_reciclo", "M-03", diff, iteracao=it, tol=num["reciclo_tol"])
-        rec, T02, TD1 = new_rec, newT02, T08
+        reciclo, T02, TD1, TD2 = new_rec, newT02, T08, T16
         if it > num["reciclo_min_iter"] and diff < num["reciclo_tol"]:
+            if tr is not None and _condicoes_mudaram(tr, T03, TD1, TD2):
+                refazer_trem = True
+                continue
             break
 
-    s02 = rec
+    s02 = reciclo
     s13 = dict(s12)
     s20 = dict(s19)
     s07 = dict(s06)
@@ -238,9 +305,10 @@ def resolver_caso(caso, dados, prem=None):
              "C-21": p["P_D2"], "C-22": p["P_pump_oil"], "C-23": p["P_pump_oil"] - p["dP_HX"],
              "C-24": P_resf, "C-25": P_resf, "C-26": P_resf}
     duties = dict(Q_pre=Q_pre, Q_H=Q_H, Q_D=Q_D, Q_C=Q_C, W_Bo=W_Bo, W_B1=W_B1, W_B2=W_B2)
-    # dRsD1 reportado com o T_D1 já atualizado (como no original)
+    # dRsD1 reportado com o T_D1 já atualizado (como no original); sem Standing no caso avaliável
     gas = dict(G_in=Gin_v, G_F=G_Fv, G_D1=G_D1v, G_D2=G_D2v, Dv=Dv,
-               dRsF=dRs(p["P_FWKO"], TF), dRsD1=dRs(p["P_D1"], TD1))
+               dRsF=None if tr else dRs(p["P_FWKO"], TF), dRsD1=None if tr else dRs(p["P_D1"], TD1))
+    gas_padrao = _gas_padrao(streams, tr, G01, Gin_v) if tr else {}
     mu = mu_interp(poco.viscosidade, T03)
     t.reg("viscosidade_oleo", "SG-001", mu[0], T=T03, marcador=mu[1])
     # estado do SG-001: η adotado e se o BSW_F,máx do BOT 2.7.1.2 exigiu η acima do padrão
@@ -252,9 +320,42 @@ def resolver_caso(caso, dados, prem=None):
     return EstadoProcesso(caso=caso, fluid=fl, well=well, api=api, rho=rho, cp=cp, gp=gp, Wv=Wv,
                           BSW01=BSW01, BSW_F=BSW_F, streams=streams, T=temps, P=press, duties=duties,
                           gas=gas, iters=it, residuo_reciclo=diff, VM=VM, mu=mu, T_ref=T_ref, trace=t, fwko=fwko,
-                          composicao={k: v for k, v in dados.composicoes[fl].items() if v > 0},
-                          mws_plus={k: v["mw"] for k, v in dados.c20.items()},
-                          proveniencia=proveniencia.consumidas("balanco"))
+                          composicao=z_base, mws_plus=mws,
+                          proveniencia=proveniencia.consumidas("balanco", avaliavel=aval),
+                          trem=tr if aval else trem_mod.nao_avaliavel(motivo), gas_padrao=gas_padrao)
+
+
+def _condicoes_mudaram(tr, TF, TD1, TD2):
+    """As temperaturas convergidas do reciclo se afastaram das que o trem usou?"""
+    tol = trem_mod.cfg()["acoplamento"]["tolerancia_condicao_C"]
+    usadas = [e.T_C for e in tr.estagios]
+    return max(abs(a - b) for a, b in zip(usadas, (TF, TD1, TD2))) > tol
+
+
+def _vapor_do_estagio(arraste, cid, oleo_vap, gas_vap, gas_standing):
+    """Corrente de gás de um estágio. No caso avaliável: O = arraste + óleo morto vaporizado,
+    G = o resto do vapor; no não avaliável: O = arraste, G = gás de Standing."""
+    if not oleo_vap:
+        return corrente(O=arraste, G=gas_standing)
+    return corrente(O=arraste + oleo_vap[cid], G=gas_vap[cid])
+
+
+def _gas_padrao(streams, tr, G01, Gin_v):
+    """Sm³/d do componente G de cada corrente num caso avaliável. A corrente de gás de um estágio
+    é o vapor inteiro (ṅ_V·V_M, a vazão que o vaso recebe); o gás de entrada é o da
+    recombinação; o gás dissolvido num líquido tem o volume que o líquido do seu estágio libera
+    até a condição padrão (trem.toml [reservatorio_gas])."""
+    q = {e.corrente_gas: e.q_vapor_sm3d for e in tr.estagios}
+    reserv = {"C-01": (G01, Gin_v)}
+    dissolvido = {e.ponto: (e.m_gas_dissolvido_kg_d * K_DIA, e.q_gas_dissolvido_sm3d) for e in tr.estagios}
+    for cid, sids in trem_mod.cfg()["reservatorio_gas"].items():
+        for sid in sids:
+            reserv[sid] = reserv[cid] if cid in reserv else dissolvido[cid]
+    out = {}
+    for sid, s in streams.items():
+        m, v = reserv.get(sid, (0.0, 0.0))
+        out[sid] = q[sid] if sid in q else (s["G"] * v / m if m > 0 else 0.0)
+    return out
 
 
 def resolver_todos(dados, prem=None):

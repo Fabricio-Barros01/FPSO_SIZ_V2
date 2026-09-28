@@ -1,5 +1,10 @@
 # 37 — Faixas de P_D1 e P_D2: o que a fonte fixa e o que falta (etapa C)
 
+> **Atualização (2026-09-28):** a TVP foi recalculada com a composição recombinada (nota 38) e o
+> trem produtivo, a 40 °C (estocagem): P_D2 em que a TVP atinge 70 kPa entre 133,4 e 157,3 kPa(a)
+> — `39-trem-produtivo.md` §9. Os números de §2 abaixo (z_base, 37,8 °C) ficam como registro;
+> nenhum dos dois é bound de otimização.
+
 Investigação **sem alteração de física**. Fonte: BOT rev. C (`docs/bot/`). O acervo local
 `references/` não estava disponível nesta sessão: nada dele é citado aqui.
 

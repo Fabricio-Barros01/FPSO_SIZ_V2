@@ -4,10 +4,14 @@
 independentes; `consumidores` diz quem usa o valor hoje. A proveniência de um cálculo é o que
 ele CONSUMIU: `consumidas("balanco")` e `da_regra(regra)` só devolvem propriedades com aquele
 consumidor. Nada aqui promove propriedade — o contrato é lido, não negociado em runtime.
+
+`casos` (opcional) restringe o consumo a uma classe de caso: "avaliaveis" (o trem produtivo:
+recombinação da Nota 4 + flash) ou "nao_avaliaveis" (casos com gás de lift, por Standing).
 """
 from fpso_siz.core.configuracao import carregar
 
 VALIDADA, NAO_VALIDADA, AUSENTE = "validada", "nao_validada", "ausente"
+AVALIAVEIS, NAO_AVALIAVEIS = "avaliaveis", "nao_avaliaveis"
 
 
 def cfg():
@@ -26,10 +30,17 @@ def de(ident):
     return d[ident]
 
 
-def consumidas(consumidor):
-    """{id: {origem, validade}} das propriedades que `consumidor` realmente usa."""
+def aplica(p, avaliavel):
+    """A declaração vale para um caso avaliável (True), não avaliável (False) ou qualquer (None)?"""
+    casos = p.get("casos")
+    return casos is None or avaliavel is None or casos == (AVALIAVEIS if avaliavel else NAO_AVALIAVEIS)
+
+
+def consumidas(consumidor, avaliavel=None):
+    """{id: {origem, validade}} das propriedades que `consumidor` realmente usa — num caso
+    avaliável, não avaliável, ou em algum caso (None)."""
     return {i: dict(origem=list(p["origem"]), validade=p["validade"])
-            for i, p in declaracoes().items() if consumidor in p["consumidores"]}
+            for i, p in declaracoes().items() if consumidor in p["consumidores"] and aplica(p, avaliavel)}
 
 
 def da_regra(regra):
@@ -52,4 +63,6 @@ def conferir():
             erros.append(f"{i}: {p['validade']} e consumida por {p['consumidores']}")
         if p["validade"] == AUSENTE and p["origem"]:
             erros.append(f"{i}: ausente, mas declara origem {p['origem']}")
+        if p.get("casos") not in (None, AVALIAVEIS, NAO_AVALIAVEIS):
+            erros.append(f"{i}: classe de caso desconhecida {p['casos']!r}")
     return erros

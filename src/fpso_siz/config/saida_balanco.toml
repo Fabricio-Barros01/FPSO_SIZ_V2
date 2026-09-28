@@ -1,7 +1,9 @@
 # Versão do esquema do balanco.json (docs/esquemas/balanco.schema.json):
+#   4 — `termodinamica` por caso (avaliabilidade, z_base, z_caso da Nota 4, estágios do trem);
+#       gas.dRsF/dRsD1 nulos nos casos avaliáveis (sem Standing; docs/validacao/39);
 #   3 — FWKO sem `regra` (uma regra só, a de eficiência; consolidação arquitetural);
 #   2 — `cargas` de utilidade (Q_H, Q_C) e um campo por trocador.
-esquema = 3
+esquema = 4
 
 # `cargas` de cada caso, em kW.
 # - Q_H: aquecimento por utilidade = Σ Q_in dos blocos da topologia (P-002 + DWH-001);

@@ -3,6 +3,8 @@
 # EXATAMENTE o declarado aqui (teste de bijeção). O memorial (F4) lê este catálogo.
 # `forma` é texto de leitura. `memorial` = rótulos (\label) do memorial onde a equação é
 # escrita ou, se o original não a numera, a tabela do bloco que a aplica (teste de bijeção).
+# `casos` (opcional): a equação só é avaliada nos casos "avaliaveis" (trem produtivo) ou
+# "nao_avaliaveis" (Standing); sem `casos`, em todo caso. A bijeção é por classe de caso.
 
 [rho_oleo_api]
 descricao = "Massa específica do óleo na condição padrão a partir do grau API"
@@ -81,13 +83,39 @@ forma = "ΔRs = max(0, Rs(P, T) − Rs(P_std, T_ref))"
 unidade = "Sm³/Sm³"
 escopos = ["SG-001", "V-001"]
 memorial = ["eq:standing"]
+casos = "nao_avaliaveis"
 
 [gas_por_estagio]
-descricao = "Vazão de gás liberada em cada estágio"
+descricao = "Vazão de gás liberada em cada estágio (Standing)"
 forma = "Q_G,D2 = ΔRs(P_D1,T_D1)·Q_O; Q_G,D1 = ΔRs(P_F,T_F)·Q_O − Q_G,D2; Q_G,F = Q_G,in − Q_G,D1 − Q_G,D2"
 unidade = "Sm³/d"
 escopos = ["C-04", "C-09", "C-17"]
 memorial = ["eq:gasstages"]
+casos = "nao_avaliaveis"
+
+[recombinacao]
+descricao = "Composição do caso pela Nota 4 do BOT: fases do flash de z_base no FWKO recombinadas nas vazões do caso"
+forma = "ṅ_g = Q_G/V_M; ṅ_L = Q_O·ρ_O/[(1−β_std)·MW_std]; z_caso = (ṅ_g·y_ref + ṅ_L·x_ref)/(ṅ_g + ṅ_L)"
+unidade = "kmol/d"
+escopos = ["caso"]
+memorial = ["eq:recomb"]
+casos = "avaliaveis"
+
+[flash_estagio]
+descricao = "Flash (T, P) da alimentação de cada estágio do trem: β, y, x e a fase vapor (MW, Z, ρ)"
+forma = "z_F = z_caso; z_V-001 = x_SG-001; z_V-002 = x_V-001; ṅ_V = β·ṅ_F; ṅ_L = (1−β)·ṅ_F"
+unidade = "–"
+escopos = ["C-04", "C-09", "C-17"]
+memorial = ["eq:flashstage"]
+casos = "avaliaveis"
+
+[gas_estagio_flash]
+descricao = "Vazão de gás de cada estágio pelo trem"
+forma = "Q_G = ṅ_V·V_M"
+unidade = "Sm³/d"
+escopos = ["C-04", "C-09", "C-17"]
+memorial = ["eq:gasflash"]
+casos = "avaliaveis"
 
 [arraste_liquido]
 descricao = "Óleo arrastado na corrente de gás"

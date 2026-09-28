@@ -1,14 +1,14 @@
 \subsection{V-002 --- Vaso desgaseificador 2}
 \paragraph{Função:} última liberação de gás para especificação de TVP/RVP do óleo (BOT 2.7.1.1: ``degasser for RVP/TVP specification''), com gás ao 1º estágio da VRU. Conjugado ao dessalinizador.
-\paragraph{Entradas:} C-16: << ind.m(RD, 'C-16')|br(2) >>~\si{\kilogram\per\second}, gás dissolvido << RD.gas['G_D2']|br >> Sm³/d, << RD.T['C-16']|br(2) >>~\si{\celsius} (Caso << DEMO >>).
-\paragraph{Premissas:} P-19, P-23 (todo o gás remanescente é liberado: óleo morto na saída), P-26, P-27, P-15.
-\paragraph{Modelo de cálculo:} <% set rsF, rs0, rsD1 = ind.standing_exemplo(RD, P, dados) %>$Q_{G,C17}=\Delta R_s(P_{\mbox{V-001}},T_{\mbox{V-001}})\,Q_O=<< (rsD1 - rs0)|mb(4) >>\times<< RD.caso['oil_sm3d']|mb >>=<< RD.gas['G_D2']|mb >>$~Sm³/d; $\eta_{G,\mbox{V-002}}=1$ por construção (P-23).
+\paragraph{Entradas:} C-16: << ind.m(RD, 'C-16')|br(2) >>~\si{\kilogram\per\second}, gás dissolvido << ind.q(RD, 'C-16', 'G')|br >> Sm³/d, << RD.T['C-16']|br(2) >>~\si{\celsius} (Caso << DEMO >>).
+\paragraph{Premissas:} P-19, P-23 (casos não avaliáveis: todo o gás remanescente é liberado, óleo morto na saída), P-26, P-27, P-15.
+\paragraph{Modelo de cálculo:} <% if RD.avaliavel %><% set e2 = RD.trem.estagios[2] %>caso avaliável: flash do líquido do V-001, eq.~\eqref{eq:flashstage} e \eqref{eq:gasflash}, a $<< e2.T_C|mb(1) >>$~\si{\celsius} e $<< e2.P_kPa|mb >>$~\si{\kilo\pascal}: $Q_{G,C17}=<< e2.beta|mb(5) >>\times<< e2.n_entrada_kmol_d|mb(1) >>\times<< RD.VM|mb(4) >>=<< RD.gas['G_D2']|mb >>$~Sm³/d, $MW_v=<< e2.vapor.MW|mb(3) >>$~\si{\kilogram\per\kilo\mole}, $Z_v=<< e2.vapor.Z|mb(4) >>$, $\rho_v=<< e2.vapor.rho|mb(3) >>$~\si{\kilogram\per\cubic\metre}. O líquido que sai não é óleo morto por construção: o que ele ainda libera até a condição padrão é gás dissolvido (G), e a TVP resultante é diagnóstico (docs/validacao/39). <% endif %>Nos casos não avaliáveis, $Q_{G,C17}=\Delta R_s(P_{\mbox{V-001}},T_{\mbox{V-001}})\,Q_O$, eq.~\eqref{eq:gasstages}, e $\eta_{G,\mbox{V-002}}=1$ por construção (P-23).
 
 \paragraph{Saídas:} C-17 gás << RD.gas['G_D2']|br >> Sm³/d; C-18 líquido << ind.m(RD, 'C-18')|br(2) >>~\si{\kilogram\per\second}; << RD.T['C-17']|br(2) >>~\si{\celsius}, << P['P_D2']|br >>~\si{\kilo\pascal}.
 \paragraph{Balanço de massa:} <% set b = bb(RD, blocos['V-002']) %>$\varepsilon_m=$<< b['em']|sci >>.
 \paragraph{Balanço de energia:} $\varepsilon_E=$<< b['eE']|sci >>.
 \paragraph{Resultado preliminar:} <% set mx, idx = maximo("r.gas['G_D2']") %>maior gás ao 1º estágio da VRU: << mx|br >> Sm³/d (caso << idx|ids >>).
-\paragraph{Validação recomendada em etapa posterior:} verificação de TVP $\le$70~\si{\kilo\pascal} na medição e RVP (BOT 2.3.1.1), que exige flash; gás residual liberado no tanque de carga.
+\paragraph{Validação recomendada em etapa posterior:} verificação de TVP $\le$70~\si{\kilo\pascal} na medição e RVP (BOT 2.3.1.1) como restrição de projeto; gás residual liberado no tanque de carga.
 {\footnotesize\setlength{\tabcolsep}{3.5pt}\begin{longtable}{rrrrrrr}
 \caption{V-002 --- desgaseificador 2 (todos os casos).\label{tab:b10}}\\\toprule
 Caso & $Q_{G,C17}$ & $Q_{G,real}$ & $\dot m_{C18}$ & $T$ & $\varepsilon_m$ & $\varepsilon_E$\\

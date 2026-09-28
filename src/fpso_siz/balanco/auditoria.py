@@ -7,6 +7,10 @@ propriedades (há teste). Ele só lê o resultado: correntes, T, cargas, ρ, cp 
 
 Cada verificação devolve o maior |desvio| absoluto entre modelo e recálculo nos casos.
 As expressões seguem a ordem de operações do original (paridade com o oráculo F1).
+
+Casos avaliáveis (trem produtivo): o gás de cada estágio é refeito a partir das FASES do trem
+(ṅ_V·V_M e ṅ_V·MW_v, O + G da corrente de gás menos o arraste) e a entrada a partir das fases
+da recombinação.
 """
 import math
 
@@ -48,12 +52,26 @@ def auditar(resultados, dados, prem):
         gp, api, st, cp, du, T, rho = r.gp, r.api, r.streams, r.cp, r.duties, r.T, r.rho
         rhoO = (const.api_a / (const.api_b + api)) * const.rho_agua_15_6C
         track("rho_oleo_api", rhoO - rho["O"])
+        tr = r.trem if r.trem is not None and r.trem.avaliavel else None
+        if tr is None:
+            g01 = (c["produced_gas_sm3d"] + c["lift_gas_sm3d"]) * (gp["MW"] / VM2) / SEGUNDOS_POR_DIA
+            n01 = st["C-01"]["G"] * SEGUNDOS_POR_HORA / gp["MW"]
+            n01_ref = (c["produced_gas_sm3d"] + c["lift_gas_sm3d"]) / VM2 / HORAS_POR_DIA
+        else:
+            rc = tr.recombinacao   # gás de entrada pelas fases: vapor do FWKO + o que o líquido libera
+            g01 = (rc.n_gas_kmol_d * rc.vapor_ref.MW + rc.n_liquido_kmol_d * rc.beta_std * rc.MW_vapor_std) \
+                / SEGUNDOS_POR_DIA
+            n01 = (rc.n_gas_kmol_d + rc.n_liquido_kmol_d * rc.beta_std) / HORAS_POR_DIA
+            n01_ref = r.gas["G_in"] / VM2 / HORAS_POR_DIA
+            track("recombinacao_nota4", max(rc.reproducao.erro_gas_rel, rc.reproducao.erro_oleo_rel, rc.erro_soma_z,
+                                            rc.erro_molar, rc.erro_massico, rc.componente[1]))
+            f = tr.fechamento
+            track("fechamento_trem", max(f.erro_molar_relativo, f.erro_massico_relativo, f.erro_componente_max))
         track("vazao_massica_C01", max(
             abs(c["oil_sm3d"] * rhoO / SEGUNDOS_POR_DIA - st["C-01"]["O"]),
             abs((c["liquid_sm3d"] - c["oil_sm3d"]) * P["rho_W"] / SEGUNDOS_POR_DIA - st["C-01"]["W"]),
-            abs((c["produced_gas_sm3d"] + c["lift_gas_sm3d"]) * (gp["MW"] / VM2) / SEGUNDOS_POR_DIA - st["C-01"]["G"])))
-        track("vazao_molar_gas", (c["produced_gas_sm3d"] + c["lift_gas_sm3d"]) / VM2 / HORAS_POR_DIA
-              - st["C-01"]["G"] * SEGUNDOS_POR_HORA / gp["MW"])
+            abs(g01 - st["C-01"]["G"])))
+        track("vazao_molar_gas", n01_ref - n01)
 
         def rs(Pk, T_):  # Standing na forma logarítmica
             Ppsi = Pk / ks.kPa_por_psia
@@ -61,12 +79,22 @@ def auditar(resultados, dados, prem):
             return (gp["gamma"] * 10 ** (ks.expoente * (math.log10(Ppsi / ks.a + ks.b) + (ks.c_api * api - ks.c_T * TF)))
                     * ks.Sm3_Sm3_por_scf_bbl)
 
-        dF = rs(P["P_FWKO"], T["C-03"]) - rs(dados.P_std_kPa, T_ref)
-        dD = rs(P["P_D1"], T["C-08"]) - rs(dados.P_std_kPa, T_ref)
-        track("gas_por_estagio", max(
-            abs((dF - dD) * c["oil_sm3d"] - r.gas["G_D1"]),
-            abs(dD * c["oil_sm3d"] - r.gas["G_D2"]),
-            abs(c["produced_gas_sm3d"] + c["lift_gas_sm3d"] - dF * c["oil_sm3d"] - r.gas["G_F"])))
+        if tr is None:
+            dF = rs(P["P_FWKO"], T["C-03"]) - rs(dados.P_std_kPa, T_ref)
+            dD = rs(P["P_D1"], T["C-08"]) - rs(dados.P_std_kPa, T_ref)
+            track("gas_por_estagio", max(
+                abs((dF - dD) * c["oil_sm3d"] - r.gas["G_D1"]),
+                abs(dD * c["oil_sm3d"] - r.gas["G_D2"]),
+                abs(c["produced_gas_sm3d"] + c["lift_gas_sm3d"] - dF * c["oil_sm3d"] - r.gas["G_F"])))
+        else:  # Q_G = β·ṅ_F·V_M, e a corrente de gás leva ṅ_V·MW_v (O + G) mais o arraste
+            chave = dict(zip(GAS_VRU, ("G_F", "G_D1", "G_D2")))
+            for e in tr.estagios:
+                qg = r.gas[chave[e.corrente_gas]]
+                arraste = P["carry"] * qg * rho["O"] / SEGUNDOS_POR_DIA
+                vapor = st[e.corrente_gas]["O"] + st[e.corrente_gas]["G"] - arraste
+                track("gas_por_estagio", max(abs(e.beta * e.n_entrada_kmol_d * VM2 - qg),
+                                             abs(e.n_vapor_kmol_d * e.vapor.MW / SEGUNDOS_POR_DIA - vapor)
+                                             * SEGUNDOS_POR_DIA / e.vapor.MW * VM2))
 
         mi = sum(sum(st[x].values()) for x in g_in)
         mo = sum(sum(st[x].values()) for x in g_out)
@@ -99,9 +127,15 @@ def auditar(resultados, dados, prem):
             track("residuo_componente", sum(st[x][k] for x in g_in) - sum(st[x][k] for x in g_out))
 
         for i in ("CO2", "H2S"):
-            y = gp["y"][i]
-            track("molar_CO2_H2S", y * st["C-01"]["G"] / gp["MW"] * SEGUNDOS_POR_HORA
-                  - y * sum(st[x]["G"] for x in GAS_VRU) / gp["MW"] * SEGUNDOS_POR_HORA)
+            if tr is None:
+                y = gp["y"][i]
+                track("molar_CO2_H2S", y * st["C-01"]["G"] / gp["MW"] * SEGUNDOS_POR_HORA
+                      - y * sum(st[x]["G"] for x in GAS_VRU) / gp["MW"] * SEGUNDOS_POR_HORA)
+            else:  # entra ṅ·z_i; sai no gás dos três estágios e no líquido final
+                ult = tr.estagios[-1]
+                entra = tr.recombinacao.n_total_kmol_d * tr.recombinacao.z_caso.get(i, 0.0)
+                sai = sum(e.n_vapor_kmol_d * e.y.get(i, 0.0) for e in tr.estagios) + ult.n_liquido_kmol_d * ult.x.get(i, 0.0)
+                track("molar_CO2_H2S", (entra - sai) / HORAS_POR_DIA)
 
         def lv(x):  # água + diluição, m³/d
             return (st[x]["W"] / rho["W"] + st[x]["D"] / rho["D"]) * SEGUNDOS_POR_DIA

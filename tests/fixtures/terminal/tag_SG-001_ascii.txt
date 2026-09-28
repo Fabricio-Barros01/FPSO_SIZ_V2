@@ -48,11 +48,11 @@
      Volume (casco, entre tampos)  -
      Restricao governante          -
      Caso governante               -
-     Teto de decantacao            2.398 mm
+     Teto de decantacao            2.399 mm
 
   Nao ha equipamento que atenda simultaneamente aos 16 casos. Nenhum diametro admissivel tem
-  esbeltez na banda 3.0-5.0: abaixo do teto de decantacao (2398.0 mm) o SR varia de 71.67 a
-  6975.66. Amplie a grade de diametros ou a banda de SR.
+  esbeltez na banda 3.0-5.0: abaixo do teto de decantacao (2399.0 mm) o SR varia de 71.67 a
+  6975.69. Amplie a grade de diametros ou a banda de SR.
 
   Casos
   Caso                       Sozinho   d (mm)
@@ -75,5 +75,6 @@
   BOT 16 - Highest CO2       viavel     5.900
 
   Resultado preliminar: 9 recomendacao(oes)/default(s) sem revisao (ver Revisar).
+  3 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
   Memoria de calculo (MC) do TAG: acao "Gerar memoria de calculo" no menu, ou --mc [--pdf] no
   comando.

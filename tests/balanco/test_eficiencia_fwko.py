@@ -17,10 +17,13 @@ FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "python_ref"
 REGRESSAO = json.loads((FIXTURES / "regressao_eficiencia.json").read_text(encoding="utf-8"))
 SEM_AGUA = (1, 4, 5, 6, 7)
 
-# tabela confirmada pelo usuário: caso → (η adotado, exigido acima do padrão, BSW C-06, BSW C-21), em %
-TABELA = {2: (85.0, False, 2.39, 0.50), 3: (85.0, False, 2.39, 0.50), 8: (85.0, False, 10.92, 0.50),
+# tabela confirmada pelo usuário: caso → (η adotado, exigido acima do padrão, BSW C-06, BSW C-21), em %.
+# Revista em 2026-09-28 pelo trem produtivo (docs/validacao/39): só mudam os BSW de C-06 dos casos
+# avaliáveis 8 (10,92 → 10,94) e 12 (34,56 → 34,57), porque a saída de óleo do FWKO passa a descontar
+# o óleo morto que vaporiza no SG-001; os casos com gás de lift (9, 11, 15, 16) não mudam.
+TABELA = {2: (85.0, False, 2.39, 0.50), 3: (85.0, False, 2.39, 0.50), 8: (85.0, False, 10.94, 0.50),
           9: (85.0, False, 16.87, 0.50), 10: (85.0, False, 21.15, 0.50), 11: (85.0, False, 34.95, 0.50),
-          12: (85.0, False, 34.56, 0.50), 13: (85.0, False, 29.15, 0.50), 14: (85.0, False, 29.15, 0.50),
+          12: (85.0, False, 34.57, 0.50), 13: (85.0, False, 29.15, 0.50), 14: (85.0, False, 29.15, 0.50),
           15: (92.4, True, 40.00, 0.50), 16: (91.5, True, 40.00, 0.50)}
 
 

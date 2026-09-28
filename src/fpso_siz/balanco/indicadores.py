@@ -22,7 +22,7 @@ def criterios():
 # ------------------------------------------------------------------ por corrente
 def q(r, sid, c):
     """Vazão volumétrica padrão do componente c na corrente (m³/d; Sm³/d para gás)."""
-    return r.vol(r.streams[sid], c)
+    return r.q(sid, c)
 
 
 def q_agua(r, sid):
@@ -53,22 +53,35 @@ def q_real_gas(r, chave, P, T, dados):
 
 
 def molares_acidos(r):
-    """{CO2|H2S: (entrada C-01, saída no gás, erro relativo)} em kmol/h."""
-    y, Mg, st = r.gp["y"], r.gp["MW"], r.streams
+    """{CO2|H2S: (entrada C-01, saída no gás, erro relativo)} em kmol/h. No caso avaliável, pelo
+    trem: entra ṅ·z_i e sai Σ ṅ_V·y_i (o que fica no óleo tratado é a diferença)."""
     out = {}
     for i in ("CO2", "H2S"):
-        nin = y[i] * st["C-01"]["G"] / Mg * SEGUNDOS_POR_HORA
-        nout = y[i] * sum(st[s]["G"] for s in GAS_VRU) / Mg * SEGUNDOS_POR_HORA
+        if r.avaliavel:
+            nin = _molar_entrada(r, i)
+            nout = sum(e.n_vapor_kmol_d * e.y.get(i, 0.0) for e in r.trem.estagios) / HORAS_POR_DIA
+        else:
+            y, Mg, st = r.gp["y"], r.gp["MW"], r.streams
+            nin = y[i] * st["C-01"]["G"] / Mg * SEGUNDOS_POR_HORA
+            nout = y[i] * sum(st[s]["G"] for s in GAS_VRU) / Mg * SEGUNDOS_POR_HORA
         out[i] = (nin, nout, abs(nin - nout) / nin)
     return out
 
 
+def _molar_entrada(r, i):
+    """kmol/h do componente i em C-01: ṅ·z_i do caso (avaliável) ou y_i do corte leve."""
+    if r.avaliavel:
+        rec = r.recombinacao
+        return rec.n_total_kmol_d * rec.z_caso.get(i, 0.0) / HORAS_POR_DIA
+    return r.gp["y"][i] * r.streams["C-01"]["G"] / r.gp["MW"] * SEGUNDOS_POR_HORA
+
+
 def co2_molar(r):
-    return r.gp["y"]["CO2"] * r.streams["C-01"]["G"] / r.gp["MW"] * SEGUNDOS_POR_HORA
+    return _molar_entrada(r, "CO2")
 
 
 def h2s_molar(r):
-    return r.gp["y"]["H2S"] * r.streams["C-01"]["G"] / r.gp["MW"] * SEGUNDOS_POR_HORA
+    return _molar_entrada(r, "H2S")
 
 
 # ------------------------------------------------------------------ eficiências
@@ -210,7 +223,8 @@ def criticos(resultados, dados, prem):
         ("B-003/vazao_C19", lambda r: q_agua(r, "C-19")),
         ("B-001/vazao_C21", lambda r: q(r, "C-21", "O") + q_agua(r, "C-21")),
         ("P-003/Q", lambda r: r.duties["Q_C"]),
-        ("materiais/CO2_molar", lambda r: r.gp["y"]["CO2"] * r.streams["C-01"]["G"] / r.gp["MW"]),
+        ("materiais/CO2_molar", lambda r: co2_molar(r) / SEGUNDOS_POR_HORA if r.avaliavel
+         else r.gp["y"]["CO2"] * r.streams["C-01"]["G"] / r.gp["MW"]),
         ("materiais/H2S_ppmv", lambda r: dados.h2s_ppmv[r.fluid]),
     ]
     return [(k, *maximo(resultados, f)) for k, f in defs]

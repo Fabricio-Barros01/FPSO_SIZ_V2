@@ -10,6 +10,12 @@
 # Regra: a proveniência diz o que o cálculo consumiu, nunca o que estaria autorizado a consumir.
 # Uma propriedade `nao_validada` ou `ausente` não pode ter consumidor (teste de arquitetura).
 #
+# `casos` (opcional): a classe de caso em que o consumo acontece —
+#   avaliaveis     casos sem gás de lift: recombinação da Nota 4 + trem de flashes (produtivo);
+#   nao_avaliaveis casos com gás de lift (9, 11, 15, 16): Standing, sem flash.
+# Sem `casos`, o consumo vale em todo caso. O EstadoProcesso de cada caso aponta só para o que
+# a SUA classe consumiu (termo/proveniencia.consumidas(..., avaliavel=)).
+#
 # Ligações com o código, conferidas por teste: `rastro` = equação do rastro do balanço que a
 # produz; `regra` = regra de entrada de TAG (pfd/entradas.REGRAS) que a entrega; `funcao` =
 # função de termo/servico.py; `fonte` = chaves "seção.campo" de termo/fluidos.toml.
@@ -50,7 +56,8 @@ origem = ["BOT"]
 validade = "validada"
 consumidores = ["balanco"]
 rastro = "gas_massa_especifica_std"
-nota = "MW do corte leve / V_M, com V_M = R·T_padrão/P_padrão"
+casos = "nao_avaliaveis"
+nota = "MW do corte leve / V_M, com V_M = R·T_padrão/P_padrão. Nos casos avaliáveis a massa e o volume do gás saem do trem (MW do vapor de equilíbrio)"
 
 [[propriedade]]
 id = "cp_gas_balanco"
@@ -80,7 +87,8 @@ origem = ["Standing"]
 validade = "validada"
 consumidores = ["balanco", "dimensionamento"]
 rastro = "rs_liberado"
-nota = "ΔRs de Standing entre a condição do vaso e a padrão, sobre a vazão de óleo. É ESTA a vazão de gás que o processo e o dimensionamento consomem; o flash do trem é diagnóstico"
+casos = "nao_avaliaveis"
+nota = "ΔRs de Standing entre a condição do vaso e a padrão, sobre a vazão de óleo. Só nos casos NÃO avaliáveis (com gás de lift); nos avaliáveis a vazão de gás de cada estágio é ṅ_V·V_M do trem (fracao_vapor_estagio)"
 
 [[propriedade]]
 id = "viscosidade_oleo_balanco"
@@ -103,7 +111,8 @@ consumidores = ["dimensionamento"]
 regra = "densidade_gas"
 funcao = "gas"
 fonte = ["gas.fonte_eos", "gas.fonte_z"]
-nota = "Z pela EOS com a composição FIXA do corte leve do balanço (gás seco), não com o vapor de equilíbrio do trem"
+casos = "nao_avaliaveis"
+nota = "Z pela EOS com a composição FIXA do corte leve do balanço (gás seco). Só nos casos não avaliáveis; nos avaliáveis a mesma regra entrega a ρ do vapor de equilíbrio (rho_vapor_estagio)"
 
 [[propriedade]]
 id = "compressibilidade_gas"
@@ -115,7 +124,8 @@ consumidores = ["dimensionamento"]
 regra = "compressibilidade_gas"
 funcao = "gas"
 fonte = ["gas.fonte_eos"]
-nota = "composição fixa do corte leve; kij do banco ChemSep"
+casos = "nao_avaliaveis"
+nota = "composição fixa do corte leve; kij do banco ChemSep. Só nos casos não avaliáveis; nos avaliáveis, Z do vapor de equilíbrio (Z_vapor_estagio)"
 
 [[propriedade]]
 id = "viscosidade_gas"
@@ -127,7 +137,7 @@ consumidores = ["dimensionamento"]
 regra = "viscosidade_gas"
 funcao = "gas"
 fonte = ["gas.fonte_transporte"]
-nota = "gás diluído: a pressão do vaso não corrige a viscosidade"
+nota = "gás diluído: a pressão do vaso não corrige a viscosidade. Em TODOS os casos, com a composição do corte leve: não há método de transporte validado para a composição y do equilíbrio (tem pseudo-componentes sem propriedade de transporte, ver transporte_fluido_de_poco)"
 
 [[propriedade]]
 id = "densidade_fase"
@@ -151,7 +161,7 @@ consumidores = ["dimensionamento"]
 regra = "viscosidade_fase"
 funcao = "emulsao"
 fonte = ["oleo.fonte_viscosidade", "oleo_vivo.fonte", "salmoura.fonte", "emulsao.fonte"]
-nota = "óleo morto do BOT corrigido para óleo vivo pelo Rs da corrente (Beggs & Robinson; fora da faixa, aviso); emulsão por Zanker"
+nota = "óleo morto do BOT corrigido para óleo vivo pelo Rs da corrente (Beggs & Robinson; fora da faixa, aviso); emulsão por Zanker. O Rs é o gás dissolvido da corrente: nos casos avaliáveis, o que o líquido do estágio ainda libera até a condição padrão pelo trem; nos não avaliáveis, Standing. A correlação não muda; muda a sua entrada (docs/validacao/39)"
 
 [[propriedade]]
 id = "pressao_vapor_saturado"
@@ -210,37 +220,60 @@ regra = "condutividade_utilidade"
 funcao = "agua_saturada"
 fonte = ["agua.fonte_condutividade"]
 
-# ---------------------------------------------------------------------------- trem (diagnóstico)
-# O trem SG-001 → V-001 → V-002 faz parte do EstadoProcesso, mas o que ele calcula não é
-# consumido: a vazão de gás por estágio que o processo usa é a de Standing (acima). A F5.1
-# mediu que a composição do BOT não reproduz o GOR dos casos (razão 0,62–2,16).
+# ---------------------------------------------------------------------------- trem (produtivo nos casos avaliáveis)
+# O trem SG-001 → V-001 → V-002 parte da composição do caso recombinada pela Nota 4 do BOT
+# (premissa de modelagem aprovada, docs/validacao/38) e é o que dá o gás de cada estágio nos
+# casos sem gás de lift. "validada" aqui é o sentido do contrato: PR com kij do ChemSep e
+# caracterização de Riazi & Al-Sahhaf (fontes citadas), com a composição que reproduz as vazões
+# do BOT e fechamento de massa, mol e componente. NÃO há PVT medido: a validação é de
+# consistência com o BOT, não experimental (docs/validacao/39).
+[[propriedade]]
+id = "composicao_caso"
+rotulo = "composição do caso recombinada (Nota 4)"
+unidade = "–"
+origem = ["BOT", "premissa", "PengRobinson", "RiaziAlSahhaf"]
+validade = "validada"
+consumidores = ["balanco"]
+rastro = "recombinacao"
+funcao = "flash_tp"
+casos = "avaliaveis"
+nota = "z_caso = (ṅ_g·y_ref + ṅ_L·x_ref)/(ṅ_g + ṅ_L), referência P_FWKO e T do caso; reproduz produced_gas_sm3d no FWKO e oil_sm3d de óleo morto. z_base (BOT) não é alterado"
+
 [[propriedade]]
 id = "fracao_vapor_estagio"
 rotulo = "fração de vapor β de cada estágio"
 unidade = "–"
 origem = ["PengRobinson", "RiaziAlSahhaf"]
-validade = "nao_validada"
-consumidores = []
+validade = "validada"
+consumidores = ["balanco"]
+rastro = "flash_estagio"
 funcao = "flash_tp"
-nota = "sem PVT medido que valide o split; a composição é por tipo de fluido, não por caso"
+casos = "avaliaveis"
+nota = "Q_G do estágio = β·ṅ_F·V_M: é a vazão de gás de SG-001, V-001 e V-002 nos casos avaliáveis"
 
 [[propriedade]]
 id = "composicao_vapor_estagio"
 rotulo = "composição y do vapor de cada estágio"
 unidade = "–"
 origem = ["PengRobinson", "RiaziAlSahhaf"]
-validade = "nao_validada"
-consumidores = []
+validade = "validada"
+consumidores = ["balanco"]
+rastro = "flash_estagio"
 funcao = "flash_tp"
+casos = "avaliaveis"
+nota = "define o MW do vapor (massa do gás de cada estágio); a μ do gás NÃO usa y (sem método validado)"
 
 [[propriedade]]
 id = "composicao_liquido_estagio"
 rotulo = "composição x do líquido de cada estágio"
 unidade = "–"
 origem = ["PengRobinson", "RiaziAlSahhaf"]
-validade = "nao_validada"
-consumidores = []
+validade = "validada"
+consumidores = ["balanco"]
+rastro = "flash_estagio"
 funcao = "flash_tp"
+casos = "avaliaveis"
+nota = "alimentação do estágio seguinte e, levada à condição padrão, a divisão óleo morto / gás dissolvido do líquido"
 
 [[propriedade]]
 id = "Z_vapor_estagio"
@@ -248,9 +281,12 @@ rotulo = "Z do vapor de equilíbrio"
 unidade = "–"
 origem = ["PengRobinson"]
 validade = "validada"
-consumidores = []
+consumidores = ["dimensionamento"]
+rastro = "flash_estagio"
+regra_alternativa = "compressibilidade_gas"
 funcao = "flash_tp"
-nota = "validada como propriedade da fase dada a composição; não consumida, porque depende de y (não validada)"
+casos = "avaliaveis"
+nota = "entregue pela regra compressibilidade_gas nos casos avaliáveis"
 
 [[propriedade]]
 id = "MW_vapor_estagio"
@@ -258,9 +294,11 @@ rotulo = "MW do vapor de equilíbrio"
 unidade = "g/mol"
 origem = ["PengRobinson"]
 validade = "validada"
-consumidores = []
+consumidores = ["balanco"]
+rastro = "flash_estagio"
 funcao = "flash_tp"
-nota = "fecha exatamente contra os MW adotados; não consumida pelo mesmo motivo de Z"
+casos = "avaliaveis"
+nota = "fecha exatamente contra os MW adotados; dá a massa do gás de cada estágio"
 
 [[propriedade]]
 id = "rho_vapor_estagio"
@@ -268,8 +306,12 @@ rotulo = "ρ do vapor de equilíbrio"
 unidade = "kg/m³"
 origem = ["PengRobinson"]
 validade = "validada"
-consumidores = []
+consumidores = ["dimensionamento"]
+rastro = "flash_estagio"
+regra_alternativa = "densidade_gas"
 funcao = "flash_tp"
+casos = "avaliaveis"
+nota = "ρ = P·MW_v/(Z_v·R·T) da fase vapor; entregue pela regra densidade_gas nos casos avaliáveis"
 
 [[propriedade]]
 id = "MW_mistura"

@@ -88,7 +88,9 @@ def test_achados_de_premissa_fixados(v):
     sem sal) — superdimensionada, conservadora. A4: FWKO abaixo de 40 °C nos casos 5–6
     (reciclo de óleo da Nota 11 não modelado, P-41). A6: γ do gás além da água de Standing."""
     exc = {x["num"]: x["excesso_rel"] for x in v["diluicao"]}
-    assert exc[2] == pytest.approx(0.3668, abs=1e-4) and exc[3] == pytest.approx(exc[2], rel=1e-5)
+    # 0,3668 com Standing; com o trem produtivo (docs/validacao/39) o óleo tratado perde a fração
+    # do óleo morto que vaporiza a 90 °C, e os casos 2 (Early Life) e 3 (Blend) deixam de coincidir
+    assert exc[2] == pytest.approx(0.3665, abs=1e-4) and exc[3] == pytest.approx(0.3666, abs=1e-4)
     assert all(e >= 0 for e in exc.values()) and max(exc, key=exc.get) in (2, 3)
     assert v["abaixo_T_fwko"] == [5, 6] and v["t_fwko_min"] == 40.0
     assert min(v["gamma_gas"].values()) == pytest.approx(0.811, abs=1e-3)

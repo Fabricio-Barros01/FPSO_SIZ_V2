@@ -160,7 +160,9 @@ def test_pdf_compila_e_iguala_o_json(planta_base, tmp_path, ident):
 def test_v001_caso_governante_e_resultado(docs):
     rt, d = docs["V-001"]
     c = d["calculo"]
-    assert c["caso_governante"] == "BOT 03 — Early Life Blend" == rt.resultado.driver_case
+    # BOT 03 com Standing; com o trem produtivo (docs/validacao/39) o líquido de saída do caso 3
+    # perde mais óleo morto vaporizado que o do caso 2, e o caso 2 passa a governar a retenção
+    assert c["caso_governante"] == "BOT 02 — Early Life" == rt.resultado.driver_case
     assert c["viavel"] and c["selecao"]["d"] == rt.resultado.x == 4700.0
     assert c["selecao"]["leff"] == rt.resultado.y
     assert [e["id"] for e in c["equacoes"]] == ["cd", "vt", "re", "k", "gas", "liquido", "leff", "lss", "sr", "volume"]
@@ -195,7 +197,8 @@ def test_knockout_conta_a_mao_reproduz_o_rastro(docs, ident):
     if ident != "V-001":
         return
     # números do cartão em 4 algarismos (o que o leitor confere no PDF)
-    assert [formatacao.texto_sig(s[k]) for k in ("leff", "lss", "sr", "volume")] == ["11,74", "16,44", "3,499", "285,3"]
+    # com Standing: 11,74 / 16,44 / 3,499 / 285,3 (docs/validacao/39)
+    assert [formatacao.texto_sig(s[k]) for k in ("leff", "lss", "sr", "volume")] == ["11,72", "16,42", "3,493", "284,9"]
 
 
 def test_v001_constantes_de_campo_convertidas(docs):
