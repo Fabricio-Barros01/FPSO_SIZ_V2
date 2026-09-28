@@ -25,6 +25,9 @@ Cada documento é o registro de uma etapa. A arquitetura vigente está em [`../a
 - [30-caracterizacao-fluido-de-poco.md](30-caracterizacao-fluido-de-poco.md) — Fase 4 — caracterização do fluido de poço (pseudo-componentes)
 - [32-auditoria-de-saida.md](32-auditoria-de-saida.md) — 32 — Gate de sanidade do dimensionamento e dos memoriais
 - [33-discretizacao-das-grades.md](33-discretizacao-das-grades.md) — 33 — Pendência de discretização: a grade do caso e a grade do envelope
+- [35-casos-bot.md](35-casos-bot.md) — 35 — O que os 16 casos do BOT representam (Nota 4: flash + recombinação); decisão pendente
+- [36-p001-diagnostico.md](36-p001-diagnostico.md) — 36 — P-001: restrição, caso e requisito que o tornam inviável; árvore de alternativas
+- [37-faixas-pressao-degaseificadores.md](37-faixas-pressao-degaseificadores.md) — 37 — Faixas de P_D1 e P_D2: TVP do BOT como teto de P_D2; o que falta
 
 ## Registros de medição e de sessão — datados, continuam corretos para a data
 
