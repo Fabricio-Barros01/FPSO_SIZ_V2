@@ -27,8 +27,8 @@ UI = {"tkinter", "PyQt5", "PyQt6", "PySide2", "PySide6", "flask", "fastapi", "st
 # uma porta única, como numpy/scipy — o port a C/Java troca só essa camada.
 # pymoo (F15): mesma regra — só `_otim.py` importa o algoritmo; o avaliador (pfd/otimizacao.py)
 # é puro e não conhece a biblioteca.
-SO_EM = {"numpy": {"_num.py"}, "scipy": {"_num.py"}, "jinja2": "output/", "thermo": {"pfd/_chedl.py"},
-         "chemicals": {"pfd/_chedl.py"}, "fluids": {"pfd/_chedl.py"}, "pandas": set(),
+SO_EM = {"numpy": {"_num.py"}, "scipy": {"_num.py"}, "jinja2": "output/", "thermo": {"termo/backend.py"},
+         "chemicals": {"termo/backend.py"}, "fluids": {"termo/backend.py"}, "pandas": set(),
          "pymoo": {"_otim.py"}}
 # 0,5 (vaso meio cheio, média), 4 (área πd²/4; casas decimais), 8 (área do segmento circular
 # d²/8) e 10 (base) são estruturais, não coeficientes empíricos; estes vão para TOML.
@@ -126,7 +126,7 @@ def test_cli_nao_nomeia_parametros_nem_grandezas(nome):
     premissa, equação, coluna, verificação, campo de resultado, parâmetro de método ou
     chave de corrente aparece como texto nela."""
     import fpso_siz.sizing  # noqa: F401
-    from fpso_siz.balanco.modelo import ResultadoCaso
+    from fpso_siz.balanco.estado import EstadoProcesso
     from fpso_siz.core import registro
     from fpso_siz.core.corrente import STREAM_KEYS
 
@@ -134,7 +134,8 @@ def test_cli_nao_nomeia_parametros_nem_grandezas(nome):
                   for s in [*m.parameters(), *m.stream_parameters()]}
     proibidos = (set(carregar("premissas.toml")) | set(carregar("equacoes_balanco.toml"))
                  | set(carregar("auditoria.toml")) | {c["id"] for c in carregar("saida_correntes.toml")["colunas"]}
-                 | set(ResultadoCaso.__dataclass_fields__) | parametros | set(STREAM_KEYS)) - {"caso", "nome"}
+                 | set(EstadoProcesso.__dataclass_fields__) | parametros | set(STREAM_KEYS))
+    proibidos -= {"caso", "nome", "proveniencia"}   # palavras genéricas de seção de documento
     textos = {n.value for n in ast.walk(arvore(PACOTE / nome))
               if isinstance(n, ast.Constant) and isinstance(n.value, str)}
     assert not (textos & proibidos), textos & proibidos
@@ -176,7 +177,7 @@ def test_interface_nao_monta_entradas_nem_chama_o_motor(nome):
     for n in ast.walk(arvore(PACOTE / nome)):
         if isinstance(n, ast.ImportFrom):
             assert not ({a.name for a in n.names} & proibidos), (nome, n.module)
-            assert n.module not in ("fpso_siz.pfd.entradas", "fpso_siz.pfd.fluidos", "fpso_siz.pfd._chedl"), nome
+            assert n.module not in ("fpso_siz.pfd.entradas", "fpso_siz.termo.servico", "fpso_siz.termo.backend"), nome
         if isinstance(n, ast.Attribute):
             assert n.attr not in proibidos, (nome, n.attr)
 

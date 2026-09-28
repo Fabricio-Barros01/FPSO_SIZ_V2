@@ -5,30 +5,40 @@ baixa carga) e os dez casos ativos do P-001. O que se prova aqui é que NENHUM c
 recusado por falta de correlação, e que o que restou de inviabilidade tem restrição governante
 identificada — a ÁREA no P-001. No P-003 o comprimento só volta a bloquear com o tubo de 25,4 mm.
 
-Os regimes afirmados aqui são os medidos na geometria que a reotimização escolhe (12,7 mm, um
+Os regimes afirmados aqui são os medidos na geometria recomendada de cada TAG (12,7 mm, um
 passe): o Reynolds de cada caso está no teste, e a tabela completa está em
 `docs/validacao/24-pelicula-baixo-reynolds.md`.
 """
 import math
+from types import SimpleNamespace
 
 import pytest
 
+from fpso_siz.core import memoria
 from fpso_siz.pfd import equipamento as servico
-from fpso_siz.pfd import memorial as mc
-from fpso_siz.pfd import reotimizacao as ro
 from fpso_siz.pfd.tags import tag
 from fpso_siz.sizing import pelicula as pel
 
 
 def candidato(ctx, ident, edits=None, ligada=True):
+    """O TAG com as recomendações e as edições dadas, pelo serviço; no inviável, o feixe mais
+    próximo de atender (hook `bloqueios`, pelo lado do dimensionamento)."""
+    e = servico.estado_inicial(ident)
     valores = {k: v["valor"] for k, v in tag(ident).recomendadas.items()}
     valores.update(edits or {})
     valores["pelicula_baixo_re"] = 1.0 if ligada else 0.0
-    return ro.avaliar(ctx, ident, valores)
+    for chave, valor in valores.items():
+        e.editar(chave, float(valor), None, {})
+    rt = servico.dimensionar(servico.preparar(ctx, e), e)
+    r = rt.resultado
+    if r.feasible:
+        return SimpleNamespace(rt=rt, viavel=True, x=r.x, y=r.y, bloqueios=(), operacao=memoria.operacao(r))
+    bloqueios, row, op, _ = memoria.feixe_mais_proximo(r)
+    return SimpleNamespace(rt=rt, viavel=False, x=row.x, y=row.y, bloqueios=bloqueios, operacao=op)
 
 
 def operacao(c):
-    return {o["caso"][:6]: o for o in ro.operacao(c)}
+    return {nome[:6]: dict(caso=nome, **o) for nome, o in c.operacao}
 
 
 def test_a_pelicula_esta_ligada_nos_tres_tags_com_fonte():
@@ -67,7 +77,7 @@ def test_p002_viavel_e_os_casos_de_baixa_carga_calculam(planta_propostas):
 
 def test_os_dois_trocadores_sao_viaveis_com_um_casco(planta_propostas):
     """Item da ordem de execução: não se adota divisão em cascos antes de saber se ela é
-    necessária — e ela NÃO é. Com a geometria que a reotimização escolhe sobre a física corrigida
+    necessária — e ela NÃO é. Com a geometria recomendada, sobre a física corrigida
     (tubo de 12,7 mm), P-002 e P-003 são viáveis com um casco só, dentro dos limites de 6 m e
     2.500 mm."""
     ctx = planta_propostas.contexto
@@ -75,7 +85,10 @@ def test_os_dois_trocadores_sao_viaveis_com_um_casco(planta_propostas):
         c = candidato(ctx, ident)
         assert c.viavel and not c.bloqueios, ident
         assert c.y <= 6.0, ident
-        assert c.valores.get("cascos_serie", 1.0) == 1.0 and c.valores.get("cascos_paralelo", 1.0) == 1.0, ident
+        for caso in c.rt.entradas.casos:
+            if caso.ativo:
+                for chave in ("cascos_serie", "cascos_paralelo"):
+                    assert chave not in caso.valores or caso.valores[chave].valor == 1.0, (ident, chave)
 
 
 # Reynolds medido na geometria escolhida (12,7 mm, um passe, 7.526 tubos/passe): os três casos de
@@ -133,7 +146,7 @@ def test_nenhum_caso_dos_tres_tags_e_recusado_por_correlacao(planta_propostas):
     for ident, edits in (("P-001", {"passes_tubo": 1.0}), ("P-002", {}), ("P-003", {})):
         c = candidato(ctx, ident, edits)
         assert "dittus_boelter" not in {crit for crit, _ in c.bloqueios}, ident
-        assert all(o["nu_valido"] for o in ro.operacao(c)), ident
+        assert all(o["nu_valido"] for _, o in c.operacao), ident
 
 
 def test_a_temperatura_de_parede_vai_para_o_rastro(planta_propostas):
@@ -142,7 +155,7 @@ def test_a_temperatura_de_parede_vai_para_o_rastro(planta_propostas):
     vars_ = {e.var for pc in rt.resultado.per_case for e in pc.trace.entries}
     assert "T média do tubo" in vars_ and "T média do casco" in vars_ and "hipótese" in vars_
     c = candidato(planta_propostas.contexto, "P-002")
-    _, conss, _, _ = ro._parametros(c.rt)
+    conss = memoria.restricoes(c.rt.resultado)
     from fpso_siz.sizing import trocador as tr
     t = tr._tubo(conss[0], int(c.x))
     assert math.isfinite(t["t_parede"])

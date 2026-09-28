@@ -1,9 +1,8 @@
 """F10w — eficiência de água livre do SG-001 (P-43): η_A = máx(η_padrão; η_req), com
 η_req = 1 − [BSW_lim/(1 − BSW_lim)]·Q_O,C06/Q_A+D,C03 e BSW_lim = F-06 (BOT 2.7.1.2).
 
-A regra de referência (mín(40 %; BSW de chegada)) continua como modo de paridade e é a do
-oráculo; a de eficiência é a padrão e tem a fixture de regressão congelada pela tabela que
-o usuário conferiu em 2026-09-25 (docs/validacao/12-eficiencia-fwko.md)."""
+É a regra única do balanço; a fixture de regressão foi congelada pela tabela que o usuário
+conferiu em 2026-09-25 (docs/validacao/12-eficiencia-fwko.md)."""
 import json
 from pathlib import Path
 
@@ -12,7 +11,6 @@ import pytest
 from fpso_siz.balanco import indicadores as I
 from fpso_siz.balanco.auditoria import auditar
 from fpso_siz.balanco.dados import premissas
-from fpso_siz.balanco.modelo import EFICIENCIA, REFERENCIA, regra_fwko_padrao, resolver_caso
 from fpso_siz.balanco.propriedades import split_eficiencia
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "python_ref"
@@ -31,23 +29,21 @@ def prem(dados):
     return premissas(dados)
 
 
-def test_regra_padrao_e_a_de_eficiencia(resultados_ef, resultados):
-    assert regra_fwko_padrao() == EFICIENCIA
-    assert {r.fwko["regra"] for r in resultados_ef} == {EFICIENCIA}
-    assert {r.fwko["regra"] for r in resultados} == {REFERENCIA}
-
-
-def test_regressao_bit_a_bit(resultados_ef, dados):
+def test_regressao_bit_a_bit(resultados, dados):
     assert REGRESSAO["proveniencia"]["entrada_sha256"] == dados.sha256
     assert REGRESSAO["premissas"] == premissas(dados)
-    for r, e in zip(resultados_ef, REGRESSAO["casos"], strict=True):
-        assert r.num == e["num"] and r.fwko == e["fwko"] and (r.BSW01, r.BSW_F) == (e["BSW01"], e["BSW_F"])
+    for r, e in zip(resultados, REGRESSAO["casos"], strict=True):
+        # a fixture foi gerada quando havia duas regras e guarda o rótulo `regra`; ele saiu do
+        # estado (há uma regra só), e todo o resto — números e estado do FWKO — é comparado
+        assert e["fwko"].get("regra", "eficiencia") == "eficiencia"
+        assert r.num == e["num"] and r.fwko == {k: v for k, v in e["fwko"].items() if k != "regra"}
+        assert (r.BSW01, r.BSW_F) == (e["BSW01"], e["BSW_F"])
         assert (r.iters, r.residuo_reciclo) == (e["iters"], e["residuo_reciclo"])
         assert r.streams == e["streams"] and r.T == e["T"] and r.duties == e["duties"] and r.gas == e["gas"]
 
 
-def test_tabela_confirmada_pelo_usuario(resultados_ef):
-    for r in resultados_ef:
+def test_tabela_confirmada_pelo_usuario(resultados):
+    for r in resultados:
         fw = r.fwko
         if r.num in SEM_AGUA:  # η nulo, com o estado explícito
             assert fw["eta"] is None and fw["eta_req"] is None and not fw["exigido_acima"]
@@ -60,13 +56,13 @@ def test_tabela_confirmada_pelo_usuario(resultados_ef):
                                 else "padrão (o limite do BOT não restringe)")
         assert round(100 * I.bsw(r, "C-06"), 2) == b06 and round(100 * I.bsw(r, "C-21"), 2) == b21
         assert fw["eta"] == max(fw["eta_padrao"], fw["eta_req"])
-    r15 = resultados_ef[14]
+    r15 = resultados[14]
     assert round(r15.fwko["eta_req"], 3) == 0.924  # a substituição numérica do memorial
-    assert resultados_ef[1].fwko["eta_req"] < 0  # diagnóstico: o limite não restringe
+    assert resultados[1].fwko["eta_req"] < 0  # diagnóstico: o limite não restringe
 
 
-def test_eta_req_pelas_correntes_do_caso_15(resultados_ef, prem):
-    r = resultados_ef[14]
+def test_eta_req_pelas_correntes_do_caso_15(resultados, prem):
+    r = resultados[14]
     lim = prem["BSW_F"]
     eta_req = 1 - lim / (1 - lim) * I.q(r, "C-06", "O") / I.q_agua(r, "C-03")
     assert eta_req == pytest.approx(r.fwko["eta_req"], rel=1e-12)
@@ -85,42 +81,26 @@ def test_split_eficiencia():
     assert eta == eta_req > 0.85 and w_keep / (w_keep + o_out) == pytest.approx(0.4, rel=1e-12)
 
 
-def test_regra_desconhecida(dados):
-    with pytest.raises(ValueError, match="regra do FWKO desconhecida"):
-        resolver_caso(dados.caso(1), dados, None, "outra")
-
-
-def test_rastro_e_auditoria_da_eficiencia(resultados_ef, resultados, dados, prem):
-    for r in resultados_ef:
+def test_rastro_e_auditoria_da_eficiencia(resultados, dados, prem):
+    for r in resultados:
         p = r.trace.passo("eficiencia_fwko", "SG-001")
         assert p.valor == r.fwko["eta"] and p.entradas["eta_padrao"] == prem["eta_F"]
-    ef = {a["id"]: a["max_desvio_abs"] for a in auditar(resultados_ef, dados, prem)}
+    ef = {a["id"]: a["max_desvio_abs"] for a in auditar(resultados, dados, prem)}
     assert ef["eficiencia_fwko"] < 1e-12 and ef["massa_global"] < 1e-9
-    assert "eficiencia_fwko" not in {a["id"] for a in auditar(resultados, dados, prem)}  # o oráculo não muda
 
 
-def test_agua_livre_e_conservacao(resultados_ef, resultados, prem):
-    """Em regime toda a água produzida sai pelo FWKO nas duas regras; a eficiência muda
-    quanto dela passa pelo aquecedor, pelo TO-001 e pelo reciclo."""
-    v = I.verificacao_fisica(resultados_ef, prem)
+def test_agua_livre_e_conservacao(resultados, prem):
+    """Em regime toda a água produzida sai pelo FWKO e pelo BSW do óleo; nenhuma água é
+    inventada nos casos sem fase aquosa."""
+    v = I.verificacao_fisica(resultados, prem)
     assert v["bsw_ok"] and v["fwko_sem_agua_no_oleo"] == [] and v["sem_fase_aquosa"] == list(SEM_AGUA)
     assert v["maior_residuo_agua"] < 1e-9 and v["sal_max_emulsao"] <= v["limite_sal"]
-    for e, r in zip(resultados_ef, resultados, strict=True):
-        assert I.massa_agua(e, "C-05") == pytest.approx(I.massa_agua(r, "C-05"), rel=1e-9)
-        if e.num not in SEM_AGUA and not e.fwko["exigido_acima"]:
-            assert I.massa_agua(e, "C-02") < I.massa_agua(r, "C-02")  # menos reciclo
 
 
-def test_sensibilidade_segue_a_regra(resultados_ef, resultados, dados, prem):
-    casos_ef, corr_ef = I.sensibilidade(resultados_ef, dados, prem)
-    casos_ref, corr_ref = I.sensibilidade(resultados, dados, prem)
-    rot_ef = {rot for _, rot, _ in corr_ef}
-    rot_ref = {rot for _, rot, _ in corr_ref}
-    assert {x for x in rot_ef - rot_ref} == {r for r in rot_ef if "eta_{A" in r} and len(rot_ef - rot_ref) == 2
-    assert all(r.fwko["regra"] == EFICIENCIA for _, _, r in corr_ef)
-    assert all(r.fwko["regra"] == REFERENCIA for _, _, r in corr_ref)
-    base = {n: r for n, rot, r in corr_ef if rot == "Base"}
-    for n, rot, r in corr_ef:
+def test_sensibilidade_da_eficiencia(resultados, dados, prem):
+    _, corridas = I.sensibilidade(resultados, dados, prem)
+    assert len({rot for _, rot, _ in corridas if "eta_{A" in rot}) == 2
+    base = {n: r for n, rot, r in corridas if rot == "Base"}
+    for n, rot, r in corridas:
         if "80" in rot and "eta_{A" in rot and not r.fwko["exigido_acima"] and I.q_agua(r, "C-03") > 0:
             assert r.duties["Q_H"] >= base[n].duties["Q_H"]  # menos eficiência → mais água aquecida
-    assert casos_ef == casos_ref or casos_ef[1:] == casos_ref[1:]  # casos fixos iguais; o 1º é o de maior Q_H

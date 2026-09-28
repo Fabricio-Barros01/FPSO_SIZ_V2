@@ -31,7 +31,7 @@ TAG & << ident['tag'] >> --- << ident['nome']|tx >>\\
 Equipamento / método & << ident['equipamento']|tx >> / << ident['metodo']|tx >>\\
 Estado & \textbf{<< textos['estado_' ~ ident['status']] >>}\\
 Preenchimento & << textos['modo_' ~ ident['modo']] >>\\
-Regra do FWKO no balanço & <% if ident['regra_fwko'] == 'eficiencia' %><< textos['regra_eficiencia'] >><% elif ident['regra_fwko'] %><< textos['regra_referencia'] >><% else %><< textos['regra_manual'] >><% endif %>\\
+Regra do FWKO no balanço & <% if ident['usa_balanco'] %><< textos['regra_eficiencia'] >><% else %><< textos['regra_manual'] >><% endif %>\\
 <% if dados %>
 Arquivo de casos & \texttt{<< dados.origem|tx >>}\\
 SHA-256 do arquivo & \texttt{\scriptsize << dados.sha256 >>}\\
@@ -318,9 +318,9 @@ Teto de decantação: << calc.diagnostico.teto|sigt >> mm, imposto pelo caso << 
 <% endif %>
 
 {\footnotesize\begin{longtable}{L{1.7cm}L{14.3cm}}\toprule
-Classe & Hipótese e resultado da variante (mesmo motor)\\\midrule\endhead
+Classe & Hipótese e variante de estudo registrada\\\midrule\endhead
 <% for h in doc.alarme.hipoteses %>
-<< h.classe|tx >> & << h.texto|tx >><% for v in h.variantes %>\newline\textbf{Variante ``<< v.rotulo|tx >>''} (<< v.origem|tx >>): <% if v.viavel %>\textcolor{green!45!black}{viável}, << calc.eixo|tx >> = << v.x|sigt >> << calc.unidade_eixo|unid >><% else %>\textcolor{red!70!black}{segue inviável}<% if v.teto is not none %> (teto << v.teto|sigt >> mm, caso << v.caso_teto|tx >>)<% endif %><% endif %>.<% endfor %>\\
+<< h.classe|tx >> & << h.texto|tx >><% for v in h.variantes %>\newline\textbf{Variante ``<< v.rotulo|tx >>''} (<< v.origem|tx >>).<% endfor %>\\
 <% endfor %>
 \bottomrule\end{longtable}}
 <% endif %>

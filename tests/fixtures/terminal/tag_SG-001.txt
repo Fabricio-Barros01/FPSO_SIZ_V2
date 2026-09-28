@@ -48,10 +48,10 @@
     Volume (casco, entre tampos)  —
     Restrição governante          —
     Caso governante               —
-    Teto de decantação            3.612 mm
+    Teto de decantação            2.398 mm
 
   Não há equipamento que atenda simultaneamente aos 16 casos. Nenhum diâmetro admissível tem
-  esbeltez na banda 3.0–5.0: abaixo do teto de decantação (3612.0 mm) o SR varia de 20.34 a
+  esbeltez na banda 3.0–5.0: abaixo do teto de decantação (2398.0 mm) o SR varia de 71.67 a
   6975.66. Amplie a grade de diâmetros ou a banda de SR.
 
   Casos
@@ -64,8 +64,8 @@
   BOT 05 — Low CO2           viável     3.050
   BOT 06 — Mid Life          viável     2.000
   BOT 07 — Mid Life          viável     5.450
-  BOT 08 — Mid Life          viável     5.900
-  BOT 09 — Mid Life          viável     5.900
+  BOT 08 — Mid Life          inviável       —
+  BOT 09 — Mid Life          viável     5.750
   BOT 10 — Late Life         viável     5.750
   BOT 11 — Late Life         viável     6.050
   BOT 12 — Late Life         viável     6.050
@@ -75,6 +75,5 @@
   BOT 16 — Highest CO2       viável     5.900
 
   Resultado preliminar: 9 recomendação(ões)/default(s) sem revisão (ver Revisar).
-  1 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
   Memória de cálculo (MC) do TAG: ação "Gerar memória de cálculo" no menu, ou --mc [--pdf] no
   comando.

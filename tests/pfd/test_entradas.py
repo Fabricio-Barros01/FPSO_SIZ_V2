@@ -7,7 +7,7 @@ import pytest
 from fpso_siz.balanco.balancos import topologia
 from fpso_siz.core.parametros import defaults
 from fpso_siz.core.motor import size_single
-from fpso_siz.pfd import fluidos
+from fpso_siz.termo import servico as termo
 from fpso_siz.pfd.entradas import conferir_tag, montar
 from fpso_siz.pfd.planta import dimensionar
 from fpso_siz.pfd.tags import tag, tags
@@ -56,14 +56,6 @@ def test_lacunas_exatas(planta_base):
     assert sg.status == "dimensionado" and sg.resultado.ceiling_case == "BOT 02 — Early Life"
 
 
-def test_oleo_morto_mantem_o_teto_da_f10w(planta_oleo_morto):
-    """--oleo-morto: com a eficiência do FWKO (F10w) o reciclo é menor, a entrada do FWKO mais
-    fria e o teto cai de 4434 para 3612 mm; o SG-001 fica inviável pelo caso 2."""
-    sg = planta_oleo_morto.tag("SG-001")
-    assert sg.status == "inviavel" and "3612" in sg.resultado.message
-    assert sg.resultado.ceiling_case == "BOT 02 — Early Life"
-
-
 def test_inativos_sem_vazao_e_sem_carga(planta_base):
     for nome, nums in {"B-002": {1, 4, 5, 6, 7}, "B-003": {1, 4, 5, 6, 7},
                        "P-001": {10, 12, 13, 14, 15, 16}, "P-002": {10, 12, 13, 14, 15, 16}}.items():
@@ -93,14 +85,23 @@ def test_todas_entradas_tem_fonte_e_rastro(planta_base, planta_ajustada):
                 assert all(e.eq and e.formula and e.unit for e in c.rastro if e.block == "propriedades")
 
 
-def test_11_envelopes_com_ajustes_de_teste(planta_ajustada):
-    assert planta_ajustada.completa
+def test_11_envelopes(planta_ajustada, planta_propostas):
+    """Os 11 TAGs dimensionam: com as entradas sintéticas (o P-002 e o P-003 esperam as
+    temperaturas da utilidade, que só as propostas dão) e na planta produtiva (onde o P-001 é o
+    alarme aberto, por área)."""
     for t in planta_ajustada.tags:
-        assert t.status == "dimensionado"
-        assert t.resultado.driver_case in t.resultado.case_names
-        assert t.resultado.x > 0 and t.resultado.y > 0
-        assert len(t.resultado.per_case) == sum(c.ativo for c in t.entradas.casos)
-    assert planta_ajustada.sem_dimensionamento == ["M-01", "DWH-001", "M-02", "M-03", "MED-001"]
+        esperado = "aguardando_entrada" if t.tag.tag in ("P-002", "P-003") else "dimensionado"
+        assert t.status == esperado, t.tag.tag
+    for t in planta_propostas.tags:
+        assert t.status == ("inviavel" if t.tag.tag == "P-001" else "dimensionado"), t.tag.tag
+    for p in (planta_ajustada, planta_propostas):
+        for t in p.tags:
+            if t.status != "dimensionado":
+                continue
+            assert t.resultado.driver_case in t.resultado.case_names
+            assert t.resultado.x > 0 and t.resultado.y > 0
+            assert len(t.resultado.per_case) == sum(c.ativo for c in t.entradas.casos)
+    assert planta_propostas.sem_dimensionamento == ["M-01", "DWH-001", "M-02", "M-03", "MED-001"]
 
 
 def test_precedencia_e_dependencias(planta_base):
@@ -117,15 +118,18 @@ def test_precedencia_e_dependencias(planta_base):
     assert "t_agua_out" in {l.chave for l in f.lacunas}
 
 
-def test_balanco_energia_utilidades_e_pv(planta_ajustada):
+def test_balanco_energia_utilidades_e_pv(planta_propostas):
+    """P-46: a utilidade vai nos tubos; a vazão dela fecha a carga do balanço."""
     for nome, carga, sinal in (("P-002", "Q_H", 1), ("P-003", "Q_C", -1)):
-        for c, r in zip(planta_ajustada.tag(nome).entradas.casos, planta_ajustada.balanco):
+        for c, r in zip(planta_propostas.tag(nome).entradas.casos, planta_propostas.balanco):
+            if not c.ativo:
+                continue
             vs = c.valores
             delta = c.insumos["t_agua_in"].valor - c.insumos["t_agua_out"].valor
-            assert vs["m_casco"].valor * vs["cp_casco"].valor * delta * sinal == pytest.approx(r.duties[carga]*1000)
+            assert vs["m_tubo"].valor * vs["cp_tubo"].valor * delta * sinal == pytest.approx(r.duties[carga]*1000)
             assert set(c.insumos) == {"t_agua_in", "t_agua_out"}
     for nome in ("B-001", "B-002", "B-003"):
-        for c in planta_ajustada.tag(nome).entradas.casos:
+        for c in planta_propostas.tag(nome).entradas.casos:
             assert c.valores["pv_informada"].valor == c.valores["pressure"].valor
 
 
@@ -134,9 +138,9 @@ def test_mistura_salinidade_e_vazao(planta_base):
     c, r = e.casos[7], planta_base.balanco[7]
     s = r.streams["C-18"]
     pr = planta_base.prem
-    sal = sum(s[k] * fluidos.fracao_sal(pr[a], pr[b]) for k, a, b in (("W", "S_W", "rho_W"), ("D", "S_D", "rho_D")))
+    sal = sum(s[k] * termo.fracao_sal(pr[a], pr[b]) for k, a, b in (("W", "S_W", "rho_W"), ("D", "S_D", "rho_D")))
     w = sal/(s["W"]+s["D"])
-    prop = fluidos.salmoura_fracao(r.T["C-18"], w)
+    prop = termo.salmoura_fracao(r.T["C-18"], w)
     assert c.valores["rho_water"].valor == prop.rho
     assert c.valores["q_water"].valor == (s["W"]+s["D"])/prop.rho*3600
     assert c.valores["mu_water"].valor == prop.mu

@@ -13,10 +13,6 @@ def c_para_k(t_c):
     return t_c + ZERO_CELSIUS_K
 
 
-def k_para_c(t_k):
-    return t_k - ZERO_CELSIUS_K
-
-
 def c_para_f(t_c):
     """°C → °F na mesma ordem de operações do script de referência (T·9/5 + 32)."""
     return t_c * 9 / 5 + 32

@@ -1,5 +1,4 @@
 """Propriedades de fluido e correlações do balanço preliminar (funções puras)."""
-import math
 
 from fpso_siz.core.unidades import c_para_f
 
@@ -30,21 +29,6 @@ def standing_rs(P_kPa, T_C, gamma, api, k):
     TF = c_para_f(T_C)
     rs = gamma * ((P / k.a + k.b) * 10 ** (k.c_api * api - k.c_T * TF)) ** k.expoente
     return rs * k.Sm3_Sm3_por_scf_bbl
-
-
-def mu_interp(tabela, T):
-    """Viscosidade por interpolação log-linear em T; fora da tabela, valor do extremo (P-40).
-    Devolve (mu, marcador)."""
-    (t_min, mu_min), (t_max, mu_max) = tabela[0], tabela[-1]
-    if T <= t_min:
-        return mu_min, f"extrapolado<{t_min}"
-    if T >= t_max:
-        return mu_max, f"limitado a {t_max} °C"
-    for (t0, m0), (t1, m1) in zip(tabela, tabela[1:]):
-        if t0 <= T <= t1:
-            return math.exp(math.log(m0) + (math.log(m1) - math.log(m0)) * (T - t0) / (t1 - t0)), "interp."
-    # inalcançável: com t_min < T < t_max, algum par consecutivo cerca T
-    raise ValueError(f"tabela de viscosidade inválida em T = {T}")  # pragma: no cover
 
 
 def split_water(O_in_v, w_in_v, bsw, C_OiW, rhoO, n_iter, extra_oil_v=0.0):

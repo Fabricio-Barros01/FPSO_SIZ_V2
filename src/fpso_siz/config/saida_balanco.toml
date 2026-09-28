@@ -1,4 +1,9 @@
-# balanco.json, esquema 2 — `cargas` de cada caso, em kW.
+# Versão do esquema do balanco.json (docs/esquemas/balanco.schema.json):
+#   3 — FWKO sem `regra` (uma regra só, a de eficiência; consolidação arquitetural);
+#   2 — `cargas` de utilidade (Q_H, Q_C) e um campo por trocador.
+esquema = 3
+
+# `cargas` de cada caso, em kW.
 # - Q_H: aquecimento por utilidade = Σ Q_in dos blocos da topologia (P-002 + DWH-001);
 # - Q_C: resfriamento por utilidade = Σ Q_out dos blocos da topologia (P-003);
 # - um campo por trocador, identificado pelo TAG: os blocos com Q_in/Q_out e os de calor

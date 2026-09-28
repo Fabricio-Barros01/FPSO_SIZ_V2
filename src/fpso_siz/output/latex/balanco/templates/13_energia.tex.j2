@@ -1,7 +1,6 @@
 \section{Balanço de energia preliminar}\label{sec:energia}
 \subsection{Hipóteses termodinâmicas}
 Foi adotada entalpia sensível por pseudo-componente, $h_k=c_{p,k}(T-T_{\mathrm{ref}})$ (P-14), sem dependência da pressão e sem calor latente. Consequências: (i) válvulas isentálpicas são isotérmicas; (ii) o trabalho de bomba aparece integralmente como aquecimento do fluido (superestima $\Delta T$ em bombas, $<1$~\si{\kelvin}); (iii) o calor de vaporização do gás liberado nos desgaseificadores e o resfriamento associado não são representados, de modo que a carga do aquecedor é subestimada e as temperaturas a jusante dos flashes são superestimadas. As energias cinética e potencial foram desprezadas por serem de ordem $10^{-3}$ a $10^{-2}$~\si{\kilo\joule\per\kilogram} frente a variações de entalpia de ordem $10^{2}$~\si{\kilo\joule\per\kilogram}.
-<% if layout == 'senai' %>
 \subsection{Cargas térmicas e potências por caso}
 As cargas foram separadas pela origem do calor: o pré-aquecedor P-001 troca calor entre correntes de processo e foi reportado como \emph{calor recuperado}; as utilidades são o aquecimento $\dot Q_H=\dot Q_{\mbox{P-002}}+\dot Q_{\mbox{DWH-001}}$ (meio de aquecimento) e o resfriamento $\dot Q_C=\dot Q_{\mbox{P-003}}$ (meio de resfriamento). Não se somam as quatro cargas: o calor recuperado reduz o que o resfriador rejeitaria e o que o aquecedor forneceria.
 {\footnotesize\setlength{\tabcolsep}{4pt}\begin{longtable}{rrrrrrrrrr}
@@ -16,18 +15,3 @@ Caso & Recuperado P-001 & $\dot Q_{\mbox{P-002}}$ & $\dot Q_{\mbox{DWH-001}}$ & 
 <% endfor %>
 \bottomrule\end{longtable}}
 
-<% else %>
-\subsection{Cargas térmicas e potências por caso}
-{\footnotesize\setlength{\tabcolsep}{4pt}\begin{longtable}{rrrrrrrrr}
-\caption{Cargas térmicas (\si{\mega\watt}) e potências (\si{\kilo\watt}) preliminares.}\label{tab:energia}\\\toprule
-Caso & $\dot Q_{\mbox{P-001}}$ & $\dot Q_{\mbox{P-002}}$ & $\dot Q_{\mbox{DWH-001}}$ & $\dot Q_{\mbox{P-003}}$ & $\dot W_{\mbox{B-002}}$ & $\dot W_{\mbox{B-003}}$ & $\dot W_{\mbox{B-001}}$ & $\dot Q_{\mbox{P-001}}/(\dot Q_{\mbox{P-001}}+\dot Q_{\mbox{P-002}})$\\\midrule\endfirsthead
-\toprule Caso & $\dot Q_{\mbox{P-001}}$ & $\dot Q_{\mbox{P-002}}$ & $\dot Q_{\mbox{DWH-001}}$ & $\dot Q_{\mbox{P-003}}$ & $\dot W_{\mbox{B-002}}$ & $\dot W_{\mbox{B-003}}$ & $\dot W_{\mbox{B-001}}$ & recup.\\\midrule\endhead
-
-<% for r in R %>
-<% set du = r.duties %>
-<% set tot = du['Q_pre'] + du['Q_H'] %>
-<< r.num >> & << (du['Q_pre'] / 1e3)|br(2) >> & << (du['Q_H'] / 1e3)|br(2) >> & << (du['Q_D'] / 1e3)|br(2) >> & << (du['Q_C'] / 1e3)|br(2) >> & << du['W_B1']|br(1) >> & << du['W_B2']|br(1) >> & << du['W_Bo']|br(1) >> & << (du['Q_pre'] / tot)|br(3) if tot > 0 else '--' >>\\
-<% endfor %>
-\bottomrule\end{longtable}}
-
-<% endif %>

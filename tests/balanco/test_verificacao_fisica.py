@@ -4,7 +4,6 @@ Não muda número: confere, caso a caso, a premissa da fase aquosa (P-42: sem á
 BSW_saída = min(BSW_entrada; especificação) em cada separador; só o óleo do TO-002 chega à
 especificação) e a consistência física do resultado. Os achados de premissa (diluição,
 T do FWKO, sal na base do óleo) ficam fixados: se mudarem, o teste acusa."""
-import math
 
 import pytest
 
@@ -45,7 +44,9 @@ def test_sem_agua_ficticia_nos_casos_sem_fase_aquosa(resultados):
             assert all(r.streams[s]["W"] == 0 and r.streams[s]["D"] == 0 for s in ids), r.num
 
 
-def test_bsw_de_cada_separador_e_min_da_entrada_e_da_especificacao(v, resultados, prem):
+def test_bsw_de_cada_separador(v, resultados, prem):
+    """FWKO pela eficiência de água livre (P-43), nunca acima de F-06; tratadores no BSW
+    especificado; só o TO-002 (último separador) chega à especificação do óleo."""
     assert v["bsw_ok"] and v["fwko_sem_agua_no_oleo"] == []
     por = {(x["bloco"], x["num"]): x for x in v["separadores"]}
     for r in resultados:
@@ -53,8 +54,8 @@ def test_bsw_de_cada_separador_e_min_da_entrada_e_da_especificacao(v, resultados
         if r.num in SEM_AGUA:
             assert fwko["saida"] == to1["saida"] == to2["saida"] == 0.0
             continue
-        # o FWKO sempre deixa água no óleo; só o TO-002 (último separador) chega à especificação
-        assert fwko["saida"] == pytest.approx(min(prem["BSW_F"], r.BSW01), rel=TOL) and fwko["saida"] > prem["BSW_pre"]
+        assert fwko["saida"] == pytest.approx(fwko["esperado"], rel=TOL) and fwko["saida"] <= prem["BSW_F"] * (1 + TOL)
+        assert fwko["saida"] == pytest.approx(r.BSW_F, rel=TOL)
         assert to1["saida"] == pytest.approx(prem["BSW_pre"], rel=TOL) and to1["saida"] > prem["BSW_t"]
         assert to2["saida"] == pytest.approx(prem["BSW_t"], rel=TOL)
 
@@ -92,14 +93,6 @@ def test_achados_de_premissa_fixados(v):
     assert v["abaixo_T_fwko"] == [5, 6] and v["t_fwko_min"] == 40.0
     assert min(v["gamma_gas"].values()) == pytest.approx(0.811, abs=1e-3)
     assert max(v["gamma_gas"].values()) == pytest.approx(1.222, abs=1e-3)
-
-
-def test_caso_1_igual_ao_oraculo(resultados, oraculo):
-    """Nenhum número do balanço muda nesta fase (a paridade completa está em test_paridade)."""
-    r1, o1 = resultados[0], oraculo["casos"][0]
-    assert r1.num == o1["num"] == 1
-    assert {s: dict(c) for s, c in r1.streams.items()} == o1["streams"]
-    assert all(math.isclose(r1.T[s], o1["T"][s], rel_tol=0, abs_tol=0) for s in o1["T"])
 
 
 def test_resumo_mostra_agua_e_alertas(v):

@@ -12,16 +12,19 @@ CASOS = FIXTURES / "python_ref" / "design_cases_bot.json"
 AJUSTES = FIXTURES / "pfd" / "ajustes_sinteticos.toml"
 
 
-def test_exportacao_estrita_com_lacunas_e_inviabilidade(planta_oleo_morto, tmp_path):
-    """Óleo morto (--oleo-morto): a planta tem os três estados, inclusive o SG-001 inviável."""
-    arquivos = pfd.gravar(planta_oleo_morto, tmp_path)
+@pytest.mark.parametrize("nome", ["planta_base", "planta_propostas"])
+def test_exportacao_estrita_com_lacunas_e_inviabilidade(request, nome, tmp_path):
+    """Sem as propostas a planta tem lacunas (aguardando entrada); com elas, o P-001 é o alarme
+    aberto (inviável). O JSON é estrito nos três estados."""
+    p = request.getfixturevalue(nome)
+    arquivos = pfd.gravar(p, tmp_path)
     assert len(arquivos) == 23  # JSON + CSV de varredura por TAG, e planta.csv
-    for t in planta_oleo_morto.tags:
+    for t in p.tags:
         texto = (tmp_path / f"{t.tag.tag}.json").read_text(encoding="utf-8")
         obj = json.loads(texto, parse_constant=lambda x: pytest.fail(f"JSON não estrito: {x}"))
         assert obj["schema_version"] == 2 and obj["modo"] == "automatico" and not obj["avulso"]
         assert obj["status"] == t.status and obj["preliminar"] == bool(obj["revisoes"])
-        assert obj["proveniencia"]["sha256"] == planta_oleo_morto.dados.sha256
+        assert obj["proveniencia"]["sha256"] == p.dados.sha256
         assert len(obj["casos"]) == 16 and obj["limitacoes"]
         for c in obj["casos"]:
             assert all(v["valor"] is None for v in c["valores"].values() if v["origem"] == "lacuna")
@@ -33,29 +36,31 @@ def test_exportacao_estrita_com_lacunas_e_inviabilidade(planta_oleo_morto, tmp_p
     with (tmp_path / "planta.csv").open(encoding="utf-8", newline="") as f:
         linhas = list(csv.DictReader(f))
     assert len(linhas) == 11 and tuple(linhas[0]) == pfd.COLUNAS
-    assert {x["status"] for x in linhas} == {"aguardando_entrada", "inviavel", "dimensionado"}
+    esperado = {"aguardando_entrada", "dimensionado"} if nome == "planta_base" else {"inviavel", "dimensionado"}
+    assert {x["status"] for x in linhas} == esperado
 
 
 def test_cli_sem_ajustes_e_sem_saida(capsys, monkeypatch, tmp_path):
     monkeypatch.chdir(tmp_path)
-    assert main(["pfd", "--sem-propostas", "--oleo-morto", "--casos", str(CASOS)]) == 1
+    assert main(["pfd", "--sem-propostas", "--casos", str(CASOS)]) == 1
     out = capsys.readouterr().out
-    assert "aguardando entrada" in out and "t_agua_out" in out and "inviável" in out
-    assert "revisão pendente" in out and "M-01" in out and "[SG-001  X]" in out
+    assert "aguardando entrada" in out and "t_agua_out" in out
+    assert "revisão pendente" in out and "M-01" in out
     assert not list(tmp_path.iterdir())
 
 
 def test_cli_exporta_os_mesmos_bytes(planta_ajustada, tmp_path, capsys):
     a, b = tmp_path/"api", tmp_path/"cli"
     pfd.gravar(planta_ajustada, a)
-    assert main(["pfd", "--sem-propostas", "--topologia-julia", "--casos", str(CASOS), "--ajustes", str(AJUSTES),
-                 "--saida", str(b)]) == 0
+    assert main(["pfd", "--sem-propostas", "--casos", str(CASOS), "--ajustes", str(AJUSTES),
+                 "--saida", str(b)]) == 1   # o P-002 e o P-003 esperam as temperaturas da utilidade
     assert "gravados:" in capsys.readouterr().out
     assert {p.name: p.read_bytes() for p in a.iterdir()} == {p.name: p.read_bytes() for p in b.iterdir()}
     for caminho in b.glob("*.json"):
         obj = json.loads(caminho.read_text(encoding="utf-8"))
-        assert obj["envelope"]["resultado"]["caso_governante"]
-        assert obj["envelope"]["rastros"] and obj["envelope"]["varredura"]
+        if obj["envelope"] is not None:
+            assert obj["envelope"]["resultado"]["caso_governante"]
+            assert obj["envelope"]["rastros"] and obj["envelope"]["varredura"]
 
 
 @pytest.mark.parametrize("texto,mensagem", [

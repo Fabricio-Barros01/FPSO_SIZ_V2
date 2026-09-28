@@ -52,9 +52,12 @@ def planta(ctx):
 
 
 @pytest.fixture(scope="module")
-def planta_morto():
-    """--oleo-morto: o SG-001 inviável (alarme) para a tela desse estado."""
-    return mod_planta.dimensionar(contexto=servico.Contexto(carregar_casos(CASOS), oleo_vivo=False))
+def sg001_inviavel(ctx):
+    """SG-001 com a viscosidade do óleo sobrescrita pelo usuário (20 cP): o teto de decantação
+    cai abaixo do menor diâmetro com a esbeltez na banda — a tela do estado inviável."""
+    e = servico.estado_inicial("SG-001")
+    e.editar("mu_oil", 20.0)
+    return servico.executar(ctx, e)
 
 
 @pytest.fixture(scope="module")
@@ -93,15 +96,13 @@ def test_snapshot_planta(planta, nome, estilo, colunas, caso):
                if "━" not in li and "=" not in li[:3])
 
 
-@pytest.mark.parametrize("ident, estado, qual", [("TO-001", "aguardando_entrada", "planta"),
-                                                 ("V-001", "dimensionado", "planta"),
-                                                 ("SG-001", "inviavel", "planta_morto")])
+@pytest.mark.parametrize("ident, estado", [("TO-001", "aguardando_entrada"), ("V-001", "dimensionado"),
+                                           ("SG-001", "inviavel")])
 @pytest.mark.parametrize("variante, estilo, colunas", [("", UNI, 100), ("_ascii", ASC, 100), ("_estreita", UNI, 52)])
-def test_snapshot_tag_nos_estados(request, ident, estado, qual, variante, estilo, colunas):
-    planta = request.getfixturevalue(qual)
-    rt = planta.tag(ident)
+def test_snapshot_tag_nos_estados(request, ctx, planta, ident, estado, variante, estilo, colunas):
+    rt = request.getfixturevalue("sg001_inviavel") if estado == "inviavel" else planta.tag(ident)
     assert rt.status == estado
-    confere(f"tag_{ident}{variante}", tela.tela_tag(planta.contexto, rt, estilo, colunas))
+    confere(f"tag_{ident}{variante}", tela.tela_tag(ctx, rt, estilo, colunas))
 
 
 def test_snapshot_tag_inativo(ctx, inativo):

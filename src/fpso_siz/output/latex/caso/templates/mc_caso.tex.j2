@@ -1,6 +1,5 @@
 <% macro aq(v, d=1) %><% if sem_agua %><< sem_fase >><% else %><< v|br(d) >><% endif %><% endmacro %>
 <% macro opc(v, d=4) %><% if v is none %><< sem_fase >><% else %><< v|br(d) >><% endif %><% endmacro %>
-<% if layout == 'senai' %>
 <% include "00_preambulo_senai.tex.j2" %>
 \thispagestyle{folhaderosto}
 
@@ -27,13 +26,6 @@
 
 \clearpage
 \section*{Identificação do documento}
-<% else %>
-<% include "preambulo_original.tex.j2" %>
-\begin{titlepage}\centering
-{\large SENAI CETIQT --- Engenharia Química\par}\vspace{1.2cm}
-{\Large\bfseries MEMÓRIA DE CÁLCULO --- BALANÇO POR CASO\\[4pt] << titulo|tx >>\par}\vspace{0.6cm}
-{\large Anexo do memorial preliminar do diagrama de blocos (<< meta['numero_balanco'] >>)\par}\vspace{1.0cm}
-<% endif %>
 \small\begin{tabular}{lL{11cm}}\toprule
 Documento & << meta['numero'] >> (<< meta['numero_nota']|tx >>)\\
 Caso & << r.num >> --- << r.caso['name']|tx >> (fluido << r.fluid|tx >>, poço << r.well|tx >>)\\
@@ -41,16 +33,13 @@ Fonte de dados & BOT I-ET-3010.2K-1200-941-P4X-001\_C, Tabelas 2.2.2.3 / 2.2.2.4
 Arquivo de casos & \texttt{<< dados.origem|tx >>}\\
 SHA-256 do arquivo & \texttt{\scriptsize << dados.sha256 >>}\\
 Programa & \texttt{fpso-siz} << versao >><% if commit %>, commit \texttt{<< commit >>}<% if sujo %> (com alterações locais)<% endif %><% endif %>\\
-Regra do FWKO & <% if regra == 'eficiencia' %>eficiência, $\eta_A=\max(\eta_{\text{padrão}};\ \eta_{\mathrm{req}})$ (P-43, F10w)<% else %>referência, $\min(40\,\%;\ \mathit{BSW})$ (modo de paridade com o script de referência)<% endif %>\\
+Regra do FWKO & eficiência, $\eta_A=\max(\eta_{\text{padrão}};\ \eta_{\mathrm{req}})$ (P-43, F10w)\\
 Premissas diferentes do padrão & <% if alteradas %><% for a in alteradas %><< a['id'] >> \texttt{<< a['nome']|tx >>} = << a['atual']|mbn >> << a['unidade']|unid >> (padrão << a['valor']|mbn >>)<% if not loop.last %>; <% endif %><% endfor %><% else %>nenhuma<% endif %>\\
 Revisão & << meta['revisao'] >> --- emissão preliminar\\
 Data de geração & << meta['data'] >>\\ \bottomrule\end{tabular}\normalsize
 
 \medskip
 {\footnotesize Todos os valores deste memorial foram gerados pelo \texttt{fpso-siz} a partir do arquivo de casos identificado acima e das premissas do << meta['numero_balanco'] >>. <% if sem_agua %>O caso não tem fase aquosa (P-42): as grandezas da fase aquosa aparecem como ``<< sem_fase >>''.<% endif %>\par}
-<% if layout != 'senai' %>
-\end{titlepage}
-<% endif %>
 \tableofcontents\clearpage
 
 \section{Dados do caso}
@@ -65,7 +54,7 @@ Poço associado: << r.well|tx >> (API << r.api|br(1) >>); BSW de chegada << (100
 \section{Separação de água livre no SG-001}
 <% set f = r.fwko %>
 \begin{tabular}{lr}\toprule
-Regra & << f['regra'] >>\\
+Regra & eficiencia\\
 $\eta_{\text{padrão}}$ (P-43) & << opc(f.get('eta_padrao'), 2) >>\\
 $\eta_{\mathrm{req}}$ & << opc(f.get('eta_req'), 4) >>\\
 $\eta_A$ adotado & << opc(f.get('eta'), 4) >>\\

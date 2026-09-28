@@ -65,17 +65,13 @@ denom_min_energia = 1e-30 # piso do denominador do erro relativo de energia por 
 fonte = "Balanço_Preliminar.py, solve_case / split_water / block_balance"
 
 [modelo]
-# Separação de água livre no SG-001 (FWKO):
-#   "eficiencia": η_A = máx(η_padrão (P-43); η_req), η_req = 1 − [BSW_lim/(1 − BSW_lim)]·Q_O,C06/Q_A+D,C03,
-#                 BSW_lim = F-06 (BOT 2.7.1.2); padrão desde a F10w (decisão do usuário, 2026-09-25);
-#   "referencia": BSW_C06 = mín(F-06; BSW de chegada), a regra do script de referência — modo de
-#                 paridade bit a bit com o oráculo (testes e layout `original` do memorial).
-regra_fwko = "eficiencia"
+# Separação de água livre no SG-001 (FWKO): η_A = máx(η_padrão (P-43); η_req), com
+# η_req = 1 − [BSW_lim/(1 − BSW_lim)]·Q_O,C06/Q_A+D,C03 e BSW_lim = F-06 (BOT 2.7.1.2); regra
+# única desde a consolidação (a do script de referência saiu com o seu oráculo).
 # estado do SG-001 em cada caso (balanco.json e memorial)
 estado_sem_agua = "não aplicável — sem fase aquosa"
 estado_padrao = "padrão (o limite do BOT não restringe)"
 estado_exigido = "exigido acima do padrão (BOT 2.7.1.2)"
-estado_referencia = "regra de referência (paridade)"
 fonte = "F10w (docs/validacao/12-eficiencia-fwko.md); regra de referência: Balanço_Preliminar.py, solve_case"
 
 [criterios]

@@ -1,5 +1,7 @@
 # F10x.7 — trocadores P-002 e P-003: reotimização discreta
 
+> **Histórico.** Registro de uma etapa anterior à consolidação arquitetural (2026-09-28): a reotimização discreta (`pfd/reotimizacao.py`) saiu; a geometria que ela escolheu está nas recomendações dos TAGs. O funcionamento vigente está em [`../arquitetura/arquitetura-alvo.md`](../arquitetura/arquitetura-alvo.md).
+
 Gerado por `tools/reotimizar_trocadores.py` (grade e regras em `config/pfd/reotimizacao.toml`); todos os números saem do serviço por TAG. Topologia P-46 (óleo no casco), P-45 ativa, limites l_tubo_max = 6 m e d_casco_max = 2.500 mm mantidos.
 
 ## P-002

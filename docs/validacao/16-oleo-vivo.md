@@ -1,5 +1,7 @@
 # F10x.5 — viscosidade de óleo vivo (Beggs & Robinson) na camada do PFD
 
+> **Histórico.** Registro de uma etapa anterior à consolidação arquitetural (2026-09-28): o óleo vivo é o único modelo; a comparação com o modo de óleo morto é registro. O funcionamento vigente está em [`../arquitetura/arquitetura-alvo.md`](../arquitetura/arquitetura-alvo.md).
+
 Pedido do usuário (2026-09-26): "Corrija a viscosidade para o valor real". Este documento
 justifica a mudança de resultado exigida pelo CLAUDE.md ("mudar um resultado exige
 justificativa escrita em `docs/validacao/`").

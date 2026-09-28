@@ -1,4 +1,3 @@
-"""Integração balanço → equipamentos (F10): propriedades na condição do equipamento e,
-nas próximas subfases, o mapeamento das correntes para as entradas de cada TAG.
-
-Camada a jusante do balanço: nada aqui altera o balanço nem a paridade dele."""
+"""A planta: o serviço por TAG (entradas a partir do EstadoProcesso, dimensionamento,
+estado de sessão), o memorial de cada TAG, os alarmes e a otimização. Camada a jusante do
+processo (`balanco/`) e da termodinâmica (`termo/`): nada aqui altera o balanço."""

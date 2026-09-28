@@ -7,9 +7,10 @@ fixtures e comparar bytes (marcador `julia`) foi retirado, junto com o marcador.
 O que NÃO mudou: os arquivos de `tests/fixtures/julia/` seguem versionados e seguem sendo o
 oráculo numérico dos equipamentos — sete arquivos de teste comparam o Python contra eles, e é
 deles que vem a garantia de que refatoração não muda número. A proveniência está registrada em
-`manifesto.json` (commit `ab58fc6` do repositório Julia) e o script que os gerou continua no
-repositório (`tools/exportar_fixtures_julia.sh`), para quem precisar refazer a exportação à mão.
-"""
+`manifesto.json` (commit `ab58fc6` do repositório Julia); o script que os exportava
+(`tools/exportar_fixtures_julia.sh`) está no histórico do Git até o commit `bd87be0`. A paridade
+com o Julia deixou de ser requisito da arquitetura (consolidação); estas fixtures ficam como
+regressão dos métodos de equipamento, que não dependem de modo nenhum."""
 import json
 from pathlib import Path
 

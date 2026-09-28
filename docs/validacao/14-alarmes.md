@@ -1,5 +1,7 @@
 # F13 — alarmes de inviabilidade: anotação e investigação
 
+> **Histórico.** Registro de uma etapa anterior à consolidação arquitetural (2026-09-28): o modo `--oleo-morto` saiu, e o relatório vigente sai de `tools/investigar_alarmes.py`. O funcionamento vigente está em [`../arquitetura/arquitetura-alvo.md`](../arquitetura/arquitetura-alvo.md).
+
 Gerado por `tools/investigar_alarmes.py`; todos os números saem do motor e do rastro.
 
 A unidade do BOT (I-ET-3010.2K-1200-941-P4X-001, rev. C, em `docs/bot/`) é um projeto básico real:

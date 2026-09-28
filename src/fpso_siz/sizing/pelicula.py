@@ -45,10 +45,6 @@ class Filme:
     peso: float = math.nan   # peso da interpolação na transição (0 = laminar, 1 = turbulento)
     fator_parede: float = 1.0
 
-    @property
-    def na_transicao(self):
-        return self.regime == TRANSICAO
-
 
 def graetz(re, pr, d_i, l_caminho):
     """Gz = Re·Pr·(d_i/L) — L é o comprimento do CAMINHO de um tubo (Branan p. 40: "if there are

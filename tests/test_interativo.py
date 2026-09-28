@@ -154,10 +154,10 @@ def test_balanco_resumo_auditoria_correntes_e_voltar():
 def test_balanco_exporta_igual_ao_comando_equivalente(tmp_path):
     pasta = tmp_path / "s"
     rc, out = rodar(op("principal", "premissas"), "BSW_pre=0.02", "", op("principal", "balanco"),
-                    op("balanco", "exportar"), "1,2", str(pasta), "original", "0", "0")
+                    op("balanco", "exportar"), "1,2", str(pasta), "0", "0")
     assert rc == 0
     assert "Premissas alteradas: P-28 BSW_pre = 0.02" in out
-    assert "--premissa BSW_pre=0.02" in out and "--layout original" in out
+    assert "--premissa BSW_pre=0.02" in out and "--layout" not in out
     feitos = {p: p.read_bytes() for p in [pasta / "balanco.json", pasta / "correntes.csv", pasta / "memorial" / "main.tex"]}
     for p in feitos:
         p.unlink()
@@ -170,19 +170,18 @@ def test_balanco_exporta_igual_ao_comando_equivalente(tmp_path):
 def test_balanco_exportacao_pdf(tmp_path, monkeypatch):
     monkeypatch.setattr(mod_sessao.compilacao, "compilar", lambda tex: Path(tex).with_suffix(".pdf"))
     b, x = op("principal", "balanco"), op("balanco", "exportar")
-    rc, out = rodar(b, x, "3", str(tmp_path), "senai", "0", "0")
+    rc, out = rodar(b, x, "3", str(tmp_path), "0", "0")
     assert "main.pdf" in out and "--pdf" in out
 
     def falha(tex):
         raise mod_sessao.compilacao.ErroCompilacao("latexmk ausente")
     monkeypatch.setattr(mod_sessao.compilacao, "compilar", falha)
-    rc, out = rodar(b, x, "3", str(tmp_path), "senai", "0", "0")
+    rc, out = rodar(b, x, "3", str(tmp_path), "0", "0")
     assert "PDF não gerado: latexmk ausente" in out
 
 
 @pytest.mark.parametrize("respostas, trecho", [
     (("9",), "formatos inválidos: '9'"),
-    (("2", "p", "xyz"), "layout desconhecido 'xyz'"),
 ])
 def test_balanco_exportacao_invalida(respostas, trecho):
     _, out = rodar(op("principal", "balanco"), op("balanco", "exportar"), *respostas, "0", "0")

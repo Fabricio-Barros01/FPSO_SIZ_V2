@@ -1,5 +1,7 @@
 # Fase 5 — integração do serviço termodinâmico, em modo sombra
 
+> **Histórico.** Registro de uma etapa anterior à consolidação arquitetural (2026-09-28): o modo sombra saiu; o trem é parte do `EstadoProcesso` (`balanco/trem.py`) e a proveniência é única. O funcionamento vigente está em [`../arquitetura/arquitetura-alvo.md`](../arquitetura/arquitetura-alvo.md).
+
 Gerado por `tools/integracao_termodinamica.py`.
 
 > **O processo continua consumindo o caminho legado.** O flash roda em paralelo nos 3 pontos de equilíbrio e é comparado; nenhum resultado da planta mudou — há paridade bit a bit. Trocar a origem de uma propriedade exige mudar o `status` dela no mapa, e o guarda recusa consumo de propriedade não liberada.

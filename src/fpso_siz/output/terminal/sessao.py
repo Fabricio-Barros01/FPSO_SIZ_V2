@@ -109,8 +109,7 @@ def casos_de(texto, validos):
 
 class Sessao:
     def __init__(self, casos=None, entrada=input, saida=None, estilo=None, colunas=None, agora=datetime.now,
-                 ajustes=None, ascii=False, propostas=None, oleo_vivo=True,
-                 topologia_julia=False):
+                 ajustes=None, ascii=False, propostas=None):
         self.saida = saida if saida is not None else sys.stdout
         self.entrada = entrada
         self.e = estilo if estilo is not None else Estilo.para(self.saida, ascii=ascii)
@@ -133,9 +132,6 @@ class Sessao:
         self._sem_propostas = propostas is False
         self._propostas = (None if propostas is False else
                            mod_propostas.carregar(propostas) if propostas is not None else mod_propostas.padrao())
-        # viscosidade do óleo vivo (Beggs & Robinson) por padrão; False = óleo morto do BOT
-        self.oleo_vivo = oleo_vivo
-        self.topologia_julia = topologia_julia   # alocação do PFD F1 (paridade), sem a P-46
 
     # ------------------------------------------------------------------ E/S
     def dizer(self, *linhas):
@@ -196,8 +192,7 @@ class Sessao:
         """Contexto dos TAGs: recriado ao trocar o arquivo de casos ou as premissas (o que
         dependia do anterior — balanço, propriedades, resultados — fica para trás)."""
         if self._ctx is None:
-            self._ctx = servico.Contexto(self.dados, alteracoes=self.alt, propostas=self._propostas,
-                                         oleo_vivo=self.oleo_vivo, topologia_julia=self.topologia_julia)
+            self._ctx = servico.Contexto(self.dados, alteracoes=self.alt, propostas=self._propostas)
         return self._ctx
 
     def _arg_propostas(self):
@@ -205,8 +200,7 @@ class Sessao:
         return str(self.caminho_propostas) if self.caminho_propostas is not None else None
 
     def _flag_sem_propostas(self):
-        return {"sem-propostas": self._sem_propostas, "oleo-morto": not self.oleo_vivo,
-                "topologia-julia": self.topologia_julia}
+        return {"sem-propostas": self._sem_propostas}
 
     def _invalidar(self):
         self._ctx = None
@@ -430,15 +424,10 @@ class Sessao:
             gravados += gravar_balanco(self.dados, prem, res, aud, pasta)
             cmds.append(comando("balanco", **base))
         if formatos & {"2", "3"}:
-            layout = self.perguntar(self.tx["layout_prompt"].format(layouts="/".join(sorted(memorial.LAYOUTS))),
-                                    self.cfg["layout_padrao"])
-            if layout not in memorial.LAYOUTS:
-                self.aviso(self.tx["layout_invalido"].format(texto=layout))
-                return
             destino = pasta / "memorial"
-            tex = memorial.gravar(self.dados, prem, res, destino, layout)
+            tex = memorial.gravar(self.dados, prem, res, destino)
             gravados.append(tex)
-            cmds.append(comando("memorial", **{**base, "saida": str(destino)}, layout=layout, pdf="3" in formatos))
+            cmds.append(comando("memorial", **{**base, "saida": str(destino)}, pdf="3" in formatos))
             if "3" in formatos:
                 self.dizer("  " + self.tx["compilando"])
                 try:
@@ -457,20 +446,14 @@ class Sessao:
         except ValueError as e:
             self.aviso(self.tx["erro"].format(erro=e))
             return
-        opcoes = [*memorial_caso.LAYOUTS, "ambos"]
-        layout = self.perguntar(self.tx["layouts_caso_prompt"].format(layouts="/".join(opcoes)), opcoes[-1])
-        if layout not in opcoes:
-            self.aviso(self.tx["layout_invalido"].format(texto=layout))
-            return
         pasta = Path(self.perguntar(self.tx["pasta_prompt"], str(Path(self.cfg["pasta_padrao"]) / "memorial"))).expanduser()
         pdf = self._mc_pdf()
         if pdf:
             self.dizer("  " + self.tx["compilando"])
-        layouts = memorial_caso.LAYOUTS if layout == opcoes[-1] else (layout,)
-        gravados, erros = memorial_caso.exportar_lote(self.dados, self.ctx.prem, res, escolhidos, pasta, layouts, pdf=pdf)
+        gravados, erros = memorial_caso.exportar_lote(self.dados, self.ctx.prem, res, escolhidos, pasta, pdf=pdf)
         for erro in erros:
             self.aviso(self.tx["pdf_falhou"].format(erro=erro))
-        cmd = comando("memorial", casos=str(self.caminho_casos), caso=texto, saida=str(pasta), layout=layout,
+        cmd = comando("memorial", casos=str(self.caminho_casos), caso=texto, saida=str(pasta),
                       premissa=self._args_premissa(), pdf=pdf)
         self.repetir([cmd], gravados)
 

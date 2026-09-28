@@ -1,5 +1,7 @@
 # Fase 5.1 — cascata composicional do trem, em modo sombra
 
+> **Histórico.** Registro de uma etapa anterior à consolidação arquitetural (2026-09-28): a cascata saiu do modo sombra e é o trem do `EstadoProcesso` (`balanco/trem.py`); o relatório vigente é `tools/relatorio_trem.py`. O funcionamento vigente está em [`../arquitetura/arquitetura-alvo.md`](../arquitetura/arquitetura-alvo.md).
+
 Gerado por `tools/cascata_composicional.py`.
 
 > **Modo sombra, integral.** O balanço produtivo, o dimensionamento, os equipamentos e os memoriais continuam intocados; `y`, `β`, `x`, `h`, `cp`, `ρ_líquido`, `μ` e `k` seguem NÃO liberados no mapa de proveniência, e o guarda `exigir_liberada` continua recusando consumo. O que muda em relação à F5 é a ANÁLISE: os três pontos deixam de ser flashes independentes e viram um trem.

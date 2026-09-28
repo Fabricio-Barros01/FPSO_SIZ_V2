@@ -115,7 +115,7 @@ def custo_de_importacao():
     alvos = {"fpso_siz": "import fpso_siz",
              "fpso_siz.pfd.planta": "import fpso_siz.pfd.planta",
              "fpso_siz.pfd.otimizacao": "import fpso_siz.pfd.otimizacao",
-             "thermo+chemicals (porta _chedl)": "from fpso_siz.pfd import _chedl; _chedl.versoes()",
+             "thermo+chemicals (porta termo/backend)": "from fpso_siz.termo import backend; backend.versoes()",
              "pymoo (porta _otim)": "from fpso_siz import _otim; _otim.versao()"}
     out = {}
     for nome, codigo in alvos.items():
@@ -139,7 +139,7 @@ def camadas(dados):
     from fpso_siz.balanco.modelo import resolver_caso, resolver_todos
     from fpso_siz.core.configuracao import carregar
     from fpso_siz.pfd import equipamento as servico
-    from fpso_siz.pfd import fluidos
+    from fpso_siz.termo import servico as fluidos
     from fpso_siz.pfd import otimizacao as ot
     from fpso_siz.pfd import propostas as mp
     from fpso_siz.pfd.planta import dimensionar
@@ -503,7 +503,9 @@ class Censo:
 
 def _censo_novo():
     from fpso_siz.balanco import modelo
-    from fpso_siz.pfd import _chedl, equipamento, fluidos
+    from fpso_siz.pfd import equipamento
+    from fpso_siz.termo import backend as _chedl
+    from fpso_siz.termo import servico as fluidos
     c = Censo()
     for nome in ("resolver_caso",):
         c.envolver(modelo, nome)

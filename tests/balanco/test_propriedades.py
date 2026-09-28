@@ -6,7 +6,8 @@ import pytest
 
 from fpso_siz.balanco.dados import carregar_casos, constantes, pocos, premissas
 from fpso_siz.balanco.modelo import corrente
-from fpso_siz.balanco.propriedades import gas_props, mu_interp, poco_do_fluido, split_water, standing_rs
+from fpso_siz.balanco.propriedades import gas_props, poco_do_fluido, split_water, standing_rs
+from fpso_siz.termo.servico import mu_interp
 from fpso_siz.core.unidades import c_para_f, c_para_k
 
 K = constantes().standing

@@ -24,7 +24,7 @@
     }
   },
   "properties": {
-    "esquema": {"const": 2},
+    "esquema": {"const": 3},
     "gerador": {
       "type": "object", "required": ["pacote", "versao"],
       "properties": {"pacote": {"const": "fpso-siz"}, "versao": {"type": "string"}}
@@ -65,10 +65,9 @@
           "BSW_chegada": {"type": "number", "minimum": 0, "maximum": 1},
           "BSW_FWKO": {"type": "number", "minimum": 0, "maximum": 1},
           "FWKO": {
-            "type": "object", "required": ["regra", "eta", "eta_req", "eta_padrao", "exigido_acima", "estado"],
+            "type": "object", "required": ["eta", "eta_req", "eta_padrao", "exigido_acima", "estado"],
             "additionalProperties": false,
-            "properties": {"regra": {"enum": ["eficiencia", "referencia"]},
-                           "eta": {"type": ["number", "null"]}, "eta_req": {"type": ["number", "null"]},
+            "properties": {"eta": {"type": ["number", "null"]}, "eta_req": {"type": ["number", "null"]},
                            "eta_padrao": {"type": ["number", "null"]}, "exigido_acima": {"type": "boolean"},
                            "estado": {"type": "string"}}
           },

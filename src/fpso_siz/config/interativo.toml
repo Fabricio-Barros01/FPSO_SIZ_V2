@@ -10,7 +10,6 @@ arquivo_casos_padrao = "design_cases_bot.json"
 # Pasta e arquivo de ajustes sugeridos ao exportar.
 pasta_padrao = "saida"
 pasta_planta = "planta"
-layout_padrao = "senai"
 
 # ------------------------------------------------------------------ menus (ordem = tela)
 [menus.principal]
@@ -174,7 +173,6 @@ avisos_n = "{n} aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no ras
 casos_inativos = "Casos inativos: {lista}"
 memorial_disponivel = "Memória de cálculo (MC) do TAG: ação \"Gerar memória de cálculo\" no menu, ou --mc [--pdf] no comando."
 casos_memorial_prompt = "Casos do memorial ({min}–{max}, lista como 1,4-7 ou todos)"
-layouts_caso_prompt = "Layout ({layouts})"
 mc_pdf_prompt = "Compilar o PDF com latexmk? (s/N)"
 aviso_item = "{casos}: {aviso}"
 # formulários
@@ -216,8 +214,6 @@ pasta_prompt = "Pasta de saída"
 ajustes_prompt = "Arquivo de ajustes"
 formatos_prompt = "Formatos: 1 JSON+CSV · 2 memorial LaTeX · 3 memorial + PDF (ex.: 1,2)"
 formatos_invalidos = "formatos inválidos: {texto!r}."
-layout_prompt = "Layout do memorial ({layouts})"
-layout_invalido = "layout desconhecido {texto!r}."
 compilando = "Compilando o PDF (latexmk)…"
 pdf_falhou = "PDF não gerado: {erro}"
 gravado = "Gravado:"

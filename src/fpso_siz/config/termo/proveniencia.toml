@@ -1,0 +1,310 @@
+# Contrato ÚNICO de proveniência de propriedade (invariante 5 do CLAUDE.md).
+#
+# Dois conceitos independentes, que antes se confundiam num só ("liberada"):
+#   validade — a propriedade é utilizável em engenharia? validada | nao_validada | ausente
+#   origem   — de que modelo ou dado o valor sai (lista quando a propriedade é composta)
+# e um terceiro, que é o que a proveniência precisa dizer de fato:
+#   consumidores — quem CONSOME o valor hoje. Lista vazia = diagnóstico: existe, tem validade
+#                  declarada, e nenhum cálculo de balanço, dimensionamento ou otimização o usa.
+#
+# Regra: a proveniência diz o que o cálculo consumiu, nunca o que estaria autorizado a consumir.
+# Uma propriedade `nao_validada` ou `ausente` não pode ter consumidor (teste de arquitetura).
+#
+# Ligações com o código, conferidas por teste: `rastro` = equação do rastro do balanço que a
+# produz; `regra` = regra de entrada de TAG (pfd/entradas.REGRAS) que a entrega; `funcao` =
+# função de termo/servico.py; `fonte` = chaves "seção.campo" de termo/fluidos.toml.
+
+[validade]
+validada = "com fonte citável e usada dentro do domínio declarado da correlação ou do dado"
+nao_validada = "o backend ou a correlação devolve número, mas fora do domínio conferido ou sem dado que o valide; pode ser exposta com aviso, nunca consumida"
+ausente = "não existe e não é estimada: NaN e lacuna declarada"
+
+[origem]
+BOT = "dado do BOT I-ET-3010.2K-1200-941-P4X-001 rev. C (composição, API, tabelas de viscosidade, vazões)"
+premissa = "premissa declarada em premissas.toml / constantes.toml, com fonte"
+Standing = "correlação de Standing para o gás em solução (constantes.toml [standing])"
+BeggsRobinson = "Beggs & Robinson (1975), viscosidade de óleo vivo (termo/fluidos.toml [oleo_vivo])"
+PengRobinson = "equação de estado de Peng-Robinson (1976) via ChEDL (termo/backend.py)"
+Brokaw = "regra de mistura de Brokaw para a viscosidade do gás diluído, via ChEDL"
+IAPWS = "IAPWS-95 (ρ, cp), IAPWS 2008 (μ), IAPWS 2011 (k)"
+Laliberte = "Laliberté (2009), solução aquosa de NaCl, via ChEDL"
+Zanker = "viscosidade de emulsão de Zanker (Branan eq. 27-4)"
+RiaziAlSahhaf = "caracterização de pseudo-componentes de Riazi & Al-Sahhaf (1996) (caracterizacao_scn.toml)"
+
+# ---------------------------------------------------------------------------- balanço
+[[propriedade]]
+id = "massa_molar_gas"
+rotulo = "massa molar do gás"
+unidade = "g/mol"
+origem = ["BOT"]
+validade = "validada"
+consumidores = ["balanco", "dimensionamento"]
+rastro = "gas_massa_molar"
+nota = "corte N2–nC4 da composição do fluido, renormalizado (P-03); não é o MW do vapor de equilíbrio"
+
+[[propriedade]]
+id = "massa_especifica_gas_padrao"
+rotulo = "massa específica do gás na condição padrão"
+unidade = "kg/m³"
+origem = ["BOT"]
+validade = "validada"
+consumidores = ["balanco"]
+rastro = "gas_massa_especifica_std"
+nota = "MW do corte leve / V_M, com V_M = R·T_padrão/P_padrão"
+
+[[propriedade]]
+id = "cp_gas_balanco"
+rotulo = "cp do gás no balanço"
+unidade = "kJ/(kg·K)"
+origem = ["premissa"]
+validade = "validada"
+consumidores = ["balanco"]
+rastro = "gas_cp"
+nota = "cp de gás ideal a 25 °C por componente, média pela composição do corte leve: simplificação declarada do balanço"
+
+[[propriedade]]
+id = "massa_especifica_oleo"
+rotulo = "massa específica do óleo"
+unidade = "kg/m³"
+origem = ["BOT"]
+validade = "validada"
+consumidores = ["balanco", "dimensionamento"]
+rastro = "rho_oleo_api"
+nota = "pela API do poço, na condição padrão, sem correção por T nem Bo"
+
+[[propriedade]]
+id = "gas_liberado_por_estagio"
+rotulo = "gás liberado por estágio (SG-001, V-001, V-002)"
+unidade = "Sm³/d"
+origem = ["Standing"]
+validade = "validada"
+consumidores = ["balanco", "dimensionamento"]
+rastro = "rs_liberado"
+nota = "ΔRs de Standing entre a condição do vaso e a padrão, sobre a vazão de óleo. É ESTA a vazão de gás que o processo e o dimensionamento consomem; o flash do trem é diagnóstico"
+
+[[propriedade]]
+id = "viscosidade_oleo_balanco"
+rotulo = "viscosidade do óleo no balanço"
+unidade = "cP"
+origem = ["BOT"]
+validade = "validada"
+consumidores = ["balanco"]
+rastro = "viscosidade_oleo"
+nota = "tabela de óleo morto do poço, log-linear em T (P-40)"
+
+# ---------------------------------------------------------------------------- entradas dos TAGs
+[[propriedade]]
+id = "densidade_gas"
+rotulo = "massa específica do gás na condição"
+unidade = "kg/m³"
+origem = ["PengRobinson"]
+validade = "validada"
+consumidores = ["dimensionamento"]
+regra = "densidade_gas"
+funcao = "gas"
+fonte = ["gas.fonte_eos", "gas.fonte_z"]
+nota = "Z pela EOS com a composição FIXA do corte leve do balanço (gás seco), não com o vapor de equilíbrio do trem"
+
+[[propriedade]]
+id = "compressibilidade_gas"
+rotulo = "fator de compressibilidade do gás"
+unidade = "–"
+origem = ["PengRobinson"]
+validade = "validada"
+consumidores = ["dimensionamento"]
+regra = "compressibilidade_gas"
+funcao = "gas"
+fonte = ["gas.fonte_eos"]
+nota = "composição fixa do corte leve; kij do banco ChemSep"
+
+[[propriedade]]
+id = "viscosidade_gas"
+rotulo = "viscosidade do gás"
+unidade = "cP"
+origem = ["Brokaw"]
+validade = "validada"
+consumidores = ["dimensionamento"]
+regra = "viscosidade_gas"
+funcao = "gas"
+fonte = ["gas.fonte_transporte"]
+nota = "gás diluído: a pressão do vaso não corrige a viscosidade"
+
+[[propriedade]]
+id = "densidade_fase"
+rotulo = "massa específica da fase líquida"
+unidade = "kg/m³"
+origem = ["BOT", "Laliberte"]
+validade = "validada"
+consumidores = ["dimensionamento"]
+regra = "densidade_fase"
+funcao = "oleo"
+fonte = ["oleo.fonte_densidade", "salmoura.fonte"]
+nota = "óleo na condição padrão pela API; fase aquosa por Laliberté nas faixas do banco; volumes aditivos"
+
+[[propriedade]]
+id = "viscosidade_fase"
+rotulo = "viscosidade da fase líquida"
+unidade = "cP"
+origem = ["BOT", "BeggsRobinson", "Laliberte", "Zanker"]
+validade = "validada"
+consumidores = ["dimensionamento"]
+regra = "viscosidade_fase"
+funcao = "emulsao"
+fonte = ["oleo.fonte_viscosidade", "oleo_vivo.fonte", "salmoura.fonte", "emulsao.fonte"]
+nota = "óleo morto do BOT corrigido para óleo vivo pelo Rs da corrente (Beggs & Robinson; fora da faixa, aviso); emulsão por Zanker"
+
+[[propriedade]]
+id = "pressao_vapor_saturado"
+rotulo = "pressão de vapor do líquido bombeado"
+unidade = "kPa"
+origem = ["premissa"]
+validade = "validada"
+consumidores = ["dimensionamento"]
+regra = "pressao_vapor_saturado"
+funcao = "pressao_vapor_saturado"
+fonte = ["vapor.fonte"]
+nota = "líquido que sai do vaso a montante está no ponto de bolha: Pv = P do vaso"
+
+[[propriedade]]
+id = "cp_utilidade"
+rotulo = "cp da água de utilidade"
+unidade = "J/kg·K"
+origem = ["IAPWS"]
+validade = "validada"
+consumidores = ["dimensionamento"]
+regra = "cp_utilidade"
+funcao = "agua_saturada"
+fonte = ["agua.fonte_densidade"]
+nota = "água pura como líquido saturado na temperatura média; a pressão do circuito não é dado"
+
+[[propriedade]]
+id = "densidade_utilidade"
+rotulo = "massa específica da água de utilidade"
+unidade = "kg/m³"
+origem = ["IAPWS"]
+validade = "validada"
+consumidores = ["dimensionamento"]
+regra = "densidade_utilidade"
+funcao = "agua_saturada"
+fonte = ["agua.fonte_densidade"]
+
+[[propriedade]]
+id = "viscosidade_utilidade"
+rotulo = "viscosidade da água de utilidade"
+unidade = "cP"
+origem = ["IAPWS"]
+validade = "validada"
+consumidores = ["dimensionamento"]
+regra = "viscosidade_utilidade"
+funcao = "agua_saturada"
+fonte = ["agua.fonte_viscosidade"]
+
+[[propriedade]]
+id = "condutividade_utilidade"
+rotulo = "condutividade da água de utilidade"
+unidade = "W/m·K"
+origem = ["IAPWS"]
+validade = "validada"
+consumidores = ["dimensionamento"]
+regra = "condutividade_utilidade"
+funcao = "agua_saturada"
+fonte = ["agua.fonte_condutividade"]
+
+# ---------------------------------------------------------------------------- trem (diagnóstico)
+# O trem SG-001 → V-001 → V-002 faz parte do EstadoProcesso, mas o que ele calcula não é
+# consumido: a vazão de gás por estágio que o processo usa é a de Standing (acima). A F5.1
+# mediu que a composição do BOT não reproduz o GOR dos casos (razão 0,62–2,16).
+[[propriedade]]
+id = "fracao_vapor_estagio"
+rotulo = "fração de vapor β de cada estágio"
+unidade = "–"
+origem = ["PengRobinson", "RiaziAlSahhaf"]
+validade = "nao_validada"
+consumidores = []
+funcao = "flash_tp"
+nota = "sem PVT medido que valide o split; a composição é por tipo de fluido, não por caso"
+
+[[propriedade]]
+id = "composicao_vapor_estagio"
+rotulo = "composição y do vapor de cada estágio"
+unidade = "–"
+origem = ["PengRobinson", "RiaziAlSahhaf"]
+validade = "nao_validada"
+consumidores = []
+funcao = "flash_tp"
+
+[[propriedade]]
+id = "composicao_liquido_estagio"
+rotulo = "composição x do líquido de cada estágio"
+unidade = "–"
+origem = ["PengRobinson", "RiaziAlSahhaf"]
+validade = "nao_validada"
+consumidores = []
+funcao = "flash_tp"
+
+[[propriedade]]
+id = "Z_vapor_estagio"
+rotulo = "Z do vapor de equilíbrio"
+unidade = "–"
+origem = ["PengRobinson"]
+validade = "validada"
+consumidores = []
+funcao = "flash_tp"
+nota = "validada como propriedade da fase dada a composição; não consumida, porque depende de y (não validada)"
+
+[[propriedade]]
+id = "MW_vapor_estagio"
+rotulo = "MW do vapor de equilíbrio"
+unidade = "g/mol"
+origem = ["PengRobinson"]
+validade = "validada"
+consumidores = []
+funcao = "flash_tp"
+nota = "fecha exatamente contra os MW adotados; não consumida pelo mesmo motivo de Z"
+
+[[propriedade]]
+id = "rho_vapor_estagio"
+rotulo = "ρ do vapor de equilíbrio"
+unidade = "kg/m³"
+origem = ["PengRobinson"]
+validade = "validada"
+consumidores = []
+funcao = "flash_tp"
+
+[[propriedade]]
+id = "MW_mistura"
+rotulo = "MW da mistura pelos MW adotados"
+unidade = "g/mol"
+origem = ["BOT", "RiaziAlSahhaf"]
+validade = "validada"
+consumidores = []
+funcao = "mw_mistura"
+nota = "Σ zᵢ·MWᵢ: fecha exatamente em relação aos MW adotados, não é o MW verdadeiro do petróleo"
+
+[[propriedade]]
+id = "rho_liquido_flash"
+rotulo = "ρ da fase líquida pela EOS"
+unidade = "kg/m³"
+origem = ["PengRobinson"]
+validade = "nao_validada"
+consumidores = []
+funcao = "flash_tp"
+nota = "PR sem translação de volume: 474,3 contra 877,3 kg/m³ (mistura ideal de volumes com as SG de Riazi) no Early Life, razão 0,541. A caracterização não é a causa; a correção usual é Péneloux, que exige parâmetro com fonte própria"
+
+[[propriedade]]
+id = "entalpia_fluido_de_poco"
+rotulo = "entalpia e cp do fluido de poço"
+unidade = "J/kg"
+origem = []
+validade = "ausente"
+consumidores = []
+nota = "sem Cp_ig com fonte para os pseudo-componentes: Riazi & Al-Sahhaf não o dá, e a rota rastreável para H/C (decomposição PNA do próprio artigo) dá fração de parafina NEGATIVA a partir de C15 — sem H/C não se arbitra Cp_ig. O pacote é montado sem ele (docs/validacao/30)"
+
+[[propriedade]]
+id = "transporte_fluido_de_poco"
+rotulo = "μ e k das fases do fluido de poço"
+unidade = "–"
+origem = []
+validade = "ausente"
+consumidores = []
+nota = "o pacote de pseudo-componentes não tem correlações de transporte; k da fase líquida de hidrocarboneto é, além disso, extrapolação do backend"

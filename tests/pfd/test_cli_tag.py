@@ -2,6 +2,8 @@
 bytes pelo TAG isolado, pela planta e pela sessão; erros de uso e de contexto (código 2)."""
 import json
 
+from pathlib import Path
+
 import pytest
 
 from fpso_siz.balanco.dados import carregar_casos
@@ -11,7 +13,8 @@ from fpso_siz.pfd import ajustes as A
 from fpso_siz.pfd import equipamento as servico
 from fpso_siz.pfd import manual
 
-from conftest import FIXTURES
+FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
+
 
 CASOS = FIXTURES / "python_ref" / "design_cases_bot.json"
 AJUSTES_LEGADO = FIXTURES / "pfd" / "ajustes_sinteticos.toml"

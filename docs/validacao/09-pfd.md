@@ -1,5 +1,7 @@
 # F10b — balanço → entradas dos TAGs → envelopes
 
+> **Histórico.** Registro de uma etapa anterior à consolidação arquitetural (2026-09-28): a alocação do PFD F1 do Julia (`--topologia-julia`), o óleo morto e as fixtures da F10b saíram; vale a P-46 e o óleo vivo. O funcionamento vigente está em [`../arquitetura/arquitetura-alvo.md`](../arquitetura/arquitetura-alvo.md).
+
 Continuação da implementação aprovada em 2026-09-23. O comando `fpso-siz pfd` monta os
 11 TAGs a partir dos 16 casos do BOT. Exporta um JSON por TAG e `planta.csv`, inclusive
 quando há lacunas ou inviabilidade. O balanço preliminar e os oráculos permanecem intactos.

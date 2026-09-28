@@ -7,9 +7,9 @@ from fpso_siz.core.trace import CalcTrace
 CATALOGO = carregar("equacoes_balanco.toml")
 
 
-def pares_declarados(regra):
-    """Pares (equação, escopo) do catálogo que a regra do FWKO emite (`regra` ausente: sempre)."""
-    return {(eq, esc) for eq, e in CATALOGO.items() if e.get("regra", regra) == regra for esc in e["escopos"]}
+def pares_declarados():
+    """Pares (equação, escopo) que o catálogo declara."""
+    return {(eq, esc) for eq, e in CATALOGO.items() for esc in e["escopos"]}
 
 
 def test_catalogo_bem_formado():
@@ -17,13 +17,9 @@ def test_catalogo_bem_formado():
         assert e["descricao"] and e["forma"] and e["unidade"] and e["escopos"], eq
 
 
-def test_bijecao_catalogo_trace_em_todos_os_casos(resultados, resultados_ef):
-    for rs, regra in ((resultados, "referencia"), (resultados_ef, "eficiencia")):
-        for r in rs:
-            assert r.fwko["regra"] == regra
-            assert r.trace.pares() == pares_declarados(regra), (regra, r.num)
-    assert pares_declarados("referencia") ^ pares_declarados("eficiencia") == {
-        ("bsw_fwko", "caso"), ("eficiencia_fwko", "SG-001")}
+def test_bijecao_catalogo_trace_em_todos_os_casos(resultados):
+    for r in resultados:
+        assert r.trace.pares() == pares_declarados(), r.num
 
 
 def test_trace_corresponde_ao_resultado_final(resultados):

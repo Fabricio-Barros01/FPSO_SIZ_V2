@@ -1,11 +1,11 @@
 """Conteúdo da memória de cálculo (MC) de um TAG (F11): só dados, sem formatação.
 
 Consome o ResultadoTAG do serviço por TAG (pfd/equipamento.py) — o mesmo do terminal, do
-JSON e do CSV — e devolve um dicionário com as dez seções do MC. Nenhuma equação de
-engenharia é reavaliada aqui: resultados e operandos vêm do rastro de cada caso
-(`Rastro.operandos`, capturados na avaliação) e do envelope; o que o MC mostra a mais
-(parcelas de Lss, bordas da banda de esbeltez, constante de campo convertida) sai de hooks
-do método ou de core/unidades.py. A escolha do que aparece e em que ordem está em
+JSON e do CSV — e devolve um dicionário com as dez seções do MC. **Nada de engenharia é
+avaliado aqui**: resultados e operandos vêm do rastro de cada caso (`Rastro.operandos`) e do
+envelope, e o que o MC mostra a mais e exige o método (critério governante por caso, bordas da
+banda, perfil T × Q, parcelas de 1/U, curva do sistema, feixe mais próximo) sai de
+`core/memoria.py`, do lado do dimensionamento, sobre as restrições que o próprio motor preparou. A escolha do que aparece e em que ordem está em
 config/memorial_tag.toml, por método: não há código por TAG.
 
 TAG aguardando entrada, inativo ou inviável também tem MC: as seções de cálculo ficam
@@ -17,7 +17,7 @@ import re
 from fpso_siz.balanco.balancos import topologia
 from fpso_siz.balanco.dados import descritores_premissas
 from fpso_siz.core.configuracao import carregar
-from fpso_siz.core.parametros import with_defaults
+from fpso_siz.core import memoria
 from fpso_siz.core.unidades import CONVERSOES_CAMPO, w_para_kw
 from fpso_siz.pfd.entradas import rotulo_origem
 from fpso_siz.pfd.equipamento import AGUARDANDO, DIMENSIONADO, INATIVO, INVIAVEL, limitacoes
@@ -54,36 +54,22 @@ def _linha_em(sweep, x):
     return next((r for r in sweep if r.x == x), None)
 
 
-def _parametros_envelope(m, entradas):
-    """Grade e banda do envelope (as mesmas que o motor usou)."""
-    params = [with_defaults(m.parameters(), vals) for _, vals in entradas.case_set().expand()]
-    ok, p_env = m.envelope_params(params) if params else (False, None)
-    return p_env if ok else None
-
-
-def indice_governante(r):
-    """Caso do passo a passo: o que governa o ponto escolhido; se inviável, o do teto;
-    se não há nem um nem outro, o primeiro caso ativo."""
-    for nome in (r.driver_case, r.ceiling_case):
-        if nome and nome in r.case_names:
-            return r.case_names.index(nome)
-    return 0
+indice_governante = memoria.indice_governante
 
 
 # ------------------------------------------------------------------ seções
 def identificacao(ctx, rt):
     t, e = rt.tag, rt.entradas
     seq, num = numero(t.tag) if not e.avulso else (None, None)
-    regra, exigidos = None, []
+    usa_balanco, exigidos = False, []
     if not e.avulso and e.modo != "manual" and ctx.balanco_resolvido:
-        b = ctx.resultados_balanco
-        regra = b[0].fwko["regra"]
-        exigidos = [x.num for x in b if x.fwko.get("exigido_acima")]
+        usa_balanco = True
+        exigidos = [x.num for x in ctx.resultados_balanco if x.fwko.get("exigido_acima")]
     m = e.metodo
     return dict(tag=t.tag, nome=t.nome, bloco=t.bloco, condicao=t.condicao, equipamento=e.equipamento.label,
                 metodo=m.label, metodo_id=m.method_id, referencia=getattr(m, "method_reference", lambda: "")(),
                 sequencia=seq, numero=num, revisao=cfg()["revisao"], status=rt.status, modo=e.modo,
-                preliminar=e.preliminar, regra_fwko=regra, fwko_exigidos=exigidos, avulso=e.avulso,
+                preliminar=e.preliminar, usa_balanco=usa_balanco, fwko_exigidos=exigidos, avulso=e.avulso,
                 propostas=dict(arquivo=ctx.propostas.arquivo, sha256=ctx.propostas.sha256) if ctx.propostas else None)
 
 
@@ -144,9 +130,8 @@ def lacunas(rt):
 
 
 def premissas(ctx, rt, ident):
-    """Códigos P-xx/F-xx citados no rastro e nas fontes das entradas do TAG (e a P-43,
-    quando o balanço usado é o da regra de eficiência), com o descritor numérico do
-    balanço quando existe."""
+    """Códigos P-xx/F-xx citados no rastro e nas fontes das entradas do TAG (e a P-43, quando
+    o TAG usa o balanço), com o descritor numérico do balanço quando existe."""
     textos = []
     for c in rt.entradas.casos:
         textos += [f"{x.eq} {x.var} {x.formula}" for x in c.rastro]
@@ -155,7 +140,7 @@ def premissas(ctx, rt, ident):
         for pc in rt.resultado.per_case:
             textos += [f"{x.eq} {x.formula}" for x in pc.trace]
     codigos = set(CODIGO_PREMISSA.findall(" ".join(textos)))
-    if ident["regra_fwko"] == "eficiencia":
+    if ident["usa_balanco"]:
         codigos.add("P-43")
     dados = ctx.dados if not rt.entradas.avulso else None
     desc = {}
@@ -212,64 +197,13 @@ def iteracoes(rt, i, bloco):
     return list(rt.resultado.per_case[i].trace.iteracoes.get(bloco, []))
 
 
-def selecao(rt, i):
-    """Operandos do ponto escolhido do envelope (só com resultado viável)."""
-    r, m = rt.resultado, rt.entradas.metodo
-    if not r.feasible or not hasattr(m, "selecao_memorial"):
-        return None
-    return m.selecao_memorial(r.x, r.y, r.derivados, r.per_case[i].trace, m.constants())
-
-
-def x_referencia(rt, p_env):
-    """Abscissa das comparações por caso: o ponto escolhido, ou, se inviável, o menor x
-    da grade com a esbeltez na banda (o que o teto impede)."""
-    r, m = rt.resultado, rt.entradas.metodo
-    if r.feasible:
-        return r.x
-    if p_env is None:
-        return None
-    na_banda = [row.x for row in r.rows if m.admissible(row.x, row.derivados, p_env)]
-    return min(na_banda) if na_banda else None
-
-
-def governantes(rt, x, pares=None):
-    """Critério governante de cada caso em `x`, pela MESMA função do motor
-    (`governing_of` sobre as restrições do caso), não por busca na varredura individual.
-
-    A grade de cada caso é a do caso (`sweep_axis` com os parâmetros daquele caso) e a do
-    envelope é a da união: elas podem ter o mesmo passo e origens diferentes, e aí o x
-    escolhido não existe na varredura individual (é o que acontece no P-002 e no P-003,
-    cuja grade de tubos começa no mínimo hidráulico de cada caso). Procurar a linha por
-    igualdade de float devolvia None e o MC imprimia um travessão sem justificativa.
-    `governing_of` não depende da grade: só de x e das restrições congeladas do caso."""
-    r, m = rt.resultado, rt.entradas.metodo
-    if x is None:
-        return [None] * len(r.case_names)
-    pares = restricoes(rt) if pares is None else pares
-    return [None if c is None else m.governing_of(x, c) for _, c in pares]
-
-
-def capacidades(rt, x, pares=None):
-    """Exigência de cada critério em `x`, envelopada sobre os casos (`per_constraint`), pela
-    mesma rota de `governantes`: a grade individual do caso não entra."""
-    m = rt.entradas.metodo
-    pares = restricoes(rt) if pares is None else pares
-    caps = {}
-    for _, c in pares:
-        if c is None:
-            continue
-        for chave, v in m.per_constraint(x, c).items():
-            caps[chave] = max(caps.get(chave, -math.inf), v)
-    return caps
-
-
-def tabela_casos(rt, x, pares=None):
+def tabela_casos(rt, x):
     """Resultados intermediários de cada caso ativo, com a exigência e o critério
     governante em x."""
     r, m = rt.resultado, rt.entradas.metodo
     colunas = conteudo_metodo(m).get("colunas_casos", [])
     linha_env = _linha_em(r.rows, x) if x is not None else None
-    govs = governantes(rt, x, pares)
+    govs = memoria.governantes(r, x)
     out = []
     for i, (nome, pc) in enumerate(zip(r.case_names, r.per_case)):
         vals = []
@@ -282,7 +216,10 @@ def tabela_casos(rt, x, pares=None):
                         governante=m.governing_label(govs[i]) if govs[i] is not None else None,
                         folga=(r.slack[i] if r.feasible and r.slack else None),
                         teto=pc.ceiling if math.isfinite(pc.ceiling) else None,
-                        mecanismo=rotulo_mec(pc.ceiling_mechanism), viavel_isolado=pc.feasible,
+                        mecanismo=rotulo_mec(pc.ceiling_mechanism), mecanismo_id=pc.ceiling_mechanism,
+                        teto_aplicavel=m.teto_aplicavel(pc.ceiling_mechanism),
+                        criterio_aplicavel=pc.ceiling_mechanism not in m.mecanismos_nao_aplicaveis(),
+                        viavel_isolado=pc.feasible,
                         x_isolado=pc.x if pc.feasible else None))
     return dict(colunas=[c["rotulo"] for c in colunas], linhas=out, tem_teto=any(l["teto"] is not None for l in out))
 
@@ -301,7 +238,7 @@ def criterios(rt, x):
         out.append(dict(criterio="existe ponto admissível para todos os casos", valor=None, unidade="", atende=False))
         if x is not None and math.isfinite(r.ceiling):
             out.append(dict(criterio="menor diâmetro com esbeltez na banda ≤ teto de decantação", valor=x,
-                            unidade=m.sweep_axis(_parametros_envelope(m, rt.entradas)).unit, atende=x <= r.ceiling))
+                            unidade=m.sweep_axis(r.p_env).unit, atende=x <= r.ceiling))
     return out
 
 
@@ -311,12 +248,15 @@ def diagnostico(rt, x):
         return None
     m = rt.entradas.metodo
     return dict(mensagem=r.message, teto=r.ceiling if math.isfinite(r.ceiling) else None, caso_teto=r.ceiling_case,
-                mecanismo=getattr(m, "rotulo_mecanismo", str)(r.ceiling_mechanism), x_min_banda=x)
+                mecanismo=getattr(m, "rotulo_mecanismo", str)(r.ceiling_mechanism), mecanismo_id=r.ceiling_mechanism,
+                teto_aplicavel=m.teto_aplicavel(r.ceiling_mechanism), x_min_banda=x)
 
 
-def alarme(ctx, rt):
-    """Alarme do TAG inviável (config/pfd/alarmes.toml) com o resultado de cada variante
-    registrada, pelo mesmo serviço; None se o TAG não está inviável."""
+def alarme(rt):
+    """Alarme do TAG inviável, como está registrado (config/pfd/alarmes.toml): estado, resumo e
+    hipóteses, com o rótulo e a origem das variantes de estudo. O MC não executa variante —
+    seria recalcular engenharia na saída; quem as roda é `tools/investigar_alarmes.py`, pelo
+    mesmo serviço. None se o TAG não está inviável."""
     from fpso_siz.pfd import investigacao
 
     if rt.status != INVIAVEL or rt.entradas.avulso:
@@ -325,16 +265,10 @@ def alarme(ctx, rt):
     if reg is None:
         return dict(registrado=False, estado="sem investigação anotada", resumo="", hipoteses=[])
     classes = investigacao.cfg()["classes"]
-    hipoteses = []
-    for h in reg["hipoteses"]:
-        vs = []
-        for nome in h.get("variantes", []):
-            v = investigacao.variante(nome)
-            r = investigacao.executar_variante(ctx, rt.tag.tag, v, rt.estado).resultado
-            vs.append(dict(nome=nome, rotulo=v["rotulo"], origem=v["origem"], viavel=r.feasible,
-                           x=r.x if r.feasible else None, teto=r.ceiling if math.isfinite(r.ceiling) else None,
-                           caso_teto=r.ceiling_case, mensagem=r.message))
-        hipoteses.append(dict(classe=classes[h["classe"]], texto=h["texto"], variantes=vs))
+    hipoteses = [dict(classe=classes[h["classe"]], texto=h["texto"],
+                      variantes=[dict(nome=n, rotulo=investigacao.variante(n)["rotulo"],
+                                      origem=investigacao.variante(n)["origem"]) for n in h.get("variantes", [])])
+                 for h in reg["hipoteses"]]
     return dict(registrado=True, estado=reg["estado"], resumo=reg["resumo"], hipoteses=hipoteses)
 
 
@@ -354,40 +288,36 @@ def nao_aplicaveis(rt):
     return [dict(campo=k, motivo=v) for k, v in (m.campos_nao_aplicaveis(r) if r is not None else {}).items()]
 
 
-def series(rt, p_env, pares=None):
+def series(rt):
     """Séries dos gráficos (CSV lidos pelo pgfplots): diagrama x × exigência com as
-    capacidades envelopadas, a banda de esbeltez e o ponto; exigência por caso."""
+    capacidades envelopadas, a banda de esbeltez e o ponto; exigência por caso. Os números vêm
+    de `core/memoria.py`; aqui só se escolhe o que o método mostra e se dá forma."""
     r, m = rt.resultado, rt.entradas.metodo
     graf = conteudo_metodo(m).get("graficos", [])
     out = {}
-    if "diagrama" in graf and r.rows and hasattr(m, "bordas_banda") and p_env is not None:
-        k = m.constants()
-        pares = restricoes(rt) if pares is None else pares
-        linhas = []
-        for row in r.rows:
-            caps = capacidades(rt, row.x, pares)
-            lo, hi = m.bordas_banda(row.x, row.governing, p_env, k)
-            linhas.append(dict(x=row.x, y=row.y, **{f"cap_{c}": v for c, v in caps.items()}, banda_min=lo,
-                               banda_max=hi, admissivel=int(row.ok)))
-        out["diagrama"] = linhas
-        rotulos = {c[4:]: m.governing_label(c[4:]) for c in linhas[0] if c.startswith("cap_")} if linhas else {}
-        out["rotulos_capacidades"] = rotulos
-        if r.feasible:
-            out["ponto"] = [dict(x=r.x, y=r.y)]
-        else:
-            x_min = x_referencia(rt, p_env)
-            lin = _linha_em(r.rows, x_min) if x_min is not None else None
-            out["minimo"] = [dict(x=lin.x, y=lin.y)] if lin else []
-        if math.isfinite(r.ceiling):
-            ys = [v for li in linhas for v in (li["y"],) if math.isfinite(v) and v > 0]
-            out["teto"] = [dict(x=r.ceiling, y=min(ys)), dict(x=r.ceiling, y=max(ys))] if ys else []
-        out["banda"] = m.banda_memorial(p_env)
+    if "diagrama" in graf:
+        diag = memoria.diagrama(r)
+        if diag:
+            linhas = [dict(x=d["x"], y=d["y"], **{f"cap_{c}": v for c, v in d["capacidades"].items()},
+                           banda_min=d["banda_min"], banda_max=d["banda_max"], admissivel=d["admissivel"]) for d in diag]
+            out["diagrama"] = linhas
+            out["rotulos_capacidades"] = {c[4:]: m.governing_label(c[4:]) for c in linhas[0] if c.startswith("cap_")}
+            if r.feasible:
+                out["ponto"] = [dict(x=r.x, y=r.y)]
+            else:
+                x_min = memoria.x_referencia(r)
+                lin = _linha_em(r.rows, x_min) if x_min is not None else None
+                out["minimo"] = [dict(x=lin.x, y=lin.y)] if lin else []
+            if math.isfinite(r.ceiling):
+                ys = [li["y"] for li in linhas if math.isfinite(li["y"]) and li["y"] > 0]
+                out["teto"] = [dict(x=r.ceiling, y=min(ys)), dict(x=r.ceiling, y=max(ys))] if ys else []
+            out["banda"] = memoria.banda(r)
     if "casos" in graf:
-        x = x_referencia(rt, p_env)
+        x = memoria.x_referencia(r)
         lin_env = _linha_em(r.rows, x) if x is not None else None
         linhas = []
         if lin_env is not None:
-            govs = governantes(rt, x, pares)
+            govs = memoria.governantes(r, x)
             for i, (nome, pc) in enumerate(zip(r.case_names, r.per_case)):
                 linhas.append(dict(caso=i + 1, nome=nome, y=lin_env.per_case_y[i], governante=govs[i] or "",
                                    teto=pc.ceiling if math.isfinite(pc.ceiling) else math.nan))
@@ -395,113 +325,75 @@ def series(rt, p_env, pares=None):
         out["x_casos"] = x
         out["rotulos_governantes"] = {g: m.governing_label(g) for g in dict.fromkeys(li["governante"] for li in linhas)
                                       if g}
-    out.update(_series_do_metodo(rt, graf, p_env, pares))
+    out.update(_series_do_metodo(rt, graf))
     return out
 
 
-def restricoes(rt):
-    """[(entrada, restrições)] de cada caso do envelope, na ordem de `case_names`, pela
-    mesma preparação do motor (sizing_constraints é determinística: mesmos números)."""
-    m = rt.entradas.metodo
-    out = []
-    for _, vals in rt.entradas.case_set().expand():
-        entrada = m.case_input(vals)
-        ok, cons, _ = m.sizing_constraints(entrada, with_defaults(m.parameters(), vals), m.constants())
-        out.append((entrada, cons if ok else None))
-    return out
-
-
-def _series_do_metodo(rt, graf, p_env, pares=None):
+def _series_do_metodo(rt, graf):
     """Gráficos próprios de trocador (perfil T × Q, parcelas de 1/U) e de bomba (curva do
-    sistema, NPSH por caso), no ponto escolhido e no caso governante, pelos hooks do método."""
+    sistema, NPSH por caso), no ponto escolhido e no caso governante."""
     r, m = rt.resultado, rt.entradas.metodo
-    if not {"perfil_tq", "resistencias", "curva_sistema", "npsh"} & set(graf):
+    if not {"perfil_tq", "resistencias", "curva_sistema", "npsh"} & set(graf) or not r.preparo:
         return {}
-    cons = restricoes(rt) if pares is None else pares
-    i = indice_governante(r)
-    if cons[i][1] is None:   # inviável já na preparação do caso: o primeiro caso que prepara
-        i = next((j for j, (_, cj) in enumerate(cons) if cj is not None), i)
-    entrada, c = cons[i]
-    out = {"caso_metodo": rt.entradas.case_set().expand()[i][0]}
+    out = {"caso_metodo": r.preparo[memoria.caso_do_metodo(r)][0]}
     # o perfil T × Q só depende do balanço térmico do caso: sai também no inviável
-    if "perfil_tq" in graf and hasattr(m, "perfil_tq") and c is not None:
-        perfil = m.perfil_tq(entrada, c)
-        out["perfil_tq"] = [dict(q_kw=w_para_kw(q), t_tubo=tt, t_casco=tc)
-                            for (q, tt), (_, tc) in zip(perfil["tubo"], perfil["casco"])]
+    if "perfil_tq" in graf:
+        perfil = memoria.perfil_tq(r)
+        if perfil is not None:
+            out["perfil_tq"] = [dict(q_kw=w_para_kw(q), t_tubo=tt, t_casco=tc) for q, tt, tc in perfil]
     if not r.feasible:
-        out.update(_feixe_mais_proximo(rt, p_env, cons))
+        out.update(_feixe_mais_proximo(rt))
         return out
-    if "resistencias" in graf and hasattr(m, "parcelas_u") and c is not None:
-        parcelas, u = m.parcelas_u(r.x, c)
-        rot = conteudo_metodo(m).get("rotulos_resistencias", {})
-        total = sum(parcelas.values())
-        out["resistencias"] = [dict(parcela=rot.get(k, k), r=v, fracao=v / total) for k, v in parcelas.items()]
-        out["u"] = u
-    if "curva_sistema" in graf and hasattr(m, "curva_sistema") and c is not None:
-        fracoes = cfg()["graficos"]["fracoes_vazao"]
-        out["curva_sistema"] = [dict(q=q, h=h, h_est=c.h_est) for q, h in m.curva_sistema(c, r.x, fracoes)]
-        out["ponto_bomba"] = [dict(q=c.q_m3h, h=_linha_em(r.rows, r.x).per_case_y[i])]
-    if "npsh" in graf and hasattr(m, "npsh_exigido"):
-        linhas = []
-        for j, (pc, (_, cj)) in enumerate(zip(r.per_case, cons)):
-            lin = _linha_em(pc.sweep, r.x)
-            if lin is None or cj is None:
-                continue
-            linhas.append(dict(caso=j + 1, npsh_disponivel=m.npsh_disponivel(lin.derivados), npsh_exigido=m.npsh_exigido(cj)))
-        out["npsh"] = linhas
-    if hasattr(m, "operacao_por_caso") and p_env is not None and all(cj is not None for _, cj in cons):
-        conss = [cj for _, cj in cons]
-        nomes = [n for n, _ in rt.entradas.case_set().expand()]
-        op = m.operacao_por_caso(conss, r.x, m.envelope_case_params(conss, p_env))
-        out["operacao"] = [dict(caso=n, **o) for n, o in zip(nomes, op)]
+    if "resistencias" in graf:
+        pu = memoria.parcelas_u(r)
+        if pu is not None:
+            parcelas, u = pu
+            rot = conteudo_metodo(m).get("rotulos_resistencias", {})
+            total = sum(parcelas.values())
+            out["resistencias"] = [dict(parcela=rot.get(k, k), r=v, fracao=v / total) for k, v in parcelas.items()]
+            out["u"] = u
+    if "curva_sistema" in graf:
+        cs = memoria.curva_sistema(r, cfg()["graficos"]["fracoes_vazao"])
+        if cs is not None:
+            curva, h_est, (q, h) = cs
+            out["curva_sistema"] = [dict(q=qq, h=hh, h_est=h_est) for qq, hh in curva]
+            out["ponto_bomba"] = [dict(q=q, h=h)]
+    if "npsh" in graf:
+        n = memoria.npsh(r)
+        if n is not None:
+            out["npsh"] = [dict(caso=j, npsh_disponivel=d, npsh_exigido=e) for j, d, e in n]
+    op = memoria.operacao(r)
+    if op is not None:
+        out["operacao"] = [dict(caso=nome, **o) for nome, o in op]
         out["tipo_operacao"] = m.method_id
         out["v2"] = dict(r.derivados_v2)
     return out
 
 
-def melhor_feixe(rt, p_env, fator_area=1.0, pares=None):
-    """Diagnóstico de um envelope inviável pelo hook `bloqueios` do método: (bloqueios, área
-    do feixe × fator, linha do envelope) da linha com menos bloqueios (critério, caso) e, entre
-    elas, a de menor área. None se o método não diagnostica ou algum caso não prepara."""
-    r, m = rt.resultado, rt.entradas.metodo
-    if r is None or not r.rows or p_env is None or not hasattr(m, "bloqueios"):
-        return None
-    conss = [c for _, c in (restricoes(rt) if pares is None else pares)]
-    if any(c is None for c in conss):
-        return None
-    pcs = m.envelope_case_params(conss, p_env)
-    linhas = [(tuple(sorted(set(m.bloqueios(row.x, conss, pcs, p_env)))), row.derivados.get("area", math.inf) * fator_area,
-               row) for row in r.rows]
-    return min(linhas, key=lambda t: (len(t[0]), t[1]))
-
-
-def _feixe_mais_proximo(rt, p_env, pares=None):
+def _feixe_mais_proximo(rt):
     """MC do trocador inviável: o feixe mais próximo de atender, com os bloqueios por critério e
-    caso e a operação de cada caso nele (mesma física)."""
-    melhor = melhor_feixe(rt, p_env, pares=pares)
-    if melhor is None:
+    caso e a operação de cada caso nele."""
+    fp = memoria.feixe_mais_proximo(rt.resultado)
+    if fp is None:
         return {}
-    bloqueios, _, row = melhor
-    m = rt.entradas.metodo
-    conss = [c for _, c in (restricoes(rt) if pares is None else pares)]
-    nomes = [n for n, _ in rt.entradas.case_set().expand()]
+    bloqueios, row, op, v2 = fp
+    nomes = [n for n, *_ in rt.resultado.preparo]
     rot = cfg()["bloqueios"]
-    op = m.operacao_por_caso(conss, row.x, m.envelope_case_params(conss, p_env))
     return {"feixe_proximo": dict(x=row.x, l=row.y, d_shell=row.derivados.get("d_shell", math.nan),
                                   bloqueios=[dict(criterio=rot.get(c, c), caso=nomes[i] if i >= 0 else "")
                                              for c, i in bloqueios]),
-            "operacao": [dict(caso=n, **o) for n, o in zip(nomes, op)], "tipo_operacao": m.method_id,
-            "v2": dict(m.envelope_derived(row.x, conss, m.envelope_case_params(conss, p_env), p_env))}
+            "operacao": [dict(caso=n, **o) for n, o in op], "tipo_operacao": rt.entradas.metodo.method_id,
+            "v2": v2}
 
 
-def pendencias(rt, oleo_vivo=True):
+def pendencias(rt):
     e = rt.entradas
     sem_fonte = [dict(chave=k, casos=v) for k, v in _sem_fonte(e).items()]
     return dict(revisoes=[dict(chave=v.chave, valor=v.numero if hasattr(v, "numero") else v.valor, fonte=v.fonte,
                                origem=rotulo_origem(v.origem), estado=v.estado, casos=list(v.casos))
                           for v in e.revisoes()],
                 lacunas=[lac.chave for lac in e.lacunas], avisos=[dict(texto=a, casos=n) for a, n in e.avisos()],
-                sem_fonte=sem_fonte, limitacoes=limitacoes(oleo_vivo), propostas=propostas_usadas(rt))
+                sem_fonte=sem_fonte, limitacoes=limitacoes(), propostas=propostas_usadas(rt))
 
 
 def propostas_usadas(rt):
@@ -535,38 +427,37 @@ def documento(ctx, rt):
     """As dez seções do MC do TAG, como dados (números em precisão total)."""
     ident = identificacao(ctx, rt)
     m = rt.entradas.metodo
-    doc = dict(identificacao=ident, alarme=alarme(ctx, rt), conteudo=conteudo_metodo(m), conteudo_tag=cfg().get("tags", {}).get(rt.tag.tag, {}),
+    doc = dict(identificacao=ident, alarme=alarme(rt), conteudo=conteudo_metodo(m), conteudo_tag=cfg().get("tags", {}).get(rt.tag.tag, {}),
                correntes=correntes(ctx, rt), casos=casos(rt), entradas=entradas(rt),
-               lacunas=lacunas(rt), premissas=premissas(ctx, rt, ident), pendencias=pendencias(rt, ctx.oleo_vivo),
+               lacunas=lacunas(rt), premissas=premissas(ctx, rt, ident), pendencias=pendencias(rt),
                calculo=None)
     r = rt.resultado
     if r is None:
         return doc
-    p_env = _parametros_envelope(m, rt.entradas)
+    p_env = r.p_env
     if not r.per_case:
         # o motor parou na preparação de um caso (ex.: cruzamento de temperatura): só diagnóstico
         doc["calculo"] = dict(caso_governante="", indice_governante=None, viavel=False, equacoes=[], rastro=[],
                               iteracoes=[], selecao=None, banda=None, tabela=dict(colunas=[], linhas=[], tem_teto=False),
                               criterios=criterios(rt, None), diagnostico=diagnostico(rt, None),
                               resultados=resultados(rt), nao_aplicaveis=nao_aplicaveis(rt),
-                              series=_series_do_metodo(rt, conteudo_metodo(m).get(
-                                  "graficos", []), p_env), x_referencia=None,
+                              series=_series_do_metodo(rt, conteudo_metodo(m).get("graficos", [])),
+                              x_referencia=None,
                               eixo=m.sweep_axis(p_env).label if p_env else "",
                               unidade_eixo=m.sweep_axis(p_env).unit if p_env else "", exigencia=m.requirement_spec())
         return doc
     i = indice_governante(r)
-    x = x_referencia(rt, p_env)
-    sel = selecao(rt, i)
-    pares = restricoes(rt)   # restrições congeladas de cada caso, avaliadas uma vez por documento
+    x = memoria.x_referencia(r)
+    sel = memoria.selecao(r, i)
     doc["calculo"] = dict(caso_governante=r.case_names[i], indice_governante=i, viavel=r.feasible,
                           equacoes=equacoes(rt, i, sel),
                           rastro=[dict(bloco=x.block, eq=x.eq, var=x.var, formula=x.formula, valor=x.value,
                                        unidade=x.unit) for x in r.per_case[i].trace],
                           iteracoes=iteracoes(rt, i, "gas"), selecao=sel,
-                          banda=m.banda_memorial(p_env) if p_env and hasattr(m, "banda_memorial") else None,
-                          tabela=tabela_casos(rt, x, pares), criterios=criterios(rt, x), diagnostico=diagnostico(rt, x),
+                          banda=memoria.banda(r),
+                          tabela=tabela_casos(rt, x), criterios=criterios(rt, x), diagnostico=diagnostico(rt, x),
                           resultados=resultados(rt), nao_aplicaveis=nao_aplicaveis(rt),
-                          series=series(rt, p_env, pares), x_referencia=x,
+                          series=series(rt), x_referencia=x,
                           eixo=m.sweep_axis(p_env).label if p_env else "", unidade_eixo=m.sweep_axis(p_env).unit
                           if p_env else "", exigencia=m.requirement_spec())
     return doc

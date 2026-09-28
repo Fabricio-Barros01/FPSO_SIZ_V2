@@ -1,0 +1,48 @@
+# Trem de separação SG-001 → V-001 → V-002 (balanco/trem.py): parte do EstadoProcesso.
+#
+# z₀ → SG-001 → x_F → V-001 → x₁ → V-002 → x₂, com ṅ_V = β·ṅ_F e ṅ_L = (1−β)·ṅ_F. A condição
+# (T, P) de cada estágio é a da corrente de gás do vaso NO PRÓPRIO ESTADO — mudar P_D1 ou P_D2
+# nas premissas move o estágio, sem código novo.
+#
+# O que o trem calcula é DIAGNÓSTICO: a vazão de gás por estágio que o processo e o
+# dimensionamento consomem é a de Standing (termo/proveniencia.toml, gas_liberado_por_estagio).
+
+[[estagio]]
+id = "SG-001"
+corrente_gas = "C-04"
+descricao = "separador de água livre: primeira liberação de gás"
+
+[[estagio]]
+id = "V-001"
+corrente_gas = "C-09"
+descricao = "primeiro desgaseificador"
+
+[[estagio]]
+id = "V-002"
+corrente_gas = "C-17"
+descricao = "segundo desgaseificador"
+
+# --------------------------------------------------------------- base molar absoluta
+# REGRA DECLARADA (F5.1), não suposta. O arquivo de casos NÃO traz vazão molar, e as três
+# grandezas que existem (oil_sm3d, produced_gas_sm3d e fluid_compositions) são incompatíveis
+# entre si: a composição é por TIPO DE FLUIDO e os sete tipos aparecem em casos com GOR
+# diferentes (razão GOR do flash / GOR do BOT de 0,62 a 2,16). Por isso a base não sai de um
+# split de fases: sai da MASSA, que é a grandeza que o balanço conserva.
+[base_molar]
+regra = "n_F = m_HC,in / MW_z"
+massa = "m_HC,in = oil_sm3d·ρ_óleo + produced_gas_sm3d·ρ_gás,padrão — os MESMOS dois termos, com as MESMAS massas específicas (lidas do EstadoProcesso), que o balanço põe em C-01"
+mw = "MW_z = Σ zᵢ·MWᵢ com os MW ADOTADOS (banco para os reais, caracterização para os pseudo): não depende de flash nenhum"
+unidade = "kmol/d"
+inclui_gas_de_lift = false
+por_que_nao_o_split = "fixar a base pelo split de fases na condição padrão exigiria escolher entre a base do gás (n_gás/β) e a do óleo (n_óleo/(1−β)), que discordam entre 0,7 % e 116 % nos 16 casos; escolher uma seria inventar quantidade molar para fechar o flash"
+conserva = "a massa de hidrocarboneto é a do balanço (menos o gás de lift, ver a lacuna): o trem e o balanço partem dos mesmos quilogramas"
+
+[[lacuna]]
+id = "composicao_gas_de_lift"
+grandeza = "composição do gás de lift"
+situacao = "ausente"
+fonte_procurada = "BOT I-ET-3010.2K-1200-941-P4X-001 rev. C, §2.3.3 (Service and Lift Gas)"
+o_que_a_fonte_da = "apenas ESPECIFICAÇÃO de envelope — máximo 5 ppmv de H2S, máximo 3 % mol de CO2, máximo 1 ppmv de H2O —, que são limites superiores, não uma composição"
+o_que_existe_na_fonte = "a composição do gás TRANSFERIDO (GT30/GT40/GT50) está na Tabela 2.3.5.1; ela é de outra corrente, que não entra em C-01"
+efeito = "nos casos com lift_gas_sm3d > 0 o balanço soma o lift ao gás de entrada e o converte com a ρ padrão do corte leve do fluido de poço, isto é, atribui ao lift a composição do poço. O trem exclui o lift da base molar e declara a lacuna"
+decisao = "não supor composição; a diferença em relação ao balanço é reportada caso a caso"

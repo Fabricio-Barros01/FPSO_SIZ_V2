@@ -3,13 +3,11 @@
 # viscoso, vai no CASCO, onde Bell-Delaware cobre o escoamento laminar (fator Jr, Branan
 # Eq. 2-29), e a água quente (meio de aquecimento) — água pura de circuito fechado (BOT 2.7.3.7.16: 'All heaters shall use hot water (as heating medium) or electrical resistors') — vai nos TUBOS,
 # turbulenta (Dittus-Boelter). Estudo que a motivou: F13.2 (docs/validacao/14-alarmes.md).
-# A alocação do PFD F1 do Julia (óleo no tubo) está em variantes/p_002_oleo_tubo.toml e é a
-# usada no modo de paridade (topologia_julia). As temperaturas da utilidade são insumos; com
+# As temperaturas da utilidade são insumos; com
 # elas a vazão da utilidade fecha a carga Q_H do balanço, ṁ = q/(cp·ΔT), e as propriedades
 # da água saem da IAPWS na temperatura média.
 tag = "P-002"
 nome = "Aquecedor de óleo"
-topologia_julia = "p_002_oleo_tubo"
 equipamento = "exchanger"
 metodo = "saari_lmtd"
 bloco = "P-002"

@@ -11,6 +11,7 @@ estados — não pergunta, não imprime, não desenha, não grava.
 - Inviabilidade física é estado (`feasible = False` + mensagem); lacuna mantém o TAG
   aguardando entrada; entrada inválida ou contexto incompatível é ValueError.
 """
+import math
 from dataclasses import dataclass
 
 from fpso_siz.balanco.dados import premissas
@@ -19,11 +20,11 @@ from fpso_siz.core import registro
 from fpso_siz.core.casos import case_set_from_config
 from fpso_siz.core.contrato import infeasible_envelope
 from fpso_siz.core.motor import size_envelope
-from fpso_siz.pfd import fluidos
+from fpso_siz.termo import servico as termo
 from fpso_siz.pfd.ajustes import AUTOMATICO, MANUAL, EstadoTAG, canonico_estado, contexto_de
 from fpso_siz.pfd.entradas import cfg, especificacoes, montar, montar_manual
 from fpso_siz.pfd.propostas import NENHUMA, conferir_casos
-from fpso_siz.pfd.tags import avulso, tag, tags, topologia_alternativa
+from fpso_siz.pfd.tags import avulso, tag, tags
 
 AGUARDANDO = "aguardando_entrada"
 DIMENSIONADO = "dimensionado"
@@ -58,15 +59,8 @@ class ResultadoTAG:
 class Contexto:
     """Dados compartilhados por todos os TAGs de uma execução ou sessão."""
 
-    def __init__(self, dados, prem=None, alteracoes=None, balanco=None, propostas=None, oleo_vivo=True,
-                 topologia_julia=False):
+    def __init__(self, dados, prem=None, alteracoes=None, balanco=None, propostas=None):
         self.dados = dados
-        # alocação de correntes: a do projeto (padrão; P-46 no P-002/P-003) ou a do PFD F1 do
-        # Julia (paridade das fixtures e da regressão F10b)
-        self.topologia_julia = topologia_julia
-        # viscosidade do óleo: vivo (Beggs & Robinson sobre o óleo morto do BOT, padrão) ou só
-        # morto (o modo das fases F10b–F13 e das fixtures do PFD F1 do Julia)
-        self.oleo_vivo = oleo_vivo
         # valores propostos para as lacunas (pfd/propostas.py); vazio = nenhum arquivo carregado
         self.propostas = propostas if propostas is not None else NENHUMA
         if self.propostas and dados is not None:
@@ -111,7 +105,7 @@ class Contexto:
     @property
     def versoes(self):
         if self._versoes is None:
-            self._versoes = fluidos.versoes()
+            self._versoes = termo.versoes()
         return self._versoes
 
     def casos(self):
@@ -152,8 +146,6 @@ def preparar(ctx, estado):
         casos = [(i, n) for i, n in enumerate(estado.nomes_casos, 1)]
         return montar_manual(descritor(estado), casos, estado, pfd=False)
     t = tag(estado.id)
-    if ctx.topologia_julia and t.topologia_julia:
-        t = topologia_alternativa(t.topologia_julia)
     if (estado.equipamento, estado.metodo) != (t.equipamento, t.metodo):
         raise ValueError(f"{t.tag}: o estado usa {estado.equipamento}/{estado.metodo}, mas o TAG é "
                          f"dimensionado por {t.equipamento}/{t.metodo}")
@@ -164,8 +156,7 @@ def preparar_tag(ctx, t, estado):
     """preparar com o descritor `t` dado (o do catálogo, ou uma topologia alternativa de estudo)."""
     if estado.modo == MANUAL:
         return montar_manual(t, ctx.casos(), estado, propostas=ctx.propostas)
-    return montar(t, ctx.balanco, ctx.dados, ctx.prem, estado=estado, propostas=ctx.propostas,
-                  oleo_vivo=ctx.oleo_vivo)
+    return montar(t, ctx.balanco, ctx.dados, ctx.prem, estado=estado, propostas=ctx.propostas)
 
 
 def dimensionar(entradas, estado=None):
@@ -180,6 +171,19 @@ def dimensionar(entradas, estado=None):
         except ValueError as e:
             r = infeasible_envelope(cfg()["mensagens"]["conta_impossivel"].format(erro=e))
     return ResultadoTAG(entradas, r, estado)
+
+
+def dividir_vazao(ctx, estado, chaves, fator):
+    """Divide as `chaves` de vazão do TAG por `fator` unidades iguais em paralelo, caso a caso,
+    a partir das entradas que o próprio TAG prepara. Lacuna ou faixa fica como está — e aí o
+    TAG não fica pronto, de modo que ninguém conta N unidades de um vaso que ainda passa o
+    serviço inteiro. Edita `estado` e o devolve (trens da otimização e variantes de alarme)."""
+    for c in preparar(ctx, estado).casos:
+        for chave in chaves:
+            v = c.valores.get(chave)
+            if v is not None and not v.lacuna and not v.faixa and math.isfinite(v.valor):
+                estado.editar(chave, v.valor / fator, [c.num], {})
+    return estado
 
 
 def executar(ctx, estado):
@@ -199,12 +203,12 @@ def blocos_sem_dimensionamento(topologia):
 
 
 def fontes_propriedades():
-    return fluidos.cfg()
+    return termo.cfg()
 
 
-def limitacoes(oleo_vivo=True):
+def limitacoes():
     """Limitações da modelagem adicional (vão para o JSON e o MC de cada TAG)."""
-    return [cfg()["limitacao_oleo"]["vivo" if oleo_vivo else "morto"], *cfg()["limitacoes"]]
+    return list(cfg()["limitacoes"])
 
 
 def rotulo_origem(origem):
@@ -212,9 +216,10 @@ def rotulo_origem(origem):
 
 
 def dimensionar_arquivo(cfg_casos, equipamento=None, metodo=None):
-    """Entrada avulsa no contrato do Julia (`dimensionar --exemplo|--casos`): o arquivo e,
-    para as chaves ausentes, os defaults do método Julia. Preservada para a paridade com
-    as fixtures; o fluxo por TAG/avulso novo usa o adaptador manual. (eq, m, casos, r)."""
+    """Equipamento avulso a partir de um arquivo de casos (`dimensionar --exemplo|--casos`): o
+    arquivo e, para as chaves ausentes, os defaults do método. É a entrada dos exemplos
+    resolvidos da literatura (config/exemplos/) e de um equipamento fora da planta; o avulso
+    da sessão interativa passa pelo adaptador manual. (eq, m, casos, r)."""
     declarado = cfg_casos.get("equipment")
     if equipamento and declarado and declarado != equipamento:
         raise ValueError(f"o arquivo declara equipment = {declarado!r}, mas --equipamento = {equipamento!r}")

@@ -86,10 +86,6 @@ def is_hot(seg):
     return seg.t_in > seg.t_out
 
 
-def is_cold(seg):
-    return seg.t_in < seg.t_out
-
-
 def stream_type(s):
     """"hot" | "cold", derivado do primeiro segmento — só tem sentido depois de
     `validate_streams` aprovar, que é quem garante que os segmentos concordam em direção."""

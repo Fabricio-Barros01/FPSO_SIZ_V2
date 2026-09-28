@@ -50,13 +50,6 @@ SAIDA_PADRAO = RAIZ / "saida" / "_auditoria_fase"
 CATEGORIAS = ("NAO_APLICAVEL", "LACUNA", "INVIAVEL", "ERRO_NUMERICO", "ERRO_OUTPUT")
 ERROS = ("ERRO_NUMERICO", "ERRO_OUTPUT")
 
-# Um método declara que um critério não se aplica a um caso pelo rótulo do mecanismo
-# (`rotulo_mecanismo`): é a única declaração de não aplicabilidade que o contrato hoje
-# oferece, e é positiva — vem do método, não do vazio. Pendência anotada no relatório:
-# promovê-la a hook do contrato, em vez de prefixo de texto.
-PREFIXO_NAO_APLICAVEL = "não aplicável"
-SEM_TETO = ("none", "sem teto de decantação")
-
 # Grandezas que não admitem valor negativo por construção geométrica ou de transporte. A
 # regra é pela UNIDADE do campo do cartão, não pelo nome: a auditoria não cita grandeza.
 # Ficam de fora "m", "W" e "kW" porque ali há campos que são diferenças com sinal (folga de
@@ -147,12 +140,6 @@ class Justificador:
         linhas = self.calc.get("series", {}).get(chave, [])
         return linhas[i[0]] if i and i[0] < len(linhas) else None
 
-    def _sem_teto(self, mecanismo):
-        return mecanismo in SEM_TETO or str(mecanismo).startswith(PREFIXO_NAO_APLICAVEL)
-
-    def _nao_aplicavel_ao_caso(self, mecanismo):
-        return str(mecanismo).startswith(PREFIXO_NAO_APLICAVEL)
-
     # --- classificação
     def classificar(self, caminho, valor):
         regra = getattr(self, "_r_" + molde(caminho).replace("calculo.", "", 1)
@@ -182,7 +169,7 @@ class Justificador:
         return None
 
     def _r_diagnostico_teto(self, caminho, valor):
-        if self._sem_teto(self.r.ceiling_mechanism):
+        if not self.m.teto_aplicavel(self.r.ceiling_mechanism):
             return "NAO_APLICAVEL", f"nenhum caso impõe teto (mecanismo declarado: {self.r.ceiling_mechanism})"
         return None
 
@@ -215,8 +202,8 @@ class Justificador:
 
     def _r_tabela_linhas_teto(self, caminho, valor):
         linha = self._linha(caminho)
-        if linha is not None and self._sem_teto(linha["mecanismo"]):
-            return "NAO_APLICAVEL", f"o caso não impõe teto (mecanismo declarado: {linha['mecanismo']})"
+        if linha is not None and not linha["teto_aplicavel"]:
+            return "NAO_APLICAVEL", f"o caso não impõe teto (mecanismo declarado: {linha['mecanismo_id']})"
         return None
 
     def _r_tabela_linhas_x_isolado(self, caminho, valor):
@@ -232,17 +219,17 @@ class Justificador:
 
     def _r_tabela_linhas_valores(self, caminho, valor):
         linha = self._linha(caminho)
-        if linha is not None and self._nao_aplicavel_ao_caso(linha["mecanismo"]):
-            return "NAO_APLICAVEL", f"o método declara o caso como «{linha['mecanismo']}»"
+        if linha is not None and not linha["criterio_aplicavel"]:
+            return "NAO_APLICAVEL", f"o método declara o critério não aplicável ao caso ({linha['mecanismo_id']})"
         return None
 
     def _r_series_casos_teto(self, caminho, valor):
         linha = self._caso_serie(caminho, "casos")
         i = indices(caminho)
         linhas = self.calc.get("tabela", {}).get("linhas", [])
-        mec = linhas[i[0]]["mecanismo"] if linha is not None and i[0] < len(linhas) else None
-        if mec is not None and self._sem_teto(mec):
-            return "NAO_APLICAVEL", f"o caso não impõe teto (mecanismo declarado: {mec})"
+        tab = linhas[i[0]] if linha is not None and i[0] < len(linhas) else None
+        if tab is not None and not tab["teto_aplicavel"]:
+            return "NAO_APLICAVEL", f"o caso não impõe teto (mecanismo declarado: {tab['mecanismo_id']})"
         return None
 
     def _r_series_operacao_peso_transicao(self, caminho, valor):
@@ -448,30 +435,29 @@ def _conferir_niveis(rt, cartao, envelope, mc_json):
 # ------------------------------------------------------------------ execução e relatório
 # Chaves da identidade que NÃO podem faltar: sem elas o relatório não é atribuível a uma
 # execução, e um gate que não se sabe de onde veio não serve de gate.
-IDENTIDADE_OBRIGATORIA = ("commit", "casos", "oleo", "propostas", "topologia", "regra_fwko",
-                          "premissas_alteradas", "modos_dos_tags")
+IDENTIDADE_OBRIGATORIA = ("commit", "casos", "modelo", "propostas", "premissas_alteradas", "modos_dos_tags")
+# O modelo de processo é um só desde a consolidação (docs/arquitetura/arquitetura-alvo.md): a
+# identidade o declara em vez de listar modos que não existem mais.
+MODELO = ("regra de eficiência do FWKO (P-43); óleo vivo (Beggs & Robinson sobre o óleo morto do BOT); "
+          "alocação de correntes do projeto (P-46)")
 
 
 def identidade(ctx, planta, casos=""):
     """Identidade da execução: o que foi dimensionado, com qual código e sob quais opções.
 
-    Tudo o que muda dimensionamento entra aqui — o arquivo de casos e seu SHA, a regra do
-    FWKO (que muda o balanço), a viscosidade do óleo, a alocação de correntes, as propostas
+    Tudo o que muda dimensionamento entra aqui — o arquivo de casos e seu SHA, as propostas
     que preencheram lacunas, as premissas alteradas e o modo de cada TAG. A proveniência do
     código vem da mesma função que os memoriais usam (`proveniencia_git`), não de outra."""
     commit, sujo = saida_mc.proveniencia_git()
     prop = ctx.propostas
-    balanco = ctx.resultados_balanco if ctx.balanco_resolvido else []
     ident = {
         "commit": commit,
         "arvore_suja": sujo,
         "fpso_siz": __version__,
         "casos": {"arquivo": str(casos) or ctx.dados.origem, "origem": ctx.dados.origem,
                   "sha256": ctx.dados.sha256, "n_casos": len(ctx.dados.casos)},
-        "oleo": "vivo" if ctx.oleo_vivo else "morto",
+        "modelo": MODELO,
         "propostas": ({"arquivo": prop.arquivo, "sha256": prop.sha256} if prop else "não usadas"),
-        "topologia": "pfd_f1_julia" if ctx.topologia_julia else "projeto_p46",
-        "regra_fwko": balanco[0].fwko["regra"] if balanco else None,
         "premissas_alteradas": dict(ctx.alteracoes),
         "modos_dos_tags": {rt.tag.tag: rt.entradas.modo for rt in planta.tags},
         "versoes_propriedades": ctx.versoes,
@@ -499,9 +485,8 @@ def auditar_planta(ctx, planta, pasta, casos=""):
                 aprovada=not erros and ident["completa"])
 
 
-def auditar(casos, pasta, propostas=True, oleo_vivo=True):
-    ctx = servico.Contexto(carregar_casos(casos), oleo_vivo=oleo_vivo,
-                           propostas=mod_propostas.padrao() if propostas else None)
+def auditar(casos, pasta, propostas=True):
+    ctx = servico.Contexto(carregar_casos(casos), propostas=mod_propostas.padrao() if propostas else None)
     return auditar_planta(ctx, dimensionar(contexto=ctx), pasta, casos)
 
 
@@ -532,9 +517,7 @@ def _identidade_md(ident):
               ("versão", ident["fpso_siz"]),
               ("casos", f"`{ident['casos']['arquivo']}` — sha256 `{ident['casos']['sha256'][:12]}`, "
                         f"{ident['casos']['n_casos']} casos"),
-              ("regra do FWKO", ident["regra_fwko"]),
-              ("viscosidade do óleo", ident["oleo"]),
-              ("alocação de correntes", ident["topologia"]),
+              ("modelo de processo", ident["modelo"]),
               ("propostas", prop if isinstance(prop, str) else
                f"`{prop['arquivo']}` — sha256 `{prop['sha256'][:12]}`"),
               ("premissas alteradas", alteradas),
@@ -586,10 +569,9 @@ def main():
     ap.add_argument("--casos", type=Path, default=CASOS_PADRAO if CASOS_PADRAO.exists() else CASOS_FIXTURE)
     ap.add_argument("--saida", type=Path, default=SAIDA_PADRAO)
     ap.add_argument("--sem-propostas", action="store_true")
-    ap.add_argument("--oleo-morto", action="store_true")
     a = ap.parse_args()
     try:
-        rel = auditar(a.casos, a.saida, propostas=not a.sem_propostas, oleo_vivo=not a.oleo_morto)
+        rel = auditar(a.casos, a.saida, propostas=not a.sem_propostas)
     except Exception as e:                                  # noqa: BLE001  (o gate não pode mascarar falha própria)
         print(f"auditoria não pôde rodar: {type(e).__name__}: {e}", file=sys.stderr)
         return 2

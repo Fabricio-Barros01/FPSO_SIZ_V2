@@ -7,7 +7,6 @@ from fpso_siz.balanco.balancos import balanco_global, balancos_por_bloco, topolo
 from fpso_siz.balanco.dados import descritores_premissas
 from fpso_siz.core.configuracao import carregar
 
-ESQUEMA = 2  # 2: cargas com Q_H/Q_C de utilidade e um campo por trocador (TAG)
 
 
 def colunas_correntes():
@@ -63,7 +62,7 @@ def estrutura_balanco(dados, prem, resultados, auditoria):
     """Resultado completo do balanço como dados puros (esquema em docs/esquemas/)."""
     base = {d["nome"]: d for d in descritores_premissas(dados)}
     return {
-        "esquema": ESQUEMA,
+        "esquema": carregar("saida_balanco.toml")["esquema"],
         "gerador": {"pacote": "fpso-siz", "versao": __version__},
         "entrada": {"arquivo": dados.origem, "sha256": dados.sha256},
         "premissas": [dict(d, valor=prem[nome], alterada=prem[nome] != d["valor"]) for nome, d in base.items()],

@@ -8,7 +8,6 @@ pela semente, e o isolamento — a otimização não altera o dimensionamento pa
 Também se fixa o que a rodada NÃO pode fazer: variável sem limite de origem declarada, valor
 apenas proposto como variável de decisão, e lacuna ou caso inativo contando como violação.
 """
-import math
 import os
 from pathlib import Path
 

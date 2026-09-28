@@ -13,7 +13,7 @@ Validado por [`balanco.schema.json`](balanco.schema.json) (JSON Schema 2020-12).
   `alterada` (se foi mudada por `--premissa`).
 - `casos[]`: para cada caso, convergência do reciclo (`convergiu`, `iteracoes`,
   `residuo_reciclo`), `BSW_chegada`, `BSW_FWKO` (BSW do óleo que sai do SG-001) e `FWKO`
-  (F10w: `regra` `eficiencia`/`referencia`, `eta` adotado, `eta_req`, `eta_padrao`,
+  (regra de eficiência, P-43: `eta` adotado, `eta_req`, `eta_padrao`,
   `exigido_acima` = o limite de F-06 exigiu η acima da P-43, e `estado` em texto; nos casos
   sem água `eta` e `eta_req` são `null` e o estado é "não aplicável — sem fase aquosa"),
   propriedades (`rho`, `cp`, `gas_props`), as 26 `correntes` (T em °C,
@@ -21,8 +21,7 @@ Validado por [`balanco.schema.json`](balanco.schema.json) (JSON Schema 2020-12).
   balanços por bloco e global e o `rastro` (CalcTrace: equação, escopo, valor, entradas;
   catálogo em `src/fpso_siz/config/equacoes_balanco.toml`).
 - `auditoria[]`: as verificações independentes, com o maior |desvio| absoluto nos casos
-  (catálogo em `src/fpso_siz/config/auditoria.toml`; `eficiencia_fwko` só na regra de
-  eficiência).
+  (catálogo em `src/fpso_siz/config/auditoria.toml`).
 
 `cargas` (kW), definido em `config/saida_balanco.toml`:
 - `Q_H`: aquecimento por utilidade = P-002 + DWH-001 (Σ `Q_in` dos blocos da topologia);
@@ -35,9 +34,9 @@ Validado por [`balanco.schema.json`](balanco.schema.json) (JSON Schema 2020-12).
 `Q_pre`, `Q_D` e o `Q_C` antigo são `P-001`, `DWH-001` e `P-003`. Os valores numéricos não
 mudaram; mudou só a organização.
 
-A regra do FWKO é a de `config/constantes.toml [modelo]` (eficiência, desde a F10w);
-`fpso-siz balanco --regra-fwko referencia` grava o JSON na regra do script de referência,
-igual ao oráculo (`docs/validacao/12-eficiencia-fwko.md`).
+**Migração do esquema 2:** `FWKO.regra` saiu — há uma regra só (eficiência, P-43). A regra
+do script de referência e a opção `--regra-fwko` saíram com o oráculo na consolidação
+arquitetural (`docs/arquitetura/inventario.md`); nenhum número da regra de eficiência mudou.
 
 ## `correntes.csv`
 Uma linha por caso × corrente (16 × 26 = 416 linhas no BOT). O cabeçalho usa os ids
@@ -89,8 +88,10 @@ Cada JSON contém:
 - cada valor: `valor`, `origem` (balanco, propriedade, premissa, recomendada, metodo,
   usuario, arquivo, lacuna, nao_aplicavel), `fonte`, `tipo`, `pendente`, `faixa` (`[mín, máx]` quando a
   entrada é uma faixa, com `valor` nulo), `revisao` (`""`, `pendente`, `confirmada`,
-  `desatualizada`) e `anterior` (o que a entrada do usuário substituiu: origem, fonte e
-  valor; `null` se não houver registro);
+  `desatualizada`), `anterior` (o que a entrada do usuário substituiu: origem, fonte e
+  valor; `null` se não houver registro) e `propriedade` (id no contrato de proveniência
+  `config/termo/proveniencia.toml` quando o valor é propriedade de fluido — é lá que estão a
+  origem, a validade e os consumidores; vazio nos demais);
 - `envelope`: entrada, resultado, cartão, casos, varredura e rastros; `null` quando o TAG
   aguarda entrada ou está inteiramente inativo.
 - `nao_aplicavel` (F10v, premissa P-42): num caso sem vazão de água e com óleo, as entradas

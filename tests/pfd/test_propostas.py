@@ -265,7 +265,5 @@ def test_sessao_usa_o_padrao_e_permite_desligar():
 
     assert Sessao(casos=CASOS)._propostas.arquivo == mod.ARQUIVO_PADRAO
     s = Sessao(casos=CASOS, propostas=False)
-    assert s._propostas is None and s._flag_sem_propostas() == {"sem-propostas": True, "oleo-morto": False,
-                                                                   "topologia-julia": False}
-    s = Sessao(casos=CASOS, oleo_vivo=False)
-    assert s._flag_sem_propostas() == {"sem-propostas": False, "oleo-morto": True, "topologia-julia": False} and not s.ctx.oleo_vivo
+    assert s._propostas is None and s._flag_sem_propostas() == {"sem-propostas": True}
+    assert Sessao(casos=CASOS)._flag_sem_propostas() == {"sem-propostas": False}

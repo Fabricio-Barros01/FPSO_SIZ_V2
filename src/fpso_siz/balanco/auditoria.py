@@ -17,7 +17,6 @@ from fpso_siz.core.unidades import HORAS_POR_DIA, SEGUNDOS_POR_DIA, SEGUNDOS_POR
 COMP = ("O", "W", "D", "G")  # declarado aqui de propósito: independência do motor
 LIQ = ("O", "W", "D")
 GAS_VRU = ("C-04", "C-09", "C-17")
-EFICIENCIA = "eficiencia"  # regra do FWKO por eficiência (F10w); declarado aqui: independência do motor
 
 
 def auditar(resultados, dados, prem):
@@ -117,7 +116,7 @@ def auditar(resultados, dados, prem):
             abs(bs("C-06") - r.BSW_F),
             abs(bs("C-11") - (P["BSW_pre"] if lv("C-11") > 0 else 0.0)),
             abs(bs("C-21") - (P["BSW_t"] if lv("C-21") > 0 else 0.0))))
-        if r.fwko.get("regra") == EFICIENCIA and lv("C-03") > 0:
+        if lv("C-03") > 0:
             # η_A = máx(η_padrão; η_req) e BSW_C06 ≤ BSW_lim, pelas definições, a partir das correntes
             eta = lv("C-05") / lv("C-03")
             eta_req = 1 - P["BSW_F"] / (1 - P["BSW_F"]) * ov("C-06") / lv("C-03")

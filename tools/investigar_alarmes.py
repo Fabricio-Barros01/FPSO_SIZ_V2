@@ -1,13 +1,11 @@
-"""Relatório dos alarmes de inviabilidade (F13): docs/validacao/14-alarmes.md.
+"""Relatório dos alarmes de inviabilidade (config/pfd/alarmes.toml).
 
-Roda a planta com óleo morto (--oleo-morto) e, com o óleo vivo padrão, sem e com as propostas
-(config/pfd/pendencias_propostas.toml); lista os
-TAGs inviáveis com a evidência do motor, as hipóteses de config/pfd/alarmes.toml e o
-resultado de cada variante pelo mesmo serviço por TAG. Para o SG-001, refaz a cadeia de
-decantação do caso do teto a partir dos operandos do rastro (conferência numérica).
-Determinístico: os números vêm do código; nada é digitado.
+Roda a planta sem e com as propostas (config/pfd/pendencias_propostas.toml), lista os TAGs
+inviáveis com a evidência do motor, as hipóteses registradas e o resultado de cada variante de
+estudo pelo mesmo serviço por TAG (`pfd/investigacao.executar_variante`). É daqui — e não do
+memorial — que as variantes são executadas. Determinístico: os números vêm do código.
 
-    uv run python tools/investigar_alarmes.py [--saida docs/validacao/14-alarmes.md]
+    uv run python tools/investigar_alarmes.py [--saida saida/alarmes.md]
 """
 import argparse
 import math
@@ -52,30 +50,6 @@ def secao_planta(titulo, ctx, planta):
     return out + [""]
 
 
-def _teto(rt):
-    """Linha da conta à mão do teto de decantação no caso do teto (operandos do rastro)."""
-    r = rt.resultado
-    i = r.case_names.index(r.ceiling_case)
-    tr = r.per_case[i].trace
-    ho = tr.operandos[("settling", "(h_o)max")]
-    beta = tr.operandos[("settling", "d_max (água em óleo)")]
-    ho_mao = ho["coef"] * ho["tr_o"] * ho["dsg"] * ho["dm"] ** 2 / ho["mu_o"]
-    dmax_mao = ho_mao / beta["beta"]
-    return (f"caso {r.ceiling_case}: (h_o)max = {ho['coef']} · {ho['tr_o']} min · ΔSG {f(ho['dsg'], 4)} · "
-            f"({f(ho['dm'])} µm)² / {f(ho['mu_o'], 2)} cP = {f(ho_mao, 1)} mm; β = {f(beta['beta'], 4)}; "
-            f"d_max = {f(dmax_mao, 1)} mm. Rastro: {f(r.ceiling, 1)} mm (diferença {abs(dmax_mao - r.ceiling):.1e} mm)")
-
-
-def conferencia_sg001(morto, vivo):
-    rm, rv = morto.tag("SG-001"), vivo.tag("SG-001")
-    return ["## Conferência numérica do teto do SG-001", "",
-            f"- Óleo morto ({rm.status}): {_teto(rm)}.",
-            f"- Óleo vivo ({rv.status}, D = {f(rv.resultado.x)} mm): {_teto(rv)}.", "",
-            "A cadeia não tem erro numérico: o teto decorre das entradas. A única diferença entre as duas linhas é "
-            "µ_o (óleo morto do BOT × óleo vivo por Beggs & Robinson com o Rs da saída de óleo C-06): a hipótese de "
-            "premissa da viscosidade explica o alarme (docs/validacao/16-oleo-vivo.md).", ""]
-
-
 def estudo_p44(ctx, planta):
     """Bombas com e sem a P-44 (variante sem_p44: banda em todos os casos, regra do Julia)."""
     out = ["## Estudo da P-44 (banda de velocidade pelo caso de projeto)", "",
@@ -103,30 +77,27 @@ def hipoteses():
 
 def gerar():
     dados = carregar_casos(CASOS)
-    ctxm = servico.Contexto(dados, oleo_vivo=False)
-    pm = dimensionar(contexto=ctxm)
     ctx0 = servico.Contexto(dados)
     p0 = dimensionar(contexto=ctx0)
     ctx1 = servico.Contexto(dados, propostas=mod_propostas.carregar(PROPOSTAS))
     p1 = dimensionar(contexto=ctx1)
-    linhas = ["# F13 — alarmes de inviabilidade: anotação e investigação", "",
-              "Gerado por `tools/investigar_alarmes.py`; todos os números saem do motor e do rastro.", "",
+    linhas = ["# Alarmes de inviabilidade: anotação e investigação", "",
+              "Gerado por `tools/investigar_alarmes.py`; todos os números saem do serviço por TAG.", "",
               "A unidade do BOT (I-ET-3010.2K-1200-941-P4X-001, rev. C, em `docs/bot/`) é um projeto básico real:",
               "um TAG sem equipamento que atenda aos casos é **alarme** de erro de premissa, numérico ou de modelo,",
               "nunca conclusão de projeto. Nenhuma variante altera o cálculo padrão; a decisão é do usuário.", ""]
-    linhas += secao_planta("Planta com óleo morto (--oleo-morto), sem propostas", ctxm, pm)
-    linhas += secao_planta("Planta sem propostas (catálogo com fonte; óleo vivo)", ctx0, p0)
-    linhas += secao_planta("Planta com as propostas (pendencias_propostas.toml, status proposto; óleo vivo)", ctx1, p1)
+    linhas += secao_planta("Planta sem propostas (catálogo com fonte)", ctx0, p0)
+    linhas += secao_planta("Planta com as propostas (pendencias_propostas.toml, status proposto)", ctx1, p1)
     linhas += estudo_p44(ctx1, p1)
-    linhas += conferencia_sg001(pm, p0)
     linhas += hipoteses()
     return "\n".join(linhas) + "\n"
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--saida", type=Path, default=RAIZ / "docs" / "validacao" / "14-alarmes.md")
+    ap.add_argument("--saida", type=Path, default=RAIZ / "saida" / "alarmes.md")
     a = ap.parse_args()
+    a.saida.parent.mkdir(parents=True, exist_ok=True)
     a.saida.write_text(gerar(), encoding="utf-8")
     print(a.saida)
 

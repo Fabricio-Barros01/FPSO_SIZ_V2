@@ -7,7 +7,7 @@ operações do script de referência (paridade byte a byte do memorial).
 """
 from fpso_siz.balanco.balancos import balanco_bloco, balanco_global, topologia
 from fpso_siz.balanco.dados import constantes, pocos
-from fpso_siz.balanco.modelo import COMP, EFICIENCIA, LIQUIDOS, resolver_caso
+from fpso_siz.balanco.modelo import COMP, LIQUIDOS, resolver_caso
 from fpso_siz.balanco.propriedades import gas_props, poco_do_fluido, standing_rs
 from fpso_siz.core.configuracao import carregar
 from fpso_siz.core.unidades import HORAS_POR_DIA, POR_CENTO, PPM_POR_UNIDADE, SEGUNDOS_POR_HORA, c_para_k
@@ -247,21 +247,17 @@ def residuos_componentes(r):
 
 # ------------------------------------------------------------------ sensibilidade
 def sensibilidade(resultados, dados, prem):
-    """Casos avaliados e [(caso, rótulo, resultado)] para cada variação declarada. As corridas
-    usam a mesma regra do FWKO dos `resultados`; variação com `regra` só vale nessa regra."""
+    """Casos avaliados e [(caso, rótulo, resultado)] para cada variação declarada."""
     cfg = carregar("sensibilidade_balanco.toml")
-    regra = resultados[0].fwko["regra"]
     iQH = max(range(len(resultados)), key=lambda i: resultados[i].duties["Q_H"])
     casos = [resultados[iQH].num, *cfg["casos_fixos"]]
     corridas = []
     for n in casos:
         caso = dados.caso(n)
         for v in cfg["variacoes"]:
-            if v.get("regra", regra) != regra:
-                continue
             p = dict(prem)
             p.update(v["alteracoes"])
-            corridas.append((n, v["rotulo"], resolver_caso(caso, dados, p, regra)))
+            corridas.append((n, v["rotulo"], resolver_caso(caso, dados, p)))
     return casos, corridas
 
 
@@ -333,7 +329,7 @@ def verificacao_fisica(resultados, prem):
         for r in resultados:
             b_in, b_out = bsw(r, s["entrada"]), bsw(r, s["oleo"])
             esperado = min(b_in, spec)
-            if "eficiencia" in s and r.fwko["regra"] == EFICIENCIA:
+            if "eficiencia" in s:
                 esperado = _bsw_por_eficiencia(r, s, prem[s["eficiencia"]], spec)
             separadores.append(dict(bloco=s["bloco"], premissa=s["premissa"], num=r.num, entrada=b_in, saida=b_out,
                                     esperado=esperado, ok=abs(b_out - esperado) <= tol * max(1, spec)

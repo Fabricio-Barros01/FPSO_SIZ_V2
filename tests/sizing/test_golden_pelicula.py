@@ -1,10 +1,10 @@
 """Caso-ouro e validação da película do lado tubo nos três regimes (`sizing/pelicula.py`).
 
-O oráculo é `tests/fixtures/python_ref/golden_pelicula_tubo.json`, gerado por
-`tools/gerar_golden_pelicula.py` — um script **independente**, que digita as equações e os
-coeficientes da própria página do Branan e não importa nada de `fpso_siz.sizing`. Por isso ele é
-caso-ouro e não espelho: se o módulo e o script discordarem, um dos dois está errado, e o valor
-publicado na fonte decide.
+O oráculo é `tests/fixtures/python_ref/golden_pelicula_tubo.json`, gerado por um script
+**independente** (`tools/gerar_golden_pelicula.py`, no histórico do Git até o commit `bd87be0`)
+que digitava as equações e os coeficientes da própria página do Branan sem importar nada de
+`fpso_siz.sizing`. Por isso ele é caso-ouro e não espelho: se o módulo e a fixture discordarem, um
+dos dois está errado, e o valor publicado na fonte decide.
 
 Cobre, na ordem do aceite: caso-ouro ponto a ponto, conta à mão, verificação dimensional, limites
 de validade, comportamento nos três regimes, continuidade nas fronteiras, regressão do

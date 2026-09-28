@@ -120,6 +120,10 @@ class MetodoVaso(MetodoTOML):
     def rotulo_mecanismo(self, mecanismo):
         return mechanism_label(mecanismo)
 
+    def mecanismos_nao_aplicaveis(self):
+        """Caso sem fase aquosa (P-42): decantação e retenção da água não se aplicam."""
+        return frozenset({SEM_FASE_AQUOSA})
+
     def cross_section(self, c):
         """Vaso meio cheio: 3 faixas com interface líquido-líquido, 2 sem; metade de cima é gás."""
         if math.isnan(c.beta):

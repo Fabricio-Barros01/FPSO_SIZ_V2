@@ -1,5 +1,7 @@
 # Fase 3 — serviço termodinâmico ativo, exercitado na planta
 
+> **Histórico.** Registro de uma etapa anterior à consolidação arquitetural (2026-09-28): o serviço foi fundido em `termo/servico.py` (uma API; o flash de água, salmoura e hidrocarboneto sem pseudo-componentes, que duplicava as propriedades, saiu). O funcionamento vigente está em [`../arquitetura/arquitetura-alvo.md`](../arquitetura/arquitetura-alvo.md).
+
 Gerado por `tools/servico_termodinamico.py`. O serviço é `pfd/estado_termodinamico.py`: `flash_tp(T, P, z, fluido) → EstadoTermodinamico`.
 
 > **O serviço ainda NÃO alimenta o balanço nem o dimensionamento.** Esta fase o disponibiliza; integrar ao processo é a Fase 5, e a fração pesada (surrogate n-C40/n-C33) é a Fase 4. Nenhum número do programa mudou — há paridade bit a bit.

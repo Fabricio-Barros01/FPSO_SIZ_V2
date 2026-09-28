@@ -20,6 +20,8 @@ from dataclasses import dataclass, field
 from fpso_siz.core.corrente import STREAM_KEYS, stream_from_case, stream_parameters
 from fpso_siz.core.trace import Rastro
 
+SEM_TETO = "none"   # mecanismo de teto de um caso que não impõe teto (código, não rótulo)
+
 
 # ------------------------------------------------------------------ descritores de apresentação
 @dataclass(frozen=True)
@@ -115,12 +117,21 @@ class EnvelopeResult:
     # extensão do V2 (sem par no Julia): grandezas do equipamento que dependem de TODOS os
     # casos no ponto escolhido (ex.: potência máxima operacional da bomba). Vazio = Julia.
     derivados_v2: dict = field(default_factory=dict)
+    # o que o motor avaliou para chegar aqui, guardado para que a memória de cálculo LEIA em
+    # vez de re-preparar os casos (core/memoria.py): o método, a preparação de cada caso
+    # [(nome, entrada, restrições ou None, parâmetros)], os parâmetros do envelope e os
+    # parâmetros com que cada caso é admitido.
+    metodo: object = field(default=None, compare=False, repr=False)
+    preparo: tuple = field(default=(), compare=False, repr=False)
+    p_env: object = field(default=None, compare=False, repr=False)
+    pcs: tuple = field(default=(), compare=False, repr=False)
 
 
 def infeasible_envelope(message, case_names=(), rows=(), per_case=(), ceiling=math.nan, ceiling_case="",
-                        ceiling_mechanism="none"):
+                        ceiling_mechanism="none", metodo=None, preparo=(), p_env=None, pcs=()):
     return EnvelopeResult(False, str(message), math.nan, math.nan, {}, "none", "", ceiling, ceiling_case,
-                          ceiling_mechanism, list(case_names), list(rows), [], list(per_case))
+                          ceiling_mechanism, list(case_names), list(rows), [], list(per_case),
+                          metodo=metodo, preparo=tuple(preparo), p_env=p_env, pcs=tuple(pcs))
 
 
 def column_value(row, col):
@@ -265,6 +276,17 @@ class MetodoDimensionamento:
         diz. O que não estiver declarado aqui e mesmo assim faltar é defeito, e é o que o
         gate de auditoria (`tools/auditar_saida_pfd.py`) cobra."""
         return {}
+
+    def mecanismos_nao_aplicaveis(self):
+        """Códigos de `ceiling_mechanism` que declaram um critério NÃO aplicável ao caso (ex.:
+        caso sem fase aquosa num vaso trifásico: a decantação não existe). Padrão: nenhum.
+
+        É por código, não pelo rótulo: o que se lê em `rotulo_mecanismo` é apresentação."""
+        return frozenset()
+
+    def teto_aplicavel(self, mecanismo):
+        """O caso impõe um teto que faz sentido reportar?"""
+        return mecanismo != SEM_TETO and mecanismo not in self.mecanismos_nao_aplicaveis()
 
     def sweep_columns(self):
         raise NotImplementedError

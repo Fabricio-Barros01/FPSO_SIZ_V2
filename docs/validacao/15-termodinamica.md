@@ -1,5 +1,7 @@
 # F14 — termodinâmica preliminar: balanço × propriedades do ChEDL
 
+> **Histórico.** Registro de uma etapa anterior à consolidação arquitetural (2026-09-28): a comparação F14 (`pfd/termodinamica.py`) saiu; a proveniência vigente está em `config/termo/proveniencia.toml`. O funcionamento vigente está em [`../arquitetura/arquitetura-alvo.md`](../arquitetura/arquitetura-alvo.md).
+
 Gerado por `tools/termodinamica_preliminar.py` (regra padrão do FWKO; balanço inalterado). Versões: thermo 0.6.1, chemicals 1.5.2. IAPWS-95/2008/2011 via `chemicals` (a mesma norma do pacote `iapws`, sem dependência nova).
 
 ## cp da fase aquosa

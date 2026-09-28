@@ -11,7 +11,7 @@ sai de UMA origem, nesta precedência:
 
 e carrega a origem, a fonte e o estado de revisão (JSON, terminal e MC). O manual não
 consulta o balanço nem o ChEDL. As propriedades na condição do equipamento vêm de
-pfd/fluidos.py e vão para o rastro do caso (bloco "propriedades"); cada entrada resolvida
+pfd/termo.py e vão para o rastro do caso (bloco "propriedades"); cada entrada resolvida
 vai para o bloco "entradas". Lacuna é NaN e deixa o TAG "aguardando entrada": pela regra
 das fontes, nada sem fonte citável é suposto.
 """
@@ -25,11 +25,12 @@ from fpso_siz.core.casos import Case, CaseSet
 from fpso_siz.core.configuracao import carregar
 from fpso_siz.core.formato_julia import jl
 from fpso_siz.core.ieee import div
-from fpso_siz.core.parametros import group_instance, in_group, instance_key
+from fpso_siz.core.parametros import group_instance, in_group
 from fpso_siz.core.trace import Rastro
 from fpso_siz.core.unidades import (HORAS_POR_DIA, SEGUNDOS_POR_HORA, kj_para_j, kw_para_w, mm_para_m,
                                     sm3sm3_para_scf_stb)
-from fpso_siz.pfd import fluidos
+from fpso_siz.termo import proveniencia
+from fpso_siz.termo import servico as termo
 from fpso_siz.pfd.ajustes import MANUAL, estado_legado
 
 BLOCO = "entradas"
@@ -67,6 +68,7 @@ class Valor:
     faixa: tuple = ()      # (mín, máx) quando a entrada é uma faixa (arquivo/manual); valor = NaN
     revisao: str = ""      # "" | pendente | confirmada | desatualizada
     anterior: dict = None  # o que a entrada do usuário substituiu: {origem, fonte, valor}
+    propriedade: str = ""  # id no contrato de proveniência (termo/proveniencia.toml), se o valor é propriedade
 
     @property
     def lacuna(self):
@@ -197,12 +199,11 @@ class _Pendente(Exception):
 # ------------------------------------------------------------------ contexto de um caso
 class _Caso:
     def __init__(self, tag, metodo, specs, r, dados, prem, ajustes, importados=None, arquivo="", propostas=None,
-                 num=None, oleo_vivo=True):
+                 num=None):
         self.tag, self.metodo, self.specs = tag, metodo, specs
         self.propostas, self.num_caso = propostas, num
         self.r, self.dados, self.prem, self.aj = r, dados, prem, ajustes
         self.manual = importados is not None     # manual: não consulta balanço nem ChEDL
-        self.oleo_vivo = oleo_vivo and not self.manual
         self.imp, self.arquivo = importados or {}, arquivo
         self.padroes = metodos().get(metodo.method_id, {})
         self.rastro = Rastro()
@@ -251,7 +252,8 @@ class _Caso:
             return Valor(math.nan, LACUNA, f"não foi possível calcular: {erro}", pendente=(chave,))
         if not math.isfinite(v.valor):
             return Valor(math.nan, LACUNA, v.fonte + "; resultado não finito", pendente=(chave,))
-        return v
+        prop = proveniencia.da_regra(regra["regra"])
+        return replace(v, propriedade=prop) if prop else v
 
     def _proposta(self, chave):
         """Valor do pendencias_propostas.toml para a lacuna, se carregado (origem própria)."""
@@ -320,12 +322,12 @@ def _rs(ctx, corrente):
 def _oleo(ctx, T, rotulo, rs_corrente=None):
     """Óleo na condição: morto (BOT, P-40) e, no automático com óleo vivo, corrigido pelo gás
     dissolvido da corrente `rs_corrente` (Beggs & Robinson)."""
-    vivo = ctx.oleo_vivo and rs_corrente is not None
+    vivo = not ctx.manual and rs_corrente is not None   # o Rs vem do balanço, que o manual não consulta
     chave = ("oleo", rotulo, rs_corrente if vivo else None)
     if chave not in ctx._props:
         tr = Rastro()
         poco = pocos()[poco_do_fluido(ctx.dados, ctx.r.fluid)]
-        o = fluidos.oleo(poco, ctx.r.rho["O"], T, tr, _rs(ctx, rs_corrente) if vivo else None)
+        o = termo.oleo(poco, ctx.r.rho["O"], T, tr, _rs(ctx, rs_corrente) if vivo else None)
         ctx.anexar(tr, f"{rotulo}, Rs de {rs_corrente}" if vivo else rotulo)
         ctx._props[chave] = o
     return ctx._props[chave]
@@ -337,7 +339,7 @@ def _fracao_sal(ctx, corrente):
     s = ctx.r.streams[corrente]
     sal = cfg()["sal"]
     massa = {c: s[c] for c in cfg()["fases"]["agua"]}
-    w = {c: fluidos.fracao_sal(ctx.prem[sal[c][0]], ctx.prem[sal[c][1]]) for c in massa}
+    w = {c: termo.fracao_sal(ctx.prem[sal[c][0]], ctx.prem[sal[c][1]]) for c in massa}
     total = sum(massa.values())
     if total > 0:
         return sum(massa[c] * w[c] for c in massa) / total
@@ -348,7 +350,7 @@ def _aquosa(ctx, corrente, T, rotulo):
     chave = ("agua", corrente, rotulo)
     if chave not in ctx._props:
         tr = Rastro()
-        a = fluidos.salmoura_fracao(T, _fracao_sal(ctx, corrente), tr)
+        a = termo.salmoura_fracao(T, _fracao_sal(ctx, corrente), tr)
         ctx.anexar(tr, f"{corrente}, {rotulo}" if corrente != rotulo else corrente, a.avisos)
         ctx._props[chave] = a
     return ctx._props[chave]
@@ -358,7 +360,7 @@ def _gas(ctx, corrente):
     chave = ("gas", corrente)
     if chave not in ctx._props:
         tr = Rastro()
-        g = fluidos.gas(ctx.r.gp["y"], ctx.r.gp["MW"], ctx.r.T[corrente], ctx.r.P[corrente], tr)
+        g = termo.gas(ctx.r.gp["y"], ctx.r.gp["MW"], ctx.r.T[corrente], ctx.r.P[corrente], tr)
         ctx.anexar(tr, corrente, g.avisos)
         ctx._props[chave] = g
     return ctx._props[chave]
@@ -453,7 +455,7 @@ def r_viscosidade_fase(ctx, alvo, corrente, fase, t=None, continua=None, rs=None
         ctx.aviso(f"{corrente}: fase contínua ({sub_c}) ausente; usada a μ da fase {sub_d}")
         return Valor(p_d.mu, "propriedade", f"{corrente}: μ da fase {sub_d}")
     tr = Rastro()
-    mu, avisos = fluidos.emulsao(p_c.mu, p_d.mu, v_d / (v_c + v_d), tr)
+    mu, avisos = termo.emulsao(p_c.mu, p_d.mu, v_d / (v_c + v_d), tr)
     _, rotulo = ctx.temperatura(t)
     ctx.anexar(tr, f"{corrente}, {rotulo}" if corrente != rotulo else corrente, avisos)
     nota = _nota(p_c, ctx, corrente, rs) or _nota(p_d, ctx, corrente, rs)
@@ -474,7 +476,7 @@ def r_compressibilidade_gas(ctx, alvo, corrente):
 
 def r_pressao_vapor_saturado(ctx, alvo, corrente):
     tr = Rastro()
-    pv = fluidos.pressao_vapor_saturado(ctx.r.P[corrente], tr)
+    pv = termo.pressao_vapor_saturado(ctx.r.P[corrente], tr)
     ctx.anexar(tr, corrente)
     return Valor(pv, "propriedade", f"{corrente}: líquido no ponto de bolha, Pv = P ({tr.entries[0].eq})")
 
@@ -499,7 +501,7 @@ def _utilidade(ctx, entrada, saida):
     chave = ("utilidade", entrada, saida)
     if chave not in ctx._props:
         tr = Rastro()
-        ctx._props[chave] = fluidos.agua_saturada((t_in + t_out) / 2, tr)
+        ctx._props[chave] = termo.agua_saturada((t_in + t_out) / 2, tr)
         ctx.anexar(tr, "utilidade")
     return t_in, t_out, ctx._props[chave]
 
@@ -762,8 +764,8 @@ def especificacoes(tag, pfd=True):
     return eq, m, specs
 
 
-def montar(tag, balanco, dados, prem, ajustes=None, estado=None, propostas=None, oleo_vivo=True):
-    """Adaptador automático: entradas do TAG nos casos do balanço (`balanco`: ResultadoCaso
+def montar(tag, balanco, dados, prem, ajustes=None, estado=None, propostas=None):
+    """Adaptador automático: entradas do TAG nos casos do balanço (`balanco`: EstadoProcesso
     de cada caso). `estado` (EstadoTAG) ou `ajustes` (formato F10b) trazem o que o usuário
     informou e revisou."""
     eq, m, specs = especificacoes(tag)
@@ -773,8 +775,7 @@ def montar(tag, balanco, dados, prem, ajustes=None, estado=None, propostas=None,
     _validar_estado(tag, estado, specs, {r.num for r in balanco})
     casos = []
     for r in balanco:
-        ctx = _Caso(tag, m, specs, r, dados, prem, estado.ajustes_do_caso(r.num), propostas=propostas, num=r.num,
-                    oleo_vivo=oleo_vivo)
+        ctx = _Caso(tag, m, specs, r, dados, prem, estado.ajustes_do_caso(r.num), propostas=propostas, num=r.num)
         valores = _auditar(_fase_aquosa(m, {k: ctx.valor(k) for k in specs}), estado, r.num)
         _rastrear(ctx, valores, specs)
         ativo, motivo = _atividade(tag, ctx, valores, specs)

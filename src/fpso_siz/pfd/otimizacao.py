@@ -194,14 +194,8 @@ def montar_ajustes(ctx, geral, trens):
         ajustes[ident] = e
     for ident, (fator, chaves) in trens.items():
         if fator > 1:
-            e = ajustes.get(ident) or servico.estado_inicial(ident)
-            rt0 = servico.dimensionar(servico.preparar(ctx, e), e)
-            for c in rt0.entradas.casos:
-                for chave in chaves:
-                    v = c.valores.get(chave)
-                    if v is not None and not v.lacuna and not v.faixa and math.isfinite(v.valor):
-                        e.editar(chave, v.valor / fator, [c.num], {})
-            ajustes[ident] = e
+            ajustes[ident] = servico.dividir_vazao(ctx, ajustes.get(ident) or servico.estado_inicial(ident),
+                                                   chaves, fator)
     return ajustes
 
 

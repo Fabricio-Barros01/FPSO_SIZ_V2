@@ -12,9 +12,8 @@ nome_caso = "BOT {num:02d} — {nome}"
 
 # Limitações da modelagem adicional (não alteram o balanço preliminar). A do óleo depende do
 # modo da viscosidade (padrão: óleo vivo; --oleo-morto: só o óleo morto do BOT).
-limitacao_oleo.vivo = "Óleo vivo: μ de Beggs & Robinson (1975) sobre o óleo morto do BOT, com o Rs (Q_G/Q_O padrão) do balanço (Standing); correlação fora do acervo local, sem PVT medido; sem Bo; densidade padrão do balanço."
-limitacao_oleo.morto = "Óleo morto: sem correção de óleo vivo nem Bo; densidade padrão do balanço."
 limitacoes = [
+    "Óleo vivo: μ de Beggs & Robinson (1975) sobre o óleo morto do BOT, com o Rs (Q_G/Q_O padrão) do balanço (Standing); correlação fora do acervo local, sem PVT medido; sem Bo; densidade padrão do balanço.",
     "Volume do líquido: óleo + fase aquosa; volume do gás dissolvido não modelado.",
     "Utilidades: água pura como líquido saturado na temperatura média; pressão do circuito não informada.",
     "Defaults de geometria e recomendações com fonte devem ser revisados no projeto.",

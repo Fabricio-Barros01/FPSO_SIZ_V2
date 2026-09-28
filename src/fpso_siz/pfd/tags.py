@@ -22,7 +22,6 @@ class Tag:
     recomendadas: dict = field(default_factory=dict)  # chave → {valor, fonte, perguntar}
     insumos: dict = field(default_factory=dict)       # entradas do TAG que não são do método
     inativo_se: dict = field(default_factory=dict)
-    topologia_julia: str = ""                         # variante com a alocação do PFD F1 do Julia (paridade)
 
     def resolver(self):
         """(equipamento, método) registrados."""
@@ -37,7 +36,7 @@ def _tag(nome_arquivo, pasta=PASTA):
         raise ValueError(f"{nome_arquivo}: faltam os campos {faltam}")
     return Tag(d["tag"], d["nome"], d["equipamento"], d["metodo"], d["bloco"], d.get("condicao", ""),
                dict(d.get("entradas", {})), dict(d.get("recomendadas", {})), dict(d.get("insumos", {})),
-               dict(d.get("inativo_se", {})), d.get("topologia_julia", ""))
+               dict(d.get("inativo_se", {})))
 
 
 VARIANTES = "pfd/variantes"

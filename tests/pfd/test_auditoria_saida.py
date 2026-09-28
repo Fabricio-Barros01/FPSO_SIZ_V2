@@ -14,6 +14,7 @@ from pathlib import Path
 
 import pytest
 
+from fpso_siz.core import memoria
 from fpso_siz.pfd import memorial as mc
 
 RAIZ = Path(__file__).resolve().parents[2]
@@ -22,8 +23,8 @@ TROCADORES = ("P-002", "P-003")
 
 def _identidade_falsa(gate):
     return dict(commit="0" * 12, arvore_suja=False, fpso_siz="0", faltando=[], completa=True,
-                casos=dict(arquivo="x", origem="x", sha256="0" * 64, n_casos=0), oleo="vivo",
-                propostas="não usadas", topologia="projeto_p46", regra_fwko="eficiencia",
+                casos=dict(arquivo="x", origem="x", sha256="0" * 64, n_casos=0), modelo=gate.MODELO,
+                propostas="não usadas",
                 premissas_alteradas={}, modos_dos_tags={}, versoes_propriedades={})
 
 
@@ -70,7 +71,7 @@ def test_governante_bate_com_a_varredura_individual_onde_a_grade_contem_o_x(plan
     mesmo; ela só passou a responder onde antes devolvia vazio."""
     rt = planta_propostas.tag(ident)
     r = rt.resultado
-    govs = mc.governantes(rt, r.x)
+    govs = memoria.governantes(r, r.x)
     conferidos = 0
     for i, pc in enumerate(r.per_case):
         linha = next((li for li in pc.sweep if li.x == r.x), None)
@@ -86,7 +87,7 @@ def test_capacidades_batem_com_as_da_varredura_individual(planta_propostas):
     varredura de cada caso e agora vêm de `per_constraint` sobre as restrições do caso."""
     rt = planta_propostas.tag("V-001")
     r = rt.resultado
-    caps = mc.capacidades(rt, r.x)
+    caps = memoria.capacidades(r, r.x)
     esperado = {}
     for pc in r.per_case:
         linha = next((li for li in pc.sweep if li.x == r.x), None)
@@ -136,7 +137,7 @@ def test_o_gate_confere_os_tres_niveis(relatorio, planta_propostas):
 
 def test_travessao_sem_justificativa_reprova(gate, planta_propostas, tmp_path, monkeypatch):
     """O defeito do P-002 reintroduzido à força: o gate tem de pegá-lo como ERRO_OUTPUT."""
-    monkeypatch.setattr(mc, "governantes", lambda rt, x, pares=None: [None] * len(rt.resultado.case_names))
+    monkeypatch.setattr(memoria, "governantes", lambda r, x: [None] * len(r.case_names))
     _, achados = gate.auditar_tag(planta_propostas.contexto, planta_propostas.tag("P-002"), tmp_path)
     perdidos = [a for a in achados if a["caminho"].endswith(".governante")]
     assert perdidos and all(a["categoria"] == "ERRO_OUTPUT" and a["erro"] for a in perdidos)
@@ -167,18 +168,17 @@ def test_a_identidade_registra_tudo_que_muda_dimensionamento(relatorio, gate, pl
     ident = relatorio["identidade"]
     assert ident["completa"] and not ident["faltando"]
     assert set(gate.IDENTIDADE_OBRIGATORIA) <= set(ident)
-    assert ident["commit"] and ident["regra_fwko"]
+    assert ident["commit"] and ident["modelo"] == gate.MODELO
     assert ident["casos"]["sha256"] == planta_propostas.contexto.dados.sha256
-    assert ident["oleo"] == "vivo" and ident["topologia"] == "projeto_p46"
     assert ident["propostas"]["sha256"] == planta_propostas.contexto.propostas.sha256
     assert set(ident["modos_dos_tags"]) == {t.tag.tag for t in planta_propostas.tags}
     assert "commit" in gate.resumo_md(relatorio)
 
 
-def test_identidade_acompanha_as_opcoes(gate, planta_oleo_morto, tmp_path):
+def test_identidade_acompanha_as_opcoes(gate, planta_base, tmp_path):
     """Trocar a opção troca a identidade: o relatório não pode dizer o que não foi rodado."""
-    ident = gate.identidade(planta_oleo_morto.contexto, planta_oleo_morto)
-    assert ident["oleo"] == "morto" and ident["propostas"] == "não usadas"
+    ident = gate.identidade(planta_base.contexto, planta_base)
+    assert ident["propostas"] == "não usadas"
 
 
 def test_identidade_incompleta_reprova(gate, planta_propostas, tmp_path, monkeypatch):

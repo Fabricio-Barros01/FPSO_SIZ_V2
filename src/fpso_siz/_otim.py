@@ -1,4 +1,4 @@
-"""Porta única do `pymoo` (F15), como `_num.py` e `pfd/_chedl.py`.
+"""Porta única do `pymoo` (F15), como `termo/backend.py` é a do ChEDL.
 
 Só este módulo importa `pymoo`, e o import é preguiçoso: quem não otimiza não paga a
 dependência, e um teste de arquitetura garante a porta única. A física e o avaliador ficam em

@@ -1,5 +1,7 @@
 # 03 — Memorial LaTeX do balanço (F4)
 
+> **Histórico.** Registro de uma etapa anterior à consolidação arquitetural (2026-09-28): o layout `original` (reprodução do memorial do script de referência) saiu; o memorial vigente é o layout SENAI. O funcionamento vigente está em [`../arquitetura/arquitetura-alvo.md`](../arquitetura/arquitetura-alvo.md).
+
 Data: 2026-09-23. **Estado: entregue.**
 
 ## Uso

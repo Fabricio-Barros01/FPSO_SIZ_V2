@@ -12,18 +12,6 @@
 classes = { premissa = "premissa", numerico = "numérico", modelo = "modelo" }
 
 [[alarme]]
-tag = "SG-001"
-estado = "explicada"
-resumo = "Só no modo --oleo-morto: os casos 2 e 3 (Early Life, com água) são inviáveis isolados, porque o teto de decantação (água em óleo) fica abaixo do menor diâmetro com a esbeltez na banda. Com a viscosidade de óleo vivo (padrão) o vaso é viável (docs/validacao/16-oleo-vivo.md)."
-hipoteses = [
-    { classe = "premissa", texto = "CONFIRMADA: a viscosidade de óleo MORTO (BOT Tab. 2.2.1.2, P-40) usada para o óleo vivo do FWKO. O gás dissolvido na saída de óleo (Rs de C-06) reduz µ_o cerca de 40 % pela correlação de Beggs & Robinson (1975), e (h_o)max ∝ 1/µ_o: o teto dos casos 2 e 3 sobe e o vaso passa a ter solução. A correlação está fora do acervo local (a conferir) e não substitui um PVT medido." },
-    { classe = "premissa", texto = "Critério de decantação de gotículas de água de 500 µm no óleo (S&A §4.7.2) aplicado ao FWKO, cuja saída de óleo pode levar até o BSW de F-06 (BOT 2.7.1.2): o FWKO remove água livre, não especifica o óleo. O critério pode ser mais restritivo que a função do vaso." },
-    { classe = "premissa", texto = "Eficiência de água livre P-43 (premissa do autor, faixa de 80–90 % declarada pelo usuário): muda o reciclo quente e a temperatura de entrada do FWKO, logo µ_o e o teto.", variantes = ["eta_80", "eta_90"] },
-    { classe = "modelo", texto = "Um único vaso para todos os casos: com trens em paralelo a vazão por vaso cai e o comprimento exigido também; o teto (razão de vazões, µ, ΔSG) não muda.", variantes = ["trens_2", "trens_3"] },
-    { classe = "numerico", texto = "Conferência numérica: (h_o)max, β e d_max refeitos à mão com os operandos do rastro reproduzem o resultado (teste da conta à mão); β por bisseção idêntico ao Julia." },
-]
-
-[[alarme]]
 tag = "P-001"
 estado = "aberta"
 resumo = "Óleo/óleo. A LACUNA METODOLÓGICA FOI FECHADA: a película do lado tubo passou a ter correlação nos três regimes (Hausen em Re ≤ 2000, interpolação em 2000 < Re < 10⁴, Dittus-Boelter acima — Branan pp. 40-41), e todos os dez casos ativos agora CALCULAM. O que restou é físico e construtivo, não metodológico: com 2 passes o fator F do arranjo 1-2 sai do domínio da Fig. 4.3 (cruzamento interno); com 1 passe (contracorrente) o impedimento é a ÁREA. No platô laminar o h_i do óleo satura em cerca de 34 W/(m²·K) e o U em cerca de 25 W/(m²·K), contra um U·A exigido de 1,55 MW/K no caso de projeto: o feixe mais curto de toda a grade pede 186,4 m de tubo (o escolhido, 434,4 m) contra o limite de 6 m. No topo da banda de velocidade (3 m/s, teto de erosão de Saari) o óleo ainda está em transição, com U de cerca de 388 W/(m²·K) e área de cerca de 4.000 m². Nenhuma correlação resolve isto: é a troca óleo/óleo com aproximação de 10 K (P-32) que exige essa área. Ver docs/validacao/24-pelicula-baixo-reynolds.md."
@@ -41,7 +29,7 @@ resumo = "FECHADO em 2026-09-26, sem premissa nova e sem mudar arquitetura. O ú
 hipoteses = [
     { classe = "premissa", texto = "CONFIRMADA e adotada (P-46): a alocação com o óleo viscoso no tubo foi trocada; com a água nos tubos, só o turndown profundo saía da faixa turbulenta." },
     { classe = "modelo", texto = "RESOLVIDA: a correlação do lado tubo fora do turbulento existia no acervo e está implementada (Hausen eq. 2-10, interpolação eq. 2-12), com caso-ouro independente. Era o que faltava — não uma premissa de operação." },
-    { classe = "premissa", texto = "Vazão da utilidade proporcional à carga (ṁ = q/(cp·ΔT), com o ΔT fixo pelos insumos): com a física completa ela NÃO precisa mais ser revista para o TAG ter solução. A circulação fixa continua estudo em docs/validacao/21-circulacao-cascos.md, e agora é escolha de operação, não remédio de viabilidade.", variantes = ["p_002_circulacao_fixa"] },
+    { classe = "premissa", texto = "Vazão da utilidade proporcional à carga (ṁ = q/(cp·ΔT), com o ΔT fixo pelos insumos): com a física completa ela NÃO precisa mais ser revista para o TAG ter solução. A circulação fixa continua estudo em docs/validacao/21-circulacao-cascos.md, e agora é escolha de operação, não remédio de viabilidade." },
 ]
 
 [[alarme]]
@@ -52,7 +40,7 @@ hipoteses = [
     { classe = "premissa", texto = "CONFIRMADA e adotada (P-46): a alocação com o óleo viscoso no tubo foi trocada." },
     { classe = "modelo", texto = "RESOLVIDA: os casos de baixa carga eram recusados por falta de correlação. Implementados os três regimes, com caso-ouro independente, nenhum caso ativo é mais recusado por correlação." },
     { classe = "modelo", texto = "RESOLVIDA sem mudar arquitetura: o comprimento excedia o limite de estoque de 6 m com tubo de 25,4 mm; com 12,7 mm o melhor feixe cabe em 4,91 m num casco só. Os limites de 6 m e de 2.500 mm não foram alterados, e cascos em série/paralelo não foram acionados." },
-    { classe = "premissa", texto = "Vazão da utilidade proporcional à carga: não é mais necessária para o TAG ter solução. A circulação fixa segue como estudo, e a decisão é de operação.", variantes = ["p_003_circulacao_fixa"] },
+    { classe = "premissa", texto = "Vazão da utilidade proporcional à carga: não é mais necessária para o TAG ter solução. A circulação fixa segue como estudo, e a decisão é de operação." },
 ]
 
 [[alarme]]
@@ -87,27 +75,6 @@ hipoteses = [
 # `premissas`: alterações de premissa do balanço (nome = valor); `geral`: entrada do TAG em
 # todos os casos; `fator_vazao`: divide as vazões do TAG (trens em paralelo). `origem` diz de
 # onde vem cada valor usado.
-[variantes.eta_80]
-rotulo = "η_padrão = 0,80 (P-43)"
-premissas = { eta_F = 0.80 }
-origem = "limite inferior da faixa de 80–90 % declarada pelo usuário para a P-43 (F10w)"
-
-[variantes.eta_90]
-rotulo = "η_padrão = 0,90 (P-43)"
-premissas = { eta_F = 0.90 }
-origem = "limite superior da faixa de 80–90 % declarada pelo usuário para a P-43 (F10w)"
-
-[variantes.trens_2]
-rotulo = "2 trens em paralelo (2 × 50 %)"
-fator_vazao = 2
-chaves_vazao = ["q_oil", "q_water", "q_gas"]
-origem = "divisão da vazão por um número inteiro de vasos iguais; não há valor suposto"
-
-[variantes.trens_3]
-rotulo = "3 trens em paralelo (3 × 33 %)"
-fator_vazao = 3
-chaves_vazao = ["q_oil", "q_water", "q_gas"]
-origem = "divisão da vazão por um número inteiro de vasos iguais; não há valor suposto"
 
 [variantes.passes_1]
 rotulo = "1 passe no tubo (contracorrente pura)"
@@ -132,19 +99,3 @@ origem = "defaults do método de Moran (2016) e regra do Julia: estudo do estado
 rotulo = "emulsão fria no casco, óleo tratado quente nos tubos"
 topologia = "p_001_emulsao_casco"
 origem = "prática de alocar o fluido mais viscoso no casco (hipótese do alarme); k e incrustações do P-001 são as mesmas propostas nos dois lados"
-
-# Circulação fixa da utilidade (F13/Etapa 2) — ESTUDO autorizado pelo usuário em 2026-09-26.
-# O cálculo padrão continua com ṁ = q/(cp·ΔT) e o ΔT fixo pelos insumos. Aqui a vazão é a do
-# caso de projeto (P-45) em todos os casos, e a temperatura de saída de cada caso é RESOLVIDA
-# por bisseção sobre o mesmo fechamento de energia (pfd/circulacao.py; critérios numéricos em
-# config/pfd/circulacao.toml). `circulacao_fixa` declara de quais entradas do TAG o estudo lê e
-# qual insumo recebe a saída resolvida — nenhum nome de parâmetro está no código do estudo.
-[variantes.p_002_circulacao_fixa]
-rotulo = "circulação fixa da utilidade (vazão do caso de projeto em todos os casos)"
-circulacao_fixa = { vazao = "m_tubo", densidade = "rho_tubo", cp = "cp_tubo", entrada = "t_agua_in", saida = "t_agua_out" }
-origem = "hipótese de operação declarada pelo usuário (2026-09-26) como estudo: a bomba da utilidade mantém a vazão do caso de projeto (P-45) e o ΔT varia com a carga; a vazão vem do próprio caso de projeto e a temperatura de saída é resolvida, não suposta"
-
-[variantes.p_003_circulacao_fixa]
-rotulo = "circulação fixa da utilidade (vazão do caso de projeto em todos os casos)"
-circulacao_fixa = { vazao = "m_tubo", densidade = "rho_tubo", cp = "cp_tubo", entrada = "t_agua_in", saida = "t_agua_out" }
-origem = "hipótese de operação declarada pelo usuário (2026-09-26) como estudo: a bomba da utilidade mantém a vazão do caso de projeto (P-45) e o ΔT varia com a carga; a vazão vem do próprio caso de projeto e a temperatura de saída é resolvida, não suposta"

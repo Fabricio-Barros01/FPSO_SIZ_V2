@@ -45,11 +45,19 @@ def docs(planta_base):
     return {t.tag.tag: (t, mc.documento(ctx, t)) for t in planta_base.tags}
 
 
+MU_INVIAVEL = 20.0   # cP: μ do óleo informada pelo usuário que derruba o teto de decantação
+
+
 @pytest.fixture(scope="module")
-def docs_morto(planta_oleo_morto):
-    """Óleo morto do BOT (--oleo-morto): o SG-001 em alarme, com o diagnóstico da F11."""
-    ctx = planta_oleo_morto.contexto
-    return {t.tag.tag: (t, mc.documento(ctx, t)) for t in planta_oleo_morto.tags}
+def sg001_inviavel(planta_propostas):
+    """SG-001 com a viscosidade do óleo sobrescrita pelo usuário (20 cP): o teto de decantação
+    cai abaixo do menor diâmetro com a esbeltez na banda — o diagnóstico sem interseção."""
+    from fpso_siz.pfd import equipamento as servico
+    ctx = planta_propostas.contexto
+    e = servico.estado_inicial("SG-001")
+    e.editar("mu_oil", MU_INVIAVEL, None, {})
+    rt = servico.dimensionar(servico.preparar(ctx, e), e)
+    return ctx, rt, mc.documento(ctx, rt)
 
 
 def test_documento_de_cada_tag_tem_as_secoes(docs):
@@ -70,7 +78,7 @@ def test_lacunas_do_mc_batem_com_as_do_pfd(docs):
 
 def test_regra_do_fwko_e_p43_no_mc(docs):
     _, d = docs["V-001"]
-    assert d["identificacao"]["regra_fwko"] == "eficiencia"
+    assert d["identificacao"]["usa_balanco"] is True
     assert "P-43" in [p["id"] for p in d["premissas"]]
     _, sg = docs["SG-001"]
     assert "P-42" in [p["id"] for p in sg["premissas"]]
@@ -207,13 +215,13 @@ def test_v002_governante_e_ponto(docs):
     assert formatacao.texto_sig(c["selecao"]["sr"]) == formatacao.texto_sig(rt.resultado.derivados["sr"])
 
 
-def test_sg001_diagnostico_sem_intersecao(docs_morto):
-    rt, d = docs_morto["SG-001"]
+def test_sg001_diagnostico_sem_intersecao(sg001_inviavel):
+    _, rt, d = sg001_inviavel
     c = d["calculo"]
     assert rt.status == "inviavel" and not c["viavel"] and c["selecao"] is None
     diag = c["diagnostico"]
     assert diag["caso_teto"] == "BOT 02 — Early Life" == c["caso_governante"]
-    assert diag["teto"] == rt.resultado.ceiling and formatacao.texto_sig(diag["teto"]) == "3.612"
+    assert diag["teto"] == rt.resultado.ceiling and diag["teto_aplicavel"]
     assert diag["x_min_banda"] > diag["teto"]           # por isso não há interseção
     assert [x["atende"] for x in c["criterios"]] == [False, False]
     s = c["series"]
@@ -223,9 +231,10 @@ def test_sg001_diagnostico_sem_intersecao(docs_morto):
     assert "ponto" not in s
 
 
-@pytest.mark.parametrize("planta", ["docs", "docs_morto"])
+@pytest.mark.parametrize("planta", ["docs", "sg001_inviavel"])
 def test_sg001_conta_a_mao_da_decantacao(request, planta):
-    _, d = request.getfixturevalue(planta)["SG-001"]
+    fx = request.getfixturevalue(planta)
+    d = fx["SG-001"][1] if planta == "docs" else fx[2]
     eq = {e["id"]: e for e in d["calculo"]["equacoes"]}
     o = eq["ho"]["operandos"]
     assert o["coef"] * o["tr_o"] * o["dsg"] * (o["dm"] * o["dm"]) / o["mu_o"] == eq["ho"]["resultado"]
@@ -241,12 +250,12 @@ def test_sg001_conta_a_mao_da_decantacao(request, planta):
 
 @pytest.mark.latex
 @pytest.mark.skipif(not compilacao.disponivel() or not shutil.which("pdftotext"), reason="latexmk/pdftotext ausentes")
-def test_sg001_pdf_mostra_a_inviabilidade(planta_oleo_morto, tmp_path):
-    ctx, rt = planta_oleo_morto.contexto, planta_oleo_morto.tag("SG-001")
+def test_sg001_pdf_mostra_a_inviabilidade(sg001_inviavel, tmp_path):
+    ctx, rt, _ = sg001_inviavel
     tex = saida_mc.gravar(ctx, rt, tmp_path, data=DATA, git=GIT)
     texto = _normal(_texto_pdf(compilacao.compilar(tex)))
     assert _normal("MEMÓRIA DE CÁLCULO – DIAGNÓSTICO") in texto
-    assert _normal("não atende") in texto and "3.612mm" in texto and "5.600mm" in texto
+    assert _normal("não atende") in texto and "5.600mm" in texto
     assert (tmp_path / "MC-SEN-SEP-EQP-001-0_teto.csv").exists()
     assert (tmp_path / "MC-SEN-SEP-EQP-001-0_minimo.csv").exists()
 
@@ -269,11 +278,12 @@ def test_aguardando_entrada_tem_lacunas_do_pfd_e_metodologia(planta_base, docs, 
     assert tpl["status"] == "aguardando" and all("@" not in m["latex"] for m in tpl["metodologia"])
 
 
-def test_mc_com_ajustes_sinteticos_cobre_todos_os_metodos(planta_ajustada):
-    """Com as entradas sintéticas dos testes os 11 TAGs dimensionam: o MC de cada método sai
-    do mesmo gerador (métodos sem substituição declarada mostram o rastro do caso)."""
-    ctx = planta_ajustada.contexto
-    for rt in planta_ajustada.tags:
+def test_mc_de_todos_os_metodos(planta_ajustada, planta_propostas):
+    """Os 11 TAGs dimensionados (entradas sintéticas; P-002 e P-003 pelas propostas): o MC de
+    cada método sai do mesmo gerador (métodos sem substituição declarada mostram o rastro)."""
+    for rt in [*[t for t in planta_ajustada.tags if t.status == "dimensionado"],
+               planta_propostas.tag("P-002"), planta_propostas.tag("P-003")]:
+        ctx = (planta_propostas if rt.tag.tag in ("P-002", "P-003") else planta_ajustada).contexto
         d = mc.documento(ctx, rt)
         c = d["calculo"]
         assert c["viavel"] and c["rastro"] and c["resultados"]
@@ -286,21 +296,23 @@ def test_mc_com_ajustes_sinteticos_cobre_todos_os_metodos(planta_ajustada):
 @pytest.mark.latex
 @pytest.mark.skipif(not compilacao.disponivel(), reason="latexmk ausente")
 @pytest.mark.parametrize("ident", ["SG-001", "TO-001", "P-001", "B-001", "B-002", "P-003"])
-def test_mc_com_ajustes_sinteticos_compila(planta_ajustada, tmp_path, ident):
-    rt = planta_ajustada.tag(ident)
-    assert compilacao.compilar(saida_mc.gravar(planta_ajustada.contexto, rt, tmp_path, data=DATA, git=GIT)).exists()
+def test_mc_compila(planta_ajustada, planta_propostas, tmp_path, ident):
+    p = planta_propostas if ident == "P-003" else planta_ajustada
+    assert compilacao.compilar(saida_mc.gravar(p.contexto, p.tag(ident), tmp_path, data=DATA, git=GIT)).exists()
 
 
 # ------------------------------------------------------------------ F10x.1 — gráficos de trocador e bomba
 @pytest.mark.parametrize("ident", ["P-001", "P-002", "P-003"])
-def test_trocador_perfil_tq_e_parcelas_de_u(planta_ajustada, ident):
-    """Com as entradas sintéticas dos testes: o perfil T × Q liga as temperaturas terminais do
-    caso governante e as parcelas de 1/U somam exatamente o 1/U do dimensionamento."""
-    rt = planta_ajustada.tag(ident)
-    d = mc.documento(planta_ajustada.contexto, rt)
+def test_trocador_perfil_tq_e_parcelas_de_u(planta_ajustada, planta_propostas, ident):
+    """O perfil T × Q liga as temperaturas terminais do caso governante e as parcelas de 1/U
+    somam exatamente o 1/U do dimensionamento (P-001 pelas entradas sintéticas, onde dimensiona;
+    P-002 e P-003 na planta produtiva)."""
+    p = planta_ajustada if ident == "P-001" else planta_propostas
+    rt = p.tag(ident)
+    d = mc.documento(p.contexto, rt)
     s = d["calculo"]["series"]
     i = mc.indice_governante(rt.resultado)
-    entrada, cons = mc.restricoes(rt)[i]
+    _, entrada, cons, _ = rt.resultado.preparo[i]
     perfil = s["perfil_tq"]
     assert [p["t_tubo"] for p in perfil] == [entrada.t_tubo_in, entrada.t_tubo_out]
     assert perfil[-1]["t_casco"] == entrada.t_casco_in and perfil[0]["t_casco"] == cons.t_casco_out

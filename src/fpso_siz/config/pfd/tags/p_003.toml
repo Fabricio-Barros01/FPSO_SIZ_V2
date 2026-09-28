@@ -3,13 +3,11 @@
 # viscoso, vai no CASCO, onde Bell-Delaware cobre o escoamento laminar (fator Jr, Branan
 # Eq. 2-29), e a água de resfriamento (meio de resfriamento) — água pura de circuito fechado (BOT 3.3.2: 'A closed freshwater cooling system shall be provided to supply cooling medium') — vai nos TUBOS,
 # turbulenta (Dittus-Boelter). Estudo que a motivou: F13.2 (docs/validacao/14-alarmes.md).
-# A alocação do PFD F1 do Julia (óleo no tubo) está em variantes/p_003_oleo_tubo.toml e é a
-# usada no modo de paridade (topologia_julia). As temperaturas da utilidade são insumos; com
+# As temperaturas da utilidade são insumos; com
 # elas a vazão da utilidade fecha a carga Q_C do balanço, ṁ = q/(cp·ΔT), e as propriedades
 # da água saem da IAPWS na temperatura média.
 tag = "P-003"
 nome = "Resfriador de óleo"
-topologia_julia = "p_003_oleo_tubo"
 equipamento = "exchanger"
 metodo = "saari_lmtd"
 bloco = "P-003"

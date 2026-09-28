@@ -12,7 +12,6 @@ from fpso_siz.output.terminal.sessao import Sessao
 
 RAIZ = Path(__file__).resolve().parents[1]
 CASOS = RAIZ / "tests" / "fixtures" / "python_ref" / "design_cases_bot.json"
-FJ_PFD = RAIZ / "tests" / "fixtures" / "julia" / "pfd"
 AGORA = datetime(2026, 9, 23, 14, 2, 11)
 
 

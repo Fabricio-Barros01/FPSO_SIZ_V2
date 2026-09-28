@@ -15,7 +15,7 @@ from fpso_siz.pfd import equipamento as servico
 from fpso_siz.pfd.entradas import especificacoes
 from fpso_siz.pfd.manual import exemplos_de
 from fpso_siz.pfd.tags import tag, tags
-from roteiro import CASOS, FJ_PFD, abrir_tag, comandos_repetir, op, repetir_comando, rodar, tag_op
+from roteiro import CASOS, abrir_tag, comandos_repetir, op, repetir_comando, rodar, tag_op
 
 
 @pytest.fixture(autouse=True)
@@ -93,8 +93,27 @@ def test_tag_manual_parcial_salvar_e_retomar(tmp_path):
     assert s2.ajustes.tags["V-001"].geral == {"q_oil": 250.0}
 
 
-def test_tag_importa_rascunho_do_julia_casando_por_nome():
-    arq = FJ_PFD / "casos_bot_1_a_16_v_001.toml"
+def _rascunho_v001(pasta):
+    """Arquivo de casos com os 16 casos do V-001 casados pelo NOME, com os valores do modo
+    automático e um valor não finito em cada caso (a lacuna explícita de um rascunho)."""
+    ctx = servico.Contexto(__import__("fpso_siz.balanco.dados", fromlist=["x"]).carregar_casos(CASOS))
+    rt = servico.executar(ctx, servico.estado_inicial("V-001"))
+    linhas = ['equipment = "knockout"', ""]
+    for c in rt.entradas.casos:
+        linhas += ["[[case]]", f'name = "{c.nome}"']
+        for k, v in c.valores.items():
+            if k == "mu_gas":
+                linhas.append("mu_gas = nan")
+            elif not v.lacuna and v.faixa == () and v.valor == v.valor:
+                linhas.append(f"{k} = {v.valor!r}")
+        linhas.append("")
+    arq = pasta / "rascunho_v_001.toml"
+    arq.write_text("\n".join(linhas), encoding="utf-8")
+    return arq
+
+
+def test_tag_importa_rascunho_casando_por_nome(tmp_path):
+    arq = _rascunho_v001(tmp_path)
     rc, out, s = rodar(*abrir_tag("V-001", "arquivo"), str(len(exemplos_de("knockout")) + 1), str(arq),
                        "0", "0", "0")
     assert rc == 0 and f"Importado de {arq.name}: 16 caso(s); 16 valor(es) não finito(s)" in out

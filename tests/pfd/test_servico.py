@@ -1,7 +1,9 @@
 """F10c — serviço por TAG: a planta e o TAG isolado passam pela mesma orquestração; o
 balanço é resolvido uma vez por contexto; o manual não consulta balanço nem ChEDL; cache
-por estado; paridade numérica com a F10b."""
+por estado."""
 import math
+
+from pathlib import Path
 
 import pytest
 
@@ -11,10 +13,12 @@ from fpso_siz.core.configuracao import exemplos
 from fpso_siz.output import pfd
 from fpso_siz.pfd import ajustes as mod_ajustes
 from fpso_siz.pfd import equipamento as servico
-from fpso_siz.pfd import fluidos, manual, planta
+from fpso_siz.pfd import manual, planta
+from fpso_siz.termo import servico as termo
 from fpso_siz.pfd.tags import tag, tags
 
-from conftest import FIXTURES
+FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
+
 
 CASOS = FIXTURES / "python_ref" / "design_cases_bot.json"
 
@@ -53,26 +57,6 @@ def test_planta_e_tag_isolado_delegam_ao_mesmo_servico(monkeypatch, tmp_path):
         assert (tmp_path / nome).read_bytes() == (tmp_path / "planta" / nome).read_bytes()
 
 
-def test_paridade_numerica_com_a_f10b(planta_referencia):
-    """Mesmos estados, lacunas, inativos e envelopes que a F10b registrou (balanço de referência)."""
-    planta_base = planta_referencia
-    ctx = servico.Contexto(planta_base.dados, balanco=planta_base.balanco, oleo_vivo=False, topologia_julia=True)
-    assert {t.tag.tag: t.status for t in planta_base.tags} == {
-        "B-001": "aguardando_entrada", "B-002": "aguardando_entrada", "B-003": "aguardando_entrada",
-        "P-001": "aguardando_entrada", "P-002": "aguardando_entrada", "P-003": "aguardando_entrada",
-        "SG-001": "inviavel", "TO-001": "aguardando_entrada", "TO-002": "aguardando_entrada",
-        "V-001": "dimensionado", "V-002": "dimensionado"}
-    v1, v2 = planta_base.tag("V-001").resultado, planta_base.tag("V-002").resultado
-    assert (v1.x, v1.driver_case, v2.x, v2.driver_case) == (4850, "BOT 08 — Mid Life", 4700, "BOT 03 — Early Life Blend")
-    for t in planta_base.tags:
-        so = servico.executar(ctx, servico.estado_inicial(t.tag.tag))
-        assert so.status == t.status and so.entradas.lacunas == t.entradas.lacunas
-        for a, b in zip(so.entradas.casos, t.entradas.casos, strict=True):
-            assert (a.ativo, a.motivo) == (b.ativo, b.motivo)
-            assert all(a.valores[k].valor == b.valores[k].valor or (math.isnan(a.valores[k].valor)
-                       and math.isnan(b.valores[k].valor)) for k in a.valores)
-
-
 def test_cache_por_estado_e_por_contexto(ctx):
     e = servico.estado_inicial("V-001")
     a = servico.executar(ctx, e)
@@ -88,7 +72,7 @@ def test_cache_por_estado_e_por_contexto(ctx):
 
 def test_manual_nao_consulta_balanco_nem_chedl(monkeypatch, ctx):
     for nome in ("gas", "oleo", "salmoura_fracao", "agua_saturada", "emulsao"):
-        monkeypatch.setattr(fluidos, nome, lambda *a, **k: pytest.fail("o manual consultou o ChEDL"))
+        monkeypatch.setattr(termo, nome, lambda *a, **k: pytest.fail("o manual consultou o ChEDL"))
     e = servico.estado_inicial("P-002", mod_ajustes.MANUAL)
     rt = servico.executar(ctx, e)
     assert not ctx.balanco_resolvido
@@ -219,134 +203,3 @@ def test_planta_so_manual_nao_resolve_o_balanco(monkeypatch):
     p = planta.dimensionar(contexto=ctx, ajustes=aj)
     assert not ctx.balanco_resolvido and {t.entradas.modo for t in p.tags} == {"manual"}
     assert not p.completa
-
-
-F10B = __import__("json").loads((FIXTURES / "pfd" / "f10b_resultados.json").read_text(encoding="utf-8"))
-P42_TAGS = {"SG-001", "TO-001", "TO-002"}
-P42_CHAVES = {"dm_water", "dm_oil", "tr_water", "rho_water", "mu_water"}
-P44_TAGS = {"B-001", "B-002", "B-003"}
-P44_CHAVES = {"piso_caso_projeto", "transicao_turndown"}   # extensões do V2 (F10x.6)
-P45_TAGS = {"P-001", "P-002", "P-003"}
-# extensões do V2 no trocador: F10x.7 (P-45, cascos) e a película do lado tubo nos três regimes
-P45_CHAVES = {"banda_caso_projeto", "cascos_serie", "cascos_paralelo", "pelicula_baixo_re", "razao_visc_parede"}
-MARCAS_V2 = ("P-44", "P-45", "F10x.7", "três regimes")
-
-
-def _sem_p44(monkeypatch):
-    """Desliga as extensões do V2 no PFD: F10x.6–F10x.7 (P-44/P-44b das bombas; P-45, cascos em
-    série e paralelo e a reotimização dos trocadores) e a **película do lado tubo nos três
-    regimes** — sem os descritores de extensão e sem as recomendações correspondentes nos TAGs, que
-    é o código que a F10b tinha. A alocação do PFD F1 (P-46 desligada) vem de topologia_julia=True.
-    Com isso a fixture da F10b conserva a sua proveniência: ela não é regerada quando o V2 completa
-    física nenhuma."""
-    from fpso_siz.pfd.tags import tags
-    from fpso_siz.sizing.bomba import MoranPumpSizing
-    from fpso_siz.sizing.trocador import SaariLMTD
-    for t in tags():
-        for k, rec in list(t.recomendadas.items()):
-            if any(m in rec["fonte"] for m in MARCAS_V2):
-                monkeypatch.delitem(t.recomendadas, k)
-    for classe, chaves in ((MoranPumpSizing, P44_CHAVES), (SaariLMTD, P45_CHAVES)):
-        original = classe.parameters
-        monkeypatch.setattr(classe, "parameters",
-                            lambda self, o=original, c=chaves: [s for s in o(self) if s.key not in c])
-
-
-@pytest.fixture
-def plantas_f10b(monkeypatch, planta_referencia, ajustes_sinteticos):
-    """As plantas com a premissa P-42 (sem fase aquosa) desligada e o balanço de referência: o
-    código que a F10b tinha."""
-    from fpso_siz.pfd import entradas
-    from fpso_siz.sizing import separador, tratador
-    monkeypatch.setattr(entradas, "_fase_aquosa", lambda metodo, valores: valores)
-    monkeypatch.setattr(separador, "sem_fase_aquosa", lambda fu: False)
-    monkeypatch.setattr(tratador, "sem_fase_aquosa", lambda fu: False)
-    _sem_p44(monkeypatch)
-    base = planta.dimensionar(planta_referencia.dados, balanco=planta_referencia.balanco, oleo_vivo=False,
-                              topologia_julia=True)
-    return {"sem_ajustes": base,
-            "ajustes_sinteticos": planta.dimensionar(base.dados, ajustes=ajustes_sinteticos, balanco=base.balanco,
-                                                     oleo_vivo=False, topologia_julia=True)}
-
-
-@pytest.mark.parametrize("modo", ["sem_ajustes", "ajustes_sinteticos"])
-def test_resultados_iguais_aos_da_f10b(modo, plantas_f10b, tmp_path):
-    """Regressão: sem a P-42 e sem a P-44, valores de entrada, lacunas, estados, envelopes e planta.csv
-    iguais aos que a F10b gravou (fixture gerada pelo código da F10b, via git archive). O
-    efeito da P-42 é conferido à parte, em test_efeito_da_p42_restrito_a_fase_aquosa."""
-    import hashlib
-    import json
-    p = plantas_f10b[modo]
-    assert F10B["casos_sha256"] == p.dados.sha256
-    esperado = F10B[modo]
-    for t in p.tags:
-        e = esperado[t.tag.tag]
-        assert t.status == e["status"] and [[l.chave, list(l.casos)] for l in t.entradas.lacunas] == e["lacunas"]
-        valores = [[c.num, c.ativo, {k: (None if math.isnan(v.valor) else v.valor) for k, v in c.valores.items()}]
-                   for c in t.entradas.casos]
-        assert hashlib.sha256(json.dumps(valores, sort_keys=True).encode()).hexdigest() == e["valores_sha256"]
-        if e["envelope"] is None:
-            assert t.resultado is None
-        else:
-            r = t.resultado
-            obtido = {"viavel": r.feasible, "x": None if math.isnan(r.x) else r.x,
-                      "y": None if math.isnan(r.y) else r.y, "caso_governante": r.driver_case, "mensagem": r.message}
-            assert obtido == {k: e["envelope"][k] for k in obtido}
-            folgas = list(r.slack) + [None] * (len(r.case_names) - len(r.slack))
-            assert folgas == e["envelope"]["folgas"]
-    pfd.gravar(p, tmp_path)
-    assert hashlib.sha256((tmp_path / "planta.csv").read_bytes()).hexdigest() == esperado["planta_csv_sha256"]
-
-
-def _num(x):
-    return None if isinstance(x, float) and math.isnan(x) else x
-
-
-def _valor(v):
-    return (v.origem, _num(v.valor), v.faixa, v.fonte, v.revisao, v.anterior)
-
-
-@pytest.mark.parametrize("modo", ["sem_ajustes", "ajustes_sinteticos"])
-def test_efeito_da_p42_restrito_a_fase_aquosa(modo, plantas_f10b, planta_referencia, planta_referencia_ajustada):
-    """P-42 (BOT Tab. 2.2.2.3 Notas 5 e 11; 2.3.1.1): nos casos sem água (1, 4–7), só as entradas
-    dos critérios aquosos do SG-001/TO-001/TO-002 deixam de ser pedidas/revisadas e só o teto do
-    SG-001 muda de caso. P-44 (F10x.6): só as bombas ganham as recomendações da banda por caso
-    de projeto (e o B-001, o piso nulo do óleo limpo). Todo o resto é idêntico ao código da F10b."""
-    antes = plantas_f10b[modo]
-    depois = planta_referencia if modo == "sem_ajustes" else planta_referencia_ajustada
-    for a, d in zip(antes.tags, depois.tags, strict=True):
-        assert a.tag.tag == d.tag.tag and a.status == d.status
-        sem_agua = {c.num for c in d.entradas.casos if "q_water" in c.valores and c.valores["q_water"].valor == 0}
-        mudou = False
-        p44 = d.tag.tag in P44_TAGS | P45_TAGS
-        for ca, cd in zip(a.entradas.casos, d.entradas.casos, strict=True):
-            extras = P44_CHAVES if d.tag.tag in P44_TAGS else P45_CHAVES if d.tag.tag in P45_TAGS else set()
-            assert (ca.num, ca.ativo, set(ca.valores) | extras) == (cd.num, cd.ativo, set(cd.valores))
-            for k, vd in cd.valores.items():
-                if p44 and any(m in vd.fonte for m in MARCAS_V2):
-                    assert vd.origem == "recomendada" or k in extras
-                elif p44 and k in extras:
-                    assert vd.origem == "metodo"
-                elif vd.nao_aplicavel:
-                    mudou = True
-                    assert d.tag.tag in P42_TAGS and cd.num in sem_agua and k in P42_CHAVES
-                    assert ca.valores[k].origem in ("lacuna", "recomendada", "metodo") and "P-42" in vd.fonte
-                else:
-                    assert _valor(vd) == _valor(ca.valores[k]), (d.tag.tag, cd.num, k)
-        esperadas = [(l.chave, tuple(n for n in l.casos if not (n in sem_agua and l.chave in P42_CHAVES)))
-                     for l in a.entradas.lacunas]
-        assert [(l.chave, l.casos) for l in d.entradas.lacunas] == [x for x in esperadas if x[1]]
-        ra, rd = a.resultado, d.resultado
-        assert (ra is None) == (rd is None)
-        if rd is None:
-            continue
-        if p44:
-            continue    # efeito da P-44 conferido em test_p44_*
-        chave = [(r.feasible, _num(r.x), _num(r.y), r.driver_case, list(r.slack)) for r in (ra, rd)]
-        assert chave[0] == chave[1], d.tag.tag
-        if d.tag.tag == "SG-001":
-            assert ra.ceiling_case == "BOT 06 — Mid Life" and rd.ceiling_case == "BOT 02 — Early Life"
-            assert rd.ceiling > ra.ceiling
-        else:
-            assert (ra.message, _num(ra.ceiling), ra.ceiling_case) == (rd.message, _num(rd.ceiling), rd.ceiling_case)
-        assert mudou == (d.tag.tag in P42_TAGS)

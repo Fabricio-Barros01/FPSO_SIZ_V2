@@ -34,8 +34,10 @@ VASOS = [("separador-3f", Separator(), StewartArnold(), 1e-13),
 
 
 def envelope_puro(r):
-    d = puro(r)
-    d.pop("derivados_v2")   # extensão do V2 (grandezas de todos os casos), sem par no Julia
+    # o que o motor guarda para a memória de cálculo ler (core/memoria.py) não tem par no Julia
+    d = puro(replace(r, metodo=None, preparo=(), p_env=None, pcs=()))
+    for k in ("derivados_v2", "metodo", "preparo", "p_env", "pcs"):   # extensões do V2
+        d.pop(k)
     for row in d["rows"]:
         row["tem_presentation"] = row.pop("presentation") is not None
     for pc, orig in zip(d["per_case"], r.per_case):

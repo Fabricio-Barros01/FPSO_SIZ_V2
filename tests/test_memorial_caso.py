@@ -1,5 +1,5 @@
-"""F11b — memorial do balanço por caso (MC_Caso01 … MC_Caso16) nos dois layouts: seleção
-dos casos, folha de rosto, P-42 ("—" sem fase aquosa), isolado × lote e compilação."""
+"""Memorial do balanço por caso (MC_Caso01 … MC_Caso16), layout SENAI: seleção dos casos, folha
+de rosto, P-42 ("—" sem fase aquosa), isolado × lote e compilação."""
 import shutil
 import subprocess
 
@@ -7,7 +7,7 @@ import pytest
 from roteiro import CASOS, op, repetir_comando, rodar
 
 from fpso_siz.balanco.dados import carregar_casos, premissas
-from fpso_siz.balanco.modelo import REFERENCIA, resolver_todos
+from fpso_siz.balanco.modelo import resolver_todos
 from fpso_siz.cli import main
 from fpso_siz.output.latex import compilacao
 from fpso_siz.output.latex.caso import memorial as mc
@@ -37,57 +37,51 @@ def test_nome_e_numero_por_caso():
     assert [mc.nome_arquivo(n) for n in (1, 16)] == ["MC_Caso01", "MC_Caso16"]
 
 
-@pytest.mark.parametrize("layout", mc.LAYOUTS)
-def test_folha_de_rosto_e_fase_aquosa(base, layout):
+def test_folha_de_rosto_e_fase_aquosa(base):
     dados, prem, R = base
     for num in (1, 2):
-        tex = mc.gerar(dados, prem, R, num, layout, DATA, GIT)
+        tex = mc.gerar(dados, prem, R, num, DATA, GIT)
         assert "commit \\texttt{0123456789ab}" in tex and DATA in tex and "P-43, F10w" in tex
         assert "Premissas diferentes do padrão & nenhuma" in tex
         linha = next(li for li in tex.splitlines() if li.startswith("C-03 &"))
         assert ("---" in linha) == (num in SEM_AGUA)
-    assert r"\eta_{A,\mbox{SG-001}}$ & ---" in mc.gerar(dados, prem, R, 4, layout, DATA, GIT)
+    assert r"\eta_{A,\mbox{SG-001}}$ & ---" in mc.gerar(dados, prem, R, 4, DATA, GIT)
 
 
-def test_regra_de_referencia_e_premissa_alterada_na_folha_de_rosto(base):
+def test_premissa_alterada_na_folha_de_rosto(base):
     dados, _, _ = base
     prem = premissas(dados, eta_F=0.8)
-    tex = mc.gerar(dados, prem, resolver_todos(dados, prem, REFERENCIA), 2, "senai", DATA, GIT)
-    assert "modo de paridade" in tex and "P-43 \\texttt{eta\\_F} = 0{,}8" in tex
+    tex = mc.gerar(dados, prem, resolver_todos(dados, prem), 2, DATA, GIT)
+    assert "P-43 \\texttt{eta\\_F} = 0{,}8" in tex
 
 
 def test_isolado_igual_ao_lote(base, tmp_path):
     dados, prem, R = base
     nums = [r.num for r in R]
-    mc.exportar_lote(dados, prem, R, nums, tmp_path / "lote", mc.LAYOUTS, DATA, GIT)
+    mc.exportar_lote(dados, prem, R, nums, tmp_path / "lote", DATA, GIT)
     for num in nums:
-        mc.exportar_lote(dados, prem, R, [num], tmp_path / "um", mc.LAYOUTS, DATA, GIT)
-        for lay in mc.LAYOUTS:
-            nome = f"{lay}/{mc.nome_arquivo(num)}/{mc.nome_arquivo(num)}.tex"
-            assert (tmp_path / "um" / nome).read_bytes() == (tmp_path / "lote" / nome).read_bytes()
-    assert len(list((tmp_path / "lote").rglob("MC_Caso*.tex"))) == 2 * len(nums)
+        mc.exportar_lote(dados, prem, R, [num], tmp_path / "um", DATA, GIT)
+        nome = f"{mc.nome_arquivo(num)}/{mc.nome_arquivo(num)}.tex"
+        assert (tmp_path / "um" / nome).read_bytes() == (tmp_path / "lote" / nome).read_bytes()
+    assert len(list((tmp_path / "lote").rglob("MC_Caso*.tex"))) == len(nums)
 
 
-def test_cli_por_caso(tmp_path, monkeypatch, capsys):
-    assert main(["memorial", "--casos", str(CASOS), "--caso", "3", "--layout", "senai", "--saida", str(tmp_path),
-                 "--data", DATA]) == 0
+def test_cli_por_caso(tmp_path, monkeypatch):
+    assert main(["memorial", "--casos", str(CASOS), "--caso", "3", "--saida", str(tmp_path), "--data", DATA]) == 0
     assert (tmp_path / "MC_Caso03" / "MC_Caso03.tex").exists() and (tmp_path / "MC_Caso03" / "logo-senai.png").exists()
-    assert main(["memorial", "--casos", str(CASOS), "--layout", "ambos", "--saida", str(tmp_path)]) == 2
-    assert "--layout ambos vale com --caso" in capsys.readouterr().err
-    # `memorial --casos todos`: o arquivo padrão da pasta corrente, os dois layouts
+    # `memorial --casos todos`: o arquivo padrão da pasta corrente
     monkeypatch.chdir(tmp_path)
     shutil.copy(CASOS, tmp_path / "design_cases_bot.json")
     assert main(["memorial", "--casos", "todos", "--data", DATA]) == 0
-    assert len(list((tmp_path / "saida" / "memorial").rglob("MC_Caso*.tex"))) == 32
+    assert len(list((tmp_path / "saida" / "memorial").rglob("MC_Caso*.tex"))) == 16
 
 
 def test_interativo_itera_os_casos_e_o_comando_repete(tmp_path):
     pasta = tmp_path / "mem"
-    rc, out, _ = rodar(op("principal", "balanco"), op("balanco", "memorial_caso"), "1,2", "ambos", str(pasta), "n",
-                       "0", "0")
+    rc, out, _ = rodar(op("principal", "balanco"), op("balanco", "memorial_caso"), "1,2", str(pasta), "n", "0", "0")
     assert rc == 0
     antes = {p: p.read_bytes() for p in pasta.rglob("*.tex")}
-    assert len(antes) == 4
+    assert len(antes) == 2
     assert repetir_comando(out) == [0]
     assert {p: p.read_bytes() for p in pasta.rglob("*.tex")} == antes
 
@@ -98,11 +92,11 @@ def _texto(pdf):
 
 @pytest.mark.latex
 @pytest.mark.skipif(not compilacao.disponivel() or not shutil.which("pdftotext"), reason="latexmk/pdftotext ausentes")
-def test_os_16_pdfs_compilam_nos_dois_layouts(base, tmp_path):
+def test_os_16_pdfs_compilam(base, tmp_path):
     dados, prem, R = base
     nums = [r.num for r in R]
-    arquivos, erros = mc.exportar_lote(dados, prem, R, nums, tmp_path / "lote", mc.LAYOUTS, DATA, GIT, pdf=True)
-    assert erros == [] and len([a for a in arquivos if a.suffix == ".pdf"]) == 32
+    arquivos, erros = mc.exportar_lote(dados, prem, R, nums, tmp_path / "lote", DATA, GIT, pdf=True)
+    assert erros == [] and len([a for a in arquivos if a.suffix == ".pdf"]) == 16
     # isolado × lote no PDF, ignorando a data de criação: o texto extraído é o mesmo
-    um, _ = mc.exportar_lote(dados, prem, R, [2], tmp_path / "um", ("senai",), DATA, GIT, pdf=True)
-    assert _texto(um[-1]) == _texto(tmp_path / "lote" / "senai" / "MC_Caso02" / "MC_Caso02.pdf")
+    um, _ = mc.exportar_lote(dados, prem, R, [2], tmp_path / "um", DATA, GIT, pdf=True)
+    assert _texto(um[-1]) == _texto(tmp_path / "lote" / "MC_Caso02" / "MC_Caso02.pdf")

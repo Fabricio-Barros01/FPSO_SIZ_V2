@@ -1,0 +1,15 @@
+# Equilíbrio do fluido de poço (termo/servico.flash_tp) e critérios numéricos do seu fechamento.
+
+[flash]
+modelo = "Peng-Robinson sobre componentes reais do banco e pseudo-componentes caracterizados"
+fonte = "Peng & Robinson, Ind. Eng. Chem. Fundam. 15 (1976) 59-64; kij do banco ChemSep entre reais e zero em qualquer par com pseudo-componente; caracterização de Riazi & Al-Sahhaf, Fluid Phase Equilibria 117 (1996) 217-224 (caracterizacao_scn.toml)"
+fases = ["vapor", "liquido"]
+tolerancia_composicao = 1.0e-9
+fonte_tolerancia = "critério de validação de entrada do serviço (a composição tem de somar 1); não é grandeza física"
+
+[fechamento]
+# Critérios NUMÉRICOS de verificação de um flash, não premissas físicas. Todos entram em `ok`:
+# z_i = β·y_i + (1−β)·x_i por componente; somas das composições; balanços molar e mássico; e
+# a coerência entre as bases (β_mássica = β·MW_v/MW_mistura).
+tolerancia_componente = 1.0e-9
+tolerancia_soma = 1.0e-9

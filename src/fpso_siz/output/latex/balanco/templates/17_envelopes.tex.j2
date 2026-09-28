@@ -8,7 +8,7 @@ Variável & Valor & Unidade & Caso(s) & Origem\\\midrule\endfirsthead
 <% for e in envelopes_memorial %>
 <% set mx, casos = envelopes[e['id']] %>
 <% set v = mx / 1e3 if e['formato'] == 'mil' else (-mx if e['formato'] == 'neg' else (100 * mx if e['formato'] == 'pct' else mx)) %>
-<< e.get('nome_' ~ layout, e['nome']) if layout else e['nome'] >> & << v|br(e['casas']) >> & << e['unidade'] >> & << casos|ids >> & << e['origem'] >>\\
+<< e.get('nome_senai', e['nome']) >> & << v|br(e['casas']) >> & << e['unidade'] >> & << casos|ids >> & << e['origem'] >>\\
 <% endfor %>
 \midrule
 Maior pressão (igual em todos os casos; não discrimina) & << P['P_FWKO']|br >> & kPa & todos & F-02\\
@@ -44,5 +44,5 @@ Caso & Variação & $\dot Q_{\mbox{P-001}}$ & $\dot Q_{\mbox{P-002}}$ & $\dot Q_
 <% endfor %>
 \bottomrule\end{longtable}
 \end{landscape}
-\textbf{Leitura:} <% if regra_fwko == 'eficiencia' %>a água no óleo de saída do FWKO resulta da eficiência padrão do SG-001 (P-43) limitada por F-06; as linhas de $\eta_{A}$ padrão da Tabela~\ref{tab:sens} mostram o efeito dessa premissa do autor nas cargas térmicas e no reciclo, e a linha do BSW máximo, o do limite;<% else %>a água no óleo de saída do FWKO (P-24) é a premissa que mais altera cargas térmicas e vazão de reciclo quando o BSW de chegada é superior a 10~\%;<% endif %> o BSW do desidratador (P-28) domina a água de diluição; as pressões dos desgaseificadores redistribuem o gás entre os estágios da VRU sem alterar o total. Essas três grandezas foram classificadas com prioridade alta entre as informações recomendadas da Seção~\ref{sec:info}.
+\textbf{Leitura:} a água no óleo de saída do FWKO resulta da eficiência padrão do SG-001 (P-43) limitada por F-06; as linhas de $\eta_{A}$ padrão da Tabela~\ref{tab:sens} mostram o efeito dessa premissa do autor nas cargas térmicas e no reciclo, e a linha do BSW máximo, o do limite; o BSW do desidratador (P-28) domina a água de diluição; as pressões dos desgaseificadores redistribuem o gás entre os estágios da VRU sem alterar o total. Essas três grandezas foram classificadas com prioridade alta entre as informações recomendadas da Seção~\ref{sec:info}.
 

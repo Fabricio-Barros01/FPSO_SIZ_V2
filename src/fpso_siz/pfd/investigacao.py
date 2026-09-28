@@ -6,9 +6,9 @@ numérico ou de modelo (config/pfd/alarmes.toml). Aqui:
 - `alarmes(planta)`: um alarme por TAG inviável, com a evidência do próprio resultado (o
   que falhou, que casos têm solução isolados e com que x) e as hipóteses registradas;
 - `executar_variante(ctx, ident, v)`: o mesmo serviço por TAG com a alteração declarada
-  (premissa do balanço, entrada geral do TAG, vazão dividida por trens em paralelo, outra
-  alocação das correntes ou a circulação fixa da utilidade, resolvida em `pfd/circulacao.py`).
-  A variante é estudo: não muda o contexto nem o resultado padrão.
+  (premissa do balanço, entrada geral do TAG, vazão dividida por trens em paralelo ou outra
+  alocação das correntes). A variante é estudo: não muda o contexto nem o resultado padrão, e
+  só é executada por ferramenta (`tools/investigar_alarmes.py`), nunca dentro do memorial.
 
 Nada aqui é física nova: só se escolhe o que o motor avalia.
 """
@@ -17,7 +17,6 @@ import math
 from dataclasses import dataclass
 
 from fpso_siz.core.configuracao import carregar
-from fpso_siz.pfd import circulacao
 from fpso_siz.pfd import equipamento as servico
 from fpso_siz.pfd.equipamento import INVIAVEL
 from fpso_siz.pfd.tags import topologia_alternativa
@@ -62,10 +61,7 @@ def executar_variante(ctx, ident, v, estado=None):
     é tocado: premissas alteradas criam outro contexto (com o mesmo arquivo de casos e as
     mesmas propostas)."""
     if v.get("premissas"):
-        ctx = servico.Contexto(ctx.dados, alteracoes={**ctx.alteracoes, **v["premissas"]}, propostas=ctx.propostas,
-                               oleo_vivo=ctx.oleo_vivo, topologia_julia=ctx.topologia_julia)
-    if v.get("circulacao_fixa"):   # a utilidade mantém a vazão do caso de projeto (estudo)
-        return circulacao.executar(ctx, ident, v, estado)[0]
+        ctx = servico.Contexto(ctx.dados, alteracoes={**ctx.alteracoes, **v["premissas"]}, propostas=ctx.propostas)
     base = copy.deepcopy(estado) if estado is not None else servico.estado_inicial(ident)
     for chave, valor in v.get("geral", {}).items():
         base.editar(chave, float(valor), None, {})
@@ -74,14 +70,8 @@ def executar_variante(ctx, ident, v, estado=None):
         if t.tag != ident:
             raise ValueError(f"variante {v['rotulo']!r}: topologia de {t.tag}, não de {ident}")
         return servico.dimensionar(servico.preparar_tag(ctx, t, base), base)
-    fator = v.get("fator_vazao")
-    if fator:
-        rt0 = servico.dimensionar(servico.preparar(ctx, base), base)
-        for c in rt0.entradas.casos:
-            for chave in v["chaves_vazao"]:
-                val = c.valores.get(chave)
-                if val is not None and not val.lacuna and not val.faixa and math.isfinite(val.valor):
-                    base.editar(chave, val.valor / fator, [c.num], {})
+    if v.get("fator_vazao"):
+        servico.dividir_vazao(ctx, base, v["chaves_vazao"], v["fator_vazao"])
     return servico.dimensionar(servico.preparar(ctx, base), base)
 
 

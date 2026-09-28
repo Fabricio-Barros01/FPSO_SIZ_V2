@@ -9,11 +9,7 @@ Equipamento & Separação & Definição & Valor / critério & Origem\\\midrule\e
 \toprule Equipamento & Separação & Definição & Valor & Origem\\\midrule\endhead
 SG-001 & Gás/líquido (gás) & $Q_{G,C04}/Q_{G,in}$ & resultado de Standing & P-23 \AV\\
 SG-001 & Líquido no gás & $1-Q_{L,arr}/Q_{L,in}$ & 0,1 gal/MMscf & P-26 \AV\\
-<% if regra_fwko == 'eficiencia' %>
 SG-001 & Água livre & $Q_{A+D,C05}/Q_{A+D,C03}$ & $\max(<< P['eta_F']|mbn(2) >>;\ \eta_{\mathrm{req}})$ (eq.~\ref{eq:etaF}) & P-43, F-06\\
-<% else %>
-SG-001 & Água livre & $Q_{A+D,C05}/Q_{A+D,C03}$ & via BSW$_{C06}$ (eq.~\ref{eq:bswF}) & F-06, P-24 \AV\\
-<% endif %>
 SG-001 & Óleo na água & $1-\dot m_{O,C05}/\dot m_{O,C03}$ & 2.000 mg/L & F-12, P-25\\
 V-001 & Gás dissolvido & $Q_{G,C09}/Q_{G,diss,C08}$ & resultado de Standing & P-23 \AV\\
 TO-001 & Água emulsionada & $Q_{A+D,C12}/Q_{A+D,C10}$ & BSW$_{out}$ = 1~\% & P-28 \AV\\

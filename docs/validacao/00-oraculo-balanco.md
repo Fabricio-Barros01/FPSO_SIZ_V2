@@ -1,5 +1,7 @@
 # 00 — Oráculo do balanço preliminar (F1)
 
+> **Histórico.** Registro de uma etapa anterior à consolidação arquitetural (2026-09-28): o oráculo do script de referência e a regra do FWKO que ele usa saíram; o balanço produtivo é congelado por `regressao_eficiencia.json`. O funcionamento vigente está em [`../arquitetura/arquitetura-alvo.md`](../arquitetura/arquitetura-alvo.md).
+
 Data: 2026-09-23. **Estado: entregue.**
 
 ## O que é

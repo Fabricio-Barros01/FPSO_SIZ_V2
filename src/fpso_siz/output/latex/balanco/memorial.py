@@ -16,7 +16,6 @@ from importlib.resources import files
 from fpso_siz.balanco import indicadores
 from fpso_siz.balanco.auditoria import auditar
 from fpso_siz.balanco.balancos import balanco_bloco, balanco_global, origem_destino, topologia
-from fpso_siz.balanco.modelo import REFERENCIA, resolver_todos
 from fpso_siz.core.configuracao import carregar
 from fpso_siz.core.unidades import c_para_k
 from fpso_siz.output.latex.ambiente import ambiente
@@ -27,9 +26,7 @@ CORPO = ["02_introducao", "03_escopo", "04_fonte", "05_condicoes", "06_conversao
          "11n_B001", "11o_P003", "11p_MED001", "12_massa_caso", "13_energia", "14_consolidada", "15_eficiencias",
          "16_fechamento", "17_envelopes", "18_informacoes", "19_conclusoes", "20_referencias", "21_ap_correntes",
          "22_ap_componentes", "23_ap_rastro", "24_reprodutibilidade"]
-LAYOUTS = {"original": ["00_preambulo_original", "01_capa_original"],
-           "senai": ["00_preambulo_senai", "01_capa_senai"]}
-REGRA_DO_LAYOUT = {"original": REFERENCIA}  # layout que exige uma regra do FWKO (paridade)
+CAPA = ["00_preambulo_senai", "01_capa_senai"]
 
 
 def contexto(dados, prem, resultados):
@@ -58,12 +55,10 @@ def tipo(t):
     return r"\AV" if t == "A VALIDAR" else r"\tipo{" + t + "}"
 
 
-def preparar(dados, prem, resultados, layout=None):
-    """(ambiente, contexto) prontos para renderizar qualquer template do memorial. `layout`
-    escolhe a terminologia própria do layout (o `original` segue o script de referência)."""
+def preparar(dados, prem, resultados):
+    """(ambiente, contexto) prontos para renderizar qualquer template do memorial."""
     env = ambiente("fpso_siz.output.latex.balanco")
     ctx = contexto(dados, prem, resultados)
-    ctx["layout"] = layout
     ctx["avaliar"] = lambda expr: env.from_string(expr).render(ctx)
     # máximo entre casos de uma grandeza escrita como expressão de template em `r`
     ctx["maximo"] = lambda expr: indicadores.maximo(
@@ -71,10 +66,6 @@ def preparar(dados, prem, resultados, layout=None):
     ctx["tipo"] = tipo
     for nome in ("premissas", "envelopes", "criticos"):
         ctx[f"{nome}_memorial"] = _conteudo(f"{nome}_memorial.toml")
-    # regra do FWKO dos resultados: escolhe o texto do SG-001 e as linhas de premissa com `regra`
-    regra = resultados[0].fwko["regra"]
-    ctx["regra_fwko"] = regra
-    ctx["premissas_memorial"] = [p for p in ctx["premissas_memorial"] if p.get("regra", regra) == regra]
     ctx["caso"] = lambda n: resultados[nums_index(resultados, n)]
     ctx["fwko_exigidos"] = [r.num for r in resultados if r.fwko["exigido_acima"]]
     ctx["envelopes"] = indicadores.envelopes(resultados, dados, prem)
@@ -83,25 +74,17 @@ def preparar(dados, prem, resultados, layout=None):
     return env, ctx
 
 
-def gerar(dados, prem, resultados, layout="original"):
-    if layout not in LAYOUTS:
-        raise ValueError(f"layout desconhecido: {layout!r} (use {sorted(LAYOUTS)})")
-    regra = REGRA_DO_LAYOUT.get(layout)
-    if regra is not None and resultados[0].fwko["regra"] != regra:
-        resultados = resolver_todos(dados, prem, regra)
-    env, ctx = preparar(dados, prem, resultados, layout)
-    # linha com `layouts` só entra nos layouts citados (o `original` segue o script de referência)
-    ctx["premissas_memorial"] = [p for p in ctx["premissas_memorial"] if layout in p.get("layouts", LAYOUTS)]
-    return "".join(env.get_template(f"{nome}.tex.j2").render(ctx) for nome in LAYOUTS[layout] + CORPO)
+def gerar(dados, prem, resultados):
+    env, ctx = preparar(dados, prem, resultados)
+    return "".join(env.get_template(f"{nome}.tex.j2").render(ctx) for nome in CAPA + CORPO)
 
 
-def gravar(dados, prem, resultados, pasta, layout="original"):
-    """Grava main.tex (UTF-8) em `pasta`; no layout SENAI, também o logotipo. Devolve o .tex."""
+def gravar(dados, prem, resultados, pasta):
+    """Grava main.tex (UTF-8) e o logotipo em `pasta`. Devolve o .tex."""
     pasta = Path(pasta)
     pasta.mkdir(parents=True, exist_ok=True)
     tex = pasta / "main.tex"
-    tex.write_text(gerar(dados, prem, resultados, layout), encoding="utf-8")
-    if layout == "senai":
-        logo = files("fpso_siz.output.latex.balanco").joinpath("recursos", "logo-senai.png")
-        (pasta / "logo-senai.png").write_bytes(logo.read_bytes())
+    tex.write_text(gerar(dados, prem, resultados), encoding="utf-8")
+    logo = files("fpso_siz.output.latex.balanco").joinpath("recursos", "logo-senai.png")
+    (pasta / "logo-senai.png").write_bytes(logo.read_bytes())
     return tex

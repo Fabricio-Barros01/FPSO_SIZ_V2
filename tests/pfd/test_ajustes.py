@@ -2,6 +2,8 @@
 validação, contexto e o escritor TOML determinístico."""
 import tomllib
 
+from pathlib import Path
+
 import pytest
 
 from fpso_siz.balanco.dados import carregar_casos
@@ -10,7 +12,8 @@ from fpso_siz.pfd import ajustes as A
 from fpso_siz.pfd import equipamento as servico
 from fpso_siz.pfd import manual, planta
 
-from conftest import FIXTURES
+FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
+
 
 CASOS = FIXTURES / "python_ref" / "design_cases_bot.json"
 
@@ -73,10 +76,11 @@ def test_legado_f10b_equivale_ao_automatico(planta_ajustada, ajustes_sinteticos)
     aj = A.ler(ajustes_sinteticos)
     assert aj.legado and not aj.contexto and {e.modo for e in aj.todos()} == {"automatico"}
     assert all(not e.revisoes for e in aj.todos())
-    p = planta.dimensionar(planta_ajustada.dados, ajustes=aj, balanco=planta_ajustada.contexto.resultados_balanco,
-                           topologia_julia=True)
+    p = planta.dimensionar(planta_ajustada.dados, ajustes=aj, balanco=planta_ajustada.contexto.resultados_balanco)
     for a, b in zip(p.tags, planta_ajustada.tags, strict=True):
-        assert (a.status, a.resultado.x, a.resultado.driver_case) == (b.status, b.resultado.x, b.resultado.driver_case)
+        assert a.status == b.status
+        if a.resultado is not None:
+            assert (a.resultado.x, a.resultado.driver_case) == (b.resultado.x, b.resultado.driver_case)
 
 
 @pytest.mark.parametrize("dados, mensagem", [

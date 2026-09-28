@@ -1,4 +1,4 @@
-"""F3 — auditoria independente: paridade com o original, independência e sensibilidade."""
+"""Auditoria independente do balanço: independência do motor e sensibilidade a erro injetado."""
 import ast
 import dataclasses
 from pathlib import Path
@@ -7,15 +7,6 @@ from fpso_siz.balanco.auditoria import auditar
 from fpso_siz.balanco.dados import premissas
 
 FONTE = Path(__file__).resolve().parents[2] / "src" / "fpso_siz" / "balanco" / "auditoria.py"
-
-
-def como_original(aud):
-    return [[a["verificacao"], a["base"], a["max_desvio_abs"], a["unidade"]] for a in aud]
-
-
-def test_identica_ao_oraculo(resultados, dados, oraculo):
-    esperado = [[a["verificacao"], a["base"], a["max_desvio_abs"], a["unidade"]] for a in oraculo["auditoria"]]
-    assert como_original(auditar(resultados, dados, premissas(dados))) == esperado
 
 
 def test_nao_importa_o_motor():

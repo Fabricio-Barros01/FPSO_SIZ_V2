@@ -1,10 +1,9 @@
 """Memorial do balanço de massa e energia de UM caso (F11b): MC_Caso01 … MC_Caso16.
 
-Anexo do memorial do balanço (MC-SEN-SEP-COO-001), em dois layouts (`original`, no estilo
-do script de referência, e `senai`). Toda grandeza vem do núcleo: resultado do caso,
-`balanco/balancos.py` e `balanco/indicadores.py`; aqui só se escolhe texto e formato. A
-folha de rosto traz o commit, a regra do FWKO dos resultados, as premissas diferentes do
-padrão e a data. Casos sem fase aquosa (P-42) mostram "—" nas grandezas da fase aquosa.
+Anexo do memorial do balanço (MC-SEN-SEP-COO-001), no layout SENAI. Toda grandeza vem do
+núcleo: resultado do caso, `balanco/balancos.py` e `balanco/indicadores.py`; aqui só se
+escolhe texto e formato. A folha de rosto traz o commit, as premissas diferentes do padrão e
+a data. Casos sem fase aquosa (P-42) mostram "—" nas grandezas da fase aquosa.
 O arquivo de um caso é o mesmo gerado isolado ou em lote (a data é parâmetro).
 """
 from importlib.resources import files
@@ -21,7 +20,6 @@ from fpso_siz.output.latex.tag.memorial import data_hoje, proveniencia_git
 
 PACOTE = "fpso_siz.output.latex.caso"
 BALANCO = "fpso_siz.output.latex.balanco"
-LAYOUTS = ("original", "senai")
 TODOS = "todos"
 
 
@@ -54,9 +52,7 @@ def selecionar(texto, nums):
     return out
 
 
-def contexto(dados, prem, resultados, num, layout, data=None, git=None):
-    if layout not in LAYOUTS:
-        raise ValueError(f"layout desconhecido: {layout!r} (use {list(LAYOUTS)})")
+def contexto(dados, prem, resultados, num, data=None, git=None):
     meta = cfg()
     c = meta["caso"]
     r = next(x for x in resultados if x.num == num)
@@ -65,46 +61,38 @@ def contexto(dados, prem, resultados, num, layout, data=None, git=None):
     doc = dict(meta, numero=c["numero"].format(num=num), numero_balanco=meta["numero"], data=data or data_hoje(),
                descricao_revisao=c["descricao_revisao"], senai=dict(meta["senai"], tipo=c["tipo"], titulo=titulo.upper()))
     agua = indicadores.balanco_agua(r)
-    return dict(meta=doc, titulo=titulo, r=r, dados=dados, P=prem, layout=layout, ind=indicadores,
+    return dict(meta=doc, titulo=titulo, r=r, dados=dados, P=prem, ind=indicadores,
                 topo=topologia(), bb=balanco_bloco, gb=balanco_global, commit=commit, sujo=sujo,
-                versao=__version__, alteradas=premissas_alteradas(dados, prem), regra=r.fwko["regra"],
+                versao=__version__, alteradas=premissas_alteradas(dados, prem),
                 sem_agua=not sum(agua["entra"].values()) > 0, agua=agua, sem_fase=c["sem_fase"],
                 fech=indicadores.criterios()["fechamento_max"], preambulo_extra="")
 
 
-def gerar(dados, prem, resultados, num, layout="senai", data=None, git=None):
-    ctx = contexto(dados, prem, resultados, num, layout, data, git)
+def gerar(dados, prem, resultados, num, data=None, git=None):
+    ctx = contexto(dados, prem, resultados, num, data, git)
     return ambiente(PACOTE, BALANCO).get_template("mc_caso.tex.j2").render(ctx)
 
 
-def pasta_de(pasta, num, layouts):
-    """Pasta de um MC: <pasta>/MC_CasoNN, ou <pasta>/<layout>/MC_CasoNN com os dois layouts."""
-    pasta = Path(pasta)
-    return [(lay, (pasta / lay if len(layouts) > 1 else pasta) / nome_arquivo(num)) for lay in layouts]
-
-
-def gravar(dados, prem, resultados, num, pasta, layout="senai", data=None, git=None):
+def gravar(dados, prem, resultados, num, pasta, data=None, git=None):
     pasta = Path(pasta)
     pasta.mkdir(parents=True, exist_ok=True)
     tex = pasta / f"{nome_arquivo(num)}.tex"
-    tex.write_text(gerar(dados, prem, resultados, num, layout, data, git), encoding="utf-8")
-    if layout == "senai":
-        logo = files(BALANCO).joinpath("recursos", "logo-senai.png")
-        (pasta / "logo-senai.png").write_bytes(logo.read_bytes())
+    tex.write_text(gerar(dados, prem, resultados, num, data, git), encoding="utf-8")
+    logo = files(BALANCO).joinpath("recursos", "logo-senai.png")
+    (pasta / "logo-senai.png").write_bytes(logo.read_bytes())
     return tex
 
 
-def exportar_lote(dados, prem, resultados, nums, pasta, layouts=("senai",), data=None, git=None, pdf=False):
-    """Um MC por caso e layout, pela mesma função do caso isolado. (arquivos, [erros])."""
+def exportar_lote(dados, prem, resultados, nums, pasta, data=None, git=None, pdf=False):
+    """Um MC por caso, pela mesma função do caso isolado, em <pasta>/MC_CasoNN. (arquivos, [erros])."""
     git = git if git is not None else proveniencia_git()
     arquivos, erros = [], []
     for num in nums:
-        for lay, destino in pasta_de(pasta, num, layouts):
-            tex = gravar(dados, prem, resultados, num, destino, lay, data, git)
-            arquivos.append(tex)
-            if pdf:
-                try:
-                    arquivos.append(compilacao.compilar(tex))
-                except compilacao.ErroCompilacao as e:
-                    erros.append(f"{tex.stem} ({lay}): {e}")
+        tex = gravar(dados, prem, resultados, num, Path(pasta) / nome_arquivo(num), data, git)
+        arquivos.append(tex)
+        if pdf:
+            try:
+                arquivos.append(compilacao.compilar(tex))
+            except compilacao.ErroCompilacao as e:
+                erros.append(f"{tex.stem}: {e}")
     return arquivos, erros

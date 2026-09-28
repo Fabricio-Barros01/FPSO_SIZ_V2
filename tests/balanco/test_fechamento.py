@@ -1,4 +1,6 @@
 """F2 — fechamento de massa e energia por bloco e global, nos 16 casos."""
+import dataclasses
+
 from fpso_siz.balanco.balancos import balanco_bloco, balanco_global, balancos_por_bloco, topologia
 from fpso_siz.balanco.modelo import COMP, corrente
 
@@ -31,7 +33,40 @@ def test_fechamento_global(resultados):
 def test_bloco_sem_vazao_nao_divide_por_zero(resultados):
     r = resultados[0]
     streams = dict(r.streams, **{"C-25": corrente(), "C-26": corrente()})
-    vazio = type(r)(**{**r.__dict__, "streams": streams})
+    vazio = dataclasses.replace(r, streams=streams)
     b = balanco_bloco(vazio, {"entradas": ["C-26"], "saidas": ["C-25"], "Q_in": [], "Q_out": [], "W": []})
     assert b["em"] == 0.0 and b["eE"] == 0.0
     assert set(b["comp"]) == set(COMP)
+
+
+def test_reciclo_convergiu_abaixo_da_tolerancia(resultados):
+    for r in resultados:
+        assert r.iters < 499
+        assert r.residuo_reciclo < 1e-10
+
+
+def test_convergiu_explicito(resultados):
+    assert all(r.convergiu for r in resultados)
+
+
+def test_sem_convergencia_e_sinalizado(dados, monkeypatch):
+    import dataclasses
+    from types import MappingProxyType
+
+    from fpso_siz.balanco import modelo
+
+    const = modelo.constantes()
+    curto = dataclasses.replace(const, numerico=MappingProxyType({**const.numerico, "reciclo_max_iter": 2}))
+    monkeypatch.setattr(modelo, "constantes", lambda: curto)
+    r = modelo.resolver_caso(dados.caso(8), dados)
+    assert r.iters == 1
+    monkeypatch.undo()
+    assert not r.convergiu and r.residuo_reciclo > 1e-10
+
+
+def test_capacidade_e_volume(resultados):
+    r = resultados[7]
+    s = r.streams["C-21"]
+    assert r.C(s) == sum(s[c] * r.cp[c] for c in "OWDG")
+    assert r.vol(s, "O") == s["O"] / r.rho["O"] / (1 / 86400)
+    assert r.H(s, r.T_ref) == 0.0

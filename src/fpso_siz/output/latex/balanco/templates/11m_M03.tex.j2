@@ -6,7 +6,7 @@
 \paragraph{Saídas:} <% set b = bb(RD, blocos['M-03']) %>C-02: << ind.q_agua(RD, 'C-02')|br >> m³/d a << RD.T['C-02']|br(2) >>~\si{\celsius}, << RD.P['C-02']|br >>~\si{\kilo\pascal}.
 \paragraph{Balanço de massa:} $\varepsilon_m=$<< b['em']|sci >>.
 \paragraph{Balanço de energia:} $\varepsilon_E=$<< b['eE']|sci >>.
-\paragraph{Resultado preliminar:} <% set mx, idx = maximo("ind.q_agua(r, 'C-02')") %>maior reciclo: << mx|br >> m³/d (caso << idx|ids >>). <% if regra_fwko == 'eficiencia' %>O reciclo é governado pela eficiência do SG-001 (P-43; limitada por F-06): cada passagem devolve ao FWKO só a água que ele não removeu (ver sensibilidade).<% else %>O reciclo é governado pela P-24 e pode superar a própria água produzida (ver sensibilidade).<% endif +%>
+\paragraph{Resultado preliminar:} <% set mx, idx = maximo("ind.q_agua(r, 'C-02')") %>maior reciclo: << mx|br >> m³/d (caso << idx|ids >>). O reciclo é governado pela eficiência do SG-001 (P-43; limitada por F-06): cada passagem devolve ao FWKO só a água que ele não removeu (ver sensibilidade).
 \paragraph{Validação recomendada em etapa posterior:} filosofia de controle do reciclo (vazão mínima para 40~\si{\celsius} versus envio ao tratamento de água produzida).
 {\footnotesize\setlength{\tabcolsep}{3.5pt}\begin{longtable}{rrrrrrrr}
 \caption{M-03 --- reciclo (todos os casos).\label{tab:b13}}\\\toprule

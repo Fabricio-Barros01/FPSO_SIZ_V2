@@ -1,7 +1,8 @@
 # FPSO_Siz_V2 — contrato do projeto
 
-Backend Python (biblioteca + CLI) que substitui gradualmente o FPSO_Siz Julia. Estado e
-backlog: [`SPRINTS.md`](SPRINTS.md), que deve ser lido primeiro.
+Backend Python (biblioteca + CLI) de balanço, termodinâmica, dimensionamento e otimização do
+módulo de separação de um FPSO. Estado e backlog: [`SPRINTS.md`](SPRINTS.md), que deve ser lido
+primeiro; a arquitetura vigente está em [`docs/arquitetura/arquitetura-alvo.md`](docs/arquitetura/arquitetura-alvo.md).
 
 ## Skills instaladas
 Fonte e hashes em `skills-lock.json` (todas de `anthropics/claude-code`). O acervo real é
@@ -34,12 +35,16 @@ sem fonte, refatoração não muda número, contrato de dimensionamento — cont
 - **`../FPSO_Siz` (Julia) é somente leitura.** Para executar o Julia, use um
   `git archive <commit>` extraído em pasta temporária.
 - **`references/` é o acervo local fora do git.** O script `references/Balanço_Preliminar.py`
-  nunca é editado: ele é o oráculo do balanço.
-- **Refatoração não muda número.** O balanço tem paridade bit a bit com o oráculo
-  (`tests/fixtures/python_ref`) na regra do FWKO do script de referência (modo de
-  paridade, `--regra-fwko referencia`); a regra padrão (eficiência, P-43, F10w) é congelada
-  por `regressao_eficiencia.json`. Mudar um resultado exige justificativa escrita em
-  `docs/validacao/` e a revisão do oráculo ou da regressão.
+  nunca é editado (é a origem do balanço portado; o modo que o reproduzia saiu na consolidação).
+- **Refatoração não muda número.** Um caminho produtivo só (sem modos de paridade), congelado
+  por: o instantâneo bit a bit da planta (os 11 TAGs, varredura inteira), a
+  `regressao_eficiencia.json` do balanço, as fixtures de equipamento do Julia
+  (`tests/fixtures/julia/`, regressão dos métodos) e o gate de sanidade
+  (`tools/auditar_saida_pfd.py`). Mudar um resultado ativo exige parar, identificar a causa e
+  justificar por escrito em `docs/validacao/` antes de rever a regressão.
+- **Pronto é o caminho inteiro**: entrada → processo → propriedades → correntes →
+  dimensionamento → saída → memorial → gate. Comparação, modo sombra, estudo e protótipo são
+  marcos internos, não capacidade entregue; nada fica em paralelo ao caminho produtivo.
 - Toda fase fecha com os testes verdes, cobertura ≥ 90 % no núcleo e o SPRINTS.md
   atualizado.
 
@@ -70,7 +75,10 @@ sem fonte, refatoração não muda número, contrato de dimensionamento — cont
    0,541 contra mistura ideal de volumes) e `k` da fase líquida de hidrocarboneto — ambos em
    (c); `h` e `cp` dos pseudo-componentes — em (a). Ver `docs/validacao/30-caracterizacao-fluido-de-poco.md`.
    Corolário: um estado que mistura proveniências **não** se apresenta como produzido por um
-   modelo só — cada propriedade carrega de onde veio.
+   modelo só — cada propriedade carrega de onde veio. A declaração é única:
+   `config/termo/proveniencia.toml`, com `validade` e `origem` independentes e os
+   **consumidores reais** (lista vazia = diagnóstico); o `EstadoProcesso` e cada entrada de TAG
+   apontam para ela, e um teste prova que a declaração descreve o código.
 
 ## Contrato de dimensionamento
 Todo método herda `core.contrato.MetodoDimensionamento` e implementa os hooks com os
@@ -84,7 +92,8 @@ versionado (`docs/esquemas/README.md`).
 ## Dependências
 numpy/scipy só via `fpso_siz/_num.py`, para manter o port a C/Java mapeável; jinja2 só em
 `fpso_siz/output/`; thermo/chemicals (ChEDL, MIT; propriedades de fluido) só via
-`fpso_siz/pfd/_chedl.py`, com import preguiçoso. **Regra das fontes:** correlação ou valor
+`fpso_siz/termo/backend.py`, com import preguiçoso; fora de `termo/`, só a API de
+`termo/servico.py`. **Regra das fontes:** correlação ou valor
 sem fonte citável (acervo `references/` ou referência da docstring do ChEDL) é lacuna de
 entrada, nunca número suposto. No NixOS, os testes precisam do `LD_LIBRARY_PATH` do flake.
 Entre pelo devShell (`nix develop`, ou direnv): ele também fornece `pdftotext`
@@ -103,12 +112,10 @@ O paralelismo que rende de fato está DENTRO do cálculo caro: os testes de vali
 avaliam a população em processos (`_otim.py`), o que levou o `criterio_2` de 1441 s para 164 s sem
 mudar um único número — a equivalência é testada em `tests/pfd/test_otimizacao_paralela.py`.
 
-**A suíte não executa mais o Julia** (decisão do usuário em 2026-09-27: o código amadureceu e
-segue em outra direção). O marcador `julia` e o teste que reexecutava o FPSO_Siz para regenerar as
-fixtures saíram; `tests/fixtures/julia/` continua versionado e continua sendo o **oráculo
-numérico** dos equipamentos, com a proveniência em `manifesto.json` (commit `ab58fc6`) e o script
-`tools/exportar_fixtures_julia.sh` guardado para uma exportação manual. Rodar a suíte não exige
-mais Julia nem o repositório irmão.
+**A paridade com o Julia deixou de ser requisito da arquitetura** (consolidação, 2026-09-28).
+`tests/fixtures/julia/` segue versionado como **regressão dos métodos de equipamento** (que não
+dependem de modo nenhum), com a proveniência em `manifesto.json` (commit `ab58fc6`). Rodar a
+suíte não exige Julia nem o repositório irmão.
 
 ## Comandos
 ```
@@ -116,25 +123,22 @@ uv sync
 uv run pytest -n 4 --dist loadscope         # rodada do dia a dia (~10 min nesta máquina)
 uv run pytest -n 4 --dist loadscope --cov=fpso_siz --cov-fail-under=90   # fechamento de fase (~52 min)
 uv run pytest -m latex                      # compila os memoriais (lento)
-tools/exportar_fixtures_julia.sh [commit]   # só à mão: reexporta as fixtures do Julia (git archive)
-uv run python tools/comparar_memorial.py    # paridade da memória de cálculo, template a template
 uv run fpso-siz                             # modo interativo (num terminal); --ascii
-uv run fpso-siz balanco --casos design_cases_bot.json --saida saida/ [--regra-fwko referencia]
+uv run fpso-siz balanco --casos design_cases_bot.json --saida saida/
 uv run python tools/gerar_regressao_eficiencia.py   # regressão da regra padrão do FWKO (F10w)
 uv run python tools/auditar_saida_pfd.py     # gate de fim de fase: dimensionamento × JSON × MC (sai != 0 no erro)
-uv run fpso-siz dimensionar --exemplo alves_komesu [--saida saida/]      # contrato Julia
+uv run fpso-siz dimensionar --exemplo alves_komesu [--saida saida/]      # equipamento avulso por arquivo
 uv run fpso-siz dimensionar --tag V-001 --casos design_cases_bot.json --auto-balanco \
     [--ajustes ajustes_pfd.toml] [--saida saida/tag]
 uv run fpso-siz pfd --casos design_cases_bot.json [--ajustes ajustes_pfd.toml] [--saida saida/pfd]
-    # propostas (config/pfd/pendencias_propostas.toml) e óleo vivo por padrão;
-    # --sem-propostas / --oleo-morto / --topologia-julia voltam ao modo das fixtures (F10b, Julia)
-uv run python tools/reotimizar_trocadores.py   # reotimização discreta P-002/P-003 (F10x.7; lenta)
+    # propostas (config/pfd/pendencias_propostas.toml) por padrão; --sem-propostas deixa as lacunas abertas
 uv run fpso-siz pfd --casos design_cases_bot.json --saida saida/pfd --mc [--pdf]   # MC de cada TAG (F11)
 uv run fpso-siz dimensionar --tag V-001 --casos design_cases_bot.json --auto-balanco --saida saida/tag --mc [--pdf]
-uv run fpso-siz memorial --casos todos [--layout original|senai|ambos] [--pdf]    # MC_Caso01…16 (F11b)
+uv run fpso-siz memorial --casos todos [--pdf]      # MC_Caso01…16 (layout SENAI)
 uv run fpso-siz dimensionar --exemplo pinch_kemp             # Análise Pinch (F8), exemplo do livro
 uv run python tools/pinch_planta.py          # alvos do pré-aquecedor pela rede do balanço (F8)
-uv run python tools/estudo_circulacao.py     # circulação fixa e cascos em série (estudo; muito lenta)
+uv run python tools/relatorio_trem.py        # trem SG-001 → V-001 → V-002 de cada caso (diagnóstico)
+uv run python tools/investigar_alarmes.py    # variantes de estudo dos alarmes, pelo mesmo serviço
 uv run python tools/otimizar.py [--sub sg_001 --varredura]   # otimização NSGA-II (F15; lenta)
 FPSO_SNAPSHOTS=1 uv run pytest tests/test_terminal_pfd.py   # regenera os snapshots de tela
 ```

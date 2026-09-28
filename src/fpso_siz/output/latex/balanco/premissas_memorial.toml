@@ -1,9 +1,6 @@
 # Tabela de premissas do memorial (seção 6) e origem das linhas P-xx da rastreabilidade.
 # Conteúdo de documento (LaTeX). `valor` é uma expressão de template avaliada no contexto do
-# memorial: números vêm das premissas em uso, nunca digitados aqui. `layouts` (opcional)
-# restringe a linha a esses layouts; sem ele, a linha vale para todos. `regra` (opcional)
-# restringe a linha a uma regra do FWKO (constantes.toml [modelo]): o layout `original` usa
-# sempre a de referência.
+# memorial: números vêm das premissas em uso, nunca digitados aqui.
 
 [[linhas]]
 id = 'F-01'
@@ -323,22 +320,11 @@ tipo = 'CORRELAÇÃO'
 [[linhas]]
 id = 'P-24'
 parametro = '''BSW na saída de óleo do FWKO'''
-valor = '''$\min(40\%,\mathrm{BSW}_{C\text{-}01})$'''
-unidade = '''\% vol'''
-justificativa = '''F-06; unicidade do laço de reciclo'''
-impacto = '''Reciclo e cargas térmicas (dominante)'''
-tipo = 'A VALIDAR'
-regra = 'referencia'
-
-[[linhas]]
-id = 'P-24'
-parametro = '''BSW na saída de óleo do FWKO'''
 valor = '''$\le << (100 * P['BSW_F'])|mbn >>\%$'''
 unidade = '''\% vol'''
 justificativa = '''Resulta de $\eta_{A}$ do SG-001 (P-43), limitado por F-06 (BOT 2.7.1.2)'''
 impacto = '''Reciclo e cargas térmicas (dominante)'''
 tipo = 'DADO DERIVADO'
-regra = 'eficiencia'
 
 [[linhas]]
 id = 'P-25'
@@ -501,7 +487,6 @@ unidade = '''--'''
 justificativa = '''BOT Tab.~2.2.2.3, Nota~5 (faixa de \textit{water cut}) e Nota~11 (reciclo de óleo para aquecimento); BOT 2.3.1.1 (especificação como limite superior)'''
 impacto = '''Critérios da fase aquosa dos vasos não aplicáveis nesses casos (não governam o envelope); fase aquosa dimensionada pelos casos com água; reciclo de aquecimento é de óleo (P-41)'''
 tipo = 'PREMISSA'
-layouts = ['senai']
 
 [[linhas]]
 id = 'P-43'
@@ -511,4 +496,3 @@ unidade = '''--'''
 justificativa = '''Premissa do autor; editável pelo usuário'''
 impacto = '''Água no óleo do FWKO, reciclo e cargas térmicas; $\eta_{\mathrm{req}}<\eta_{\mbox{padrão}}$ é diagnóstico'''
 tipo = 'PREMISSA'
-regra = 'eficiencia'

@@ -1,5 +1,7 @@
 # F13/Etapa 2 — circulação fixa da utilidade e cascos em série (estudos)
 
+> **Histórico.** Registro de uma etapa anterior à consolidação arquitetural (2026-09-28): o estudo de circulação fixa (`pfd/circulacao.py`) saiu. O funcionamento vigente está em [`../arquitetura/arquitetura-alvo.md`](../arquitetura/arquitetura-alvo.md).
+
 Gerado por `tools/estudo_circulacao.py`; todos os números saem do motor e do rastro.
 
 Os dois estudos foram autorizados pelo usuário em 2026-09-26 **como estudo**. O cálculo padrão não muda: a vazão da utilidade continua proporcional à carga (ṁ = q/(cp·ΔT), com o ΔT fixo pelos insumos `t_agua_in`/`t_agua_out`), a política de divisão em cascos do P-003 continua a de cascos em paralelo, e as recomendações dos TAGs continuam as da reotimização F10x.7 (`docs/validacao/18-trocadores.md`). Nada aqui é promovido a premissa ou a padrão.

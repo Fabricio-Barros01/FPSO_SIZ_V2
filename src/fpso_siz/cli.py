@@ -13,7 +13,7 @@ from fpso_siz import __version__
 from fpso_siz.balanco import indicadores
 from fpso_siz.balanco.auditoria import auditar
 from fpso_siz.balanco.dados import carregar_casos, descritores_premissas, premissas
-from fpso_siz.balanco.modelo import EFICIENCIA, REFERENCIA, resolver_todos
+from fpso_siz.balanco.modelo import resolver_todos
 from fpso_siz.core import registro
 from fpso_siz.core.configuracao import carregar, exemplos
 from fpso_siz.output import dimensionamento
@@ -30,7 +30,6 @@ from fpso_siz.pfd import ajustes as mod_ajustes
 from fpso_siz.pfd import equipamento as servico
 from fpso_siz.pfd import propostas as mod_propostas
 
-AMBOS = "ambos"
 COLUNAS = 79  # largura dos resumos fora do modo interativo (saída pode ser arquivo)
 CHAVES_BOT = ("casos_arquivo", "casos_sha256", "casos")
 
@@ -46,7 +45,7 @@ def _mostrar(estilo, linhas):
 def cmd_balanco(a):
     dados = carregar_casos(a.casos)
     prem = premissas(dados, **_alteracoes(a.premissa))
-    resultados = resolver_todos(dados, prem, a.regra_fwko)
+    resultados = resolver_todos(dados, prem)
     aud = auditar(resultados, dados, prem)
     arq_json, arq_csv = gravar_balanco(dados, prem, resultados, aud, a.saida)
     e = _estilo(a)
@@ -80,22 +79,18 @@ def _arquivo_casos(a):
 
 def cmd_memorial(a):
     por_caso = a.caso is not None or a.casos == memorial_caso.TODOS
-    if a.layout == AMBOS and not por_caso:
-        raise ValueError(f"--layout {AMBOS} vale com --caso (memorial por caso)")
     dados = carregar_casos(_arquivo_casos(a))
     prem = premissas(dados, **_alteracoes(a.premissa))
     saida = a.saida or Path(carregar("interativo.toml")["pasta_padrao"]) / "memorial"
     if por_caso:
-        resultados = resolver_todos(dados, prem, a.regra_fwko)
+        resultados = resolver_todos(dados, prem)
         nums = memorial_caso.selecionar(a.caso or memorial_caso.TODOS, [r.num for r in resultados])
-        layouts = memorial_caso.LAYOUTS if a.layout in (None, AMBOS) else (a.layout,)
-        arquivos, erros = memorial_caso.exportar_lote(dados, prem, resultados, nums, saida, layouts, a.data, pdf=a.pdf)
+        arquivos, erros = memorial_caso.exportar_lote(dados, prem, resultados, nums, saida, a.data, pdf=a.pdf)
         print("memoriais por caso: " + ", ".join(str(p) for p in arquivos))
         return _codigo_mc(erros, 0)
     resultados = resolver_todos(dados, prem)
-    layout = a.layout or "original"
-    tex = memorial.gravar(dados, prem, resultados, saida, layout)
-    print(f"memorial ({layout}): {tex}")
+    tex = memorial.gravar(dados, prem, resultados, saida)
+    print(f"memorial: {tex}")
     if a.pdf:
         try:
             print(f"PDF: {compilacao.compilar(tex)}")
@@ -167,8 +162,7 @@ def _dimensionar_equipamento(a):
             raise ValueError("--tag exige --casos (o JSON do BOT que identifica o contexto)")
         t = tag(a.tag)
         ctx = servico.Contexto(carregar_casos(a.casos), alteracoes=_alteracoes(a.premissa),
-                               propostas=_propostas(a), oleo_vivo=not a.oleo_morto,
-                               topologia_julia=a.topologia_julia)
+                               propostas=_propostas(a))
         estado = _estado_do_tag(a, t, aj)
         _verificar_contexto(aj, ctx, [estado])
     else:
@@ -238,8 +232,7 @@ def cmd_dimensionar(a):
 
 def cmd_interativo(a):
     return Sessao(casos=a.casos, ajustes=a.ajustes, ascii=a.ascii,
-                  propostas=False if a.sem_propostas else a.propostas, oleo_vivo=not a.oleo_morto,
-                  topologia_julia=a.topologia_julia).rodar()
+                  propostas=False if a.sem_propostas else a.propostas).rodar()
 
 
 def cmd_pfd(a):
@@ -247,8 +240,7 @@ def cmd_pfd(a):
     from fpso_siz.output.terminal.pfd import resumo
     from fpso_siz.pfd.planta import dimensionar
 
-    ctx = servico.Contexto(carregar_casos(a.casos), alteracoes=_alteracoes(a.premissa), propostas=_propostas(a),
-                           oleo_vivo=not a.oleo_morto, topologia_julia=a.topologia_julia)
+    ctx = servico.Contexto(carregar_casos(a.casos), alteracoes=_alteracoes(a.premissa), propostas=_propostas(a))
     aj = _ler_ajustes(a.ajustes)
     _verificar_contexto(aj, ctx, aj.todos())
     _validar_mc(a)
@@ -281,12 +273,6 @@ def _opcao_propostas(sub):
                           "padrão: o do pacote (config/pfd/pendencias_propostas.toml)")
     sub.add_argument("--sem-propostas", action="store_true", dest="sem_propostas",
                      help="não carrega valores propostos: as entradas sem fonte ficam como lacuna")
-    sub.add_argument("--oleo-morto", action="store_true", dest="oleo_morto",
-                     help="viscosidade do óleo morto do BOT, sem a correção de óleo vivo (Beggs & Robinson); "
-                          "modo das fases F10b–F13 e das fixtures do Julia")
-    sub.add_argument("--topologia-julia", action="store_true", dest="topologia_julia",
-                     help="alocação de correntes do PFD F1 do Julia (óleo no tubo do P-002/P-003, sem a P-46): "
-                          "modo das fixtures do Julia e da regressão F10b")
 
 
 def _opcoes_mc(sub):
@@ -315,9 +301,6 @@ def main(argv=None):
     b.add_argument("--saida", required=True, type=Path, help="pasta de saída (JSON + CSV)")
     b.add_argument("--premissa", action="append", default=[], metavar="NOME=VALOR",
                    help="sobrescreve uma premissa (repetível); ver `fpso-siz premissas`")
-    b.add_argument("--regra-fwko", choices=(EFICIENCIA, REFERENCIA), default=None,
-                   help="separação de água livre no SG-001: eficiência η = máx(η_padrão; η_req) (padrão) ou "
-                        "a regra do script de referência, mín(40 %%; BSW de chegada), para paridade com o oráculo")
     b.add_argument("--ascii", action="store_true", help="texto só em ASCII (setas, bordas, acentos)")
     b.set_defaults(func=cmd_balanco)
 
@@ -326,11 +309,6 @@ def main(argv=None):
                                    "um MC_CasoNN por caso, com o arquivo padrão")
     m.add_argument("--caso", help="memorial por caso: N, lista (1,4-7) ou 'todos' → MC_CasoNN")
     m.add_argument("--saida", type=Path, help="pasta de saída (padrão: saida/memorial)")
-    m.add_argument("--layout", choices=[*sorted(memorial.LAYOUTS), AMBOS], default=None,
-                   help="original = idêntico ao script de referência; senai = template SENAI CETIQT; "
-                        f"{AMBOS} (só com --caso; padrão do memorial por caso)")
-    m.add_argument("--regra-fwko", choices=(EFICIENCIA, REFERENCIA), default=None,
-                   help="com --caso: regra do FWKO dos resultados (padrão: eficiência)")
     m.add_argument("--premissa", action="append", default=[], metavar="NOME=VALOR")
     m.add_argument("--pdf", action="store_true", help="compila com latexmk, se instalado")
     m.add_argument("--data", help="com --caso: data da folha de rosto (DD/MM/AAAA; padrão: hoje)")
