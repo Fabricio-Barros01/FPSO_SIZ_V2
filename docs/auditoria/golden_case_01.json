@@ -1,7 +1,7 @@
 {
   "identidade": {
-    "commit": "930e6dd855b664f8c8f990622fa99ad1672ff066",
-    "src_modificado": true,
+    "commit": "30c804468082f218b581dbb1a17694db68a6cdf7",
+    "src_modificado": false,
     "casos": "tests/fixtures/python_ref/design_cases_bot.json",
     "sha256_casos": "ca3dfe559b32926c9d9ca4d9e75e2cec711f00f7fdfd2247242bbf3a754dac60"
   },
