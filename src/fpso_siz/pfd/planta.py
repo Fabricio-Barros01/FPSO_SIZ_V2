@@ -60,12 +60,15 @@ def normalizar(ajustes):
     return ler(ajustes)
 
 
-def dimensionar(dados=None, prem=None, ajustes=None, balanco=None, contexto=None):
+def dimensionar(dados=None, prem=None, ajustes=None, balanco=None, contexto=None, somente=None):
     """Planta dimensionada: um ResultadoTAG por TAG, todos pelo serviço por TAG.
-    `ajustes`: Ajustes, ou o dict do arquivo de ajustes."""
+    `ajustes`: Ajustes, ou o dict do arquivo de ajustes. `somente`: os TAGs a dimensionar (None =
+    todos) — cada TAG é dimensionado pelo serviço a partir do mesmo contexto, independente dos
+    outros, então o recorte não muda o resultado dos que ficam."""
     ctx = contexto if contexto is not None else Contexto(dados, prem=prem, balanco=balanco)
     aj = normalizar(ajustes)
-    estados = [aj.tags.get(t.tag) or equipamento.estado_inicial(t.tag) for t in tags()]
+    estados = [aj.tags.get(t.tag) or equipamento.estado_inicial(t.tag) for t in tags()
+               if somente is None or t.tag in somente]
     if any(e.modo == equipamento.AUTOMATICO for e in estados):
         ctx.balanco  # noqa: B018  (valida uma vez, antes de percorrer os TAGs)
     return Planta(ctx, [equipamento.executar(ctx, e) for e in estados], aj)

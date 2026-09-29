@@ -59,6 +59,38 @@ min = 1
 max = 2
 fonte = "faixa do descritor passes_tubo (Saari)"
 
+# P_D1 e P_D2: variáveis do SUBPROBLEMA DE PRESSÃO (docs/validacao/42), não do problema completo
+# ([completo] abaixo). Os extremos são DOMÍNIO DE ESTUDO declarado — a região da Nota 41
+# (docs/validacao/41) —, não limite de projeto: `natureza_min`/`natureza_max` dizem de onde cada
+# extremo vem. Os limites com fonte ou de processo que existem ficam como RESTRIÇÃO explícita
+# (TVP, P_D2 < P_D1) ou fora do domínio (sucção do compressor, 2.200 kPa, BOT estimado);
+# o piso de P_D2 não tem fonte (101,3 kPa, sucção do 1º estágio da VRU) e não vira bound.
+[[variavel]]
+id = "P_D1"
+rotulo = "pressão do V-001 (P_D1)"
+destino = "premissa"
+chave = "P_D1"
+tipo = "real"
+unidade = "kPa"
+min = 200.0
+max = 2000.0
+natureza_min = "dominio_estudo"
+natureza_max = "dominio_estudo"
+fonte = "domínio de estudo da Nota 41 (grade do mapa determinístico); o máximo fica abaixo do limite com fonte da sucção do compressor principal, 2.200 kPa (BOT §2.7.3.9.20.1, valor ESTIMADO pelo BOT), que por isso nunca fica ativo"
+
+[[variavel]]
+id = "P_D2"
+rotulo = "pressão do V-002 (P_D2)"
+destino = "premissa"
+chave = "P_D2"
+tipo = "real"
+unidade = "kPa"
+min = 110.0
+max = 250.0
+natureza_min = "dominio_estudo"
+natureza_max = "dominio_estudo"
+fonte = "domínio de estudo da Nota 41; o piso físico de P_D2 (sucção do 1º estágio da VRU) não tem fonte, e 110 kPa é só o extremo explorado; o teto efetivo vem da restrição de TVP, não de bound"
+
 # ---------------------------------------------------------------------------- objetivos
 # tipo: "soma_derivado" (soma um derivado dos TAGs listados) | "carga_balanco" (soma cargas do
 # balanço no caso de projeto do critério declarado)
@@ -95,6 +127,35 @@ tags = ["P-001", "P-002", "P-003"]
 sentido = "minimizar"
 fonte = "área de troca é o proxy de custo dos trocadores (0003); com cascos divididos vale a área total (derivados_v2)"
 
+# Objetivos do SUBPROBLEMA DE PRESSÃO (docs/validacao/42). Sem preço, custo ou peso.
+# razao_componente: Σ_casos m(componente, corrente) / Σ_casos m(componente, referencia), das
+#   correntes do EstadoProcesso (kg/s); `complemento = true` minimiza 1 − razão.
+# carga_balanco com `campo`: soma as chaves de r.<campo> (padrão: duties) em cada caso.
+# `casos`: "avaliaveis" (os 12 do trem produtivo) | ausente (todos os casos do balanço).
+[[objetivo]]
+id = "perda_oleo"
+rotulo = "perda de óleo estabilizado (1 − recuperação mássica)"
+unidade = "–"
+tipo = "razao_componente"
+componente = "O"
+corrente = "C-25"
+referencia = "C-01"
+complemento = true
+casos = "avaliaveis"
+sentido = "minimizar"
+fonte = "recuperação = Σ ṁ_O(C-25, óleo à estocagem) / Σ ṁ_O(C-01, alimentação) nos 12 casos avaliáveis; O é o teor de óleo de tanque (flash à condição padrão), conservado pelo trem (docs/validacao/39), e o que falta sai pelas outras saídas globais: como O nos vapores do SG-001, V-001 e V-002 e no óleo da água do FWKO (C-05, fixado pela premissa de teor de óleo na água, não pela pressão). Adimensional; por caso, massa e volume padrão dão a mesma razão (mesma ρ_O). Maximizar a recuperação = minimizar 1 − recuperação"
+
+[[objetivo]]
+id = "carga_vru"
+rotulo = "carga de vapor da VRU (V-001 + V-002)"
+unidade = "Sm³/d"
+tipo = "carga_balanco"
+campo = "gas"
+cargas = ["G_D1", "G_D2"]
+agregacao = "maximo_entre_casos"
+sentido = "minimizar"
+fonte = "vazão de vapor que chega à VRU (V-001 + V-002, Sm³/d) já calculada pelo balanço; o máximo entre os 16 casos, como o envelope com que os vasos são dimensionados. Não é potência de compressor (sem modelo de compressor)"
+
 # ---------------------------------------------------------------------------- restrições
 [restricoes]
 # Cada TAG tem de ficar viável. A violação é MEDIDA DE DISTÂNCIA ao admissível, não grandeza
@@ -115,6 +176,28 @@ estados_neutros = ["aguardando_entrada", "inativo"]
 estados_sem_dado = ["aguardando_entrada"]
 fonte = "restrições do contrato de dimensionamento como estado (0003); a métrica de violação é critério numérico da otimização, não premissa física"
 
+# Restrição do BALANÇO: uma grandeza do EstadoProcesso contra um limite com fonte. A violação é
+# CONTÍNUA, g = máx_casos(grandeza) / limite − 1 (g ≤ 0 atende; g < 0 é folga), e só nos casos da
+# classe declarada. Caso em que a grandeza não existe (NaN) deixa o ponto não avaliável.
+[[restricao_balanco]]
+id = "tvp"
+rotulo = "TVP do óleo tratado na estocagem ≤ limite do BOT"
+grandeza = "tvp_kPa"
+limite = { arquivo = "trem.toml", secao = "tvp", chave = "limite_kPa" }
+casos = "avaliaveis"
+natureza = "fonte"
+fonte = "BOT I-ET-3010.2K-1200-941-P4X-001 rev. C, §2.3.1.1 (TVP ≤ 70 kPa) e §2.7.1.10 (na estocagem). Verificada só nos 12 casos avaliáveis: nos 4 com gás de lift (9, 11, 15, 16) não há composição e a TVP NÃO é verificada. É restrição, não bound de P_D2"
+
+# Restrição entre VARIÁVEIS (topologia): g = 1 + (x_menor − x_maior)/x_maior quando x_menor ≥
+# x_maior, 0 caso contrário. O ponto que a viola não é avaliado (o processo não existe nele).
+[[restricao_variavel]]
+id = "p_d2_menor_que_p_d1"
+rotulo = "P_D2 < P_D1"
+menor = "P_D2"
+maior = "P_D1"
+natureza = "processo"
+fonte = "topologia do BOT (Fig. 2.7.1.17): o líquido do V-001 segue ao V-002 sem bomba; o ΔP mínimo de transferência não tem fonte"
+
 [algoritmo]
 # NSGA-II para 2–3 objetivos; NSGA-III (direções de Das-Dennis) a partir de 4 (0003).
 objetivos_max_nsga2 = 3
@@ -122,6 +205,14 @@ populacao = 40
 geracoes = 20
 semente = 1
 fonte = "0003: populações de 40–100 com avaliação cara; semente fixa para reprodutibilidade"
+
+# ---------------------------------------------------------------------------- problema completo
+# O problema completo da F15 (Rodada 1 do docs/validacao/23): as variáveis e objetivos com que
+# ele foi declarado. Explícito para que a variável ou o objetivo de um subproblema novo não entre
+# nele por omissão.
+[completo]
+variaveis = ["eta_F", "trens_sg", "passes_p002", "passes_p003"]
+objetivos = ["volume_vasos", "carga_aquecimento", "area_trocadores"]
 
 # ---------------------------------------------------------------------------- subproblemas
 # Um subproblema restringe variáveis, objetivos e TAGs restringidos. Existe por duas razões
@@ -140,3 +231,21 @@ fonte = "critério de validação 2 do 0003 (docs/decisoes/0003-otimizacao-pymoo
 # Passo da grade da varredura exaustiva com que a frente é conferida. É critério NUMÉRICO da
 # validação (resolução da conferência), não premissa física; variável inteira anda de 1 em 1.
 grade_passo = { eta_F = 0.02 }
+
+[[subproblema]]
+id = "pressao"
+rotulo = "pressões de separação: P_D1 × P_D2"
+variaveis = ["P_D1", "P_D2"]
+objetivos = ["perda_oleo", "carga_vru"]
+tags = ["SG-001", "V-001", "V-002"]
+restricoes_balanco = ["tvp"]
+restricoes_variavel = ["p_d2_menor_que_p_d1"]
+# só os TAGs do subproblema são dimensionados: P-001, P-002, P-003, TO-001, TO-002 e as bombas
+# ficam FORA (o P-001 segue inviável e não bloqueia este recorte, docs/validacao/41)
+dimensiona_so_tags = true
+fonte = "subproblema de pressão e separação (docs/validacao/42): P_D1, P_D2 → balanço (resolver_todos, recombinação da Nota 4, trem) → SG-001, V-001, V-002 → objetivos e restrições. Não é a otimização da planta inteira"
+grade_passo = { P_D1 = 150.0, P_D2 = 10.0 }
+# Relatório de cada ponto da frente (tools/otimizar.py): grandezas do balanço (máximo entre os
+# casos) e potências das bombas, só como métricas AUXILIARES — não são objetivo.
+relatorio_gas = ["G_F", "G_D1", "G_D2"]
+relatorio_potencias = ["W_Bo", "W_B1", "W_B2"]

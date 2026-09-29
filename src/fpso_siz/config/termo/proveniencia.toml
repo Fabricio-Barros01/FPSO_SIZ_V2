@@ -314,6 +314,17 @@ casos = "avaliaveis"
 nota = "ρ = P·MW_v/(Z_v·R·T) da fase vapor; entregue pela regra densidade_gas nos casos avaliáveis"
 
 [[propriedade]]
+id = "tvp_estocagem"
+rotulo = "TVP do óleo tratado na temperatura de estocagem"
+unidade = "kPa"
+origem = ["PengRobinson", "RiaziAlSahhaf"]
+validade = "validada"
+consumidores = ["otimizacao"]
+funcao = "pressao_bolha"
+casos = "avaliaveis"
+nota = "ponto de bolha do líquido final do trem (x do V-002) em T_store, pelo mesmo flash (EstadoProcesso.tvp_kPa). Validada no mesmo sentido do trem: consistência com o BOT, sem PVT medido. Consumida só pela restrição TVP ≤ 70 kPa do subproblema de pressão (docs/validacao/42); nos casos com gás de lift não existe e a restrição não é verificada"
+
+[[propriedade]]
 id = "MW_mistura"
 rotulo = "MW da mistura pelos MW adotados"
 unidade = "g/mol"

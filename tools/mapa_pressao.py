@@ -22,7 +22,6 @@ import csv
 import math
 from pathlib import Path
 
-from fpso_siz.balanco import trem
 from fpso_siz.balanco.dados import carregar_casos, premissas
 from fpso_siz.core import memoria
 from fpso_siz.core.configuracao import carregar
@@ -73,8 +72,7 @@ def ponto(dados, p_d1, p_d2):
     except ValueError as e:  # recombinação que não fecha, trem incompleto, flash sem convergência
         return dict(linha, estado=f"não convergiu: {e}")
     aval = [r for r in b if r.avaliavel]
-    T = ctx.prem[trem.cfg()["tvp"]["premissa_T"]]
-    tvps = {r.num: trem.tvp_kpa(r.trem, T, r.mws_plus) for r in aval}
+    tvps = {r.num: r.tvp_kPa for r in aval}
     finitas = [v for v in tvps.values() if math.isfinite(v)]
     lim = limite("tvp")["valor"]
     linha.update({

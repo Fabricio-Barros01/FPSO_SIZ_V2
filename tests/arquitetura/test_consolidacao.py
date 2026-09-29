@@ -134,20 +134,16 @@ def test_a_otimizacao_passa_pelo_servico(nome):
     assert not {"size_envelope", "size_single", "sizing_constraints", "flash_tp"} & chamadas_de_atributo(PACOTE / nome)
 
 
-def test_pressoes_do_trem_sao_premissas_otimizaveis_por_configuracao(monkeypatch):
-    """P_D1 e P_D2 viram variável de decisão por DECLARAÇÃO (`destino = "premissa"` no TOML): o
-    decodificador as entrega ao processo, e o trem as lê do estado — sem código novo. (A faixa,
-    com fonte, é decisão de projeto ainda não tomada: por isso não estão no TOML do pacote.)"""
+def test_pressoes_do_trem_sao_premissas_otimizaveis_por_configuracao():
+    """P_D1 e P_D2 viram variável de decisão por DECLARAÇÃO (`destino = "premissa"` no TOML, no
+    subproblema de pressão): o decodificador as entrega ao processo, e o trem as lê do estado —
+    sem código novo nem segundo resolvedor."""
     from fpso_siz.core.configuracao import carregar
     from fpso_siz.pfd import otimizacao as ot
     assert {"P_D1", "P_D2"} <= set(carregar("premissas.toml"))
-    base = ot.cfg()
-    extra = [dict(id=k, rotulo=k, destino="premissa", chave=k, tipo="real", min=1.0, max=2.0, fonte="teste")
-             for k in ("P_D1", "P_D2")]
-    monkeypatch.setattr(ot, "cfg", lambda: {**base, "variavel": [*base["variavel"], *extra]})
-    x = [v["min"] for v in base["variavel"]] + [650.0, 180.0]
-    prem, _, _ = ot.decodificar(x)
-    assert prem["P_D1"] == 650.0 and prem["P_D2"] == 180.0
+    assert all(v["destino"] == "premissa" for v in ot.variaveis("pressao"))
+    prem, _, _ = ot.decodificar((650.0, 180.0), "pressao")
+    assert prem == {"P_D1": 650.0, "P_D2": 180.0}
 
 
 # ------------------------------------------------------------------ nada órfão, nada de compatibilidade

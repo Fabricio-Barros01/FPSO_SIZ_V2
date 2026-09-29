@@ -115,6 +115,39 @@ def test_nao_convergir_e_estado_e_nao_excecao(monkeypatch, z, mws):
     assert not e.ok and "não convergiu" in e.mensagem and "faixa de composição" in e.mensagem and e.fases == ()
 
 
+def test_nao_convergencia_do_solver_do_backend_e_estado(monkeypatch, z, mws):
+    """O solver do ChEDL avisa que não convergiu com exceções próprias (fluids.numerics), que
+    não descendem de ArithmeticError nem de ValueError. A porta as traduz: o serviço devolve
+    estado com ok=False, e a otimização não cai por um ponto sem equilíbrio."""
+    from fluids.numerics import OscillationError
+
+    class Oscila:
+        def flash(self, **k):
+            raise OscillationError("Converged to cycle in errors, no progress being made")
+    monkeypatch.setattr(backend, "_pacote_pseudo", lambda *a: Oscila())
+    with pytest.raises(ArithmeticError, match="OscillationError"):
+        backend.flash_pseudo((), (), [1.0], T_K, P_PA, "PR")
+    e = termo.flash_tp(T_K, P_PA, z, mws)
+    assert not e.ok and "OscillationError" in e.mensagem
+
+
+def test_ponto_de_bolha_sem_equilibrio_em_algum_passo_e_nan(monkeypatch, bifasico, mws):
+    """Um flash que não converge no meio da bisseção não é "não ferve": sem equilíbrio não há
+    ponto de bolha, e a TVP fica NaN (não avaliável) em vez de deslocada em silêncio."""
+    real = termo.flash_tp
+    chamadas = []
+
+    def falha_no_terceiro(T, P, zz, m):
+        chamadas.append(P)
+        if len(chamadas) == 3:
+            return dataclasses.replace(real(T, P, zz, m), fases=(), ok=False)
+        return real(T, P, zz, m)
+    x = bifasico.liquido.composicao          # o líquido do FWKO: ferve abaixo de 2,5 MPa
+    assert math.isfinite(termo.pressao_bolha(T_K, x, mws))
+    monkeypatch.setattr(termo, "flash_tp", falha_no_terceiro)
+    assert math.isnan(termo.pressao_bolha(T_K, x, mws)) and len(chamadas) == 3
+
+
 def test_erro_de_programacao_nao_e_engolido(monkeypatch, z, mws):
     """Só ValueError e ArithmeticError viram estado. Um TypeError é defeito, e tem de aparecer."""
     def defeito(*a, **k):

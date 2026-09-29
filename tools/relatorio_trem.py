@@ -30,7 +30,7 @@ def e(x):
 
 
 def tvp(dados, prem, r):
-    return trem.tvp_kpa(r.trem, prem[trem.cfg()["tvp"]["premissa_T"]], r.mws_plus)
+    return r.tvp_kPa
 
 
 def p_d2_no_limite(dados, prem, caso):

@@ -43,8 +43,8 @@ def _saidas(a, ids_obj, tags, grande):
     dimensionado) entra como a penalidade declarada: o indivíduo é dominado, e a violação é que
     informa o caminho de volta ao admissível.
 
-    G tem uma posição a mais do que os TAGs restringidos: a ÚLTIMA conta os TAGs que ficaram
-    esperando entrada. Lacuna não é violação de projeto — por isso ela não entra na violação do
+    G tem uma posição por restrição declarada (TAGs, relações entre variáveis, grandezas do
+    balanço) e mais uma: a ÚLTIMA conta o que ficou esperando entrada. Lacuna não é violação de projeto — por isso ela não entra na violação do
     TAG —, mas também não é projeto avaliado, e sem essa posição o pymoo devolveria como
     "viável" um ponto de que não se sabe nada. Falta de dado não vira viabilidade por omissão."""
     return ([a.objetivos[i] if math.isfinite(a.objetivos[i]) else grande for i in ids_obj],
@@ -120,7 +120,7 @@ def _problema(dados, propostas, sub, pool=None):
 
     ids_obj = [o["id"] for o in otim.objetivos(sub)]
     lo, hi, _ = otim.limites(sub)
-    tags = otim.tags_restritas(sub)
+    tags = otim.ids_restricoes(sub)
     grande = float(carregar("pfd/otimizacao.toml")["algoritmo"].get("penalidade", 0)) or math.inf
 
     runner = None if pool is None else _Paralelo(pool, ids_obj, tags, grande)
@@ -132,7 +132,7 @@ def _problema(dados, propostas, sub, pool=None):
 
         def __init__(self):
             extra = {} if runner is None else {"elementwise_runner": runner}
-            # len(tags) violações de projeto + 1 posição para "ponto não avaliável" (ver _saidas)
+            # uma violação por restrição declarada + 1 posição para "ponto não avaliável" (ver _saidas)
             super().__init__(n_var=len(lo), n_obj=len(ids_obj), n_ieq_constr=len(tags) + 1,
                              xl=lo, xu=hi, **extra)
             self.avaliacoes = [] if runner is None else runner.avaliacoes
@@ -181,5 +181,5 @@ def _rodar(dados, propostas, sub, populacao, geracoes, semente, processos, pool)
     meta = {"algoritmo": nome, "pymoo": versao(), "semente": semente, "populacao": populacao,
             "geracoes": geracoes, "processos": processos, "avaliacoes": len(problema.avaliacoes),
             "subproblema": sub or "completo", "variaveis": [v["id"] for v in otim.variaveis(sub)],
-            "objetivos": ids_obj, "tags_restritas": tags}
+            "objetivos": ids_obj, "tags_restritas": otim.tags_restritas(sub), "restricoes": tags}
     return frente, problema.avaliacoes, meta

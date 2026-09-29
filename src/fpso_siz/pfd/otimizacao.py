@@ -18,6 +18,11 @@ fecharam com a película do lado tubo nos três regimes (`docs/validacao/24-peli
 **só o P-001 segue inviável**. Enquanto ele estiver aberto toda rodada é estudo, e quem gera
 relatório tem de dizer isso.
 
+O **subproblema de pressão** (`pressao`, docs/validacao/42) usa a mesma cadeia: P_D1 e P_D2 são
+premissas do balanço; os objetivos (perda de óleo estabilizado, carga de vapor da VRU) e a
+restrição de TVP são grandezas do `EstadoProcesso` agregadas como o TOML declara — aritmética
+sobre o estado, nenhuma física aqui —, e a relação P_D2 < P_D1 é restrição entre variáveis.
+
 Um TAG **replicado** (`fator_vazao`: a vazão é dividida por N unidades iguais) é dimensionado
 como UMA unidade, então o objetivo que soma um derivado extensivo dele soma N vezes o valor
 unitário — a multiplicidade sai da própria decodificação, sem o código citar TAG nenhum.
@@ -37,9 +42,9 @@ def cfg():
 
 
 def subproblema(ident):
-    """Declaração do subproblema, ou None para o problema completo."""
+    """Declaração do subproblema; para o problema completo (None), a declaração `[completo]`."""
     if ident is None:
-        return None
+        return cfg()["completo"]
     s = next((s for s in cfg().get("subproblema", []) if s["id"] == ident), None)
     if s is None:
         conhecidos = [x["id"] for x in cfg().get("subproblema", [])]
@@ -48,20 +53,34 @@ def subproblema(ident):
 
 
 def variaveis(sub=None):
-    s = subproblema(sub)
-    todas = cfg()["variavel"]
-    return todas if s is None else [v for v in todas if v["id"] in s["variaveis"]]
+    ids = subproblema(sub)["variaveis"]
+    return [v for v in cfg()["variavel"] if v["id"] in ids]
 
 
 def objetivos(sub=None):
-    s = subproblema(sub)
-    todos = cfg()["objetivo"]
-    return todos if s is None else [o for o in todos if o["id"] in s["objetivos"]]
+    ids = subproblema(sub)["objetivos"]
+    return [o for o in cfg()["objetivo"] if o["id"] in ids]
 
 
 def tags_restritas(sub=None):
-    s = subproblema(sub)
-    return list(cfg()["restricoes"]["tags"] if s is None else s["tags"])
+    return list(cfg()["restricoes"]["tags"] if sub is None else subproblema(sub)["tags"])
+
+
+def restricoes_balanco(sub=None):
+    ids = subproblema(sub).get("restricoes_balanco", [])
+    return [r for r in cfg().get("restricao_balanco", []) if r["id"] in ids]
+
+
+def restricoes_variavel(sub=None):
+    ids = subproblema(sub).get("restricoes_variavel", [])
+    return [r for r in cfg().get("restricao_variavel", []) if r["id"] in ids]
+
+
+def ids_restricoes(sub=None):
+    """Ids das restrições na ordem em que o algoritmo as recebe: os TAGs restringidos, as
+    restrições entre variáveis e as do balanço."""
+    return (tags_restritas(sub) + [r["id"] for r in restricoes_variavel(sub)]
+            + [r["id"] for r in restricoes_balanco(sub)])
 
 
 @dataclass(frozen=True)
@@ -69,10 +88,10 @@ class Avaliacao:
     """Um ponto do espaço de decisão avaliado pelo serviço por TAG."""
     x: tuple                 # vetor de decisão, na ordem de `variaveis()`
     objetivos: dict          # id → valor (NaN se algum TAG que ele soma não está dimensionado)
-    restricoes: dict         # id do TAG → violação g (0 = sem violação)
+    restricoes: dict         # id do TAG ou da restrição → violação g (≤ 0 atende; < 0 é folga)
     estados: dict            # id do TAG → status
     convergiu: bool
-    sem_dado: frozenset = frozenset()   # TAGs restringidos que aguardam entrada (lacuna)
+    sem_dado: frozenset = frozenset()   # TAGs que aguardam entrada ou restrições sem grandeza (lacuna)
 
     @property
     def avaliavel(self):
@@ -156,6 +175,38 @@ def multiplicidade(trens):
     return {ident: fator for ident, (fator, _) in trens.items()}
 
 
+def _casos(balanco, classe):
+    """Os casos da classe declarada: "avaliaveis" (trem produtivo) ou todos (None)."""
+    if classe is None:
+        return list(balanco)
+    if classe == "avaliaveis":
+        return [r for r in balanco if r.avaliavel]
+    raise ValueError(f"classe de caso desconhecida {classe!r}")
+
+
+def limite(r):
+    """Valor do limite de uma restrição do balanço, lido do TOML que o declara (uma declaração só)."""
+    ref = r["limite"]
+    return float(carregar(ref["arquivo"])[ref["secao"]][ref["chave"]])
+
+
+def restricao_balanco(r, balanco):
+    """(g, caso governante) de uma restrição do balanço: g = máx_casos(grandeza)/limite − 1.
+    Grandeza ausente (NaN) em algum caso da classe → (NaN, caso): o ponto não é avaliável."""
+    valores = [(getattr(e, r["grandeza"]), e.num) for e in _casos(balanco, r.get("casos"))]
+    faltando = [num for v, num in valores if not math.isfinite(v)]
+    if faltando or not valores:
+        return math.nan, (faltando or [None])[0]
+    v, num = max(valores)
+    return v / limite(r) - 1, num
+
+
+def _restricao_variavel(r, valores):
+    """Violação da relação x_menor < x_maior entre duas variáveis (0 quando atende)."""
+    menor, maior = valores[r["menor"]], valores[r["maior"]]
+    return 0.0 if menor < maior else 1 + (menor - maior) / maior
+
+
 def _objetivo(o, planta, mult=None):
     mult = mult or {}
     if o["tipo"] == "soma_derivado":
@@ -170,8 +221,17 @@ def _objetivo(o, planta, mult=None):
                 valor = d.get(o["derivado"], math.nan)
             total += int(mult.get(ident, 1)) * float(valor)
         return total
+    if o["tipo"] == "razao_componente":
+        casos = _casos(planta.balanco, o.get("casos"))
+        entra = sum(float(r.streams[o["referencia"]][o["componente"]]) for r in casos)
+        if not casos or entra <= 0:
+            return math.nan
+        razao = sum(float(r.streams[o["corrente"]][o["componente"]]) for r in casos) / entra
+        return 1 - razao if o.get("complemento") else razao
     if o["tipo"] == "carga_balanco":
-        cargas = [sum(float(r.duties[c]) for c in o["cargas"]) for r in planta.balanco]
+        campo = o.get("campo", "duties")
+        cargas = [sum(float(getattr(r, campo)[c]) for c in o["cargas"])
+                  for r in _casos(planta.balanco, o.get("casos"))]
         if o["agregacao"] != "maximo_entre_casos":
             raise ValueError(f"objetivo {o['id']!r}: agregação desconhecida {o['agregacao']!r}")
         return max(cargas) if cargas else math.nan
@@ -206,22 +266,38 @@ def avaliar(dados, x, propostas=None, sub=None):
     r = cfg()["restricoes"]
     tags = tags_restritas(sub)
     prem, geral, trens = decodificar(x, sub)
+    nan_objs = {o["id"]: math.nan for o in objetivos(sub)}
+    # relação entre variáveis violada: o processo não existe no ponto, e ele não é avaliado
+    valores = {v["id"]: float(xi) for v, xi in zip(variaveis(sub), x)}
+    topo = {rv["id"]: _restricao_variavel(rv, valores) for rv in restricoes_variavel(sub)}
+    if any(g > 0 for g in topo.values()):
+        zeros = {i: 0.0 for i in ids_restricoes(sub)}
+        return Avaliacao(tuple(x), nan_objs, {**zeros, **topo}, {ident: "" for ident in tags}, True)
     propostas = mod_propostas.padrao() if propostas is None else propostas
     try:
         ctx = servico.Contexto(dados, alteracoes=prem, propostas=propostas)
         ctx.balanco
     except ValueError:
-        return Avaliacao(tuple(x), {o["id"]: math.nan for o in objetivos(sub)},
-                         {ident: 1.0 for ident in tags}, {ident: "" for ident in tags}, False,
-                         frozenset())
+        return Avaliacao(tuple(x), nan_objs, {i: 1.0 for i in ids_restricoes(sub)},
+                         {ident: "" for ident in tags}, False, frozenset())
     ajustes = montar_ajustes(ctx, geral, trens)
-    planta = dimensionar(contexto=ctx, ajustes=Ajustes(tags=ajustes) if ajustes else None)
+    somente = None
+    if sub is not None and subproblema(sub).get("dimensiona_so_tags"):
+        somente = set(tags) | {t for o in objetivos(sub) for t in o.get("tags", [])}
+    planta = dimensionar(contexto=ctx, ajustes=Ajustes(tags=ajustes) if ajustes else None, somente=somente)
     estados = {ident: planta.tag(ident).status for ident in tags}
     restricoes = {ident: _violacao(planta.tag(ident), list(r["estados_neutros"])) for ident in tags}
-    sem_dado = frozenset(ident for ident in tags
-                         if estados[ident] in set(r["estados_sem_dado"]))
+    restricoes.update(topo)
+    sem_dado = {ident for ident in tags if estados[ident] in set(r["estados_sem_dado"])}
+    for rb in restricoes_balanco(sub):
+        g, _ = restricao_balanco(rb, planta.balanco)
+        if math.isfinite(g):
+            restricoes[rb["id"]] = g
+        else:
+            restricoes[rb["id"]] = 0.0
+            sem_dado.add(rb["id"])
     objs = {o["id"]: _objetivo(o, planta, multiplicidade(trens)) for o in objetivos(sub)}
-    return Avaliacao(tuple(x), objs, restricoes, estados, True, sem_dado)
+    return Avaliacao(tuple(x), objs, restricoes, estados, True, frozenset(sem_dado))
 
 
 # ------------------------------------------------------------------ validação (critério 2 do 0003)
@@ -230,8 +306,7 @@ def grade(sub, passos=None):
     variável, com o passo declarado (inteira anda de 1 em 1). `passos` sobrescreve os passos
     declarados — os testes usam grade mais grossa, e a ferramenta usa a do TOML."""
     import itertools
-    s = subproblema(sub)
-    declarados = dict(s.get("grade_passo", {})) if s else {}
+    declarados = dict(subproblema(sub).get("grade_passo", {}))
     declarados.update(passos or {})
     eixos = []
     for v in variaveis(sub):
@@ -268,3 +343,46 @@ def domina(a, b, ids, tol=0.0):
 def nao_dominados(pontos, ids, tol=0.0):
     """Os pontos não dominados de uma lista de dicionários de objetivos."""
     return [p for p in pontos if not any(domina(q, p, ids, tol) for q in pontos if q is not p)]
+
+
+# ------------------------------------------------------------------ conferência da frente
+def vizinhos(pontos, sub):
+    """Pares de pontos da grade que diferem em UM passo de UMA variável (os demais iguais)."""
+    eixos = [sorted({p[i] for p in pontos}) for i in range(len(variaveis(sub)))]
+    posicao = [{v: k for k, v in enumerate(e)} for e in eixos]
+    indice = {tuple(pos[v] for pos, v in zip(posicao, p)): p for p in pontos}
+    pares = []
+    for chave, p in indice.items():
+        for i in range(len(chave)):
+            outro = chave[:i] + (chave[i] + 1,) + chave[i + 1:]
+            if outro in indice:
+                pares.append((p, indice[outro]))
+    return pares
+
+
+def resolucao(avaliacoes, sub):
+    """{objetivo: ε} — a resolução da grade no espaço dos objetivos: a maior diferença do objetivo
+    entre dois pontos VIÁVEIS vizinhos da grade. Abaixo dela a grade não distingue nada, e é com
+    ela que a frente do algoritmo (que anda no contínuo) é conferida. Critério da validação, lido
+    da própria grade antes de rodar o algoritmo."""
+    por_x = {a.x: a for a in avaliacoes if a.viavel}
+    ids = [o["id"] for o in objetivos(sub)]
+    eps = {i: 0.0 for i in ids}
+    for p, q in vizinhos(list(por_x), sub):
+        for i in ids:
+            eps[i] = max(eps[i], abs(por_x[p].objetivos[i] - por_x[q].objetivos[i]))
+    return eps
+
+
+def cobre(a, b, eps):
+    """`a` cobre `b` dentro da resolução: a_i ≤ b_i + ε_i em todo objetivo (indicador ε aditivo)."""
+    return all(math.isfinite(a[i]) and a[i] <= b[i] + e for i, e in eps.items())
+
+
+def conferir_frente(frente, referencia, eps):
+    """(pontos da frente do algoritmo que a referência supera por mais que ε em todo objetivo,
+    pontos da frente de referência que a do algoritmo não cobre dentro de ε). As duas listas
+    vazias = a frente do algoritmo reproduz a de referência na resolução declarada."""
+    superados = [p for p in frente if any(all(q[i] < p[i] - e for i, e in eps.items()) for q in referencia)]
+    descobertos = [q for q in referencia if not any(cobre(p, q, eps) for p in frente)]
+    return superados, descobertos
