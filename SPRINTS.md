@@ -74,6 +74,8 @@ esse formato; R3/R4 do P-003 (mudam o que o MC mostra).
 ## Próximo marco
 
 **Fechar o laço P → flash → dimensionamento → otimização** (a contribuição central do TCC). O
-trecho P → flash → dimensionamento está ativo (nota 39). Próxima decisão do usuário: autorizar ou
-não P_D1/P_D2 como variáveis da otimização (subproblema de pressão/separação: SG-001, V-001,
-V-002), com a TVP como restrição e a faixa da pendência 7.
+trecho P → flash → dimensionamento está ativo (nota 39). O mapa determinístico de P_D1 × P_D2
+(nota 41) concluiu **C**: nenhuma das duas produz efeito suficiente nos objetivos atuais (volume
+dos três vasos 0,90 %, diâmetros e governantes constantes); elas respondem na TVP (P_D2), no gás
+à VRU (P_D1/P_D2), nas bombas e no óleo recuperado, que não são objetivos. Próxima decisão do
+usuário: se e com que modelo e fonte um objetivo capturaria esse efeito (P-001 segue fora).

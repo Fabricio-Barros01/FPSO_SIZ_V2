@@ -59,7 +59,7 @@ fonte_densidade = "grau API do poço na condição padrão (balanço, P-07 e eq.
 # Óleo VIVO (pedido do usuário em 2026-09-26: "corrija a viscosidade para o valor real").
 # O BOT (Tab. 2.2.1.2) só mede óleo morto; o gás dissolvido na condição do equipamento reduz a
 # viscosidade. Correção de Beggs & Robinson sobre o óleo morto do BOT, com o Rs da corrente
-# (gás dissolvido do balanço, Standing, P-23):
+# (gás dissolvido do balanço: pelo trem nos casos avaliáveis, por Standing nos demais):
 #   mu_o = A * mu_od^B,  A = a (Rs + b)^c,  B = d (Rs + e)^f,  Rs em scf/STB, mu em cP.
 # Referência bibliográfica publicada, FORA do acervo local (como a correlação de Standing do
 # balanço): a conferir no acervo. Abaixo da faixa de Rs não se extrapola: os coeficientes
@@ -79,6 +79,13 @@ f = -0.338
 faixa_rs_scf_stb = [20.0, 2070.0]
 faixa_api = [16.0, 58.0]
 faixa_t_f = [70.0, 295.0]
+# LIMITAÇÃO DE APLICABILIDADE (decisão do usuário, 2026-09-28: Rs do trem → Beggs & Robinson,
+# sem voltar a Standing só para a viscosidade). A correlação só recebe o VOLUME de gás
+# dissolvido (Rs); não tem variável de composição do gás. Aqui o gás dissolvido é rico em CO2
+# (17–56 % no fluido), e a fonte citada — fora do acervo — não demonstra aplicabilidade a esse
+# gás. Os Rs do trem (116–304 scf/STB), a API e as T estão dentro das faixas numéricas acima;
+# a extrapolação é de NATUREZA do gás, não de faixa. Sensibilidade: docs/validacao/40.
+limitacao = "sem variável de composição do gás; aplicabilidade a gás dissolvido rico em CO2 não demonstrada pela fonte (docs/validacao/40)"
 
 [emulsao]
 # Zanker — Branan, Rules of Thumb for Chemical Engineers, 5ª ed. (2012), p. 406, eq. 27-4:
