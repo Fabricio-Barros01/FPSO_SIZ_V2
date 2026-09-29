@@ -314,7 +314,8 @@ def _informado(v, origem, fonte):
 
 # ------------------------------------------------------------------ propriedades (memo por caso)
 def _rs(ctx, corrente):
-    """Gás dissolvido da corrente de líquido [scf/STB]: Q_G/Q_O padrão do balanço (Standing)."""
+    """Gás dissolvido da corrente de líquido [scf/STB]: Q_G/Q_O padrão do balanço (pelo trem nos
+    casos avaliáveis, por Standing nos com gás de lift)."""
     q_o = q(ctx.r, corrente, "O")
     return sm3sm3_para_scf_stb(q(ctx.r, corrente, "G") / q_o) if q_o > 0 else 0.0
 

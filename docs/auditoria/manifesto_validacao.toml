@@ -1,0 +1,115 @@
+# Manifesto de validação da release do TCC (FPSO_SIZ_V2).
+# Registro máquina-legível do que foi auditado, com que entrada e com que resultado.
+# Legível por humanos: docs/auditoria/AUDITORIA_TCC.md.
+
+[release]
+status = "PENDENTE DE VERIFICAÇÃO LATEX"
+motivo_status = "24 testes marcados 'latex' não rodaram: o contêiner da auditoria não tem latexmk/pdflatex/pdftotext; exigem o ambiente Nix (nix develop)"
+baseline_fisico = "b638c193e97450ac563aa5c5099ec3f2a6242e74"
+branch_auditoria = "claude/tcc-release-audit"
+data = "2026-09-29"
+tag = ""   # não criada: depende da verificação LaTeX e da conferência da entrada local
+alteracoes_de_fisica = "nenhuma (só documentação, comentários, textos de fonte e docstring)"
+
+[entrada]
+arquivo_auditado = "tests/fixtures/python_ref/design_cases_bot.json"
+sha256 = "ca3dfe559b32926c9d9ca4d9e75e2cec711f00f7fdfd2247242bbf3a754dac60"
+casos = 16
+arquivo_local_design_cases_bot = "ausente no checkout da auditoria; se aparecer, comparar o sha256 com o da fixture (não modificar nem versionar). Diferente → parar antes da tag"
+propostas = "src/fpso_siz/config/pfd/pendencias_propostas.toml"
+sha256_propostas_prefixo = "a1715287ab3a"
+
+[cenarios.base]
+descricao = "CENÁRIO-BASE / PREMISSAS INICIAIS — usado em todos os resultados produtivos"
+P_D1_kPa = 700.0
+P_D2_kPa = 200.0
+TVP_max_kPa_12_avaliaveis = 110.8
+TVP_min_kPa_12_avaliaveis = 93.1
+conformidade_TVP = "NÃO CONFORME ao limite de 70 kPa do BOT §2.3.1.1 nos 12 casos avaliáveis"
+
+[cenarios.otimizado]
+descricao = "RESULTADO DO SUBPROBLEMA DE OTIMIZAÇÃO DE PRESSÕES DENTRO DO DOMÍNIO DE ESTUDO (nota 42)"
+P_D1_kPa = [510.5, 538.2]
+P_D2_kPa = [133.7, 133.9]
+conformidade_TVP = "≤ 70 kPa nos 12 casos avaliáveis (restrição ativa)"
+nao_e = ["pressão definitiva de projeto", "premissa final da planta", "condição validada industrialmente"]
+motivos = ["piso de P_D2 sem fonte", "TVP avaliada só nos 12 casos sem lift", "subproblema não representa a planta inteira"]
+planta_redimensionada = false
+nsga2_reexecutado_na_auditoria = false
+evidencia = "docs/validacao/42-otimizacao-pressao.md; docs/validacao/otimizacao_pressao/"
+
+[verificacoes]
+suite_padrao = "1322 passed (baseline: 1321; +1 teste de arquitetura sobre tools/tabelas_auditoria.py) (-m 'not latex', -n 4 --dist loadscope, com cobertura)"
+cobertura = "95,93 % (limiar 90 %)"
+gate = "tools/auditar_saida_pfd.py: APROVADA (0 ERRO_NUMERICO, 0 ERRO_OUTPUT, 316 NAO_APLICAVEL, 22 INVIAVEL)"
+latex = "NÃO EXECUTADO — 24 testes pendentes no ambiente Nix"
+snapshots_regenerados = "tests/fixtures/terminal/entradas_P-002*.txt — só o texto da fonte da geometria recomendada (D3); nenhum número"
+
+[[regressao]]
+nome = "instantâneo bit a bit da planta (11 TAGs)"
+situacao = "inalterado"
+
+[[regressao]]
+nome = "tests/fixtures/python_ref/regressao_eficiencia.json (balanço)"
+situacao = "inalterado"
+
+[[regressao]]
+nome = "tests/fixtures/julia/ (métodos de equipamento)"
+situacao = "inalterado"
+
+[[regressao]]
+nome = "golden_pelicula_tubo.json"
+situacao = "inalterado"
+
+[planta]
+dimensionados = ["SG-001", "V-001", "V-002", "TO-001", "TO-002", "P-002", "P-003", "B-001", "B-002", "B-003"]
+inviaveis = ["P-001"]
+casos_avaliaveis = [1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 13, 14]
+casos_com_lift = [9, 11, 15, 16]
+golden_case = 2
+
+[[limitacao]]
+id = "T1"
+classificacao = "ACEITO COM LIMITAÇÃO / APROXIMAÇÃO DO MODELO"
+descricao = "o trem flasha a alimentação recombinada; remoções (óleo na água, arraste) e o óleo do reciclo do balanço não são realimentados composicionalmente estágio a estágio; massa global fecha"
+impacto_max = "0,55 % na base de óleo (caso 12)"
+
+[[achado]]
+id = "D1"
+onde = "README.md"
+situacao = "corrigido"
+
+[[achado]]
+id = "D2"
+onde = "SPRINTS.md"
+situacao = "corrigido"
+
+[[achado]]
+id = "D3"
+onde = "config/pfd/tags/p_002.toml, p_003.toml (fonte da geometria recomendada)"
+situacao = "corrigido — aponta para docs/validacao/18 e 24, ADR 0004, inventário e o commit de remoção f196f36"
+
+[[achado]]
+id = "D4"
+onde = "config/termo/fluidos.toml (comentários)"
+situacao = "corrigido"
+
+[[achado]]
+id = "D5"
+onde = "pfd/entradas._rs (docstring)"
+situacao = "corrigido"
+
+[[achado]]
+id = "D6"
+onde = "docs/validacao/35, 36, 37"
+situacao = "corrigido — nota de situação no topo; texto histórico preservado"
+
+[[achado]]
+id = "D7"
+onde = "output/latex/balanco/premissas_memorial.toml (P-18, P-19)"
+situacao = "corrigido — P-19 declarada cenário-base não conforme à TVP"
+
+[[achado]]
+id = "D8"
+onde = "config/premissas.toml (ids P-17, P-30, P-31 repetidos)"
+situacao = "mantido — agrupamentos deliberados, uma linha por id no memorial; não renomeado"

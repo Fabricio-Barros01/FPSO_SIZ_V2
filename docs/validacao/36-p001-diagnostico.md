@@ -1,5 +1,12 @@
 # 36 — P-001: o que torna o pré-aquecedor inviável (etapa B)
 
+> **Situação (release do TCC, 2026-09-29):** o diagnóstico continua válido — o P-001 segue
+> inviável no baseline `b638c19`, com a mesma causa. Os números das tabelas abaixo são do
+> baseline **anterior ao trem produtivo** (`f196f36`, gás por Standing); com o trem as cargas mudam
+> pouco (caso 2: Q_pre 16.532 → 16.343 kW, `39-trem-produtivo.md` §8). A frase "a reconferir com o
+> flash" sobre a sensibilidade a P_D1/P_D2 segue não reconferida: o P-001 ficou fora do subproblema
+> de pressão (notas 41 e 42).
+
 Diagnóstico **sem alteração de física**, com a planta produtiva do baseline `f196f36` (propostas do
 pacote; gate aprovado). Números lidos do `EstadoProcesso` (`resolver_todos`) e do motor
 (`fpso-siz dimensionar --tag P-001`); os de 1 passe vêm de `24-pelicula-baixo-reynolds.md`.

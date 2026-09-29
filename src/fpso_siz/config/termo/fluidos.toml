@@ -1,6 +1,6 @@
 # Propriedades de fluido na CONDIÇÃO DO EQUIPAMENTO (F10a) — o detalhamento que o balanço
 # preliminar não faz (ele trabalha na condição padrão, com Z = 1 e óleo morto; P-39, P-40).
-# Camada a jusante: o balanço não muda (paridade bit a bit mantida).
+# Camada a jusante do balanço: lê o EstadoProcesso, não o altera.
 #
 # Regra das fontes (usuário, 2026-09-23): só entra o que tem fonte citável — no acervo
 # `references/` ou na documentação da função do ecossistema ChEDL (thermo/chemicals, MIT;
@@ -52,7 +52,7 @@ rotulo_viscosidade = "BOT Tab. 2.2.1.2 / P-40"
 rotulo_densidade = "API (P-07)"
 # Viscosidade: óleo morto medido (BOT Tab. 2.2.1.2), interpolação log-linear e valor do
 # extremo fora da tabela — a mesma regra do balanço (P-40). A correção de óleo vivo está em
-# [oleo_vivo] (padrão; --oleo-morto a desliga); sem correção de Bo (limitação declarada no MC).
+# [oleo_vivo] (caminho único desde a consolidação); sem correção de Bo (limitação declarada no MC).
 fonte_viscosidade = "BOT I-ET-3010.2K-1200-941-P4X-001 rev. C, Tab. 2.2.1.2 (óleo morto); premissa P-40"
 fonte_densidade = "grau API do poço na condição padrão (balanço, P-07 e eq. do rho_oleo_api); sem correção por T e Bo"
 

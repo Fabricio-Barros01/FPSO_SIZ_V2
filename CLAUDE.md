@@ -138,6 +138,7 @@ uv run fpso-siz memorial --casos todos [--pdf]      # MC_Caso01…16 (layout SEN
 uv run fpso-siz dimensionar --exemplo pinch_kemp             # Análise Pinch (F8), exemplo do livro
 uv run python tools/pinch_planta.py          # alvos do pré-aquecedor pela rede do balanço (F8)
 uv run python tools/relatorio_trem.py        # trem SG-001 → V-001 → V-002 de cada caso (diagnóstico)
+uv run python tools/tabelas_auditoria.py     # tabelas da auditoria da release (docs/auditoria/)
 uv run python tools/investigar_alarmes.py    # variantes de estudo dos alarmes, pelo mesmo serviço
 uv run python tools/otimizar.py [--sub sg_001 --varredura]   # otimização NSGA-II (F15; lenta)
 uv run python tools/otimizar.py --sub pressao --processos 4 [--repetir]   # P_D1 × P_D2: grade-oráculo + NSGA-II (nota 42; horas)

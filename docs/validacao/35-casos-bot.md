@@ -1,6 +1,10 @@
 # 35 — O que os 16 casos do BOT representam (etapa A do laço pressão → flash)
 
-Nota de decisão **pendente de aprovação do usuário**. Não altera física nem número: registra a
+> **Situação (release do TCC, 2026-09-29):** decisão **tomada**. A recombinação da Nota 4 foi
+> adotada na referência do FWKO (nota 38, aprovada em 2026-09-28) e está no caminho produtivo nos
+> 12 casos sem gás de lift (nota 39). O texto abaixo é o registro da análise que a precedeu.
+
+Nota de decisão (na data, pendente de aprovação do usuário). Não altera física nem número: registra a
 leitura da fonte e a decisão que ela exige. Fonte: `docs/bot/I-ET-3010.2K-1200-941-P4X-001_C.pdf`
 (rev. C), folhas 10–13 e 23.
 

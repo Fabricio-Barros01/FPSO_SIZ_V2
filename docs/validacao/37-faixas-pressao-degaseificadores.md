@@ -4,6 +4,11 @@
 > trem produtivo, a 40 °C (estocagem): P_D2 em que a TVP atinge 70 kPa entre 133,4 e 157,3 kPa(a)
 > — `39-trem-produtivo.md` §9. Os números de §2 abaixo (z_base, 37,8 °C) ficam como registro;
 > nenhum dos dois é bound de otimização.
+>
+> **Situação (release do TCC, 2026-09-29):** o §5 ("P_D2 não muda vazão de gás nenhuma") descreve
+> o balanço **anterior** ao trem produtivo; hoje, nos 12 casos avaliáveis, P_D1 e P_D2 movem os
+> estágios do flash (notas 39 e 41). A TVP ≤ 70 kPa entrou como restrição contínua do subproblema
+> de pressão (nota 42), sem virar bound; o piso de P_D2 continua sem fonte.
 
 Investigação **sem alteração de física**. Fonte: BOT rev. C (`docs/bot/`). O acervo local
 `references/` não estava disponível nesta sessão: nada dele é citado aqui.

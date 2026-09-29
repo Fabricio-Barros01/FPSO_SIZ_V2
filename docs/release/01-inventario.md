@@ -176,7 +176,10 @@ sequência.
 `b638c193e974`, árvore limpa); 0 `ERRO_NUMERICO`, 0 `ERRO_OUTPUT`, 316 `NAO_APLICAVEL` e 22
 `INVIAVEL`, todos justificados.
 
-## Achados da leitura (a tratar nas próximas etapas; nada alterado)
+## Achados da leitura
+
+> **Situação:** D1–D7 corrigidos como documentação; D8 mantido (agrupamentos deliberados); T1
+> aceito como limitação; decisões de fechamento em `docs/auditoria/AUDITORIA_TCC.md`.
 
 ### Documentais (texto desatualizado ou rastreabilidade quebrada; não mudam número)
 

@@ -2,7 +2,8 @@
 
 Um programa que calcula **o tamanho dos equipamentos** que separam petróleo, água e gás a bordo
 de um navio-plataforma, e que entrega essa conta em forma auditável: cada número com a equação
-que o gerou e a fonte bibliográfica que autoriza a equação.
+que o gerou e a **origem declarada** de cada valor — fonte bibliográfica, premissa do autor ou
+valor proposto.
 
 Esta página é para quem **não é da área**. Não é necessário saber engenharia química para
 entender o que o software faz e como ele funciona.
@@ -70,7 +71,11 @@ pressões, composição do fluido.
 **Passo 2 — Balanço de massa e energia.** Antes de dimensionar qualquer equipamento, o programa
 resolve para onde vai cada quilo e cada joule: quanto de óleo, água e gás passa em cada ponto da
 planta, e quanto calor cada aquecedor e resfriador tem de trocar. É a contabilidade da planta —
-nada é criado nem destruído, e o programa verifica isso.
+nada é criado nem destruído, e o programa verifica isso. Nos 12 casos em que a composição do
+fluido é conhecida, o gás que sai em cada vaso vem de um cálculo de **equilíbrio de fases**
+(equação de estado de Peng-Robinson) sobre a composição do caso reconstruída pela Nota 4 do BOT;
+nos 4 casos com gás de lift, cuja composição a fonte não dá, vem de uma correlação clássica
+(Standing).
 
 **Passo 3 — Dimensionamento por envelope.** Aqui está a ideia central do software. Para cada
 equipamento, o programa varre uma dimensão — por exemplo, o diâmetro de um vaso, milímetro a
@@ -105,14 +110,24 @@ convenção da indústria: quem lê o desenho encontra o equipamento pelo TAG).
 
 Estas três decisões explicam quase tudo o que o software faz — e o que ele **se recusa** a fazer.
 
-### Nenhum número sem fonte
+### Cada número com a origem declarada
 
-Todo coeficiente, toda faixa de validade, toda premissa fica num arquivo de configuração **com a
-citação bibliográfica ao lado** — livro, capítulo, página, equação. Não há número solto no código.
+Não há número solto no código: todo coeficiente, faixa de validade e premissa fica num arquivo de
+configuração, com a origem ao lado. **Nem todo valor tem referência bibliográfica** — e o programa
+não finge que tem. Cada valor cai numa de quatro situações, sempre identificada:
 
-A consequência é incomum e deliberada: se falta um dado, o programa **não estima**. Ele marca
-aquela entrada como **lacuna** e diz o que precisa receber. Um valor inventado que parece
-razoável é pior que uma lacuna declarada, porque atravessa o projeto sem ninguém notar.
+- **dado ou correlação com fonte** → a fonte fica registrada (livro, capítulo, página, equação, ou
+  o documento do BOT);
+- **premissa do autor** → identificada como premissa (por exemplo, a aproximação de 10 K do
+  pré-aquecedor ou as pressões dos desgaseificadores);
+- **valor proposto sem fonte** → identificado como **proposta**, nunca como valor validado. Hoje
+  são **43** entradas de equipamento (geometria das linhas das bombas, condutividades e
+  incrustações dos trocadores, temperaturas das utilidades, gota dos tratadores), escolhidas pelo
+  autor para o fluxo rodar, cada uma com a justificativa física;
+- **lacuna** → se falta um dado e nada foi proposto, o programa **não estima**: marca a entrada como
+  lacuna e diz o que precisa receber.
+
+A lista completa está em [`docs/PREMISSAS_E_LIMITACOES.md`](docs/PREMISSAS_E_LIMITACOES.md).
 
 ### "Inviável" é uma resposta, não um erro
 
@@ -125,28 +140,45 @@ informação de projeto; entregar um número que não atende é defeito.
 ### Refatoração não muda número
 
 O programa é a reescrita, em Python, de uma versão anterior escrita em outra linguagem (Julia).
-Os resultados daquela versão ficaram congelados como **oráculo**: um conjunto de arquivos de
-referência que os testes comparam a cada mudança, número por número. Melhorar a organização do
-código é permitido; mudar um resultado sem justificativa escrita, não.
+A paridade com ela deixou de ser requisito; os resultados dos métodos de equipamento daquela
+versão seguem como **regressão**, junto com um instantâneo bit a bit da planta e da regressão do
+balanço. Melhorar a organização do código é permitido; mudar um resultado sem justificativa
+escrita, não.
 
-Existem hoje **1.177 testes automatizados**, e mudar um número exige documentar por quê em
-`docs/validacao/`.
+Existem hoje **1.346 testes automatizados** (1.322 na rodada padrão e 24 que compilam os memoriais
+em LaTeX), e mudar um número exige documentar por quê em `docs/validacao/`.
 
 ---
 
 ## 6. Em que ponto o projeto está
 
-Dos onze equipamentos, **dez estão dimensionados**.
+Dos onze equipamentos, **dez estão dimensionados** (tabela em
+[`docs/auditoria/RESULTADOS_EQUIPAMENTOS.md`](docs/auditoria/RESULTADOS_EQUIPAMENTOS.md)).
 
 O que falta é o **P-001**, o pré-aquecedor óleo/óleo — e a razão é física, não do programa. Ele
 troca calor entre dois óleos viscosos, e óleo viscoso escoando devagar é um mau condutor de calor:
 nos casos de baixa vazão a capacidade de troca do equipamento satura (cerca de 25 W por metro
 quadrado e por grau de diferença de temperatura) muito abaixo do que o serviço pedido exige. Para
-dar conta, o equipamento precisaria de uma área de troca absurda — o cálculo pede tubos de 434
-metros de comprimento, contra um limite prático de seis metros.
+dar conta, o equipamento precisaria de uma área de troca absurda — mesmo na melhor geometria da
+busca o tubo teria de ter 186 metros (434 m no caso mais desfavorável; diagnóstico da nota 36),
+contra um limite prático de seis metros.
 
 O programa **diz isso com número**, em vez de entregar um equipamento que não funcionaria. Essa é
 exatamente a regra da seção anterior em funcionamento.
+
+### Pressões dos desgaseificadores: cenário-base × resultado da otimização
+
+| | pressão do V-001 | pressão do V-002 | para que serve | pressão de vapor do óleo (TVP) nos 12 casos avaliáveis |
+|---|---|---|---|---|
+| **cenário-base** (premissas iniciais) | 700 kPa | 200 kPa | **todos** os resultados produtivos: balanço, 11 equipamentos, memoriais | 93–111 kPa: **NÃO CONFORME** ao limite de 70 kPa do BOT |
+| **subproblema otimizado** (nota 42) | ≈ 510–540 kPa | ≈ 134 kPa | só o estudo de otimização | ≤ 70 kPa (no limite) |
+
+O cenário-base não atende a especificação de TVP do BOT, e o programa **declara** isso em vez de
+esconder. O resultado da otimização é o **resultado de um subproblema dentro de um domínio de
+estudo** — não é pressão definitiva de projeto, nem premissa final da planta, nem condição
+validada industrialmente: o piso da pressão do V-002 não tem fonte, a TVP só pôde ser avaliada
+nos 12 casos sem gás de lift e o subproblema não representa a planta inteira. A planta não foi
+redimensionada com ele.
 
 ---
 
@@ -184,7 +216,11 @@ Rodar os testes:
 
 ```bash
 uv run pytest -n 4 --dist loadscope     # cerca de dez minutos
+uv run pytest -m latex                  # compila os memoriais (exige LaTeX, fornecido pelo nix develop)
 ```
+
+A entrada usada na auditoria da release é `tests/fixtures/python_ref/design_cases_bot.json`
+(sha256 `ca3dfe559b32…`); os comandos acima aceitam qualquer arquivo com o mesmo formato.
 
 ---
 
@@ -193,6 +229,8 @@ uv run pytest -n 4 --dist loadscope     # cerca de dez minutos
 | Arquivo | O que tem |
 |---|---|
 | [`SPRINTS.md`](SPRINTS.md) | o estado real do projeto, fase por fase, com o que foi decidido e por quê. É a fonte de verdade |
+| [`docs/PREMISSAS_E_LIMITACOES.md`](docs/PREMISSAS_E_LIMITACOES.md) | o que o software assume, o que ele não sabe e o que não pretende representar |
+| [`docs/auditoria/`](docs/auditoria/) | auditoria da release do TCC: afirmações conferidas, caso de referência (Golden Case) e resultados dos equipamentos |
 | [`docs/validacao/`](docs/validacao/) | um documento por verificação feita: de onde veio cada correlação, como foi conferida, que números deu |
 | [`docs/decisoes/`](docs/decisoes/) | as decisões de arquitetura, registradas com a alternativa que foi descartada |
 | [`CLAUDE.md`](CLAUDE.md) | o contrato técnico para quem for mexer no código: invariantes, regras de processo, comandos |

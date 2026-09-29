@@ -79,21 +79,31 @@
     chicana / diâmetro do casco
     espacamento_chicana · Revisão: revisão pendente
     espacamento_chicana · Fonte: melhor candidato da
-    reotimização discreta reexecutada com a película do
-    lado tubo nos três regimes
-    (tools/reotimizar_trocadores.py;
+    reotimização discreta F10x.7 reexecutada com a
+    película do lado tubo nos três regimes, dentro da
+    faixa da fonte do descritor; grade, candidatos e
+    escolha registrados em
     docs/validacao/18-trocadores.md e
-    24-pelicula-baixo-reynolds.md), dentro da faixa da
-    fonte do descritor (config/pfd/reotimizacao.toml)
+    24-pelicula-baixo-reynolds.md. A ferramenta e a
+    grade da busca saíram na consolidação
+    (docs/decisoes/0004-consolidacao-arquitetural.md;
+    docs/arquitetura/inventario.md) e ficam no histórico
+    do git (removidas em f196f36; última versão em
+    f196f36^)
     layout_tubos · Entrada: Arranjo do feixe
     layout_tubos · Revisão: revisão pendente
     layout_tubos · Fonte: melhor candidato da
-    reotimização discreta reexecutada com a película do
-    lado tubo nos três regimes
-    (tools/reotimizar_trocadores.py;
+    reotimização discreta F10x.7 reexecutada com a
+    película do lado tubo nos três regimes, dentro da
+    faixa da fonte do descritor; grade, candidatos e
+    escolha registrados em
     docs/validacao/18-trocadores.md e
-    24-pelicula-baixo-reynolds.md), dentro da faixa da
-    fonte do descritor (config/pfd/reotimizacao.toml)
+    24-pelicula-baixo-reynolds.md. A ferramenta e a
+    grade da busca saíram na consolidação
+    (docs/decisoes/0004-consolidacao-arquitetural.md;
+    docs/arquitetura/inventario.md) e ficam no histórico
+    do git (removidas em f196f36; última versão em
+    f196f36^)
     pares_veda · Entrada: Pares de faixas de vedação
     pares_veda · Revisão: revisão pendente
     pares_veda · Fonte: 1 par (Branan p. 44: regra de
@@ -111,11 +121,16 @@
     d_externo · Entrada: Diâmetro externo do tubo
     d_externo · Revisão: revisão pendente
     d_externo · Fonte: melhor candidato da reotimização
-    discreta reexecutada com a película do lado tubo nos
-    três regimes (tools/reotimizar_trocadores.py;
-    docs/validacao/18-trocadores.md e
-    24-pelicula-baixo-reynolds.md), dentro da faixa da
-    fonte do descritor (config/pfd/reotimizacao.toml)
+    discreta F10x.7 reexecutada com a película do lado
+    tubo nos três regimes, dentro da faixa da fonte do
+    descritor; grade, candidatos e escolha registrados
+    em docs/validacao/18-trocadores.md e
+    24-pelicula-baixo-reynolds.md. A ferramenta e a
+    grade da busca saíram na consolidação
+    (docs/decisoes/0004-consolidacao-arquitetural.md;
+    docs/arquitetura/inventario.md) e ficam no histórico
+    do git (removidas em f196f36; última versão em
+    f196f36^)
     espessura · Entrada: Espessura da parede do tubo
     espessura · Revisão: revisão pendente
     espessura · Fonte: Branan (2012) p. 38: 'start with
@@ -127,21 +142,31 @@
     tubo
     razao_passo · Revisão: revisão pendente
     razao_passo · Fonte: melhor candidato da
-    reotimização discreta reexecutada com a película do
-    lado tubo nos três regimes
-    (tools/reotimizar_trocadores.py;
+    reotimização discreta F10x.7 reexecutada com a
+    película do lado tubo nos três regimes, dentro da
+    faixa da fonte do descritor; grade, candidatos e
+    escolha registrados em
     docs/validacao/18-trocadores.md e
-    24-pelicula-baixo-reynolds.md), dentro da faixa da
-    fonte do descritor (config/pfd/reotimizacao.toml)
+    24-pelicula-baixo-reynolds.md. A ferramenta e a
+    grade da busca saíram na consolidação
+    (docs/decisoes/0004-consolidacao-arquitetural.md;
+    docs/arquitetura/inventario.md) e ficam no histórico
+    do git (removidas em f196f36; última versão em
+    f196f36^)
     passes_tubo · Entrada: Passes no lado tubo
     passes_tubo · Revisão: revisão pendente
     passes_tubo · Fonte: melhor candidato da
-    reotimização discreta reexecutada com a película do
-    lado tubo nos três regimes
-    (tools/reotimizar_trocadores.py;
+    reotimização discreta F10x.7 reexecutada com a
+    película do lado tubo nos três regimes, dentro da
+    faixa da fonte do descritor; grade, candidatos e
+    escolha registrados em
     docs/validacao/18-trocadores.md e
-    24-pelicula-baixo-reynolds.md), dentro da faixa da
-    fonte do descritor (config/pfd/reotimizacao.toml)
+    24-pelicula-baixo-reynolds.md. A ferramenta e a
+    grade da busca saíram na consolidação
+    (docs/decisoes/0004-consolidacao-arquitetural.md;
+    docs/arquitetura/inventario.md) e ficam no histórico
+    do git (removidas em f196f36; última versão em
+    f196f36^)
     n_min · Entrada: Tubos por passe — mínimo
     n_min · Fonte: t_agua_in, t_agua_out
     n_max · Entrada: Tubos por passe — máximo

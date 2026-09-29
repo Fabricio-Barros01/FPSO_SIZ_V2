@@ -1,0 +1,932 @@
+{
+  "identidade": {
+    "commit": "930e6dd855b664f8c8f990622fa99ad1672ff066",
+    "src_modificado": true,
+    "casos": "tests/fixtures/python_ref/design_cases_bot.json",
+    "sha256_casos": "ca3dfe559b32926c9d9ca4d9e75e2cec711f00f7fdfd2247242bbf3a754dac60"
+  },
+  "dados": {
+    "B-001": {
+      "nome": "Bomba de transferência de óleo",
+      "metodo": "moran",
+      "status": "dimensionado",
+      "x": 600.0,
+      "y": 75.02143550488118,
+      "governante": "estatica",
+      "caso_governante": "BOT 03 — Early Life Blend",
+      "mensagem": "",
+      "derivados": {
+        "v": 1.1580608086956428,
+        "re": 97143.03873213926,
+        "f": 0.018488919098261194,
+        "h_est": 74.05374561856912,
+        "h_atrito": 0.9676898863120568,
+        "npsh": 4.842228882752904,
+        "folga_npsh": 0.8422288827529041,
+        "confiavel": 1.0,
+        "re_min_correlacao": 4000.0,
+        "re_max_laminar": 2300.0,
+        "potencia": 304.91239992143005
+      },
+      "cartao": {
+        "Diâmetro nominal DN": {
+          "valor": 600.0,
+          "unidade": "mm",
+          "principal": true
+        },
+        "Carga do sistema H": {
+          "valor": 75.02143550488118,
+          "unidade": "m",
+          "principal": true
+        },
+        "Velocidade v": {
+          "valor": 1.1580608086956428,
+          "unidade": "m/s",
+          "principal": false
+        },
+        "Carga estática": {
+          "valor": 74.05374561856912,
+          "unidade": "m",
+          "principal": false
+        },
+        "Perda de carga": {
+          "valor": 0.9676898863120568,
+          "unidade": "m",
+          "principal": false
+        },
+        "Reynolds": {
+          "valor": 97143.03873213926,
+          "unidade": "",
+          "principal": false
+        },
+        "Fator de atrito f": {
+          "valor": 0.018488919098261194,
+          "unidade": "",
+          "principal": false
+        },
+        "NPSH disponível": {
+          "valor": 4.842228882752904,
+          "unidade": "m",
+          "principal": false
+        },
+        "Folga de NPSH": {
+          "valor": 0.8422288827529041,
+          "unidade": "m",
+          "principal": false
+        },
+        "Potência no caso governante": {
+          "valor": 304.91239992143005,
+          "unidade": "kW",
+          "principal": false
+        },
+        "Potência máxima operacional": {
+          "valor": 306.1025056655679,
+          "unidade": "kW",
+          "principal": false
+        },
+        "Potência nominal requerida": {
+          "valor": 307.2946808005769,
+          "unidade": "kW",
+          "principal": true
+        },
+        "Parcela governante": {
+          "valor": "carga estática",
+          "unidade": "",
+          "principal": false
+        },
+        "Caso governante": {
+          "valor": "BOT 03 — Early Life Blend",
+          "unidade": "",
+          "principal": false
+        }
+      }
+    },
+    "B-002": {
+      "nome": "Bomba de água produzida do desidratador",
+      "metodo": "moran",
+      "status": "dimensionado",
+      "x": 250.0,
+      "y": 183.42545303235974,
+      "governante": "estatica",
+      "caso_governante": "BOT 03 — Early Life Blend",
+      "mensagem": "",
+      "derivados": {
+        "v": 0.10046464534830817,
+        "re": 57363.94633519839,
+        "f": 0.020946609516295393,
+        "h_est": 183.41626268851857,
+        "h_atrito": 0.0091903438411728,
+        "npsh": 4.998540113323913,
+        "folga_npsh": 0.9985401133239131,
+        "confiavel": 1.0,
+        "re_min_correlacao": 4000.0,
+        "re_max_laminar": 2300.0,
+        "potencia": 13.761439894384965
+      },
+      "cartao": {
+        "Diâmetro nominal DN": {
+          "valor": 250.0,
+          "unidade": "mm",
+          "principal": true
+        },
+        "Carga do sistema H": {
+          "valor": 183.42545303235974,
+          "unidade": "m",
+          "principal": true
+        },
+        "Velocidade v": {
+          "valor": 0.10046464534830817,
+          "unidade": "m/s",
+          "principal": false
+        },
+        "Carga estática": {
+          "valor": 183.41626268851857,
+          "unidade": "m",
+          "principal": false
+        },
+        "Perda de carga": {
+          "valor": 0.0091903438411728,
+          "unidade": "m",
+          "principal": false
+        },
+        "Reynolds": {
+          "valor": 57363.94633519839,
+          "unidade": "",
+          "principal": false
+        },
+        "Fator de atrito f": {
+          "valor": 0.020946609516295393,
+          "unidade": "",
+          "principal": false
+        },
+        "NPSH disponível": {
+          "valor": 4.998540113323913,
+          "unidade": "m",
+          "principal": false
+        },
+        "Folga de NPSH": {
+          "valor": 0.9985401133239131,
+          "unidade": "m",
+          "principal": false
+        },
+        "Potência no caso governante": {
+          "valor": 13.761439894384965,
+          "unidade": "kW",
+          "principal": false
+        },
+        "Potência máxima operacional": {
+          "valor": 140.30726979218295,
+          "unidade": "kW",
+          "principal": false
+        },
+        "Potência nominal requerida": {
+          "valor": 143.26100435871513,
+          "unidade": "kW",
+          "principal": true
+        },
+        "Parcela governante": {
+          "valor": "carga estática",
+          "unidade": "",
+          "principal": false
+        },
+        "Caso governante": {
+          "valor": "BOT 03 — Early Life Blend",
+          "unidade": "",
+          "principal": false
+        }
+      }
+    },
+    "B-003": {
+      "nome": "Bomba de água produzida do dessalinizador",
+      "metodo": "moran",
+      "status": "dimensionado",
+      "x": 125.0,
+      "y": 252.1846843011929,
+      "governante": "estatica",
+      "caso_governante": "BOT 03 — Early Life Blend",
+      "mensagem": "",
+      "derivados": {
+        "v": 1.0480924423083906,
+        "re": 374054.2552824818,
+        "f": 0.017062614094684316,
+        "h_est": 250.97784487369657,
+        "h_atrito": 1.2068394274963294,
+        "npsh": 4.811597603737251,
+        "folga_npsh": 0.8115976037372512,
+        "confiavel": 1.0,
+        "re_min_correlacao": 4000.0,
+        "re_max_laminar": 2300.0,
+        "potencia": 45.21113539876325
+      },
+      "cartao": {
+        "Diâmetro nominal DN": {
+          "valor": 125.0,
+          "unidade": "mm",
+          "principal": true
+        },
+        "Carga do sistema H": {
+          "valor": 252.1846843011929,
+          "unidade": "m",
+          "principal": true
+        },
+        "Velocidade v": {
+          "valor": 1.0480924423083906,
+          "unidade": "m/s",
+          "principal": false
+        },
+        "Carga estática": {
+          "valor": 250.97784487369657,
+          "unidade": "m",
+          "principal": false
+        },
+        "Perda de carga": {
+          "valor": 1.2068394274963294,
+          "unidade": "m",
+          "principal": false
+        },
+        "Reynolds": {
+          "valor": 374054.2552824818,
+          "unidade": "",
+          "principal": false
+        },
+        "Fator de atrito f": {
+          "valor": 0.017062614094684316,
+          "unidade": "",
+          "principal": false
+        },
+        "NPSH disponível": {
+          "valor": 4.811597603737251,
+          "unidade": "m",
+          "principal": false
+        },
+        "Folga de NPSH": {
+          "valor": 0.8115976037372512,
+          "unidade": "m",
+          "principal": false
+        },
+        "Potência no caso governante": {
+          "valor": 45.21113539876325,
+          "unidade": "kW",
+          "principal": false
+        },
+        "Potência máxima operacional": {
+          "valor": 45.21113539876325,
+          "unidade": "kW",
+          "principal": false
+        },
+        "Potência nominal requerida": {
+          "valor": 45.54463195959354,
+          "unidade": "kW",
+          "principal": true
+        },
+        "Parcela governante": {
+          "valor": "carga estática",
+          "unidade": "",
+          "principal": false
+        },
+        "Caso governante": {
+          "valor": "BOT 03 — Early Life Blend",
+          "unidade": "",
+          "principal": false
+        }
+      }
+    },
+    "P-001": {
+      "nome": "Pré-aquecedor óleo/óleo",
+      "metodo": "saari_lmtd",
+      "status": "inviavel",
+      "x": null,
+      "y": null,
+      "governante": "none",
+      "caso_governante": "",
+      "mensagem": "Caso 'BOT 01 — Early Life': O arranjo 1-2 não fecha com estas temperaturas: o fator de correção F sai do domínio da Fig. 4.3. Em contracorrente puro (1 passe) o caso é viável — o cruzamento interno de um segundo passe é que não é.",
+      "derivados": {},
+      "cartao": {
+        "Tubos por passe": {
+          "valor": null,
+          "unidade": "",
+          "principal": true
+        },
+        "Comprimento do tubo L": {
+          "valor": null,
+          "unidade": "m",
+          "principal": true
+        },
+        "Área de troca A": {
+          "valor": null,
+          "unidade": "m²",
+          "principal": false
+        },
+        "Tubos no total": {
+          "valor": null,
+          "unidade": "",
+          "principal": false
+        },
+        "Diâmetro do feixe": {
+          "valor": null,
+          "unidade": "mm",
+          "principal": false
+        },
+        "Diâmetro do casco": {
+          "valor": null,
+          "unidade": "mm",
+          "principal": false
+        },
+        "Esbeltez do feixe L/D": {
+          "valor": null,
+          "unidade": "",
+          "principal": false
+        },
+        "Velocidade no tubo": {
+          "valor": null,
+          "unidade": "m/s",
+          "principal": false
+        },
+        "Reynolds no tubo": {
+          "valor": null,
+          "unidade": "",
+          "principal": false
+        },
+        "Coeficiente interno h_i": {
+          "valor": null,
+          "unidade": "W/m²K",
+          "principal": false
+        },
+        "Coeficiente do casco h_o": {
+          "valor": null,
+          "unidade": "W/m²K",
+          "principal": false
+        },
+        "Correção de Bell-Delaware": {
+          "valor": null,
+          "unidade": "",
+          "principal": false
+        },
+        "Coeficiente global U": {
+          "valor": null,
+          "unidade": "W/m²K",
+          "principal": false
+        },
+        "Carga térmica q": {
+          "valor": null,
+          "unidade": "W",
+          "principal": false
+        },
+        "ΔT médio logarítmico": {
+          "valor": null,
+          "unidade": "K",
+          "principal": false
+        },
+        "Fator de correção F": {
+          "valor": null,
+          "unidade": "",
+          "principal": false
+        },
+        "Caso governante": {
+          "valor": "—",
+          "unidade": "",
+          "principal": false
+        }
+      }
+    },
+    "P-002": {
+      "nome": "Aquecedor de óleo",
+      "metodo": "saari_lmtd",
+      "status": "dimensionado",
+      "x": 1701.0,
+      "y": 5.999687339816886,
+      "governante": "termica",
+      "caso_governante": "BOT 02 — Early Life",
+      "mensagem": "",
+      "derivados": {
+        "v": 1.3312171987792811,
+        "re": 39356.48339774825,
+        "h_tubo": 11575.857400473598,
+        "h_casco": 6064.895533373736,
+        "re_casco": 53299.27325300801,
+        "h_ideal": 9859.325733118752,
+        "jc": 1.0020465865951402,
+        "jl": 0.6817716315471336,
+        "jb": 0.9004285778964954,
+        "js": 1.0,
+        "jr": 1.0,
+        "j_produto": 0.6151430328547688,
+        "n_chicanas": 38.25521217219122,
+        "nu_valido": 1.0,
+        "pr": 1.706864102312427,
+        "re_min_correlacao": 10000.0,
+        "re_max_correlacao": 120000.0,
+        "u": 1030.0478873515485,
+        "area": 407.18008243396605,
+        "n_total": 1701.0,
+        "d_casco": 738.7899008849485,
+        "d_shell": 764.1899008849484,
+        "l": 5.999687339816886,
+        "l_sobre_d": 8.120965558178652,
+        "q": 7741043.3102472825,
+        "dt_lm": 18.456763853012337,
+        "f": 1.0,
+        "passes": 1.0
+      },
+      "cartao": {
+        "Tubos por passe": {
+          "valor": 1701.0,
+          "unidade": "",
+          "principal": true
+        },
+        "Comprimento do tubo L": {
+          "valor": 5.999687339816886,
+          "unidade": "m",
+          "principal": true
+        },
+        "Área de troca A": {
+          "valor": 407.18008243396605,
+          "unidade": "m²",
+          "principal": false
+        },
+        "Tubos no total": {
+          "valor": 1701.0,
+          "unidade": "",
+          "principal": false
+        },
+        "Diâmetro do feixe": {
+          "valor": 738.7899008849485,
+          "unidade": "mm",
+          "principal": false
+        },
+        "Diâmetro do casco": {
+          "valor": 764.1899008849484,
+          "unidade": "mm",
+          "principal": false
+        },
+        "Esbeltez do feixe L/D": {
+          "valor": 8.120965558178652,
+          "unidade": "",
+          "principal": false
+        },
+        "Velocidade no tubo": {
+          "valor": 1.3312171987792811,
+          "unidade": "m/s",
+          "principal": false
+        },
+        "Reynolds no tubo": {
+          "valor": 39356.48339774825,
+          "unidade": "",
+          "principal": false
+        },
+        "Coeficiente interno h_i": {
+          "valor": 11575.857400473598,
+          "unidade": "W/m²K",
+          "principal": false
+        },
+        "Coeficiente do casco h_o": {
+          "valor": 6064.895533373736,
+          "unidade": "W/m²K",
+          "principal": false
+        },
+        "Correção de Bell-Delaware": {
+          "valor": 0.6151430328547688,
+          "unidade": "",
+          "principal": false
+        },
+        "Coeficiente global U": {
+          "valor": 1030.0478873515485,
+          "unidade": "W/m²K",
+          "principal": false
+        },
+        "Carga térmica q": {
+          "valor": 7741043.3102472825,
+          "unidade": "W",
+          "principal": false
+        },
+        "ΔT médio logarítmico": {
+          "valor": 18.456763853012337,
+          "unidade": "K",
+          "principal": false
+        },
+        "Fator de correção F": {
+          "valor": 1.0,
+          "unidade": "",
+          "principal": false
+        },
+        "Caso governante": {
+          "valor": "BOT 02 — Early Life",
+          "unidade": "",
+          "principal": false
+        }
+      }
+    },
+    "P-003": {
+      "nome": "Resfriador de óleo",
+      "metodo": "saari_lmtd",
+      "status": "dimensionado",
+      "x": 7435.0,
+      "y": 4.909603819110406,
+      "governante": "termica",
+      "caso_governante": "BOT 07 — Mid Life",
+      "mensagem": "",
+      "derivados": {
+        "v": 2.999385319118174,
+        "re": 33445.82373612815,
+        "h_tubo": 13992.61207438088,
+        "h_casco": 1670.207656692542,
+        "re_casco": 4161.704940565741,
+        "h_ideal": 2889.3957354430668,
+        "jc": 0.9954721716308667,
+        "jl": 0.6215578399920391,
+        "jb": 0.9342277648347709,
+        "js": 1.0,
+        "jr": 1.0,
+        "j_produto": 0.5780473876266826,
+        "n_chicanas": 15.78164357447665,
+        "nu_valido": 1.0,
+        "pr": 5.116174656926385,
+        "re_min_correlacao": 10000.0,
+        "re_max_correlacao": 120000.0,
+        "u": 723.4173719503027,
+        "area": 1456.4011547851123,
+        "n_total": 7435.0,
+        "d_casco": 1437.3899220126045,
+        "d_shell": 1462.7899220126046,
+        "l": 4.909603819110406,
+        "l_sobre_d": 3.415638125691098,
+        "q": 26185188.94727906,
+        "dt_lm": 24.853397382384475,
+        "f": 1.0,
+        "passes": 1.0
+      },
+      "cartao": {
+        "Tubos por passe": {
+          "valor": 7435.0,
+          "unidade": "",
+          "principal": true
+        },
+        "Comprimento do tubo L": {
+          "valor": 4.909603819110406,
+          "unidade": "m",
+          "principal": true
+        },
+        "Área de troca A": {
+          "valor": 1456.4011547851123,
+          "unidade": "m²",
+          "principal": false
+        },
+        "Tubos no total": {
+          "valor": 7435.0,
+          "unidade": "",
+          "principal": false
+        },
+        "Diâmetro do feixe": {
+          "valor": 1437.3899220126045,
+          "unidade": "mm",
+          "principal": false
+        },
+        "Diâmetro do casco": {
+          "valor": 1462.7899220126046,
+          "unidade": "mm",
+          "principal": false
+        },
+        "Esbeltez do feixe L/D": {
+          "valor": 3.415638125691098,
+          "unidade": "",
+          "principal": false
+        },
+        "Velocidade no tubo": {
+          "valor": 2.999385319118174,
+          "unidade": "m/s",
+          "principal": false
+        },
+        "Reynolds no tubo": {
+          "valor": 33445.82373612815,
+          "unidade": "",
+          "principal": false
+        },
+        "Coeficiente interno h_i": {
+          "valor": 13992.61207438088,
+          "unidade": "W/m²K",
+          "principal": false
+        },
+        "Coeficiente do casco h_o": {
+          "valor": 1670.207656692542,
+          "unidade": "W/m²K",
+          "principal": false
+        },
+        "Correção de Bell-Delaware": {
+          "valor": 0.5780473876266826,
+          "unidade": "",
+          "principal": false
+        },
+        "Coeficiente global U": {
+          "valor": 723.4173719503027,
+          "unidade": "W/m²K",
+          "principal": false
+        },
+        "Carga térmica q": {
+          "valor": 26185188.94727906,
+          "unidade": "W",
+          "principal": false
+        },
+        "ΔT médio logarítmico": {
+          "valor": 24.853397382384475,
+          "unidade": "K",
+          "principal": false
+        },
+        "Fator de correção F": {
+          "valor": 1.0,
+          "unidade": "",
+          "principal": false
+        },
+        "Caso governante": {
+          "valor": "BOT 07 — Mid Life",
+          "unidade": "",
+          "principal": false
+        }
+      }
+    },
+    "SG-001": {
+      "nome": "Separador trifásico de água livre (FWKO)",
+      "metodo": "stewart_arnold",
+      "status": "dimensionado",
+      "x": 6050.0,
+      "y": 17.866835224997622,
+      "governante": "liquid",
+      "caso_governante": "BOT 12 — Late Life",
+      "mensagem": "",
+      "derivados": {
+        "lss": 23.822446966663495,
+        "sr": 3.9375945399443797,
+        "volume": 684.8366583514108
+      },
+      "cartao": {
+        "Diâmetro d": {
+          "valor": 6050.0,
+          "unidade": "mm",
+          "principal": true
+        },
+        "Comprimento efetivo Leff": {
+          "valor": 17.866835224997622,
+          "unidade": "m",
+          "principal": false
+        },
+        "Comprimento real Lss": {
+          "valor": 23.822446966663495,
+          "unidade": "m",
+          "principal": false
+        },
+        "Esbeltez SR": {
+          "valor": 3.9375945399443797,
+          "unidade": "",
+          "principal": false
+        },
+        "Volume (casco, entre tampos)": {
+          "valor": 684.8366583514108,
+          "unidade": "m³",
+          "principal": false
+        },
+        "Restrição governante": {
+          "valor": "capacidade de líquido",
+          "unidade": "",
+          "principal": false
+        },
+        "Caso governante": {
+          "valor": "BOT 12 — Late Life",
+          "unidade": "",
+          "principal": false
+        },
+        "Teto de decantação": {
+          "valor": 10021.300846771126,
+          "unidade": "mm",
+          "principal": false
+        }
+      }
+    },
+    "TO-001": {
+      "nome": "Desidratador (pré-tratador eletrostático)",
+      "metodo": "arnold_electrostatic",
+      "status": "dimensionado",
+      "x": 5550.0,
+      "y": 16.428214196999086,
+      "governante": "liquid",
+      "caso_governante": "BOT 02 — Early Life",
+      "mensagem": "",
+      "derivados": {
+        "lss": 21.978214196999087,
+        "sr": 3.9600385940538896,
+        "volume": 531.7019453270899
+      },
+      "cartao": {
+        "Diâmetro d": {
+          "valor": 5550.0,
+          "unidade": "mm",
+          "principal": true
+        },
+        "Comprimento efetivo Leff": {
+          "valor": 16.428214196999086,
+          "unidade": "m",
+          "principal": false
+        },
+        "Comprimento real Lss": {
+          "valor": 21.978214196999087,
+          "unidade": "m",
+          "principal": false
+        },
+        "Esbeltez SR": {
+          "valor": 3.9600385940538896,
+          "unidade": "",
+          "principal": false
+        },
+        "Volume (casco, entre tampos)": {
+          "valor": 531.7019453270899,
+          "unidade": "m³",
+          "principal": false
+        },
+        "Restrição governante": {
+          "valor": "capacidade de líquido (retenção)",
+          "unidade": "",
+          "principal": false
+        },
+        "Caso governante": {
+          "valor": "BOT 02 — Early Life",
+          "unidade": "",
+          "principal": false
+        },
+        "Teto de decantação": {
+          "valor": 18724.500349772483,
+          "unidade": "mm",
+          "principal": false
+        }
+      }
+    },
+    "TO-002": {
+      "nome": "Dessalinizador (tratador eletrostático)",
+      "metodo": "arnold_electrostatic",
+      "status": "dimensionado",
+      "x": 5550.0,
+      "y": 16.40163540177588,
+      "governante": "liquid",
+      "caso_governante": "BOT 02 — Early Life",
+      "mensagem": "",
+      "derivados": {
+        "lss": 21.95163540177588,
+        "sr": 3.9552496219416002,
+        "volume": 531.0589450815759
+      },
+      "cartao": {
+        "Diâmetro d": {
+          "valor": 5550.0,
+          "unidade": "mm",
+          "principal": true
+        },
+        "Comprimento efetivo Leff": {
+          "valor": 16.40163540177588,
+          "unidade": "m",
+          "principal": false
+        },
+        "Comprimento real Lss": {
+          "valor": 21.95163540177588,
+          "unidade": "m",
+          "principal": false
+        },
+        "Esbeltez SR": {
+          "valor": 3.9552496219416002,
+          "unidade": "",
+          "principal": false
+        },
+        "Volume (casco, entre tampos)": {
+          "valor": 531.0589450815759,
+          "unidade": "m³",
+          "principal": false
+        },
+        "Restrição governante": {
+          "valor": "capacidade de líquido (retenção)",
+          "unidade": "",
+          "principal": false
+        },
+        "Caso governante": {
+          "valor": "BOT 02 — Early Life",
+          "unidade": "",
+          "principal": false
+        },
+        "Teto de decantação": {
+          "valor": 9355.954165081363,
+          "unidade": "mm",
+          "principal": false
+        }
+      }
+    },
+    "V-001": {
+      "nome": "Vaso desgaseificador 1",
+      "metodo": "stewart_arnold_2f",
+      "status": "dimensionado",
+      "x": 4700.0,
+      "y": 11.718810350378106,
+      "governante": "liquid",
+      "caso_governante": "BOT 02 — Early Life",
+      "mensagem": "",
+      "derivados": {
+        "lss": 16.418810350378106,
+        "sr": 3.493363904335767,
+        "volume": 284.85725419036777
+      },
+      "cartao": {
+        "Diâmetro d": {
+          "valor": 4700.0,
+          "unidade": "mm",
+          "principal": true
+        },
+        "Comprimento efetivo Leff": {
+          "valor": 11.718810350378106,
+          "unidade": "m",
+          "principal": false
+        },
+        "Comprimento real Lss": {
+          "valor": 16.418810350378106,
+          "unidade": "m",
+          "principal": false
+        },
+        "Esbeltez SR": {
+          "valor": 3.493363904335767,
+          "unidade": "",
+          "principal": false
+        },
+        "Volume (casco, entre tampos)": {
+          "valor": 284.85725419036777,
+          "unidade": "m³",
+          "principal": false
+        },
+        "Restrição governante": {
+          "valor": "capacidade de líquido",
+          "unidade": "",
+          "principal": false
+        },
+        "Caso governante": {
+          "valor": "BOT 02 — Early Life",
+          "unidade": "",
+          "principal": false
+        },
+        "Teto de decantação": {
+          "valor": null,
+          "unidade": "mm",
+          "principal": false
+        }
+      }
+    },
+    "V-002": {
+      "nome": "Vaso desgaseificador 2",
+      "metodo": "stewart_arnold_2f",
+      "status": "dimensionado",
+      "x": 4700.0,
+      "y": 11.806579052996872,
+      "governante": "liquid",
+      "caso_governante": "BOT 02 — Early Life",
+      "mensagem": "",
+      "derivados": {
+        "lss": 16.506579052996873,
+        "sr": 3.5120380963823132,
+        "volume": 286.3799925068657
+      },
+      "cartao": {
+        "Diâmetro d": {
+          "valor": 4700.0,
+          "unidade": "mm",
+          "principal": true
+        },
+        "Comprimento efetivo Leff": {
+          "valor": 11.806579052996872,
+          "unidade": "m",
+          "principal": false
+        },
+        "Comprimento real Lss": {
+          "valor": 16.506579052996873,
+          "unidade": "m",
+          "principal": false
+        },
+        "Esbeltez SR": {
+          "valor": 3.5120380963823132,
+          "unidade": "",
+          "principal": false
+        },
+        "Volume (casco, entre tampos)": {
+          "valor": 286.3799925068657,
+          "unidade": "m³",
+          "principal": false
+        },
+        "Restrição governante": {
+          "valor": "capacidade de líquido",
+          "unidade": "",
+          "principal": false
+        },
+        "Caso governante": {
+          "valor": "BOT 02 — Early Life",
+          "unidade": "",
+          "principal": false
+        },
+        "Teto de decantação": {
+          "valor": null,
+          "unidade": "mm",
+          "principal": false
+        }
+      }
+    }
+  }
+}

@@ -1,5 +1,7 @@
 # Documentos de validação
 
+Release do TCC: premissas e limitações em [`../PREMISSAS_E_LIMITACOES.md`](../PREMISSAS_E_LIMITACOES.md); auditoria, Golden Case e resultados dos equipamentos em [`../auditoria/`](../auditoria/).
+
 Cada documento é o registro de uma etapa. A arquitetura vigente está em [`../arquitetura/arquitetura-alvo.md`](../arquitetura/arquitetura-alvo.md); o que mudou na consolidação, em [`../arquitetura/inventario.md`](../arquitetura/inventario.md).
 
 ## Vigentes — descrevem o comportamento atual

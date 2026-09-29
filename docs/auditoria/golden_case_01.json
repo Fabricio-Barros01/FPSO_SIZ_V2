@@ -1,0 +1,1678 @@
+{
+  "identidade": {
+    "commit": "930e6dd855b664f8c8f990622fa99ad1672ff066",
+    "src_modificado": true,
+    "casos": "tests/fixtures/python_ref/design_cases_bot.json",
+    "sha256_casos": "ca3dfe559b32926c9d9ca4d9e75e2cec711f00f7fdfd2247242bbf3a754dac60"
+  },
+  "dados": {
+    "caso": 2,
+    "fluido": "Early Life",
+    "avaliavel": true,
+    "entrada_BOT": {
+      "oil_sm3d": 28621,
+      "liquid_sm3d": 31802,
+      "produced_gas_sm3d": 12000000,
+      "lift_gas_sm3d": 0,
+      "T_C": 50
+    },
+    "recombinacao": {
+      "n_gas_kmol_d": 506330.9949528394,
+      "n_liquido_kmol_d": 137967.91509312345,
+      "Q_G_reproduzido_Sm3_d": 12000000.000129573,
+      "Q_O_reproduzido_m3_d": 28620.9999984685,
+      "erro_gas_rel": 1.0797753930091858e-11,
+      "erro_oleo_rel": 5.350972245184448e-11
+    },
+    "trem": [
+      {
+        "estagio": "SG-001",
+        "T_C": 52.681084622851095,
+        "P_kPa": 2500.0,
+        "beta": 0.7889139862404475,
+        "Q_G_Sm3_d": 12046580.43504715,
+        "MW_v": 25.91524372670849,
+        "Z_v": 0.9288595165920338,
+        "rho_v": 25.746522118542504
+      },
+      {
+        "estagio": "V-001",
+        "T_C": 90.0,
+        "P_kPa": 700.0,
+        "beta": 0.2508168910490555,
+        "Q_G_Sm3_d": 808444.7929140908,
+        "MW_v": 36.13044775394963,
+        "Z_v": 0.9702419492193861,
+        "rho_v": 8.633186090878361
+      },
+      {
+        "estagio": "V-002",
+        "T_C": 90.0,
+        "P_kPa": 200.0,
+        "beta": 0.09421614453949406,
+        "Q_G_Sm3_d": 227513.35426200368,
+        "MW_v": 49.34536274597108,
+        "Z_v": 0.9813086719622148,
+        "rho_v": 3.33081468876393
+      }
+    ],
+    "fechamento_trem": {
+      "molar": 0.0,
+      "massico": 0.0,
+      "componente": 9.034263446032371e-17,
+      "ok": true
+    },
+    "correntes_kg_d": {
+      "C-01": {
+        "T_C": 50,
+        "P_kPa": 2500.0,
+        "O": 25445419.047169812,
+        "W": 3670874.0,
+        "D": 0.0,
+        "G": 14547443.565327
+      },
+      "C-03": {
+        "T_C": 52.681084622285304,
+        "P_kPa": 2500.0,
+        "O": 25448386.629882254,
+        "W": 4282276.549337444,
+        "D": 953025.8085486086,
+        "G": 14547443.565327
+      },
+      "C-04": {
+        "T_C": 52.681084622285304,
+        "P_kPa": 2500.0,
+        "O": 26216.413839221732,
+        "W": 0.0,
+        "D": 0.0,
+        "G": 13146552.405158093
+      },
+      "C-05": {
+        "T_C": 52.681084622285304,
+        "P_kPa": 2500.0,
+        "O": 7930.145305574589,
+        "W": 3639935.0669368273,
+        "D": 810071.9372663172,
+        "G": 0.0
+      },
+      "C-06": {
+        "T_C": 52.681084622285304,
+        "P_kPa": 2500.0,
+        "O": 25414240.07073746,
+        "W": 642341.4824006165,
+        "D": 142953.87128229128,
+        "G": 1400891.160168906
+      },
+      "C-09": {
+        "T_C": 90.0,
+        "P_kPa": 700.0,
+        "O": 27988.5926688082,
+        "W": 0.0,
+        "D": 0.0,
+        "G": 1204492.7820788105
+      },
+      "C-10": {
+        "T_C": 90.0,
+        "P_kPa": 700.0,
+        "O": 25386251.47806865,
+        "W": 642341.4824006165,
+        "D": 142953.87128229128,
+        "G": 196398.3780900956
+      },
+      "C-12": {
+        "T_C": 90.0,
+        "P_kPa": 700.0,
+        "O": 822.5985568310913,
+        "W": 377572.568678698,
+        "D": 84029.23034161943,
+        "G": 0.0
+      },
+      "C-14": {
+        "T_C": 25.0,
+        "P_kPa": 700.0,
+        "O": 0.0,
+        "W": 0.0,
+        "D": 925052.1758495689,
+        "G": 0.0
+      },
+      "C-16": {
+        "T_C": 89.99999999999999,
+        "P_kPa": 200.0,
+        "O": 25385428.879511815,
+        "W": 264768.9137219186,
+        "D": 983976.8167902407,
+        "G": 196398.3780900956
+      },
+      "C-17": {
+        "T_C": 89.99999999999999,
+        "P_kPa": 200.0,
+        "O": 277307.73106903257,
+        "W": 0.0,
+        "D": 0.0,
+        "G": 196398.3780900925
+      },
+      "C-18": {
+        "T_C": 89.99999999999999,
+        "P_kPa": 200.0,
+        "O": 25108121.148442782,
+        "W": 264768.9137219186,
+        "D": 983976.8167902407,
+        "G": 3.069544618483633e-09
+      },
+      "C-19": {
+        "T_C": 89.99999999999999,
+        "P_kPa": 200.0,
+        "O": 2144.984155596868,
+        "W": 233829.9806583573,
+        "D": 868996.5782009655,
+        "G": 0.0
+      },
+      "C-21": {
+        "T_C": 89.99999999999999,
+        "P_kPa": 200.0,
+        "O": 25105976.164287183,
+        "W": 30938.933063561282,
+        "D": 114980.23858927513,
+        "G": 3.069544618483633e-09
+      },
+      "C-25": {
+        "T_C": 40.0,
+        "P_kPa": 600.0,
+        "O": 25105976.164287183,
+        "W": 30938.933063561282,
+        "D": 114980.23858927513,
+        "G": 3.069544618483633e-09
+      }
+    },
+    "gas_Sm3_d": {
+      "G_in": 12973901.301856969,
+      "G_F": 12046580.43504715,
+      "G_D1": 808444.7929140908,
+      "G_D2": 227513.35426200368,
+      "Dv": 925.9781540035725,
+      "dRsF": null,
+      "dRsD1": null
+    },
+    "cargas_kW": {
+      "Q_pre": 16342.872229031338,
+      "Q_H": 7741.043310247283,
+      "Q_D": 2908.989307619536,
+      "Q_C": 13334.644147525098,
+      "W_Bo": 281.55853417191406,
+      "W_B1": 12.950175601293061,
+      "W_B2": 42.65495060942647
+    },
+    "BSW_FWKO": 0.0238928873659721,
+    "FWKO": {
+      "eta": 0.85,
+      "eta_req": -3.085345976326768,
+      "eta_padrao": 0.85,
+      "exigido_acima": false
+    },
+    "TVP_kPa": 100.55312328344334,
+    "T_TVP_C": 40.0,
+    "iteracoes_reciclo": 35,
+    "residuo_reciclo": 7.034373084024992e-11,
+    "entradas_TAG": {
+      "B-001": {
+        "h_geometrica": {
+          "valor": 5.0,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Desnível entre a sucção e o bocal de chegada no mesmo convés de processo do topside; da ordem de um pavimento de módulo. Muda pouco a carga: nestas bombas a parcela de pressão (P_rec − P_suc)/(ρg) domina."
+        },
+        "p_recalque": {
+          "valor": 800.0,
+          "origem": "balanco",
+          "fonte": "C-22: P"
+        },
+        "h_sucao": {
+          "valor": 5.0,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Nível mínimo de líquido no vaso de sucção acima da linha de centro da bomba. O líquido chega no ponto de bolha (Pv = P do vaso), então o NPSH disponível é só esta coluna menos a perda na sucção; 5 m deixa folga sobre NPSHr + margem propostos."
+        },
+        "l_sucao": {
+          "valor": 10.0,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Linha de sucção curta, bomba ao lado do vaso no mesmo módulo (prática para líquido no ponto de bolha)."
+        },
+        "k_sucao": {
+          "valor": 2.0,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Σk estimado para entrada do vaso, uma válvula de bloqueio, filtro temporário e duas curvas; conferir peça a peça na Tab. 1 de Moran (2016), citada no código, quando o isométrico existir."
+        },
+        "l_recalque": {
+          "valor": 60.0,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Trajeto de recalque dentro do topside até o equipamento de destino (P-001 ou M-03), dimensão típica de um módulo de FPSO."
+        },
+        "k_recalque": {
+          "valor": 10.0,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Σk estimado para válvula de retenção, válvula de controle aberta, bloqueios e curvas do recalque; a confirmar com a lista de peças."
+        },
+        "npsh_requerido": {
+          "valor": 3.0,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): NPSHr inicial para bomba centrífuga de processo desta faixa de vazão, até existir a curva do fabricante (o código indica a curva do fabricante como origem)."
+        },
+        "npsh_margem": {
+          "valor": 1.0,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Folga sobre o NPSHr para operação; Moran (2016) não fixa valor (dica do código); critério do projeto a confirmar."
+        },
+        "rendimento": {
+          "valor": 0.7,
+          "origem": "premissa",
+          "fonte": "P-22 eta_pump"
+        },
+        "rugosidade": {
+          "valor": 0.045,
+          "origem": "metodo",
+          "fonte": "Branan (2012) Tab. 1-5, p. 10: aço novo, 0,000045 m"
+        },
+        "antoine_a": {
+          "valor": 5.40221,
+          "origem": "metodo",
+          "fonte": "Moran (2016) Tab. 3 (água); não entra no cálculo: Pv informada"
+        },
+        "antoine_b": {
+          "valor": 1838.675,
+          "origem": "metodo",
+          "fonte": "Moran (2016) Tab. 3 (água); não entra no cálculo: Pv informada"
+        },
+        "antoine_c": {
+          "valor": -31.737,
+          "origem": "metodo",
+          "fonte": "Moran (2016) Tab. 3 (água); não entra no cálculo: Pv informada"
+        },
+        "dn_min": {
+          "valor": 10.0,
+          "origem": "metodo",
+          "fonte": "domínio de busca: faixa do descritor do método"
+        },
+        "dn_max": {
+          "valor": 1000.0,
+          "origem": "metodo",
+          "fonte": "domínio de busca: faixa do descritor do método"
+        },
+        "v_min": {
+          "valor": 0.0,
+          "origem": "recomendada",
+          "fonte": "P-44: óleo tratado, líquido limpo. Moran (2016) dá o piso de 1 m/s só para 'water-like fluids with settleable solids'; para líquido limpo o artigo só impõe o teto (nota do descritor v_min)"
+        },
+        "v_max": {
+          "valor": 1.5,
+          "origem": "metodo",
+          "fonte": "Moran (2016): 'pumped water-like fluids: <1.5 m/sec'"
+        },
+        "pv_informada": {
+          "valor": 200.0,
+          "origem": "propriedade",
+          "fonte": "C-21: líquido no ponto de bolha, Pv = P (Branan Ex. 5-2)"
+        },
+        "piso_caso_projeto": {
+          "valor": 1.0,
+          "origem": "recomendada",
+          "fonte": "P-44 (aprovada pelo usuário, 2026-09-26): a linha é dimensionada pelo caso de maior vazão; o piso de velocidade vale só nele e os casos de menor vazão operam abaixo dele (turndown); o teto vale em todos"
+        },
+        "transicao_turndown": {
+          "valor": 1.0,
+          "origem": "recomendada",
+          "fonte": "P-44b — política conservadora de engenharia para a região de transição, separada das correlações fisicamente válidas (a confirmar): na zona de transição laminar-turbulento (Re entre 2.300 e 4.000) nenhuma correlação desta implementação é válida (Moran 2016 declara Colebrook-White só para Re > 4000). Nos casos de turndown, o fator avaliado por Colebrook-White é aceito como estimativa conservadora quando não é menor que 64/Re no mesmo Re; não é correlação válida nem limite superior demonstrado. O caso de projeto segue exigindo correlação válida"
+        },
+        "q_oil": {
+          "valor": 1182.7446408151584,
+          "origem": "propriedade",
+          "fonte": "C-21: Σ ṁ/ρ(T) da fase liquido"
+        },
+        "rho_oil": {
+          "valor": 889.5938052520006,
+          "origem": "propriedade",
+          "fonte": "C-21: ρ da fase liquido (volumes aditivos)"
+        },
+        "mu_oil": {
+          "valor": 7.943619578109673,
+          "origem": "propriedade",
+          "fonte": "C-21: emulsão, oleo contínuo (Branan eq. 27-4)"
+        },
+        "pressure": {
+          "valor": 200.0,
+          "origem": "balanco",
+          "fonte": "C-21: P"
+        },
+        "temperature": {
+          "valor": 89.99999999999999,
+          "origem": "balanco",
+          "fonte": "C-21: T"
+        }
+      },
+      "B-002": {
+        "h_geometrica": {
+          "valor": 5.0,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Desnível entre a sucção e o bocal de chegada no mesmo convés de processo do topside; da ordem de um pavimento de módulo. Muda pouco a carga: nestas bombas a parcela de pressão (P_rec − P_suc)/(ρg) domina."
+        },
+        "p_recalque": {
+          "valor": 2600.0,
+          "origem": "balanco",
+          "fonte": "C-13: P"
+        },
+        "h_sucao": {
+          "valor": 5.0,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Nível mínimo de líquido no vaso de sucção acima da linha de centro da bomba. O líquido chega no ponto de bolha (Pv = P do vaso), então o NPSH disponível é só esta coluna menos a perda na sucção; 5 m deixa folga sobre NPSHr + margem propostos."
+        },
+        "l_sucao": {
+          "valor": 10.0,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Linha de sucção curta, bomba ao lado do vaso no mesmo módulo (prática para líquido no ponto de bolha)."
+        },
+        "k_sucao": {
+          "valor": 2.0,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Σk estimado para entrada do vaso, uma válvula de bloqueio, filtro temporário e duas curvas; conferir peça a peça na Tab. 1 de Moran (2016), citada no código, quando o isométrico existir."
+        },
+        "l_recalque": {
+          "valor": 60.0,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Trajeto de recalque dentro do topside até o equipamento de destino (P-001 ou M-03), dimensão típica de um módulo de FPSO."
+        },
+        "k_recalque": {
+          "valor": 10.0,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Σk estimado para válvula de retenção, válvula de controle aberta, bloqueios e curvas do recalque; a confirmar com a lista de peças."
+        },
+        "npsh_requerido": {
+          "valor": 3.0,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): NPSHr inicial para bomba centrífuga de processo desta faixa de vazão, até existir a curva do fabricante (o código indica a curva do fabricante como origem)."
+        },
+        "npsh_margem": {
+          "valor": 1.0,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Folga sobre o NPSHr para operação; Moran (2016) não fixa valor (dica do código); critério do projeto a confirmar."
+        },
+        "rendimento": {
+          "valor": 0.7,
+          "origem": "premissa",
+          "fonte": "P-22 eta_pump"
+        },
+        "rugosidade": {
+          "valor": 0.045,
+          "origem": "metodo",
+          "fonte": "Branan (2012) Tab. 1-5, p. 10: aço novo, 0,000045 m"
+        },
+        "antoine_a": {
+          "valor": 5.40221,
+          "origem": "metodo",
+          "fonte": "Moran (2016) Tab. 3 (água); não entra no cálculo: Pv informada"
+        },
+        "antoine_b": {
+          "valor": 1838.675,
+          "origem": "metodo",
+          "fonte": "Moran (2016) Tab. 3 (água); não entra no cálculo: Pv informada"
+        },
+        "antoine_c": {
+          "valor": -31.737,
+          "origem": "metodo",
+          "fonte": "Moran (2016) Tab. 3 (água); não entra no cálculo: Pv informada"
+        },
+        "dn_min": {
+          "valor": 10.0,
+          "origem": "metodo",
+          "fonte": "domínio de busca: faixa do descritor do método"
+        },
+        "dn_max": {
+          "valor": 1000.0,
+          "origem": "metodo",
+          "fonte": "domínio de busca: faixa do descritor do método"
+        },
+        "v_min": {
+          "valor": 1.0,
+          "origem": "metodo",
+          "fonte": "Moran (2016): 'water-like fluids with settleable solids: >1, <1.5 m/sec'"
+        },
+        "v_max": {
+          "valor": 1.5,
+          "origem": "metodo",
+          "fonte": "Moran (2016): 'pumped water-like fluids: <1.5 m/sec'"
+        },
+        "pv_informada": {
+          "valor": 700.0,
+          "origem": "propriedade",
+          "fonte": "C-12: líquido no ponto de bolha, Pv = P (Branan Ex. 5-2)"
+        },
+        "piso_caso_projeto": {
+          "valor": 1.0,
+          "origem": "recomendada",
+          "fonte": "P-44 (aprovada pelo usuário, 2026-09-26): a linha é dimensionada pelo caso de maior vazão; o piso de velocidade vale só nele e os casos de menor vazão operam abaixo dele (turndown); o teto vale em todos"
+        },
+        "transicao_turndown": {
+          "valor": 1.0,
+          "origem": "recomendada",
+          "fonte": "P-44b — política conservadora de engenharia para a região de transição, separada das correlações fisicamente válidas (a confirmar): na zona de transição laminar-turbulento (Re entre 2.300 e 4.000) nenhuma correlação desta implementação é válida (Moran 2016 declara Colebrook-White só para Re > 4000). Nos casos de turndown, o fator avaliado por Colebrook-White é aceito como estimativa conservadora quando não é menor que 64/Re no mesmo Re; não é correlação válida nem limite superior demonstrado. O caso de projeto segue exigindo correlação válida"
+        },
+        "q_oil": {
+          "valor": 17.748947064007172,
+          "origem": "propriedade",
+          "fonte": "C-12: Σ ṁ/ρ(T) da fase liquido"
+        },
+        "rho_oil": {
+          "valor": 1085.5676769386416,
+          "origem": "propriedade",
+          "fonte": "C-12: ρ da fase liquido (volumes aditivos)"
+        },
+        "mu_oil": {
+          "valor": 0.4753168979394717,
+          "origem": "propriedade",
+          "fonte": "C-12: emulsão, agua contínuo (Branan eq. 27-4)"
+        },
+        "pressure": {
+          "valor": 700.0,
+          "origem": "balanco",
+          "fonte": "C-12: P"
+        },
+        "temperature": {
+          "valor": 90.0,
+          "origem": "balanco",
+          "fonte": "C-12: T"
+        }
+      },
+      "B-003": {
+        "h_geometrica": {
+          "valor": 5.0,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Desnível entre a sucção e o bocal de chegada no mesmo convés de processo do topside; da ordem de um pavimento de módulo. Muda pouco a carga: nestas bombas a parcela de pressão (P_rec − P_suc)/(ρg) domina."
+        },
+        "p_recalque": {
+          "valor": 2600.0,
+          "origem": "balanco",
+          "fonte": "C-20: P"
+        },
+        "h_sucao": {
+          "valor": 5.0,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Nível mínimo de líquido no vaso de sucção acima da linha de centro da bomba. O líquido chega no ponto de bolha (Pv = P do vaso), então o NPSH disponível é só esta coluna menos a perda na sucção; 5 m deixa folga sobre NPSHr + margem propostos."
+        },
+        "l_sucao": {
+          "valor": 10.0,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Linha de sucção curta, bomba ao lado do vaso no mesmo módulo (prática para líquido no ponto de bolha)."
+        },
+        "k_sucao": {
+          "valor": 2.0,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Σk estimado para entrada do vaso, uma válvula de bloqueio, filtro temporário e duas curvas; conferir peça a peça na Tab. 1 de Moran (2016), citada no código, quando o isométrico existir."
+        },
+        "l_recalque": {
+          "valor": 60.0,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Trajeto de recalque dentro do topside até o equipamento de destino (P-001 ou M-03), dimensão típica de um módulo de FPSO."
+        },
+        "k_recalque": {
+          "valor": 10.0,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Σk estimado para válvula de retenção, válvula de controle aberta, bloqueios e curvas do recalque; a confirmar com a lista de peças."
+        },
+        "npsh_requerido": {
+          "valor": 3.0,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): NPSHr inicial para bomba centrífuga de processo desta faixa de vazão, até existir a curva do fabricante (o código indica a curva do fabricante como origem)."
+        },
+        "npsh_margem": {
+          "valor": 1.0,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Folga sobre o NPSHr para operação; Moran (2016) não fixa valor (dica do código); critério do projeto a confirmar."
+        },
+        "rendimento": {
+          "valor": 0.7,
+          "origem": "premissa",
+          "fonte": "P-22 eta_pump"
+        },
+        "rugosidade": {
+          "valor": 0.045,
+          "origem": "metodo",
+          "fonte": "Branan (2012) Tab. 1-5, p. 10: aço novo, 0,000045 m"
+        },
+        "antoine_a": {
+          "valor": 5.40221,
+          "origem": "metodo",
+          "fonte": "Moran (2016) Tab. 3 (água); não entra no cálculo: Pv informada"
+        },
+        "antoine_b": {
+          "valor": 1838.675,
+          "origem": "metodo",
+          "fonte": "Moran (2016) Tab. 3 (água); não entra no cálculo: Pv informada"
+        },
+        "antoine_c": {
+          "valor": -31.737,
+          "origem": "metodo",
+          "fonte": "Moran (2016) Tab. 3 (água); não entra no cálculo: Pv informada"
+        },
+        "dn_min": {
+          "valor": 10.0,
+          "origem": "metodo",
+          "fonte": "domínio de busca: faixa do descritor do método"
+        },
+        "dn_max": {
+          "valor": 1000.0,
+          "origem": "metodo",
+          "fonte": "domínio de busca: faixa do descritor do método"
+        },
+        "v_min": {
+          "valor": 1.0,
+          "origem": "metodo",
+          "fonte": "Moran (2016): 'water-like fluids with settleable solids: >1, <1.5 m/sec'"
+        },
+        "v_max": {
+          "valor": 1.5,
+          "origem": "metodo",
+          "fonte": "Moran (2016): 'pumped water-like fluids: <1.5 m/sec'"
+        },
+        "pv_informada": {
+          "valor": 200.0,
+          "origem": "propriedade",
+          "fonte": "C-19: líquido no ponto de bolha, Pv = P (Branan Ex. 5-2)"
+        },
+        "piso_caso_projeto": {
+          "valor": 1.0,
+          "origem": "recomendada",
+          "fonte": "P-44 (aprovada pelo usuário, 2026-09-26): a linha é dimensionada pelo caso de maior vazão; o piso de velocidade vale só nele e os casos de menor vazão operam abaixo dele (turndown); o teto vale em todos"
+        },
+        "transicao_turndown": {
+          "valor": 1.0,
+          "origem": "recomendada",
+          "fonte": "P-44b — política conservadora de engenharia para a região de transição, separada das correlações fisicamente válidas (a confirmar): na zona de transição laminar-turbulento (Re entre 2.300 e 4.000) nenhuma correlação desta implementação é válida (Moran 2016 declara Colebrook-White só para Re > 4000). Nos casos de turndown, o fator avaliado por Colebrook-White é aceito como estimativa conservadora quando não é menor que 64/Re no mesmo Re; não é correlação válida nem limite superior demonstrado. O caso de projeto segue exigindo correlação válida"
+        },
+        "q_oil": {
+          "valor": 46.29016647355266,
+          "origem": "propriedade",
+          "fonte": "C-19: Σ ṁ/ρ(T) da fase liquido"
+        },
+        "rho_oil": {
+          "valor": 994.6060787070116,
+          "origem": "propriedade",
+          "fonte": "C-19: ρ da fase liquido (volumes aditivos)"
+        },
+        "mu_oil": {
+          "valor": 0.34835964776003076,
+          "origem": "propriedade",
+          "fonte": "C-19: emulsão, agua contínuo (Branan eq. 27-4)"
+        },
+        "pressure": {
+          "valor": 200.0,
+          "origem": "balanco",
+          "fonte": "C-19: P"
+        },
+        "temperature": {
+          "valor": 89.99999999999999,
+          "origem": "balanco",
+          "fonte": "C-19: T"
+        }
+      },
+      "P-001": {
+        "m_tubo": {
+          "valor": 319.4493817660795,
+          "origem": "balanco",
+          "fonte": "C-06: ṁ total"
+        },
+        "cp_tubo": {
+          "valor": 2020.2077388130751,
+          "origem": "balanco",
+          "fonte": "C-06: C/ṁ (cp do balanço)"
+        },
+        "t_tubo_in": {
+          "valor": 52.681084622285304,
+          "origem": "balanco",
+          "fonte": "C-06: T"
+        },
+        "t_tubo_out": {
+          "valor": 78.00496788990999,
+          "origem": "balanco",
+          "fonte": "C-07: T"
+        },
+        "rho_tubo": {
+          "valor": 894.2050158149644,
+          "origem": "propriedade",
+          "fonte": "C-06: ρ da fase liquido (volumes aditivos)"
+        },
+        "mu_tubo": {
+          "valor": 3.2307192591699434,
+          "origem": "propriedade",
+          "fonte": "C-06: emulsão, oleo contínuo (Branan eq. 27-4) (óleo vivo, Beggs & Robinson (1975); Rs de C-06)"
+        },
+        "k_tubo": {
+          "valor": 0.13,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Lado tubo com óleo ou emulsão de fase contínua óleo; adota-se a condutividade de óleo cru líquido, a menor dos componentes. É conservador: k menor dá h_i menor e área maior. Sem correlação de emulsão no acervo nem no ChEDL (dica do código)."
+        },
+        "m_casco": {
+          "valor": 292.26730712893544,
+          "origem": "balanco",
+          "fonte": "C-22: ṁ total"
+        },
+        "cp_casco": {
+          "valor": 2011.5802982655416,
+          "origem": "balanco",
+          "fonte": "C-22: C/ṁ (cp do balanço)"
+        },
+        "t_casco_in": {
+          "valor": 90.47890688863001,
+          "origem": "balanco",
+          "fonte": "C-22: T"
+        },
+        "mu_casco": {
+          "valor": 7.943662207116569,
+          "origem": "propriedade",
+          "fonte": "C-22: emulsão, oleo contínuo (Branan eq. 27-4)"
+        },
+        "k_casco": {
+          "valor": 0.13,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Lado casco do P-001 com óleo tratado (C-22); mesma proposta do óleo do lado tubo."
+        },
+        "h_casco": {
+          "valor": 500.0,
+          "origem": "metodo",
+          "fonte": "só com Bell-Delaware desligado; aqui h_o é calculado (Branan Eq. 2-18)"
+        },
+        "corte_chicana": {
+          "valor": 0.25,
+          "origem": "metodo",
+          "fonte": "Saari Tab. 3.1 (p. 21): 'very often 25% of shell inside diameter'"
+        },
+        "espacamento_chicana": {
+          "valor": 0.4,
+          "origem": "metodo",
+          "fonte": "Saari Tab. 3.1 (p. 21): 0,2 a 1,0·Ds; adotado 0,4·Ds"
+        },
+        "layout_tubos": {
+          "valor": 30.0,
+          "origem": "metodo",
+          "fonte": "Branan (2012) Tab. 2-6: 30° triangular"
+        },
+        "pares_veda": {
+          "valor": 1.0,
+          "origem": "metodo",
+          "fonte": "1 par (Branan p. 44: regra de bolso de um par a cada ~6 fileiras de tubos)"
+        },
+        "folga_furo_chicana": {
+          "valor": 0.8,
+          "origem": "metodo",
+          "fonte": "Branan (2012) p. 44: 'usually 0.8 mm' (furo da chicana − d_o)"
+        },
+        "faixas_divisoras": {
+          "valor": 0.0,
+          "origem": "metodo",
+          "fonte": "divisória de passe perpendicular ao escoamento (nota do método)"
+        },
+        "d_externo": {
+          "valor": 19.05,
+          "origem": "metodo",
+          "fonte": "Saari Tab. 3.1 (p. 21): tubos típicos de 12,7 a 25,4 mm; 19,05 mm (3/4 in) dentro da faixa"
+        },
+        "espessura": {
+          "valor": 2.11,
+          "origem": "metodo",
+          "fonte": "Branan (2012) p. 38: 'start with 14 BWG' (2,11 mm)"
+        },
+        "k_parede": {
+          "valor": 45.0,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Tubo de aço-carbono, material usual segundo o próprio código (Saari §3); condutividade de aço-carbono na faixa de 80–100 °C, a conferir numa tabela de materiais."
+        },
+        "rf_tubo": {
+          "valor": 0.00035,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Incrustação de serviço com óleo cru ou emulsão; a Tab. 8.1 de Saari citada no código não tem petróleo. Valor conservador da ordem das incrustações de óleo, a confirmar."
+        },
+        "rf_casco": {
+          "valor": 0.00035,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Lado casco do P-001 com óleo tratado: mesma proposta do lado tubo."
+        },
+        "razao_passo": {
+          "valor": 1.25,
+          "origem": "metodo",
+          "fonte": "Saari Tab. 3.1 (p. 21): passo de 1,25 a 1,5·d_o; adotado o menor"
+        },
+        "passes_tubo": {
+          "valor": 2.0,
+          "origem": "metodo",
+          "fonte": "2 passes no tubo (Saari Tab. 3.1: até Ds,i em centenas de mm; fator F da Fig. 4.3)"
+        },
+        "n_min": {
+          "valor": 689.0,
+          "origem": "metodo",
+          "fonte": "domínio de busca: banda de velocidade no tubo, n = ṁ/(ρ·v·A_i)"
+        },
+        "n_max": {
+          "valor": 2069.0,
+          "origem": "metodo",
+          "fonte": "domínio de busca: banda de velocidade no tubo, n = ṁ/(ρ·v·A_i)"
+        },
+        "n_step": {
+          "valor": 5.0,
+          "origem": "metodo",
+          "fonte": "passo da grade do método (5 tubos)"
+        },
+        "v_min": {
+          "valor": 1.0,
+          "origem": "metodo",
+          "fonte": "Saari Tab. 3.1 (p. 21): 'often 1m/s unless better information is available'"
+        },
+        "v_max": {
+          "valor": 3.0,
+          "origem": "metodo",
+          "fonte": "Saari Tab. 3.1 (p. 21): erosão, < 3 m/s em aço-carbono"
+        },
+        "d_casco_max": {
+          "valor": 2500.0,
+          "origem": "metodo",
+          "fonte": "Saari Tab. 3.1 (p. 21): casco de chapa enrolada de 300 a 2500 mm"
+        },
+        "l_tubo_max": {
+          "valor": 6.0,
+          "origem": "metodo",
+          "fonte": "Branan (2012) p. 38: tubos de 4 a 20 ft (6,1 m); default do método 6 m"
+        },
+        "banda_caso_projeto": {
+          "valor": 1.0,
+          "origem": "recomendada",
+          "fonte": "P-45 (decisão do usuário, 2026-09-26; específica de trocadores): teto de velocidade em todos os casos; banda inteira no caso de projeto (maior vazão volumétrica no tubo); abaixo do piso no turndown, alerta de operabilidade/incrustação; Dittus-Boelter exigido na faixa em cada caso"
+        },
+        "cascos_serie": {
+          "valor": 1.0,
+          "origem": "metodo",
+          "fonte": "um casco (regra do Julia); cascos em série só pela reotimização do TAG (F10x.7)"
+        },
+        "cascos_paralelo": {
+          "valor": 1.0,
+          "origem": "metodo",
+          "fonte": "um casco (regra do Julia); cascos em paralelo só pela reotimização do TAG (F10x.7)"
+        },
+        "pelicula_baixo_re": {
+          "valor": 1.0,
+          "origem": "recomendada",
+          "fonte": "Branan (2012), cap. 2, pp. 40-41: a película do lado tubo tem correlação declarada nos três regimes — Hausen (eq. 2-10) em Re ≤ 2000, interpolação (eq. 2-12) em 2000 < Re < 10⁴ e Dittus-Boelter (Saari eq. 6.23) em Re ≥ 10⁴. Este TAG opera em baixa carga fora da faixa turbulenta, e sem os três regimes os casos de turndown eram RECUSADOS por falta de correlação, não por limite físico (docs/validacao/24-pelicula-baixo-reynolds.md)"
+        },
+        "razao_visc_parede": {
+          "valor": 1.0,
+          "origem": "metodo",
+          "fonte": "fator (µ/µ_parede)^0,14 das eq. 2-10/2-11 do Branan omitido (razão 1,0): hipótese declarada, conservadora ao aquecer líquido; a temperatura de parede da eq. 2-9 vai ao rastro"
+        }
+      },
+      "P-002": {
+        "m_tubo": {
+          "valor": 122.33150013172728,
+          "origem": "propriedade",
+          "fonte": "carga Q_H do balanço / (cp·ΔT) da utilidade"
+        },
+        "cp_tubo": {
+          "valor": 4218.615429883381,
+          "origem": "propriedade",
+          "fonte": "utilidade: cp da água (IAPWS-95)"
+        },
+        "t_tubo_in": {
+          "valor": 110.0,
+          "origem": "proposta",
+          "fonte": "Temperatura de entrada da água quente (meio de aquecimento)"
+        },
+        "t_tubo_out": {
+          "valor": 95.0,
+          "origem": "proposta",
+          "fonte": "Temperatura de saída da água quente (meio de aquecimento)"
+        },
+        "rho_tubo": {
+          "valor": 956.5407626598274,
+          "origem": "propriedade",
+          "fonte": "utilidade: ρ da água (IAPWS-95)"
+        },
+        "mu_tubo": {
+          "valor": 0.27436705903223274,
+          "origem": "propriedade",
+          "fonte": "utilidade: μ da água (IAPWS 2008)"
+        },
+        "k_tubo": {
+          "valor": 0.678114389491824,
+          "origem": "propriedade",
+          "fonte": "utilidade: k da água (IAPWS 2011)"
+        },
+        "m_casco": {
+          "valor": 319.4493817660795,
+          "origem": "balanco",
+          "fonte": "C-07: ṁ total"
+        },
+        "cp_casco": {
+          "valor": 2020.2077388130751,
+          "origem": "balanco",
+          "fonte": "C-07: C/ṁ (cp do balanço)"
+        },
+        "t_casco_in": {
+          "valor": 78.00496788990999,
+          "origem": "balanco",
+          "fonte": "C-07: T"
+        },
+        "mu_casco": {
+          "valor": 2.9189617198314273,
+          "origem": "propriedade",
+          "fonte": "C-07: emulsão, oleo contínuo (Branan eq. 27-4) (óleo vivo, Beggs & Robinson (1975); Rs de C-07)"
+        },
+        "k_casco": {
+          "valor": 0.13,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Óleo ou emulsão de fase contínua óleo no lado CASCO (topologia P-46); adota-se a condutividade de óleo cru líquido, a menor dos componentes. É conservador: k menor dá h_o menor e área maior. Sem correlação de emulsão no acervo nem no ChEDL (dica do código)."
+        },
+        "h_casco": {
+          "valor": 500.0,
+          "origem": "metodo",
+          "fonte": "só com Bell-Delaware desligado; aqui h_o é calculado (Branan Eq. 2-18)"
+        },
+        "corte_chicana": {
+          "valor": 0.25,
+          "origem": "metodo",
+          "fonte": "Saari Tab. 3.1 (p. 21): 'very often 25% of shell inside diameter'"
+        },
+        "espacamento_chicana": {
+          "valor": 0.2,
+          "origem": "recomendada",
+          "fonte": "melhor candidato da reotimização discreta F10x.7 reexecutada com a película do lado tubo nos três regimes, dentro da faixa da fonte do descritor; grade, candidatos e escolha registrados em docs/validacao/18-trocadores.md e 24-pelicula-baixo-reynolds.md. A ferramenta e a grade da busca saíram na consolidação (docs/decisoes/0004-consolidacao-arquitetural.md; docs/arquitetura/inventario.md) e ficam no histórico do git (removidas em f196f36; última versão em f196f36^)"
+        },
+        "layout_tubos": {
+          "valor": 90.0,
+          "origem": "recomendada",
+          "fonte": "melhor candidato da reotimização discreta F10x.7 reexecutada com a película do lado tubo nos três regimes, dentro da faixa da fonte do descritor; grade, candidatos e escolha registrados em docs/validacao/18-trocadores.md e 24-pelicula-baixo-reynolds.md. A ferramenta e a grade da busca saíram na consolidação (docs/decisoes/0004-consolidacao-arquitetural.md; docs/arquitetura/inventario.md) e ficam no histórico do git (removidas em f196f36; última versão em f196f36^)"
+        },
+        "pares_veda": {
+          "valor": 1.0,
+          "origem": "metodo",
+          "fonte": "1 par (Branan p. 44: regra de bolso de um par a cada ~6 fileiras de tubos)"
+        },
+        "folga_furo_chicana": {
+          "valor": 0.8,
+          "origem": "metodo",
+          "fonte": "Branan (2012) p. 44: 'usually 0.8 mm' (furo da chicana − d_o)"
+        },
+        "faixas_divisoras": {
+          "valor": 0.0,
+          "origem": "metodo",
+          "fonte": "divisória de passe perpendicular ao escoamento (nota do método)"
+        },
+        "d_externo": {
+          "valor": 12.7,
+          "origem": "recomendada",
+          "fonte": "melhor candidato da reotimização discreta F10x.7 reexecutada com a película do lado tubo nos três regimes, dentro da faixa da fonte do descritor; grade, candidatos e escolha registrados em docs/validacao/18-trocadores.md e 24-pelicula-baixo-reynolds.md. A ferramenta e a grade da busca saíram na consolidação (docs/decisoes/0004-consolidacao-arquitetural.md; docs/arquitetura/inventario.md) e ficam no histórico do git (removidas em f196f36; última versão em f196f36^)"
+        },
+        "espessura": {
+          "valor": 2.11,
+          "origem": "metodo",
+          "fonte": "Branan (2012) p. 38: 'start with 14 BWG' (2,11 mm)"
+        },
+        "k_parede": {
+          "valor": 45.0,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Tubo de aço-carbono, material usual segundo o próprio código (Saari §3); condutividade de aço-carbono na faixa de 80–100 °C, a conferir numa tabela de materiais."
+        },
+        "rf_tubo": {
+          "valor": 0.00018,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Lado TUBO com água de utilidade em circuito fechado tratado (topologia P-46): 0,00018 m²K/W é o valor de água de resfriamento tratada da nota do descritor rf_tubo (Saari cap. 8); conferir na Tab. 8.1 citada no código."
+        },
+        "rf_casco": {
+          "valor": 0.00035,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Lado CASCO com óleo cru ou emulsão (topologia P-46); a Tab. 8.1 de Saari citada no código não tem petróleo. Valor conservador da ordem das incrustações de óleo (0,00035 m²K/W, nota do descritor rf_casco: óleo leve), a confirmar."
+        },
+        "razao_passo": {
+          "valor": 1.25,
+          "origem": "recomendada",
+          "fonte": "melhor candidato da reotimização discreta F10x.7 reexecutada com a película do lado tubo nos três regimes, dentro da faixa da fonte do descritor; grade, candidatos e escolha registrados em docs/validacao/18-trocadores.md e 24-pelicula-baixo-reynolds.md. A ferramenta e a grade da busca saíram na consolidação (docs/decisoes/0004-consolidacao-arquitetural.md; docs/arquitetura/inventario.md) e ficam no histórico do git (removidas em f196f36; última versão em f196f36^)"
+        },
+        "passes_tubo": {
+          "valor": 1.0,
+          "origem": "recomendada",
+          "fonte": "melhor candidato da reotimização discreta F10x.7 reexecutada com a película do lado tubo nos três regimes, dentro da faixa da fonte do descritor; grade, candidatos e escolha registrados em docs/validacao/18-trocadores.md e 24-pelicula-baixo-reynolds.md. A ferramenta e a grade da busca saíram na consolidação (docs/decisoes/0004-consolidacao-arquitetural.md; docs/arquitetura/inventario.md) e ficam no histórico do git (removidas em f196f36; última versão em f196f36^)"
+        },
+        "n_min": {
+          "valor": 754.0,
+          "origem": "metodo",
+          "fonte": "domínio de busca: banda de velocidade no tubo, n = ṁ/(ρ·v·A_i)"
+        },
+        "n_max": {
+          "valor": 2265.0,
+          "origem": "metodo",
+          "fonte": "domínio de busca: banda de velocidade no tubo, n = ṁ/(ρ·v·A_i)"
+        },
+        "n_step": {
+          "valor": 5.0,
+          "origem": "metodo",
+          "fonte": "passo da grade do método (5 tubos)"
+        },
+        "v_min": {
+          "valor": 1.0,
+          "origem": "metodo",
+          "fonte": "Saari Tab. 3.1 (p. 21): 'often 1m/s unless better information is available'"
+        },
+        "v_max": {
+          "valor": 3.0,
+          "origem": "metodo",
+          "fonte": "Saari Tab. 3.1 (p. 21): erosão, < 3 m/s em aço-carbono"
+        },
+        "d_casco_max": {
+          "valor": 2500.0,
+          "origem": "metodo",
+          "fonte": "Saari Tab. 3.1 (p. 21): casco de chapa enrolada de 300 a 2500 mm"
+        },
+        "l_tubo_max": {
+          "valor": 6.0,
+          "origem": "metodo",
+          "fonte": "Branan (2012) p. 38: tubos de 4 a 20 ft (6,1 m); default do método 6 m"
+        },
+        "banda_caso_projeto": {
+          "valor": 1.0,
+          "origem": "recomendada",
+          "fonte": "P-45 (decisão do usuário, 2026-09-26; específica de trocadores): teto de velocidade em todos os casos; banda inteira no caso de projeto (maior vazão volumétrica no tubo); abaixo do piso no turndown, alerta de operabilidade/incrustação; Dittus-Boelter exigido na faixa em cada caso"
+        },
+        "cascos_serie": {
+          "valor": 1.0,
+          "origem": "metodo",
+          "fonte": "um casco (regra do Julia); cascos em série só pela reotimização do TAG (F10x.7)"
+        },
+        "cascos_paralelo": {
+          "valor": 1.0,
+          "origem": "metodo",
+          "fonte": "um casco (regra do Julia); cascos em paralelo só pela reotimização do TAG (F10x.7)"
+        },
+        "pelicula_baixo_re": {
+          "valor": 1.0,
+          "origem": "recomendada",
+          "fonte": "Branan (2012), cap. 2, pp. 40-41: a película do lado tubo tem correlação declarada nos três regimes — Hausen (eq. 2-10) em Re ≤ 2000, interpolação (eq. 2-12) em 2000 < Re < 10⁴ e Dittus-Boelter (Saari eq. 6.23) em Re ≥ 10⁴. Este TAG opera em baixa carga fora da faixa turbulenta, e sem os três regimes os casos de turndown eram RECUSADOS por falta de correlação, não por limite físico (docs/validacao/24-pelicula-baixo-reynolds.md)"
+        },
+        "razao_visc_parede": {
+          "valor": 1.0,
+          "origem": "metodo",
+          "fonte": "fator (µ/µ_parede)^0,14 das eq. 2-10/2-11 do Branan omitido (razão 1,0): hipótese declarada, conservadora ao aquecer líquido; a temperatura de parede da eq. 2-9 vai ao rastro"
+        }
+      },
+      "P-003": {
+        "m_tubo": {
+          "valor": 638.0682000617032,
+          "origem": "propriedade",
+          "fonte": "carga Q_C do balanço / (cp·ΔT) da utilidade"
+        },
+        "cp_tubo": {
+          "valor": 4179.692436086172,
+          "origem": "propriedade",
+          "fonte": "utilidade: cp da água (IAPWS-95)"
+        },
+        "t_tubo_in": {
+          "valor": 30.0,
+          "origem": "proposta",
+          "fonte": "Temperatura de entrada da água de resfriamento (meio de resfriamento)"
+        },
+        "t_tubo_out": {
+          "valor": 35.0,
+          "origem": "proposta",
+          "fonte": "Temperatura de saída da água de resfriamento (meio de resfriamento)"
+        },
+        "rho_tubo": {
+          "valor": 994.8247060885902,
+          "origem": "propriedade",
+          "fonte": "utilidade: ρ da água (IAPWS-95)"
+        },
+        "mu_tubo": {
+          "valor": 0.7565415402782033,
+          "origem": "propriedade",
+          "fonte": "utilidade: μ da água (IAPWS 2008)"
+        },
+        "k_tubo": {
+          "valor": 0.6180615724689649,
+          "origem": "propriedade",
+          "fonte": "utilidade: k da água (IAPWS 2011)"
+        },
+        "m_casco": {
+          "valor": 292.26730712893544,
+          "origem": "balanco",
+          "fonte": "C-23: ṁ total"
+        },
+        "cp_casco": {
+          "valor": 2011.5802982655416,
+          "origem": "balanco",
+          "fonte": "C-23: C/ṁ (cp do balanço)"
+        },
+        "t_casco_in": {
+          "valor": 62.681084622285304,
+          "origem": "balanco",
+          "fonte": "C-23: T"
+        },
+        "mu_casco": {
+          "valor": 13.960741624573075,
+          "origem": "propriedade",
+          "fonte": "C-23: emulsão, oleo contínuo (Branan eq. 27-4)"
+        },
+        "k_casco": {
+          "valor": 0.13,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Óleo ou emulsão de fase contínua óleo no lado CASCO (topologia P-46); adota-se a condutividade de óleo cru líquido, a menor dos componentes. É conservador: k menor dá h_o menor e área maior. Sem correlação de emulsão no acervo nem no ChEDL (dica do código)."
+        },
+        "h_casco": {
+          "valor": 500.0,
+          "origem": "metodo",
+          "fonte": "só com Bell-Delaware desligado; aqui h_o é calculado (Branan Eq. 2-18)"
+        },
+        "corte_chicana": {
+          "valor": 0.25,
+          "origem": "metodo",
+          "fonte": "Saari Tab. 3.1 (p. 21): 'very often 25% of shell inside diameter'"
+        },
+        "espacamento_chicana": {
+          "valor": 0.2,
+          "origem": "recomendada",
+          "fonte": "melhor candidato da reotimização discreta F10x.7 reexecutada com a película do lado tubo nos três regimes, dentro da faixa da fonte do descritor; grade, candidatos e escolha registrados em docs/validacao/18-trocadores.md e 24-pelicula-baixo-reynolds.md. A ferramenta e a grade da busca saíram na consolidação (docs/decisoes/0004-consolidacao-arquitetural.md; docs/arquitetura/inventario.md) e ficam no histórico do git (removidas em f196f36; última versão em f196f36^)"
+        },
+        "layout_tubos": {
+          "valor": 30.0,
+          "origem": "recomendada",
+          "fonte": "melhor candidato da reotimização discreta F10x.7 reexecutada com a película do lado tubo nos três regimes, dentro da faixa da fonte do descritor; grade, candidatos e escolha registrados em docs/validacao/18-trocadores.md e 24-pelicula-baixo-reynolds.md. A ferramenta e a grade da busca saíram na consolidação (docs/decisoes/0004-consolidacao-arquitetural.md; docs/arquitetura/inventario.md) e ficam no histórico do git (removidas em f196f36; última versão em f196f36^)"
+        },
+        "pares_veda": {
+          "valor": 1.0,
+          "origem": "metodo",
+          "fonte": "1 par (Branan p. 44: regra de bolso de um par a cada ~6 fileiras de tubos)"
+        },
+        "folga_furo_chicana": {
+          "valor": 0.8,
+          "origem": "metodo",
+          "fonte": "Branan (2012) p. 44: 'usually 0.8 mm' (furo da chicana − d_o)"
+        },
+        "faixas_divisoras": {
+          "valor": 0.0,
+          "origem": "metodo",
+          "fonte": "divisória de passe perpendicular ao escoamento (nota do método)"
+        },
+        "d_externo": {
+          "valor": 12.7,
+          "origem": "recomendada",
+          "fonte": "melhor candidato da reotimização discreta F10x.7 reexecutada com a película do lado tubo nos três regimes, dentro da faixa da fonte do descritor; grade, candidatos e escolha registrados em docs/validacao/18-trocadores.md e 24-pelicula-baixo-reynolds.md. A ferramenta e a grade da busca saíram na consolidação (docs/decisoes/0004-consolidacao-arquitetural.md; docs/arquitetura/inventario.md) e ficam no histórico do git (removidas em f196f36; última versão em f196f36^)"
+        },
+        "espessura": {
+          "valor": 2.11,
+          "origem": "metodo",
+          "fonte": "Branan (2012) p. 38: 'start with 14 BWG' (2,11 mm)"
+        },
+        "k_parede": {
+          "valor": 45.0,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Tubo de aço-carbono, material usual segundo o próprio código (Saari §3); condutividade de aço-carbono na faixa de 80–100 °C, a conferir numa tabela de materiais."
+        },
+        "rf_tubo": {
+          "valor": 0.00018,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Lado TUBO com água de utilidade em circuito fechado tratado (topologia P-46): 0,00018 m²K/W é o valor de água de resfriamento tratada da nota do descritor rf_tubo (Saari cap. 8); conferir na Tab. 8.1 citada no código."
+        },
+        "rf_casco": {
+          "valor": 0.00035,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Lado CASCO com óleo cru ou emulsão (topologia P-46); a Tab. 8.1 de Saari citada no código não tem petróleo. Valor conservador da ordem das incrustações de óleo (0,00035 m²K/W, nota do descritor rf_casco: óleo leve), a confirmar."
+        },
+        "razao_passo": {
+          "valor": 1.25,
+          "origem": "recomendada",
+          "fonte": "melhor candidato da reotimização discreta F10x.7 reexecutada com a película do lado tubo nos três regimes, dentro da faixa da fonte do descritor; grade, candidatos e escolha registrados em docs/validacao/18-trocadores.md e 24-pelicula-baixo-reynolds.md. A ferramenta e a grade da busca saíram na consolidação (docs/decisoes/0004-consolidacao-arquitetural.md; docs/arquitetura/inventario.md) e ficam no histórico do git (removidas em f196f36; última versão em f196f36^)"
+        },
+        "passes_tubo": {
+          "valor": 1.0,
+          "origem": "recomendada",
+          "fonte": "melhor candidato da reotimização discreta F10x.7 reexecutada com a película do lado tubo nos três regimes, dentro da faixa da fonte do descritor; grade, candidatos e escolha registrados em docs/validacao/18-trocadores.md e 24-pelicula-baixo-reynolds.md. A ferramenta e a grade da busca saíram na consolidação (docs/decisoes/0004-consolidacao-arquitetural.md; docs/arquitetura/inventario.md) e ficam no histórico do git (removidas em f196f36; última versão em f196f36^)"
+        },
+        "n_min": {
+          "valor": 3785.0,
+          "origem": "metodo",
+          "fonte": "domínio de busca: banda de velocidade no tubo, n = ṁ/(ρ·v·A_i)"
+        },
+        "n_max": {
+          "valor": 11357.0,
+          "origem": "metodo",
+          "fonte": "domínio de busca: banda de velocidade no tubo, n = ṁ/(ρ·v·A_i)"
+        },
+        "n_step": {
+          "valor": 5.0,
+          "origem": "metodo",
+          "fonte": "passo da grade do método (5 tubos)"
+        },
+        "v_min": {
+          "valor": 1.0,
+          "origem": "metodo",
+          "fonte": "Saari Tab. 3.1 (p. 21): 'often 1m/s unless better information is available'"
+        },
+        "v_max": {
+          "valor": 3.0,
+          "origem": "metodo",
+          "fonte": "Saari Tab. 3.1 (p. 21): erosão, < 3 m/s em aço-carbono"
+        },
+        "d_casco_max": {
+          "valor": 2500.0,
+          "origem": "metodo",
+          "fonte": "Saari Tab. 3.1 (p. 21): casco de chapa enrolada de 300 a 2500 mm"
+        },
+        "l_tubo_max": {
+          "valor": 6.0,
+          "origem": "metodo",
+          "fonte": "Branan (2012) p. 38: tubos de 4 a 20 ft (6,1 m); default do método 6 m"
+        },
+        "banda_caso_projeto": {
+          "valor": 1.0,
+          "origem": "recomendada",
+          "fonte": "P-45 (decisão do usuário, 2026-09-26; específica de trocadores): teto de velocidade em todos os casos; banda inteira no caso de projeto (maior vazão volumétrica no tubo); abaixo do piso no turndown, alerta de operabilidade/incrustação; Dittus-Boelter exigido na faixa em cada caso"
+        },
+        "cascos_serie": {
+          "valor": 1.0,
+          "origem": "metodo",
+          "fonte": "um casco (regra do Julia); cascos em série só pela reotimização do TAG (F10x.7)"
+        },
+        "cascos_paralelo": {
+          "valor": 1.0,
+          "origem": "metodo",
+          "fonte": "um casco (regra do Julia); cascos em paralelo só pela reotimização do TAG (F10x.7)"
+        },
+        "pelicula_baixo_re": {
+          "valor": 1.0,
+          "origem": "recomendada",
+          "fonte": "Branan (2012), cap. 2, pp. 40-41: a película do lado tubo tem correlação declarada nos três regimes — Hausen (eq. 2-10) em Re ≤ 2000, interpolação (eq. 2-12) em 2000 < Re < 10⁴ e Dittus-Boelter (Saari eq. 6.23) em Re ≥ 10⁴. Este TAG opera em baixa carga fora da faixa turbulenta, e sem os três regimes os casos de turndown eram RECUSADOS por falta de correlação, não por limite físico (docs/validacao/24-pelicula-baixo-reynolds.md)"
+        },
+        "razao_visc_parede": {
+          "valor": 1.0,
+          "origem": "metodo",
+          "fonte": "fator (µ/µ_parede)^0,14 das eq. 2-10/2-11 do Branan omitido (razão 1,0): hipótese declarada, conservadora ao aquecer líquido; a temperatura de parede da eq. 2-9 vai ao rastro"
+        }
+      },
+      "SG-001": {
+        "dm_water": {
+          "valor": 500.0,
+          "origem": "metodo",
+          "fonte": "Stewart & Arnold (2008) §4.7.2: gotas de água de 500 µm"
+        },
+        "dm_oil": {
+          "valor": 200.0,
+          "origem": "metodo",
+          "fonte": "Stewart & Arnold (2008) §4.7.3: gotas de óleo de 200 µm"
+        },
+        "dm_gas": {
+          "valor": 100.0,
+          "origem": "metodo",
+          "fonte": "Stewart & Arnold (2008), exemplo de projeto p. 168: remoção de líquido de 100 µm"
+        },
+        "tr_oil": {
+          "valor": 10.0,
+          "origem": "recomendada",
+          "fonte": "Stewart & Arnold (2008) Tab. 4.1: óleo intermediário (20–30 °API; poços de 27,5 e 28,2 °API) 7,5–10 min, adotado o limite superior. Nota da tabela: com emulsão na entrada, ×2 a 4"
+        },
+        "tr_water": {
+          "valor": 10.0,
+          "origem": "recomendada",
+          "fonte": "Stewart & Arnold (2008) §4.7.4: 'a water retention time of 10 min is recommended for design'"
+        },
+        "d_min": {
+          "valor": 500.0,
+          "origem": "metodo",
+          "fonte": "domínio de busca: faixa do descritor do método"
+        },
+        "d_max": {
+          "valor": 12000.0,
+          "origem": "metodo",
+          "fonte": "domínio de busca: faixa do descritor do método"
+        },
+        "d_step": {
+          "valor": 150.0,
+          "origem": "metodo",
+          "fonte": "Stewart & Arnold (2008) §3.8.6, p. 126: cascos em incrementos de 150 mm (6 in)"
+        },
+        "sr_min": {
+          "valor": 3.0,
+          "origem": "metodo",
+          "fonte": "Stewart & Arnold (2008) cap. 4: comprimento/diâmetro 'between 3 and 5'"
+        },
+        "sr_max": {
+          "valor": 5.0,
+          "origem": "metodo",
+          "fonte": "Stewart & Arnold (2008) cap. 4: comprimento/diâmetro 'between 3 and 5'"
+        },
+        "sr_target": {
+          "valor": 4.0,
+          "origem": "metodo",
+          "fonte": "centro da banda de Stewart & Arnold (2008)"
+        },
+        "q_oil": {
+          "valor": 1192.6807473407678,
+          "origem": "propriedade",
+          "fonte": "C-03: Σ ṁ/ρ(T) da fase oleo"
+        },
+        "q_water": {
+          "valor": 196.87426804336667,
+          "origem": "propriedade",
+          "fonte": "C-03: Σ ṁ/ρ(T) da fase agua"
+        },
+        "q_gas": {
+          "valor": 501940.8514602979,
+          "origem": "balanco",
+          "fonte": "C-04: gás na condição padrão, n_V·V_M do flash do estágio (S&A Eq. 3.8b: Qg em scm/h)"
+        },
+        "rho_oil": {
+          "valor": 889.0471698113208,
+          "origem": "propriedade",
+          "fonte": "C-03: ρ da fase oleo (volumes aditivos)"
+        },
+        "rho_water": {
+          "valor": 1108.0046184461328,
+          "origem": "propriedade",
+          "fonte": "C-03: ρ da fase agua (volumes aditivos)"
+        },
+        "rho_gas": {
+          "valor": 25.746522118542504,
+          "origem": "propriedade",
+          "fonte": "C-04: ρ_g do vapor de equilíbrio do estágio (PR, trem)"
+        },
+        "mu_oil": {
+          "valor": 4.213398215934796,
+          "origem": "propriedade",
+          "fonte": "C-03: μ da fase oleo (óleo vivo, Beggs & Robinson (1975); Rs de C-06)"
+        },
+        "mu_water": {
+          "valor": 0.7659160494127104,
+          "origem": "propriedade",
+          "fonte": "C-03: μ da fase agua"
+        },
+        "mu_gas": {
+          "valor": 0.012753882408777813,
+          "origem": "propriedade",
+          "fonte": "C-04: μ do gás na condição, corte leve do balanço (sem método validado para a composição y)"
+        },
+        "pressure": {
+          "valor": 2500.0,
+          "origem": "balanco",
+          "fonte": "C-04: P"
+        },
+        "temperature": {
+          "valor": 52.681084622285304,
+          "origem": "balanco",
+          "fonte": "C-04: T"
+        },
+        "z": {
+          "valor": 0.9288595165920338,
+          "origem": "propriedade",
+          "fonte": "C-04: Z do vapor de equilíbrio do estágio (PR, trem)"
+        }
+      },
+      "TO-001": {
+        "dm_water": {
+          "valor": 1000.0,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Sem correlação campo elétrico → gotícula no acervo (dica do código). Adota-se 1000 µm, a premissa do autor já registrada no descritor do método (nota de dm_water em equipment/treater/electrostatic.toml): 2× os 500 µm que S&A §4.7.2 usa sem tratamento, isto é, ganho de 4× na decantação. Com 500 µm (sem crédito do campo) o tratador não teria razão de ser; a confirmar com dado de laboratório."
+        },
+        "dm_oil": {
+          "valor": 200.0,
+          "origem": "metodo",
+          "fonte": "Stewart & Arnold (2008) §4.7.3: gotas de óleo de 200 µm"
+        },
+        "tr_oil": {
+          "valor": 20.0,
+          "origem": "recomendada",
+          "fonte": "Stewart & Arnold (2008) Tab. 4.1: óleo intermediário 7,5–10 min (limite superior), ×2 pela nota da tabela para emulsão na entrada (fator 2 a 4; adotado o menor)"
+        },
+        "tr_water": {
+          "valor": 10.0,
+          "origem": "recomendada",
+          "fonte": "Stewart & Arnold (2008) §4.7.4: 'a water retention time of 10 min is recommended for design'"
+        },
+        "d_min": {
+          "valor": 300.0,
+          "origem": "metodo",
+          "fonte": "domínio de busca: faixa do descritor do método"
+        },
+        "d_max": {
+          "valor": 12000.0,
+          "origem": "metodo",
+          "fonte": "domínio de busca: faixa do descritor do método"
+        },
+        "d_step": {
+          "valor": 150.0,
+          "origem": "metodo",
+          "fonte": "Stewart & Arnold (2008) §4.9.3: 'heads come in outside diameters, which are multiples of 6 in. (150 mm)'"
+        },
+        "sr_min": {
+          "valor": 3.0,
+          "origem": "metodo",
+          "fonte": "Stewart & Arnold (2008) §4.9.2: Lss/d entre 3 e 5"
+        },
+        "sr_max": {
+          "valor": 5.0,
+          "origem": "metodo",
+          "fonte": "Stewart & Arnold (2008) §4.9.2: Lss/d entre 3 e 5"
+        },
+        "sr_target": {
+          "valor": 4.0,
+          "origem": "metodo",
+          "fonte": "centro da banda de Stewart & Arnold (2008) §4.9.2"
+        },
+        "q_oil": {
+          "valor": 1189.7686806396841,
+          "origem": "propriedade",
+          "fonte": "C-10: Σ ṁ/ρ(T) da fase oleo"
+        },
+        "q_water": {
+          "valor": 30.129628259033563,
+          "origem": "propriedade",
+          "fonte": "C-10: Σ ṁ/ρ(T) da fase agua"
+        },
+        "rho_oil": {
+          "valor": 889.0471698113208,
+          "origem": "propriedade",
+          "fonte": "C-10: ρ da fase oleo (volumes aditivos)"
+        },
+        "rho_water": {
+          "valor": 1085.9954678324787,
+          "origem": "propriedade",
+          "fonte": "C-10: ρ da fase agua (volumes aditivos)"
+        },
+        "mu_oil": {
+          "valor": 6.377537235121908,
+          "origem": "propriedade",
+          "fonte": "C-10: μ da fase oleo (óleo vivo, Beggs & Robinson (1975); Rs de C-10)"
+        },
+        "mu_water": {
+          "valor": 0.4728309092500567,
+          "origem": "propriedade",
+          "fonte": "C-10: μ da fase agua"
+        }
+      },
+      "TO-002": {
+        "dm_water": {
+          "valor": 1000.0,
+          "origem": "proposta",
+          "fonte": "proposta do usuário (autor do TCC) (status proposto, a confirmar): Sem correlação campo elétrico → gotícula no acervo (dica do código). Adota-se 1000 µm, a premissa do autor já registrada no descritor do método (nota de dm_water em equipment/treater/electrostatic.toml): 2× os 500 µm que S&A §4.7.2 usa sem tratamento, isto é, ganho de 4× na decantação. Com 500 µm (sem crédito do campo) o tratador não teria razão de ser; a confirmar com dado de laboratório."
+        },
+        "dm_oil": {
+          "valor": 200.0,
+          "origem": "metodo",
+          "fonte": "Stewart & Arnold (2008) §4.7.3: gotas de óleo de 200 µm"
+        },
+        "tr_oil": {
+          "valor": 20.0,
+          "origem": "recomendada",
+          "fonte": "Stewart & Arnold (2008) Tab. 4.1: óleo intermediário 7,5–10 min (limite superior), ×2 pela nota da tabela para emulsão na entrada (fator 2 a 4; adotado o menor)"
+        },
+        "tr_water": {
+          "valor": 10.0,
+          "origem": "recomendada",
+          "fonte": "Stewart & Arnold (2008) §4.7.4: 'a water retention time of 10 min is recommended for design'"
+        },
+        "d_min": {
+          "valor": 300.0,
+          "origem": "metodo",
+          "fonte": "domínio de busca: faixa do descritor do método"
+        },
+        "d_max": {
+          "valor": 12000.0,
+          "origem": "metodo",
+          "fonte": "domínio de busca: faixa do descritor do método"
+        },
+        "d_step": {
+          "valor": 150.0,
+          "origem": "metodo",
+          "fonte": "Stewart & Arnold (2008) §4.9.3: 'heads come in outside diameters, which are multiples of 6 in. (150 mm)'"
+        },
+        "sr_min": {
+          "valor": 3.0,
+          "origem": "metodo",
+          "fonte": "Stewart & Arnold (2008) §4.9.2: Lss/d entre 3 e 5"
+        },
+        "sr_max": {
+          "valor": 5.0,
+          "origem": "metodo",
+          "fonte": "Stewart & Arnold (2008) §4.9.2: Lss/d entre 3 e 5"
+        },
+        "sr_target": {
+          "valor": 4.0,
+          "origem": "metodo",
+          "fonte": "centro da banda de Stewart & Arnold (2008) §4.9.2"
+        },
+        "q_oil": {
+          "valor": 1176.7336425360584,
+          "origem": "propriedade",
+          "fonte": "C-18: Σ ṁ/ρ(T) da fase oleo"
+        },
+        "q_water": {
+          "valor": 52.30116475265266,
+          "origem": "propriedade",
+          "fonte": "C-18: Σ ṁ/ρ(T) da fase agua"
+        },
+        "rho_oil": {
+          "valor": 889.0471698113208,
+          "origem": "propriedade",
+          "fonte": "C-18: ρ da fase oleo (volumes aditivos)"
+        },
+        "rho_water": {
+          "valor": 994.8358196369679,
+          "origem": "propriedade",
+          "fonte": "C-18: ρ da fase agua (volumes aditivos)"
+        },
+        "mu_oil": {
+          "valor": 7.9,
+          "origem": "propriedade",
+          "fonte": "C-18: μ da fase oleo"
+        },
+        "mu_water": {
+          "valor": 0.346521738542421,
+          "origem": "propriedade",
+          "fonte": "C-18: μ da fase agua"
+        }
+      },
+      "V-001": {
+        "dm_gas": {
+          "valor": 140.0,
+          "origem": "metodo",
+          "fonte": "Stewart & Arnold (2008) §3.7.1: equações de capacidade de gás baseadas em remoção de 140 µm"
+        },
+        "tr_liquid": {
+          "valor": 5.0,
+          "origem": "recomendada",
+          "fonte": "Stewart & Arnold (2008) Tab. 3.2, nota: mínimo de 5 min para alto CO2; gás dos casos BOT. Decisão registrada em docs/decisoes/0002-pfd-automatico.md."
+        },
+        "d_min": {
+          "valor": 200.0,
+          "origem": "metodo",
+          "fonte": "domínio de busca: faixa do descritor do método"
+        },
+        "d_max": {
+          "valor": 12000.0,
+          "origem": "metodo",
+          "fonte": "domínio de busca: faixa do descritor do método"
+        },
+        "d_step": {
+          "valor": 150.0,
+          "origem": "metodo",
+          "fonte": "Stewart & Arnold (2008) §3.8.6, p. 126: cascos em incrementos de 150 mm (6 in)"
+        },
+        "sr_min": {
+          "valor": 3.0,
+          "origem": "metodo",
+          "fonte": "Stewart & Arnold (2008) §3.8.5: esbeltez entre 3 e 4"
+        },
+        "sr_max": {
+          "valor": 4.0,
+          "origem": "metodo",
+          "fonte": "Stewart & Arnold (2008) §3.8.5: esbeltez entre 3 e 4"
+        },
+        "sr_target": {
+          "valor": 3.5,
+          "origem": "metodo",
+          "fonte": "centro da banda de Stewart & Arnold (2008) §3.8.5"
+        },
+        "q_oil": {
+          "valor": 1219.8983088987177,
+          "origem": "propriedade",
+          "fonte": "C-10: Σ ṁ/ρ(T) da fase liquido"
+        },
+        "q_gas": {
+          "valor": 33685.19970475378,
+          "origem": "balanco",
+          "fonte": "C-09: gás na condição padrão, n_V·V_M do flash do estágio (S&A Eq. 3.8b: Qg em scm/h)"
+        },
+        "rho_oil": {
+          "valor": 893.9114924866951,
+          "origem": "propriedade",
+          "fonte": "C-10: ρ da fase liquido (volumes aditivos)"
+        },
+        "rho_gas": {
+          "valor": 8.633186090878361,
+          "origem": "propriedade",
+          "fonte": "C-09: ρ_g do vapor de equilíbrio do estágio (PR, trem)"
+        },
+        "mu_gas": {
+          "valor": 0.014060926764453623,
+          "origem": "propriedade",
+          "fonte": "C-09: μ do gás na condição, corte leve do balanço (sem método validado para a composição y)"
+        },
+        "pressure": {
+          "valor": 700.0,
+          "origem": "balanco",
+          "fonte": "C-09: P"
+        },
+        "temperature": {
+          "valor": 90.0,
+          "origem": "balanco",
+          "fonte": "C-09: T"
+        },
+        "z": {
+          "valor": 0.9702419492193861,
+          "origem": "propriedade",
+          "fonte": "C-09: Z do vapor de equilíbrio do estágio (PR, trem)"
+        }
+      },
+      "V-002": {
+        "dm_gas": {
+          "valor": 140.0,
+          "origem": "metodo",
+          "fonte": "Stewart & Arnold (2008) §3.7.1: equações de capacidade de gás baseadas em remoção de 140 µm"
+        },
+        "tr_liquid": {
+          "valor": 5.0,
+          "origem": "recomendada",
+          "fonte": "Stewart & Arnold (2008) Tab. 3.2, nota: mínimo de 5 min para alto CO2; gás dos casos BOT. Decisão registrada em docs/decisoes/0002-pfd-automatico.md."
+        },
+        "d_min": {
+          "valor": 200.0,
+          "origem": "metodo",
+          "fonte": "domínio de busca: faixa do descritor do método"
+        },
+        "d_max": {
+          "valor": 12000.0,
+          "origem": "metodo",
+          "fonte": "domínio de busca: faixa do descritor do método"
+        },
+        "d_step": {
+          "valor": 150.0,
+          "origem": "metodo",
+          "fonte": "Stewart & Arnold (2008) §3.8.6, p. 126: cascos em incrementos de 150 mm (6 in)"
+        },
+        "sr_min": {
+          "valor": 3.0,
+          "origem": "metodo",
+          "fonte": "Stewart & Arnold (2008) §3.8.5: esbeltez entre 3 e 4"
+        },
+        "sr_max": {
+          "valor": 4.0,
+          "origem": "metodo",
+          "fonte": "Stewart & Arnold (2008) §3.8.5: esbeltez entre 3 e 4"
+        },
+        "sr_target": {
+          "valor": 3.5,
+          "origem": "metodo",
+          "fonte": "centro da banda de Stewart & Arnold (2008) §3.8.5"
+        },
+        "q_oil": {
+          "valor": 1229.034807288711,
+          "origem": "propriedade",
+          "fonte": "C-18: Σ ṁ/ρ(T) da fase liquido"
+        },
+        "q_gas": {
+          "valor": 9479.723094250154,
+          "origem": "balanco",
+          "fonte": "C-17: gás na condição padrão, n_V·V_M do flash do estágio (S&A Eq. 3.8b: Qg em scm/h)"
+        },
+        "rho_oil": {
+          "valor": 893.5489703874148,
+          "origem": "propriedade",
+          "fonte": "C-18: ρ da fase liquido (volumes aditivos)"
+        },
+        "rho_gas": {
+          "valor": 3.33081468876393,
+          "origem": "propriedade",
+          "fonte": "C-17: ρ_g do vapor de equilíbrio do estágio (PR, trem)"
+        },
+        "mu_gas": {
+          "valor": 0.014060926764453623,
+          "origem": "propriedade",
+          "fonte": "C-17: μ do gás na condição, corte leve do balanço (sem método validado para a composição y)"
+        },
+        "pressure": {
+          "valor": 200.0,
+          "origem": "balanco",
+          "fonte": "C-17: P"
+        },
+        "temperature": {
+          "valor": 89.99999999999999,
+          "origem": "balanco",
+          "fonte": "C-17: T"
+        },
+        "z": {
+          "valor": 0.9813086719622148,
+          "origem": "propriedade",
+          "fonte": "C-17: Z do vapor de equilíbrio do estágio (PR, trem)"
+        }
+      }
+    },
+    "x_isolado_por_TAG": {
+      "B-001": {
+        "x_isolado": 600.0,
+        "viavel_isolado": true
+      },
+      "B-002": {
+        "x_isolado": 65.0,
+        "viavel_isolado": true
+      },
+      "B-003": {
+        "x_isolado": 125.0,
+        "viavel_isolado": true
+      },
+      "P-002": {
+        "x_isolado": 1704.0,
+        "viavel_isolado": true
+      },
+      "P-003": {
+        "x_isolado": 4015.0,
+        "viavel_isolado": true
+      },
+      "SG-001": {
+        "x_isolado": 5750.0,
+        "viavel_isolado": true
+      },
+      "TO-001": {
+        "x_isolado": 5550.0,
+        "viavel_isolado": true
+      },
+      "TO-002": {
+        "x_isolado": 5550.0,
+        "viavel_isolado": true
+      },
+      "V-001": {
+        "x_isolado": 4700.0,
+        "viavel_isolado": true
+      },
+      "V-002": {
+        "x_isolado": 4700.0,
+        "viavel_isolado": true
+      }
+    }
+  }
+}
