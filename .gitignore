@@ -27,3 +27,4 @@ dist/
 *.fdb_latexmk
 *.synctex.gz
 *.pdf
+docs/validacao/otimizacao_pressao/.rodada.pkl

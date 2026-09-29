@@ -29,6 +29,7 @@ Cada documento é o registro de uma etapa. A arquitetura vigente está em [`../a
 - [36-p001-diagnostico.md](36-p001-diagnostico.md) — 36 — P-001: restrição, caso e requisito que o tornam inviável; árvore de alternativas
 - [40-viscosidade-rs-flash.md](40-viscosidade-rs-flash.md) — 40 — μ do óleo vivo com o Rs do trem: limitação de aplicabilidade e sensibilidade (SG-001, TO-001)
 - [41-mapa-pressao.md](41-mapa-pressao.md) — 41 — Mapa P_D1 × P_D2 → flash → dimensionamento → TVP; sensibilidade; conclusão C
+- [42-otimizacao-pressao.md](42-otimizacao-pressao.md) — 42 — Otimização das pressões de separação (P_D1 × P_D2): grade-oráculo, NSGA-II, frente na fronteira da TVP
 - [39-trem-produtivo.md](39-trem-produtivo.md) — 39 — Trem produtivo: recombinação da Nota 4 e flash nos casos avaliáveis; Standing × flash; propagação; TVP recalculada
 - [37-faixas-pressao-degaseificadores.md](37-faixas-pressao-degaseificadores.md) — 37 — Faixas de P_D1 e P_D2: TVP do BOT como teto de P_D2; o que falta
 - [38-recombinacao-nota4.md](38-recombinacao-nota4.md) — 38 — Recombinação da Nota 4: condição padrão × FWKO; recomendada a do FWKO

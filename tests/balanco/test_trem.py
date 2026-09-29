@@ -256,9 +256,12 @@ def test_a_proveniencia_do_caso_diz_de_onde_veio_o_gas(resultados):
             assert "fracao_vapor_estagio" not in r.proveniencia
 
 
-# ------------------------------------------------------------------ TVP (diagnóstico)
-def test_tvp_do_liquido_final_e_diagnostico(resultados, dados):
+# ------------------------------------------------------------------ TVP
+def test_tvp_do_liquido_final_e_lida_pelo_estado(resultados, dados):
+    """O EstadoProcesso lê a TVP na temperatura da premissa declarada, pela mesma função do
+    trem; nos casos não avaliáveis ela não existe (NaN), e a restrição não é verificada neles."""
     T = premissas(dados)[trem.cfg()["tvp"]["premissa_T"]]
     for r in resultados[:2] + [x for x in resultados if not x.avaliavel][:1]:
         v = trem.tvp_kpa(r.trem, T, r.mws_plus)
-        assert math.isfinite(v) and v > 0 if r.avaliavel else math.isnan(v)
+        assert r.T_tvp_C == T
+        assert math.isfinite(v) and v > 0 and r.tvp_kPa == v if r.avaliavel else math.isnan(r.tvp_kPa)

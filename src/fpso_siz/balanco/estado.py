@@ -5,9 +5,12 @@ Não existe outro. O trem de separação (`balanco/trem.py`) é parte deste esta
 termodinamicamente avaliáveis é ele que dá o gás de cada estágio; nos demais o estado diz por que
 não é avaliável.
 """
+import math
 from dataclasses import dataclass, field
+from functools import cached_property
 
 from fpso_siz.balanco.dados import constantes
+from fpso_siz.balanco.trem import tvp_kpa
 from fpso_siz.core.trace import CalcTrace
 from fpso_siz.core.unidades import SEGUNDOS_POR_DIA
 
@@ -50,6 +53,7 @@ class EstadoProcesso:
     proveniencia: dict = field(default_factory=dict)
     trem: object = None                             # balanco/trem.TremSeparacao (produtivo ou não avaliável)
     gas_padrao: dict = field(default_factory=dict)  # Sm³/d do componente G por corrente (casos avaliáveis)
+    T_tvp_C: float = math.nan                       # T em que a TVP do óleo tratado é lida (trem.toml [tvp])
 
     @property
     def avaliavel(self):
@@ -65,6 +69,15 @@ class EstadoProcesso:
         if not self.avaliavel:
             return None
         return next((e.vapor for e in self.trem.estagios if e.corrente_gas == corrente), None)
+
+    @cached_property
+    def tvp_kPa(self):
+        """TVP [kPa] do líquido final do trem em `T_tvp_C` (ponto de bolha pelo mesmo flash,
+        `trem.tvp_kpa`). Só nos casos avaliáveis; NaN nos demais — neles não é verificada. É lida
+        sob demanda (a bisseção custa dezenas de flashes) e guardada no estado, que é imutável."""
+        if not self.avaliavel:
+            return math.nan
+        return tvp_kpa(self.trem, self.T_tvp_C, self.mws_plus)
 
     @property
     def num(self):

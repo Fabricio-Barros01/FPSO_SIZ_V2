@@ -140,6 +140,7 @@ uv run python tools/pinch_planta.py          # alvos do pré-aquecedor pela rede
 uv run python tools/relatorio_trem.py        # trem SG-001 → V-001 → V-002 de cada caso (diagnóstico)
 uv run python tools/investigar_alarmes.py    # variantes de estudo dos alarmes, pelo mesmo serviço
 uv run python tools/otimizar.py [--sub sg_001 --varredura]   # otimização NSGA-II (F15; lenta)
+uv run python tools/otimizar.py --sub pressao --processos 4 [--repetir]   # P_D1 × P_D2: grade-oráculo + NSGA-II (nota 42; horas)
 FPSO_SNAPSHOTS=1 uv run pytest tests/test_terminal_pfd.py   # regenera os snapshots de tela
 ```
 

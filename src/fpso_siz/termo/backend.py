@@ -144,11 +144,24 @@ def _pacote_pseudo(reais, pseudos, kij):
     return thermo.FlashVL(consts, props, liquid=liq, gas=gas)
 
 
+def _erros_de_convergencia():
+    """As exceções com que o solver do ChEDL (fluids.numerics) diz que não convergiu. Não
+    descendem de ArithmeticError nem de ValueError; aqui viram ArithmeticError, que é como o
+    serviço reconhece "não convergiu" (e devolve estado com ok=False, nunca exceção)."""
+    from fluids import numerics as n
+    return (n.OscillationError, n.UnconvergedError, n.NoSolutionError, n.NotBoundedError,
+            n.DiscontinuityError, n.SamePointError)
+
+
 def flash_pseudo(reais, pseudos, zs, T, P, kij):
     """Flash (T, P) de uma mistura com pseudo-componentes. Devolve as fases com Z, ρ, MW e
-    composição; **sem h e sem cp**, que o pacote não tem como calcular."""
+    composição; **sem h e sem cp**, que o pacote não tem como calcular. Não convergir é
+    ArithmeticError."""
     flash = _pacote_pseudo(tuple(reais), tuple(pseudos), kij)
-    r = flash.flash(T=T, P=P, zs=list(zs))
+    try:
+        r = flash.flash(T=T, P=P, zs=list(zs))
+    except _erros_de_convergencia() as e:
+        raise ArithmeticError(f"{type(e).__name__}: {e}") from e
     fases = []
     for nome, fase, beta, beta_m in _fases_de(r):
         fases.append(dict(nome=nome, fracao_molar=beta, fracao_massica=beta_m,

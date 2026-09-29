@@ -94,7 +94,7 @@ Uma API pública:
 flash_tp(T, P, z, fluido) -> EstadoTermodinamico
 flash_poco(T, P, z, mws_plus) -> EstadoTermodinamico
 mw_mistura(z, mws_plus) -> float
-pressao_bolha(T, z, mws_plus) -> float          # leitura do mesmo flash (TVP, diagnóstico)
+pressao_bolha(T, z, mws_plus) -> float          # leitura do mesmo flash (TVP: EstadoProcesso.tvp_kPa)
 conferir(estado) -> Fechamento
 gas(...), gas_cp(...), agua(...), agua_saturada(...), salmoura_fracao(...), fracao_sal(...),
 oleo(...), oleo_vivo(...), emulsao(...), pressao_vapor_saturado(...), versoes()
@@ -138,8 +138,15 @@ valor proposto, ou deixá-las abertas), não compatibilidade.
 
 `vetor x → premissas/ajustes → Contexto → resolver_todos → planta → objetivos/restrições`. Uma
 variável é uma entrada de `config/pfd/otimizacao.toml`. `P_D1`/`P_D2` entram com
-`destino = "premissa"` e uma faixa com fonte — configuração, não reescrita; o trem as lê do
-estado (`P` das correntes C-09 e C-17).
+`destino = "premissa"` no subproblema `pressao` — configuração, não reescrita; o trem as lê do
+estado (`P` das correntes C-09 e C-17). O domínio é de estudo declarado (região da nota 41); os
+limites com fonte ou de processo são restrição explícita: `[[restricao_balanco]]` (grandeza do
+`EstadoProcesso` contra limite com fonte, violação contínua — a TVP ≤ 70 kPa, só nos casos
+avaliáveis) e `[[restricao_variavel]]` (P_D2 < P_D1). Os objetivos do subproblema — perda de óleo
+estabilizado (`razao_componente` sobre as correntes) e carga de vapor da VRU (`carga_balanco` com
+`campo = "gas"`) — são agregações do estado; `pfd/otimizacao.py` não avalia física. A frente é
+conferida contra uma grade-oráculo na resolução da própria grade (nota 42). O problema completo
+da F15 é a declaração `[completo]`: variável nova de subproblema não entra nele por omissão.
 
 ## Regressões que ficam
 

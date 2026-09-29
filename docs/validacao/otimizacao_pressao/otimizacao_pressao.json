@@ -1,0 +1,241 @@
+{
+  "descobertos": 0,
+  "frente_grade": [
+    {
+      "objetivos": {
+        "carga_vru": 1221881.3308129585,
+        "perda_oleo": 0.021579173571062316
+      },
+      "restricoes": {
+        "SG-001": 0.0,
+        "V-001": 0.0,
+        "V-002": 0.0,
+        "p_d2_menor_que_p_d1": 0.0,
+        "tvp": -0.03397033499543811
+      },
+      "x": [
+        500.0,
+        130.0
+      ]
+    }
+  ],
+  "frente_nsga2": [
+    {
+      "ficha": {
+        "G_D1": 975490.3014101441,
+        "G_D1_caso": 3,
+        "G_D2": 240274.20666378696,
+        "G_D2_caso": 3,
+        "G_F": 12046508.246599382,
+        "G_F_caso": 2,
+        "P_D1": 510.5370262494105,
+        "P_D2": 133.69226567586588,
+        "SG-001": {
+          "Leff_m": 17.86668706507747,
+          "caso": "BOT 12 — Late Life",
+          "d_mm": 6050.0,
+          "governante": "liquid",
+          "viavel": true,
+          "volume_m3": 684.8309793745053
+        },
+        "V-001": {
+          "Leff_m": 11.664908869349281,
+          "caso": "BOT 02 — Early Life",
+          "d_mm": 4700.0,
+          "governante": "liquid",
+          "viavel": true,
+          "volume_m3": 283.9220933866917
+        },
+        "V-002": {
+          "Leff_m": 11.712148418353564,
+          "caso": "BOT 02 — Early Life",
+          "d_mm": 4700.0,
+          "governante": "liquid",
+          "viavel": true,
+          "volume_m3": 284.7416733642533
+        },
+        "W_B1": 144.30624750879443,
+        "W_B1_caso": 11,
+        "W_B2": 43.64759674344802,
+        "W_B2_caso": 2,
+        "W_Bo": 310.1275848673747,
+        "W_Bo_caso": 2,
+        "carga_vru_caso": 3,
+        "tvp_caso": 14,
+        "tvp_max": 69.85948779576492
+      },
+      "objetivos": {
+        "carga_vru": 1215764.508073931,
+        "perda_oleo": 0.021030473567003383
+      },
+      "restricoes": {
+        "SG-001": 0.0,
+        "V-001": 0.0,
+        "V-002": 0.0,
+        "p_d2_menor_que_p_d1": 0.0,
+        "tvp": -0.0020073172033582276
+      },
+      "x": [
+        510.5370262494105,
+        133.69226567586588
+      ]
+    },
+    {
+      "ficha": {
+        "G_D1": 957455.3270705903,
+        "G_D1_caso": 3,
+        "G_D2": 258261.70890543415,
+        "G_D2_caso": 3,
+        "G_F": 12046533.596006189,
+        "G_F_caso": 2,
+        "P_D1": 537.6175331320669,
+        "P_D2": 133.86716218650778,
+        "SG-001": {
+          "Leff_m": 17.86673982383587,
+          "caso": "BOT 12 — Late Life",
+          "d_mm": 6050.0,
+          "governante": "liquid",
+          "viavel": true,
+          "volume_m3": 684.8330016202666
+        },
+        "V-001": {
+          "Leff_m": 11.675073052981274,
+          "caso": "BOT 02 — Early Life",
+          "d_mm": 4700.0,
+          "governante": "liquid",
+          "viavel": true,
+          "volume_m3": 284.0984363359498
+        },
+        "V-002": {
+          "Leff_m": 11.71296732953725,
+          "caso": "BOT 02 — Early Life",
+          "d_mm": 4700.0,
+          "governante": "liquid",
+          "viavel": true,
+          "volume_m3": 284.7558810191462
+        },
+        "W_B1": 142.4359648660466,
+        "W_B1_caso": 11,
+        "W_B2": 43.68819029747449,
+        "W_B2_caso": 2,
+        "W_Bo": 310.0565135477261,
+        "W_Bo_caso": 2,
+        "carga_vru_caso": 3,
+        "tvp_caso": 14,
+        "tvp_max": 69.97667588512317
+      },
+      "objetivos": {
+        "carga_vru": 1215717.0359760246,
+        "perda_oleo": 0.021032653014328884
+      },
+      "restricoes": {
+        "SG-001": 0.0,
+        "V-001": 0.0,
+        "V-002": 0.0,
+        "p_d2_menor_que_p_d1": 0.0,
+        "tvp": -0.0003332016410975136
+      },
+      "x": [
+        537.6175331320669,
+        133.86716218650778
+      ]
+    },
+    {
+      "ficha": {
+        "G_D1": 957085.770234165,
+        "G_D1_caso": 3,
+        "G_D2": 258630.19627308298,
+        "G_D2_caso": 3,
+        "G_F": 12046534.095215108,
+        "G_F_caso": 2,
+        "P_D1": 538.1831643250089,
+        "P_D2": 133.8733389502966,
+        "SG-001": {
+          "Leff_m": 17.866740854658335,
+          "caso": "BOT 12 — Late Life",
+          "d_mm": 6050.0,
+          "governante": "liquid",
+          "viavel": true,
+          "volume_m3": 684.8330411317415
+        },
+        "V-001": {
+          "Leff_m": 11.675274576042709,
+          "caso": "BOT 02 — Early Life",
+          "d_mm": 4700.0,
+          "governante": "liquid",
+          "viavel": true,
+          "volume_m3": 284.101932649307
+        },
+        "V-002": {
+          "Leff_m": 11.712982309900847,
+          "caso": "BOT 02 — Early Life",
+          "d_mm": 4700.0,
+          "governante": "liquid",
+          "viavel": true,
+          "volume_m3": 284.75614092014695
+        },
+        "W_B1": 142.3969002278944,
+        "W_B1_caso": 11,
+        "W_B2": 43.688947719962286,
+        "W_B2_caso": 2,
+        "W_Bo": 310.05380865819546,
+        "W_Bo_caso": 2,
+        "carga_vru_caso": 3,
+        "tvp_caso": 14,
+        "tvp_max": 69.9808196261657
+      },
+      "objetivos": {
+        "carga_vru": 1215715.966507248,
+        "perda_oleo": 0.021032792934257305
+      },
+      "restricoes": {
+        "SG-001": 0.0,
+        "V-001": 0.0,
+        "V-002": 0.0,
+        "p_d2_menor_que_p_d1": 0.0,
+        "tvp": -0.00027400534049004666
+      },
+      "x": [
+        538.1831643250089,
+        133.8733389502966
+      ]
+    }
+  ],
+  "mesma_semente": true,
+  "meta": {
+    "algoritmo": "NSGA-II",
+    "avaliacoes": 800,
+    "geracoes": 20,
+    "objetivos": [
+      "perda_oleo",
+      "carga_vru"
+    ],
+    "populacao": 40,
+    "processos": 4,
+    "pymoo": "0.6.2",
+    "restricoes": [
+      "SG-001",
+      "V-001",
+      "V-002",
+      "p_d2_menor_que_p_d1",
+      "tvp"
+    ],
+    "semente": 1,
+    "subproblema": "pressao",
+    "tags_restritas": [
+      "SG-001",
+      "V-001",
+      "V-002"
+    ],
+    "variaveis": [
+      "P_D1",
+      "P_D2"
+    ]
+  },
+  "reproduz_fora_do_otimizador": true,
+  "resolucao": {
+    "carga_vru": 61949.31406599027,
+    "perda_oleo": 0.007133039359592641
+  },
+  "superados": 0
+}

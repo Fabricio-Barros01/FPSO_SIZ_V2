@@ -70,10 +70,12 @@ estado_nao_avaliavel = "não avaliável termodinamicamente para integração com
 regra = "o caso é avaliável se não tem gás de lift (lift_gas_sm3d = 0): o gás de lift entra em C-01 e não tem composição na fonte"
 nao_avaliavel = "casos com gás de lift: continuam no envelope do BOT pelo caminho de Standing, sem flash, e a proveniência do caso diz isso"
 
-# --------------------------------------------------------------- TVP (diagnóstico)
+# --------------------------------------------------------------- TVP
 [tvp]
 # Pressão de vapor verdadeira do líquido final do trem (x₂) na temperatura de estocagem (BOT
-# §2.7.1.10) e o limite do BOT §2.3.1.1 (TVP ≤ 70 kPa). DIAGNÓSTICO: não é restrição nem bound.
+# §2.7.1.10) e o limite do BOT §2.3.1.1 (TVP ≤ 70 kPa). Lida pelo EstadoProcesso (`tvp_kPa`).
+# Não restringe o balanço nem o dimensionamento; é RESTRIÇÃO EXPLÍCITA só da otimização das
+# pressões (config/pfd/otimizacao.toml, docs/validacao/42) — nunca bound fixo de P_D2.
 limite_kPa = 70.0
 premissa_T = "T_store"
 fonte = "BOT I-ET-3010.2K-1200-941-P4X-001 rev. C, §2.3.1.1 (TVP máx. 70 kPa) e §2.7.1.10 (TVP na estocagem)"

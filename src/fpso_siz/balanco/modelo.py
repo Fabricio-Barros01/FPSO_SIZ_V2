@@ -322,7 +322,8 @@ def resolver_caso(caso, dados, prem=None):
                           gas=gas, iters=it, residuo_reciclo=diff, VM=VM, mu=mu, T_ref=T_ref, trace=t, fwko=fwko,
                           composicao=z_base, mws_plus=mws,
                           proveniencia=proveniencia.consumidas("balanco", avaliavel=aval),
-                          trem=tr if aval else trem_mod.nao_avaliavel(motivo), gas_padrao=gas_padrao)
+                          trem=tr if aval else trem_mod.nao_avaliavel(motivo), gas_padrao=gas_padrao,
+                          T_tvp_C=p[trem_mod.cfg()["tvp"]["premissa_T"]])
 
 
 def _condicoes_mudaram(tr, TF, TD1, TD2):

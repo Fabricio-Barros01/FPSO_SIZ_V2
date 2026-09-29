@@ -15,7 +15,7 @@ arquivo do BOT + premissas
   → balanco/modelo.resolver_todos          → EstadoProcesso (balanco/estado.py; trem em balanco/trem.py)
   → pfd/entradas.montar (termo/servico)    → entradas dos 11 TAGs, cada propriedade com proveniência
   → pfd/equipamento → core/motor + sizing  → envelopes (EnvelopeResult guarda o que avaliou)
-  → pfd/otimizacao + _otim                 → objetivos e restrições (NSGA-II; estudo)
+  → pfd/otimizacao + _otim                 → objetivos e restrições (NSGA-II; subproblema de pressão, nota 42)
   → output/* e pfd/memorial (+ core/memoria) → JSON, CSV, MC em LaTeX
   → tools/auditar_saida_pfd.py             → gate
 ```
@@ -29,11 +29,19 @@ arquivo do BOT + premissas
   avaliáveis, Standing (`docs/validacao/39`).
 - **Planta produtiva (16 casos, propostas do pacote):** 10 TAGs dimensionados; **P-001 inviável**
   (alarme aberto). Gate aprovado.
+- **Otimização das pressões de separação (nota 42):** P_D1 × P_D2 → mesmo resolvedor → trem →
+  SG-001/V-001/V-002 → perda de óleo estabilizado e carga de vapor da VRU, com TVP ≤ 70 kPa como
+  restrição contínua (12 casos avaliáveis). Frente do NSGA-II conferida contra grade-oráculo de
+  195 pontos: na resolução declarada, **um ponto** sobre a fronteira da TVP — P_D1 ≈ 510–540 kPa,
+  P_D2 ≈ 134 kPa, recuperação 97,90 %, VRU 1,216 MSm³/d. Os dois objetivos não conflitam; quem
+  limita é a TVP. Subproblema de pressão e separação, não a planta inteira.
 
 ## Entregue
 
 | etapa | commit | resumo |
 |---|---|---|
+| Otimização das pressões | (este) | subproblema P_D1 × P_D2: TVP no estado, objetivos e restrições no TOML, grade-oráculo, NSGA-II, frente reproduzida na resolução da grade — `docs/validacao/42` |
+| Mapa de pressão e viscosidade | `d9c565d` | Rs do trem → Beggs & Robinson (nota 40); mapa determinístico P_D1 × P_D2, conclusão C (nota 41) |
 | Trem produtivo | (este) | recombinação da Nota 4 + flash no gás de SG-001/V-001/V-002 nos 12 casos avaliáveis; Standing só nos 4 com lift — `docs/validacao/39` |
 | Etapas A–C e nota 38 | `046eb3f`, `593f7d9` | casos do BOT, P-001, faixas de P_D1/P_D2, recombinação F — `docs/validacao/35`–`38` |
 | Consolidação arquitetural | (este) | um resolvedor de processo, uma API termo, trem no estado, proveniência única, sem modos de paridade; memorial só lê — `docs/arquitetura/` |
@@ -57,15 +65,14 @@ arquivo do BOT + premissas
 4. **h e cp dos pseudo-componentes** — sem Cp_ig com fonte (a rota PNA para H/C não fecha).
 5. **ρ da fase líquida pela EOS** (Péneloux) e **k líquido de hidrocarboneto** — não validados.
 6. **Discretização das grades** do trocador (caso × envelope) — `docs/validacao/33-…`; muda número.
-7. **Faixas de P_D1 e P_D2** para a otimização — sem fonte ainda; a arquitetura já as aceita por
-   configuração (`destino = "premissa"`), e o trem as lê do estado. O BOT não dá pressão de
-   degaseificador; a TVP ≤ 70 kPa (§2.3.1.1/§2.7.1.10) é o critério do teto de P_D2. Com z_caso e
-   o trem produtivo (nota 39 §9), a 40 °C: P-19 = 200 kPa dá TVP de 93–111 kPa, e a TVP atinge
-   70 kPa com P_D2 entre 133,4 e 157,3 kPa(a) — ainda diagnóstico, não bound; o piso depende da
-   VRU, fora do BOT —
-   `docs/validacao/37-faixas-pressao-degaseificadores.md`.
-8. **Otimização F15** — `docs/validacao/23-otimizacao.md` desatualizado; rodar de novo depois de
-   decidir 1 e 7.
+7. **Faixas de P_D1 e P_D2** — sem fonte: o BOT não dá pressão de degaseificador. A otimização
+   (nota 42) usa um **domínio de estudo declarado** (região da nota 41) e a TVP ≤ 70 kPa como
+   restrição contínua; o piso de P_D2 (sucção da VRU) segue sem fonte e não vira bound.
+   Com as premissas atuais (P-19 = 200 kPa) a TVP é 110,8 kPa: a P-19 não atende o BOT —
+   `docs/validacao/37`, `41`, `42`.
+8. **Otimização F15 (problema completo)** — `docs/validacao/23-otimizacao.md` segue como
+   diagnóstico do alarme do P-001; o subproblema de pressão (nota 42) é a otimização que o TCC
+   defende.
 
 Pendências de engenharia de software (não físicas): o leitor do formato de ajustes da F10b
 (`pfd/ajustes.estado_legado`) ainda existe — a fixture de teste `ajustes_sinteticos.toml` usa
@@ -73,9 +80,7 @@ esse formato; R3/R4 do P-003 (mudam o que o MC mostra).
 
 ## Próximo marco
 
-**Fechar o laço P → flash → dimensionamento → otimização** (a contribuição central do TCC). O
-trecho P → flash → dimensionamento está ativo (nota 39). O mapa determinístico de P_D1 × P_D2
-(nota 41) concluiu **C**: nenhuma das duas produz efeito suficiente nos objetivos atuais (volume
-dos três vasos 0,90 %, diâmetros e governantes constantes); elas respondem na TVP (P_D2), no gás
-à VRU (P_D1/P_D2), nas bombas e no óleo recuperado, que não são objetivos. Próxima decisão do
-usuário: se e com que modelo e fonte um objetivo capturaria esse efeito (P-001 segue fora).
+**Só fechamento documental** depois da nota 42 (instrução do usuário, 2026-09-29): SPRINTS, documentos de arquitetura, tabela de
+premissas, balanço final, memoriais, resultados da otimização, figuras e tabelas, limitações, suíte
+completa com cobertura e gate, tag de release. Qualquer tarefa nova responde antes: "isso é
+necessário para defender a contribuição central do TCC ou para produzir um artefato final?"
