@@ -1,0 +1,10 @@
+[rating]
+tolerancia_relativa = 1e-9
+max_iteracoes = 100
+margem_temperatura_K = 1e-9
+fonte = "Critério numérico interno: bisseção limitada pelo alvo termodinâmico e pelo não cruzamento"
+
+[busca]
+max_unidades_instaladas = 3
+fonte = "Faixa inicial solicitada para busca discreta de layouts; não representa filosofia de nenhum TAG"
+

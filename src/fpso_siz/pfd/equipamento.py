@@ -20,6 +20,7 @@ from fpso_siz.core import registro
 from fpso_siz.core.casos import case_set_from_config
 from fpso_siz.core.contrato import infeasible_envelope
 from fpso_siz.core.motor import size_envelope
+from fpso_siz.sizing import bombas_paralelo, rating
 from fpso_siz.termo import servico as termo
 from fpso_siz.pfd.ajustes import AUTOMATICO, MANUAL, EstadoTAG, canonico_estado, contexto_de
 from fpso_siz.pfd.entradas import cfg, especificacoes, montar, montar_manual
@@ -229,3 +230,8 @@ def dimensionar_arquivo(cfg_casos, equipamento=None, metodo=None):
     eq, m = registro.resolver(eq_id, metodo)
     casos = case_set_from_config(cfg_casos)
     return eq, m, casos, size_envelope(eq, m, casos)
+
+
+def api_operacao():
+    """APIs físicas de off-design expostas pelo mesmo serviço usado pelos TAGs."""
+    return {"rating_trocador": rating.rating, "bombas_paralelo": bombas_paralelo.operar}
