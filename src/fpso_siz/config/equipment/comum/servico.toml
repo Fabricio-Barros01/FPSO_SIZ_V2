@@ -1,0 +1,15 @@
+[rating]
+tolerancia_relativa = 1e-9
+max_iteracoes = 100
+margem_temperatura_K = 1e-9
+carga_semente_W = 1e-6
+fonte = "Critério numérico interno: bisseção limitada pelo alvo termodinâmico e pelo não cruzamento"
+
+[busca]
+max_unidades_instaladas = 3
+fonte = "Faixa inicial solicitada para busca discreta de layouts; não representa filosofia de nenhum TAG"
+
+[acoplamento]
+tolerancia_W = 1e-6
+max_iteracoes = 100
+fonte = "Critério numérico interno do laço balanço → rating → utilidades"

@@ -12,6 +12,10 @@ equipamento = "exchanger"
 metodo = "saari_lmtd"
 bloco = "P-003"
 
+[servico]
+status = "lacuna"
+fonte = "Número de unidades físicas duty/standby ausente no acervo; não inferir de TAG"
+
 [entradas]
 m_tubo = { regra = "vazao_utilidade", carga = "Q_C", entrada = "t_agua_in", saida = "t_agua_out", processo = ["C-23", "C-24"] }
 cp_tubo = { regra = "cp_utilidade", entrada = "t_agua_in", saida = "t_agua_out" }

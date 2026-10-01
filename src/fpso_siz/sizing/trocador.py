@@ -184,6 +184,47 @@ class ExchangerConstraints:
     _ultimo_feixe: dict = field(default_factory=dict, compare=False, repr=False, init=False)
 
 
+@dataclass(frozen=True)
+class GeometriaTrocador:
+    """Geometria física congelada de uma unidade, usada exclusivamente em RATING."""
+    tubos_por_passe: int
+    comprimento: float
+
+
+def avaliar_geometria(c, geometria):
+    """Recalcula películas e UA numa geometria fixa, sem redimensionar o comprimento."""
+    n = geometria.tubos_por_passe
+    l = geometria.comprimento
+    if n < 1 or l <= 0:
+        return dict(VAZIO)
+    n_total = n * c.passes
+    v = c.m_tubo / (c.rho_tubo * n * c.area_tubo)
+    re = reynolds_pipe(c.rho_tubo, v, c.d_i, c.mu_tubo)
+    d_feixe = math.sqrt(4 * n_total * c.area_celula * (c.passo_m * c.passo_m) / math.pi)
+    h_i, nu_valido, diag = _pelicula(c, _caminho(c, l), re)
+    d_s = d_feixe + 2 * c.d_o
+    if c.bd_ativo:
+        folga = mm_para_m(baffle_clearance(m_para_mm(d_s), c.kbd))
+        p_n, p_p, _ = layout_pitches(c.layout, c.passo_m, c.kbd)
+        l_bc = c.espac_chicana * d_s
+        geo = ShellGeometry(d_s, d_feixe, c.d_o, c.passo_m, p_n, p_p,
+                            c.corte_chicana * d_s, l_bc, folga, c.folga_furo_m,
+                            float(n_total), c.pares_veda, c.faixas_divisoras,
+                            2 * c.d_o, c.layout)
+        ideal = feixe_ideal(geo, c.m_casco, c.cp_casco, c.mu_casco, c.k_casco, c.kbd)
+        n_b = max(l / l_bc - 1, 1.0)
+        h_o, fat, ok = com_chicanas(ideal, n_b, l_bc, l_bc, l_bc, c.kbd)
+        re_casco = fat.re
+    else:
+        h_o, n_b, re_casco, ok = c.h_casco, math.nan, math.nan, True
+    u = overall_u(h_i, h_o, c.rf_tubo, c.rf_casco, c.d_i, c.d_o, c.k_parede)
+    area = n_total * math.pi * c.d_o * l
+    return dict(VAZIO, v=v, re=re, h_i=h_i, h_o=h_o, u=u, area=area,
+                ua=u * area, l=l, n_total=float(n_total), d_casco=d_feixe,
+                d_shell=d_s, re_casco=re_casco, n_chicanas=n_b,
+                nu_valido=nu_valido, ok=ok and nu_valido and math.isfinite(u), **diag)
+
+
 VAZIO = dict(v=math.inf, re=math.nan, h_i=math.nan, h_o=math.nan, u=math.nan, area=math.inf, l=math.inf, n_total=0.0,
              d_casco=math.inf, d_shell=math.inf, re_casco=math.nan, jc=math.nan, jl=math.nan, jb=math.nan,
              js=math.nan, jr=math.nan, j_produto=math.nan, h_ideal=math.nan, n_chicanas=math.nan, nu_valido=False,
