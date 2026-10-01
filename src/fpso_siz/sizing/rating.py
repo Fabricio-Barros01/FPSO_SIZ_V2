@@ -4,11 +4,10 @@ O Pinch entrega somente ``q_rec_max``. A geometria, as propriedades do caso e as
 temperaturas que o próprio Q produz determinam ``q_rating`` por uma raiz limitada.
 """
 import math
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 
 from fpso_siz.core.configuracao import carregar
 from fpso_siz.sizing.trocador import lmtd
-from fpso_siz.sizing.trocador import avaliar_geometria
 
 
 @dataclass(frozen=True)
@@ -102,34 +101,3 @@ def integrar(caso, resultado, t_tratamento, t_estocagem):
     qh = max(0, caso.c_fria * (t_tratamento - resultado.t_fria_out))
     qc = max(0, caso.c_quente * (resultado.t_quente_out - t_estocagem))
     return BalancoIntegrado(resultado, qh, qc, qh, qc)
-
-
-def rating_saari(metodo, entrada, parametros, geometria, q_rec_max):
-    """Adapta uma geometria Saari fixa ao solver, reavaliando U e F em cada Q."""
-    c_fria = entrada.m_tubo * entrada.cp_tubo
-    c_quente = entrada.m_casco * entrada.cp_casco
-    caso = CasoRating(entrada.t_tubo_in, entrada.t_casco_in, c_fria, c_quente,
-                      q_rec_max)
-    constantes = metodo.constants()
-
-    def estado(q, tc, th):
-        if q <= 0:
-            eps = carregar("equipment/comum/servico.toml")["rating"]["carga_semente_W"]
-            q = min(float(eps), q_rec_max)
-            tc = entrada.t_tubo_in + q / c_fria
-        e = replace(entrada, t_tubo_out=tc)
-        ok, cons, _ = metodo.sizing_constraints(e, parametros, constantes)
-        if not ok:
-            return None, None
-        desempenho = avaliar_geometria(cons, geometria)
-        return desempenho, cons
-
-    def ua(q, tc, th):
-        desempenho, _ = estado(q, tc, th)
-        return desempenho["ua"] if desempenho and desempenho["ok"] else math.nan
-
-    def fator(q, tc, th):
-        _, cons = estado(q, tc, th)
-        return cons.f if cons is not None else math.nan
-
-    return rating(caso, ua, fator)

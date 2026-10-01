@@ -29,33 +29,9 @@ pelas restrições simultâneas, não pelo rótulo histórico do caso 5.
   discreta e frente de Pareto física.
 - `sizing/bombas_paralelo.py`: divisão de vazão e avaliação separada de potência/NPSH.
 
-## Acoplamento produtivo entregue na fase 2
-
-O adaptador `rating_saari` transforma uma geometria unitária congelada (tubos por passe e
-comprimento) em `UA(Q)` e `F(Q)`: em cada avaliação ele reconstrói temperaturas, Bell–Delaware,
-película do tubo, Reynolds, coeficientes e área da geometria instalada. O comprimento não é
-obtido novamente da carga. Assim, um caso off-design não redimensiona o equipamento.
-
-O resolvedor `balanco/integracao_energetica.py` é o único laço de acoplamento. Ele conserva as
-correntes mássicas, substitui a carga idealizada por `Q_real`, atualiza C-07 e C-23 e recalcula
-P-002 e P-003. Tolerância, máximo de iterações, convergência e resíduo são explícitos. O serviço
-por TAG permite ativá-lo mediante `rating_p001`, sempre com a mesma geometria instalada.
-
-A filosofia física também passou a integrar o descritor declarativo de TAG. P-001 declara um
-**domínio de busca**, não uma configuração escolhida. P-002, P-003 e B-001/2/3 declaram a
-filosofia duty/standby como lacuna: não se inferiu `2×50%`, `2×100%` ou standby a partir do nome.
-
-## Resultado de engenharia ainda aberto
-
-Nenhuma fonte do projeto identifica a geometria instalada ou a filosofia duty/standby do
-P-001. Portanto esta mudança não promove arbitrariamente um candidato a projeto. O caminho
-produtivo anterior permanece como baseline quando `rating_p001` não é fornecido; quando uma
-geometria é fornecida, o mesmo PFD passa pelo rating e propaga suas utilidades. A seleção final
-do layout continua bloqueada por decisão de projeto documentada, e não por falta de conexão
-entre o rating e o balanço.
-
 ## Limitação declarada
 
 A correlação de Beggs & Robinson não recebe composição do gás. O alto teor de CO₂ segue
 como incerteza de aplicabilidade já documentada na nota 40. Não foi criado caminho
 produtivo alternativo por Standing e nenhum fouling, condutividade ou limite foi alterado.
+

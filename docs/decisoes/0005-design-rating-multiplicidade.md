@@ -26,10 +26,6 @@ não existia representação de unidades físicas duty/standby.
    expõe a frente de Pareto de área instalada, utilidade quente e utilidade fria.
 6. Bombas usam o mesmo contrato de multiplicidade, mas avaliação hidráulica própria:
    vazão por unidade, head, potência, eficiência, NPSH e limites informados.
-7. Uma geometria Saari instalada é imutável no rating: número de tubos por passe e
-   comprimento determinam a área, enquanto películas, U e F são reavaliados com Q.
-8. O acoplamento ao processo ocorre somente em `balanco/integracao_energetica.py`; sem
-   geometria aprovada o baseline é preservado e a ausência continua sendo lacuna.
 
 ## Consequências
 
@@ -39,3 +35,4 @@ não existia representação de unidades físicas duty/standby.
   geometria instalada.
 - Ausência de curva, vazão mínima ou NPSHr continua sendo lacuna; o algoritmo não inventa
   dados de fabricante.
+
