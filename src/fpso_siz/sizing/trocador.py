@@ -15,12 +15,17 @@ from fpso_siz.core.formato_julia import jl, jl_round
 from fpso_siz.core.grade import faixa_julia
 from fpso_siz.core.ieee import div
 from fpso_siz.core.trace import Rastro
-from fpso_siz.core.unidades import cp_para_pas, m_para_mm, mm_para_m
+from fpso_siz.core.unidades import cp_para_pas, kpa_para_pa, m_para_mm, mm_para_m, pa_para_kpa
 from fpso_siz.sizing.base import MetodoTOML, driver_case
-from fpso_siz.sizing.bell_delaware import (ShellGeometry, baffle_clearance, com_chicanas, feixe_ideal,
-                                           layout_pitches)
-from fpso_siz.sizing.hidraulica import reynolds_pipe
+from fpso_siz.sizing.bell_delaware import (PerdaCasco, ShellGeometry, baffle_clearance, com_chicanas, feixe_ideal,
+                                           layout_pitches, perda_carga_casco)
+from fpso_siz.sizing.hidraulica import darcy_friction, reynolds_pipe
+# reexportados: a ΔT_lm e o fator F são de `sizing/lmtd.py` — uma física só, usada pelo
+# dimensionamento (área para um Q) e pelo rating (Q para uma área)
+from fpso_siz.sizing.lmtd import f_correction_1_2, lmtd  # noqa: F401
 from fpso_siz.sizing.pelicula import depende_do_comprimento, filme_tubo, temperatura_parede
+from fpso_siz.sizing.rating import CasoRating, rating
+from fpso_siz.sizing.servico import ConfiguracaoServico
 
 EXCHANGER_KEYS = ("m_tubo", "cp_tubo", "t_tubo_in", "t_tubo_out", "rho_tubo", "mu_tubo", "k_tubo",
                   "m_casco", "cp_casco", "t_casco_in", "mu_casco", "k_casco")
@@ -48,33 +53,6 @@ class ExchangerDuty:
     t_casco_in: float
     mu_casco: float     # Pa·s
     k_casco: float
-
-
-def lmtd(dt1, dt2):
-    """ΔT médio logarítmico (Eq. 4.6); NaN se algum ΔT ≤ 0 (cruzamento)."""
-    if not (math.isfinite(dt1) and math.isfinite(dt2) and dt1 > 0 and dt2 > 0):
-        return math.nan
-    r = dt1 / dt2
-    if abs(r - 1.0) <= _t()["singularidades"]["tol_lmtd"]:
-        return float(dt1)
-    return (dt1 - dt2) / math.log(r)
-
-
-def f_correction_1_2(p, r):
-    """Fator F do arranjo 1 casco / 2 passes (Fig. 4.3); R = 1 é limite removível."""
-    if not (math.isfinite(p) and math.isfinite(r)):
-        return math.nan
-    if p <= 0:
-        return 1.0
-    if p >= 1 or r * p >= 1:
-        return math.nan
-    s = math.sqrt(1 + r * r)
-    den_log = (2 - p * (1 + r - s)) / (2 - p * (1 + r + s))
-    if not (math.isfinite(den_log) and den_log > 0):
-        return math.nan
-    if abs(r - 1.0) <= _t()["singularidades"]["tol_f_r1"]:
-        return math.sqrt(2.0) * (p / (1 - p)) / math.log(den_log)
-    return s * math.log((1 - r * p) / (1 - p)) / ((1 - r) * math.log(den_log))
 
 
 def nusselt_dittus_boelter(re, pr, aquecendo, k):
@@ -162,6 +140,29 @@ class ExchangerConstraints:
     razao_visc: float = 1.0
     t_tubo_med: float = math.nan
     t_casco_med: float = math.nan
+    # extensão do V2 (ADR 0005 — DESIGN × RATING): `rating_apenas` marca um caso que NÃO
+    # dimensiona o feixe; ele é CLASSIFICADO na geometria que o caso de projeto escolheu. O
+    # comprimento que ele pediria sozinho continua calculado (`operacao_por_caso`), para
+    # comparação — o que muda é que ele não entra no máximo do envelope.
+    # `duty` guarda as entradas do caso, já divididas por casco em paralelo: o rating precisa
+    # delas para recompor as temperaturas realizadas, que o dimensionamento não devolve.
+    rating_apenas: bool = False
+    duty: object = None
+    # as restrições que DIMENSIONAM o feixe, quando não é esta (ADR 0005). Serve para que um caso
+    # só classificado saiba em que comprimento ele opera — é o comprimento do caso de projeto,
+    # não o que ele pediria sozinho —, e possa cobrar a perda de carga nesse comprimento.
+    dimensionantes: tuple = ()
+    # extensão do V2: perda de carga do lado tubo (Darcy-Weisbach) e o limite com que ela é
+    # verificada. `dp_max = 0` significa NÃO verificada (sem limite declarado), não aprovada.
+    rugosidade_m: float = 0.0
+    dp_max_pa: float = 0.0
+    # Fase C (nota 46): perda de carga do lado casco por Bell-Delaware (Branan Eq. 2-32 a 2-38),
+    # com a ρ do fluido do casco (NaN = não informada) e o limite com que é verificada (0 = só
+    # reportada); e a GEOMETRIA CONGELADA — `l_fixo > 0` é o comprimento por casco de um feixe
+    # existente, em que todos os casos são classificados.
+    rho_casco: float = 0.0   # 0 = não informada: ΔP do casco NaN declarada
+    dp_max_casco_pa: float = 0.0
+    l_fixo: float = 0.0
     # R2 — reaproveitamento do ÚLTIMO feixe calculado para esta restrição.
     #
     # NÃO é cache global, persistente nem compartilhado: o dicionário nasce e morre com ESTE
@@ -288,13 +289,8 @@ def _tubo_bell_delaware(c, n_total, v, re, d_feixe):
     padrao = _t()["laco_comprimento"]
     tol = float(kbd.get("tolerancia", padrao["tolerancia"]))
     maxit = int(kbd.get("max_iter", padrao["max_iteracoes"]))
-    d_otl = d_feixe
-    d_s = d_otl + 2 * c.d_o
-    folga_mm = baffle_clearance(m_para_mm(d_s), kbd)
-    p_n, p_p, _ = layout_pitches(c.layout, c.passo_m, kbd)
-    l_bc = c.espac_chicana * d_s
-    geo = ShellGeometry(d_s, d_otl, c.d_o, c.passo_m, p_n, p_p, c.corte_chicana * d_s, l_bc, mm_para_m(folga_mm),
-                        c.folga_furo_m, float(n_total), c.pares_veda, c.faixas_divisoras, 2 * c.d_o, c.layout)
+    geo = geometria_casco(c, n_total, d_feixe)
+    d_s, l_bc = geo.d_s, geo.l_bc
     l = u = area = h_o = math.nan
     fat = None
     n_b = 1.0
@@ -332,11 +328,155 @@ def _tubo_bell_delaware(c, n_total, v, re, d_feixe):
                 t_parede=_t_parede(c, u, h_i), **diag)
 
 
+def geometria_casco(c, n_total, d_feixe):
+    """ShellGeometry do feixe: a mesma para o coeficiente (Eq. 2-18) e a perda de carga (2-38)."""
+    kbd = c.kbd
+    d_s = d_feixe + 2 * c.d_o
+    folga_mm = baffle_clearance(m_para_mm(d_s), kbd)
+    p_n, p_p, _ = layout_pitches(c.layout, c.passo_m, kbd)
+    l_bc = c.espac_chicana * d_s
+    return ShellGeometry(d_s, d_feixe, c.d_o, c.passo_m, p_n, p_p, c.corte_chicana * d_s, l_bc, mm_para_m(folga_mm),
+                         c.folga_furo_m, float(n_total), c.pares_veda, c.faixas_divisoras, 2 * c.d_o, c.layout)
+
+
+def perda_carga_casco_conjunto(c, n, l):
+    """(ΔP do lado casco do TREM [Pa], PerdaCasco de um casco). O fluido do casco atravessa os
+    `n_serie` cascos em série, cada um com as suas chicanas: ΔP do trem = n_serie × ΔP de um
+    casco. Bocais e ligações entre cascos não entram (Eq. 2-38 os exclui)."""
+    if not c.bd_ativo:
+        return math.nan, PerdaCasco(motivo="Bell-Delaware desligado: sem geometria de chicana")
+    t = _tubo(c, n)
+    if not (math.isfinite(l) and l > 0 and t["n_total"] > 0 and math.isfinite(t["d_casco"])):
+        return math.nan, PerdaCasco(motivo="feixe ou comprimento indefinidos")
+    geo = geometria_casco(c, t["n_total"], t["d_casco"])
+    n_b = max(l / geo.l_bc - 1, 1.0) if geo.l_bc > 0 else math.nan
+    pc = perda_carga_casco(geo, c.m_casco, c.rho_casco, c.mu_casco, n_b, c.kbd)
+    return pc.dp * c.n_serie, pc
+
+
+def violacoes_do_caso(t, v_max, v_min, dp, dp_max, dp_casco, pc_casco, dp_max_casco):
+    """Violações de um caso no feixe instalado, SEPARADAS por natureza (Fase C, nota 46):
+    hidráulica (velocidade, ΔP de cada lado), domínio da correlação de película e coeficiente
+    de perda de carga não validado. É o que distingue "insuficiente para a carga" (o rating
+    diz quanto realiza) de "não opera" (alguma destas)."""
+    out = []
+    if not t["nu_valido"]:
+        out.append(("dominio_correlacao", t.get("motivo") or "película do lado tubo fora da faixa declarada"))
+    if t["v"] > v_max:
+        out.append(("hidraulica", f"velocidade no tubo {t['v']:.2f} m/s acima do teto de {v_max:g} m/s"))
+    if v_min > 0 and t["v"] < v_min:
+        out.append(("hidraulica", f"velocidade no tubo {t['v']:.2f} m/s abaixo do piso de {v_min:g} m/s"))
+    if dp_max > 0 and not (math.isfinite(dp) and dp <= dp_max):
+        out.append(("hidraulica", f"ΔP do lado tubo {pa_para_kpa(dp):.1f} kPa acima de {pa_para_kpa(dp_max):g} kPa"))
+    if not pc_casco.validado and math.isfinite(dp_casco):
+        # com limite declarado, não validado não aprova: entra como falta de verificação, que
+        # recusa o feixe na busca; sem limite, é só aviso
+        out.append(("nao_validado" if not dp_max_casco > 0 else "verificacao_pendente",
+                    f"ΔP do lado casco {pa_para_kpa(dp_casco):.1f} kPa: {pc_casco.motivo}"))
+    elif dp_max_casco > 0 and not (math.isfinite(dp_casco) and dp_casco <= dp_max_casco):
+        out.append(("hidraulica", f"ΔP do lado casco {pa_para_kpa(dp_casco):.1f} kPa acima de "
+                                  f"{pa_para_kpa(dp_max_casco):g} kPa"))
+    return tuple(out)
+
+
+def comprimento_do_caso(c, n):
+    """Comprimento de tubo por casco em que ESTE caso opera: o do(s) caso(s) que dimensionam o
+    feixe, se o caso só é classificado (ADR 0005); o seu próprio, se é ele que dimensiona."""
+    if c.l_fixo > 0:
+        return c.l_fixo
+    refs = c.dimensionantes or (c,)
+    return max(_tubo(x, n)["l"] for x in refs)
+
+
+def perda_carga_tubo(c, n, l):
+    """(ΔP [Pa], f de Darcy, regime, correlação confiável?) do lado tubo, em tubo reto.
+
+    O fluido do tubo atravessa `passes` passes em cada um dos `n_serie` cascos em série, logo o
+    caminho é `passes · l · n_serie`. Darcy-Weisbach com f de Colebrook-White no turbulento e
+    f = 64/Re no laminar — as mesmas correlações, fronteiras e constantes que a bomba usa
+    (Moran, 2016; `equipment/comum/hidraulica.toml`).
+
+    PISO, não total: bocais, cabeçotes, retornos entre passes e entre cascos, e o lado casco
+    NÃO estão modelados (sem fatores de atrito de feixe no acervo). É lacuna declarada."""
+    t = _tubo(c, n)
+    v, re = t["v"], t["re"]
+    if not (math.isfinite(v) and v > 0 and math.isfinite(re) and re > 0 and math.isfinite(l) and l > 0):
+        return math.nan, math.nan, "indefinido", False
+    k = carregar("equipment/comum/hidraulica.toml")["darcy"]
+    f, regime, confiavel = darcy_friction(re, div(c.rugosidade_m, c.d_i), k)
+    if not math.isfinite(f):
+        return math.nan, f, regime, False
+    caminho = c.passes * l * c.n_serie
+    return f * (caminho / c.d_i) * (c.rho_tubo * v * v / 2), f, regime, confiavel
+
+
+# ------------------------------------------------------------------ RATING (ADR 0005)
+def _fator_rating(c):
+    """F(Q) do arranjo durante o rating. Com 1 passe é contracorrente puro (F = 1, §4.2.1);
+    com 2 passes, P e R são recalculados a cada Q pela Fig. 4.3, e um Q que tire o arranjo do
+    domínio devolve NaN — o rating lê isso como ausência de transferência, não extrapola."""
+    if c.passes != 2:
+        return lambda q, tc, th: 1.0
+    e = c.duty
+    c_tubo, c_casco = e.m_tubo * e.cp_tubo, e.m_casco * e.cp_casco
+    abertura = abs(e.t_casco_in - e.t_tubo_in)
+
+    def f(q, tc, th):
+        dt_tubo = div(q, c_tubo)
+        return f_correction_1_2(abs(div(dt_tubo, abertura)), abs(div(div(q, c_casco), dt_tubo)))
+
+    return f
+
+
+def rating_do_caso(c, n, l):
+    """Classificação (RATING) do caso `c` na geometria escolhida: `n` tubos por passe e
+    comprimento `l` por casco. Port de nada — é extensão do V2 (ADR 0005, docs/validacao/43).
+
+    O conjunto é `n_paralelo` trens iguais, cada um com `n_serie` cascos em série. As vazões
+    de `c` já são as de UM trem (`sizing_constraints` dividiu por `n_paralelo`); cascos em
+    série somam U·A. Resolve-se Q = U·A·F(Q)·ΔT_lm(Q) por `sizing/rating.py`, com as
+    temperaturas de saída produzidas pelo próprio Q e sem cruzamento.
+
+    F(Q) é recalculado a cada iteração da raiz (`_fator_rating`). U vem das propriedades que
+    ESTA restrição recebeu — o método não tem acesso à curva µ(T), que é da camada de
+    propriedades. Quem fecha o laço é `pfd/integracao.py`: ele reprepara as entradas do TAG com
+    as propriedades avaliadas nas temperaturas REALIZADAS e repete, até o ponto fixo. O desvio
+    de temperatura média entre alvo e realizado vai no resultado (`dt_medio_tubo`,
+    `dt_medio_casco`), e é ele que mede quanto falta para o ponto fixo.
+    """
+    e, t = c.duty, _tubo(c, n)
+    area_casco = n * c.passes * math.pi * c.d_o * l
+    ua_trem = t["u"] * area_casco * c.n_serie
+    c_tubo, c_casco = e.m_tubo * e.cp_tubo, e.m_casco * e.cp_casco
+    if c.aquecendo:    # o casco é o lado quente (P-001, P-003); o tubo recebe calor
+        caso = CasoRating(e.t_tubo_in, e.t_casco_in, c_tubo, c_casco, c.q)
+    else:
+        caso = CasoRating(e.t_casco_in, e.t_tubo_in, c_casco, c_tubo, c.q)
+    r = rating(caso, lambda q, tc, th: ua_trem, _fator_rating(c))
+    t_tubo_out, t_casco_out = ((r.t_fria_out, r.t_quente_out) if c.aquecendo
+                               else (r.t_quente_out, r.t_fria_out))
+    return dict(
+        u=t["u"], area_por_casco=area_casco, area_total=area_casco * c.n_serie * c.n_paralelo,
+        ua_instalado=ua_trem * c.n_paralelo, ua_exigido=c.ua_exigido * c.n_serie * c.n_paralelo,
+        q_alvo=c.q * c.n_paralelo, q_realizado=r.q_real * c.n_paralelo,
+        q_nao_recuperado=r.recuperacao_nao_realizada * c.n_paralelo,
+        fracao_realizada=div(r.q_real, c.q), t_tubo_out=t_tubo_out, t_casco_out=t_casco_out,
+        t_tubo_out_alvo=e.t_tubo_out, t_casco_out_alvo=c.t_casco_out,
+        dt_medio_tubo=(e.t_tubo_in + t_tubo_out) / 2 - c.t_tubo_med,
+        dt_medio_casco=(e.t_casco_in + t_casco_out) / 2 - c.t_casco_med,
+        dt_lm=r.dt_lm, f=r.fator_f, convergiu=r.convergiu, iteracoes=r.iteracoes,
+        estado=r.estado, motivo=r.motivo, avaliavel=r.avaliavel)
+
+
 class SaariLMTD(MetodoTOML):
     method_id = "saari_lmtd"
     config = "equipment/exchanger/saari_lmtd.toml"
     rotulo_padrao = "Saari — LMTD com fator F"
     config_extensoes = "equipment/exchanger/saari_extensoes.toml"
+    # chaves de `derived` que o V2 acrescentou e que não existem no Julia: a comparação de
+    # paridade as desconsidera, como já faz com `derivados_v2`
+    derivados_extensao = ("dp", "dp_max", "f_darcy", "dp_confiavel", "dp_casco", "dp_max_casco",
+                          "dp_casco_validado", "f_casco", "rb_casco", "rl_casco")
 
     def applies_to(self):
         return ShellTubeExchanger()
@@ -455,7 +595,14 @@ class SaariLMTD(MetodoTOML):
             p["razao_passo"] * d_o, area_celula, e.m_casco, e.cp_casco, e.mu_casco, e.k_casco, layout,
             p["corte_chicana"], p["espacamento_chicana"], p["pares_veda"], mm_para_m(p["folga_furo_chicana"]),
             p["faixas_divisoras"], bd_ativo, kbd, dict(k), n_ser, n_par, baixo_re, razao_visc, t_tubo_med,
-            t_casco_med)
+            t_casco_med, duty=e, rugosidade_m=mm_para_m(p.get("rugosidade", 0.0)),
+            dp_max_pa=kpa_para_pa(p.get("dp_max", 0.0)),
+            rho_casco=p.get("rho_casco", 0.0),
+            dp_max_casco_pa=kpa_para_pa(p.get("dp_max_casco", 0.0)), l_fixo=p.get("l_instalado", 0.0))
+        if cons.dp_max_pa > 0:
+            tr.trace("tubo", "Moran Eq. 2", "ΔP máximo no lado tubo",
+                     "limite declarado para a perda de carga do lado tubo (premissa P-17 nos TAGs da planta)",
+                     p["dp_max"], "kPa")
         return True, cons, tr
 
     def sweep_axis(self, p):
@@ -465,13 +612,19 @@ class SaariLMTD(MetodoTOML):
         return ["n_min", "n_max", "n_step", "v_min", "v_max", "d_casco_max", "l_tubo_max"]
 
     def requirement(self, n, c):
-        return _tubo(c, n)["l"]
+        # ADR 0005: um caso marcado só para RATING não exige comprimento — quem dimensiona o
+        # feixe é o caso de projeto. O comprimento que ele pediria sozinho segue disponível em
+        # `operacao_por_caso` e no envelope por caso, para comparação.
+        if c.l_fixo > 0:      # geometria congelada: o comprimento é dado, não exigido
+            return c.l_fixo
+        return 0.0 if c.rating_apenas else _tubo(c, n)["l"]
 
     def governing_of(self, n, c):
         return "termica"
 
     def derived(self, n, l, gov, c, k, p):
         t = _tubo(c, n)
+        dp, fd, _regime, conf = perda_carga_tubo(c, n, l)
         return {"v": t["v"], "re": t["re"], "h_tubo": t["h_i"], "h_casco": t["h_o"], "re_casco": t["re_casco"],
                 "h_ideal": t["h_ideal"], "jc": t["jc"], "jl": t["jl"], "jb": t["jb"], "js": t["js"], "jr": t["jr"],
                 "j_produto": t["j_produto"], "n_chicanas": t["n_chicanas"], "nu_valido": 1.0 if t["nu_valido"] else 0.0,
@@ -479,14 +632,67 @@ class SaariLMTD(MetodoTOML):
                 "re_max_correlacao": float(k.get("dittus_boelter_re_max", math.nan)), "u": t["u"], "area": t["area"],
                 "n_total": t["n_total"], "d_casco": m_para_mm(t["d_casco"]), "d_shell": m_para_mm(t["d_shell"]),
                 "l": float(l), "l_sobre_d": l / t["d_casco"] if t["d_casco"] > 0 else math.nan, "q": c.q,
-                "dt_lm": c.dt_lm, "f": c.f, "passes": float(c.passes)}
+                "dt_lm": c.dt_lm, "f": c.f, "passes": float(c.passes),
+                # ΔP no comprimento do ENVELOPE (o instalado), não no ótimo isolado do caso
+                "dp": pa_para_kpa(dp), "dp_max": pa_para_kpa(c.dp_max_pa), "f_darcy": fd,
+                "dp_confiavel": 1.0 if conf else 0.0, **self._derivados_casco(c, n, l)}
+
+    @staticmethod
+    def _derivados_casco(c, n, l):
+        dp_c, pc = perda_carga_casco_conjunto(c, n, l)
+        return {"dp_casco": pa_para_kpa(dp_c), "dp_max_casco": pa_para_kpa(c.dp_max_casco_pa),
+                "dp_casco_validado": 1.0 if pc.validado else 0.0, "f_casco": pc.f_ideal,
+                "rb_casco": pc.rb, "rl_casco": pc.rl}
+
+    @staticmethod
+    def _casco_reprova(dp_casco, validado, limite):
+        """ΔP do casco só é verificada com limite declarado. Com limite, só APROVA o valor finito,
+        dentro do limite e calculado com coeficiente VALIDADO: NaN reprova (não se aprova o que
+        não foi possível avaliar), e a faixa não validada da Tabela 2-5 também não aprova — o
+        número é reportado como não validado até a conferência na fonte (nota 46)."""
+        if not limite > 0:
+            return False
+        return not (validado and math.isfinite(dp_casco) and dp_casco <= limite)
 
     def case_admissible(self, n, c, p):
         t = _tubo(c, n)
-        return t["ok"] and t["nu_valido"] and p["v_min"] <= t["v"] <= p["v_max"]
+        if c.l_fixo > 0:
+            # geometria congelada: o feixe EXISTE; velocidade, faixa da correlação e perdas de
+            # carga são reportadas por caso (`operacao_por_caso`), não recusam o feixe. Só a
+            # conta que não pôde ser feita (U indefinido) recusa.
+            return bool(math.isfinite(t["u"]) and t["u"] > 0)
+        if not (t["ok"] and t["nu_valido"] and p["v_min"] <= t["v"] <= p["v_max"]):
+            return False
+        l_caso = comprimento_do_caso(c, n) if c.dimensionantes else None
+        if l_caso is not None and p.get("dp_max_casco", 0.0) > 0:
+            dp_c, pc = perda_carga_casco_conjunto(c, n, l_caso)
+            if self._casco_reprova(pa_para_kpa(dp_c), pc.validado, p["dp_max_casco"]):
+                return False
+        # Perda de carga: com o rating fora do projeto, o caso sabe em que comprimento opera
+        # (`dimensionantes`) e a cobra ali — o atrito de um caso de turndown pode passar do
+        # limite mesmo com o do caso de projeto dentro dele, porque o f sobe quando o Reynolds
+        # cai. Sem a marca (regra do Julia), quem cobra é `admissible`, no caso governante.
+        limite = p.get("dp_max", 0.0)
+        if not (limite > 0 and c.dimensionantes):
+            return True
+        dp = pa_para_kpa(perda_carga_tubo(c, n, comprimento_do_caso(c, n))[0])
+        return math.isfinite(dp) and dp <= limite
 
     def admissible(self, n, der_, p):
-        return der_.get("d_shell", math.inf) <= p["d_casco_max"] and der_.get("l", math.inf) <= p["l_tubo_max"]
+        if p.get("l_instalado", 0.0) > 0:   # geometria congelada: nada a escolher, só reportar
+            return math.isfinite(der_.get("u", math.nan))
+        if not (der_.get("d_shell", math.inf) <= p["d_casco_max"] and der_.get("l", math.inf) <= p["l_tubo_max"]):
+            return False
+        if self._casco_reprova(der_.get("dp_casco", math.nan), bool(der_.get("dp_casco_validado", 0.0)),
+                               p.get("dp_max_casco", 0.0)):
+            return False
+        # ΔP só reprova se há limite declarado (dp_max > 0); sem limite, é só reportada. NaN
+        # com limite declarado reprova: não se aprova o que não foi possível avaliar.
+        limite = p.get("dp_max", 0.0)
+        if not limite > 0:
+            return True
+        dp = der_.get("dp", math.nan)
+        return math.isfinite(dp) and dp <= limite
 
     def objective(self, n, der_, p):
         return der_.get("area", math.inf)
@@ -501,12 +707,48 @@ class SaariLMTD(MetodoTOML):
                           n_step=min(p["n_step"] for p in params), v_min=v_min, v_max=v_max,
                           d_casco_max=min(p["d_casco_max"] for p in params),
                           l_tubo_max=min(p["l_tubo_max"] for p in params),
-                          banda_caso_projeto=max(p.get("banda_caso_projeto", 0.0) for p in params))
+                          banda_caso_projeto=max(p.get("banda_caso_projeto", 0.0) for p in params),
+                          rating_fora_do_projeto=max(p.get("rating_fora_do_projeto", 0.0) for p in params),
+                          trens_reserva=max(p.get("trens_reserva", 0.0) for p in params),
+                          l_instalado=max(p.get("l_instalado", 0.0) for p in params),
+                          refino_local=max(p.get("refino_local", 0.0) for p in params),
+                          dp_max_casco=min((x for x in (p.get("dp_max_casco", 0.0) for p in params) if x > 0),
+                                           default=0.0),
+                          dp_max=min((x for x in (p.get("dp_max", 0.0) for p in params) if x > 0), default=0.0))
 
     # --- extensões do V2 (F10x.7)
     def caso_projeto(self, conss):
         """Caso de projeto do feixe (P-45): o de maior vazão volumétrica no tubo."""
         return max(range(len(conss)), key=lambda i: conss[i].m_tubo / conss[i].rho_tubo)
+
+    def envelope_constraints(self, conss, p_env):
+        """ADR 0005: com `rating_fora_do_projeto`, só o caso de PROJETO dimensiona o feixe; os
+        demais são marcados para RATING e classificados na geometria escolhida. Sem o
+        parâmetro (default), todo caso exige comprimento — a regra do Julia."""
+        if p_env.get("l_instalado", 0.0) > 0 and conss:   # geometria congelada: todos classificados
+            return tuple(replace(c, rating_apenas=True, dimensionantes=()) for c in conss)
+        if not conss:
+            return super().envelope_constraints(conss, p_env)
+        if not p_env.get("rating_fora_do_projeto", 0.0):
+            if not p_env.get("dp_max_casco", 0.0) > 0:
+                return super().envelope_constraints(conss, p_env)
+            # regra do Julia com limite de ΔP no casco (nota 46): todo caso dimensiona, mas OPERA
+            # no comprimento instalado (o maior entre eles) — é nele que as perdas de carga de
+            # cada caso são cobradas, não no comprimento que o caso pediria sozinho
+            return tuple(replace(c, dimensionantes=tuple(conss)) for c in conss)
+        projeto = self.caso_projeto(conss)
+        dimensionante = (conss[projeto],)
+        return tuple(c if i == projeto else replace(c, rating_apenas=True, dimensionantes=dimensionante)
+                     for i, c in enumerate(conss))
+
+    def refinar_eixo(self, p_env, x, eixo):
+        """Refino local (Fase C, nota 46): com `refino_local`, os números de tubos entre `x` e os
+        vizinhos da grade, de um em um, dentro de [n_min, n_max]."""
+        if not p_env.get("refino_local", 0.0):
+            return ()
+        passo = max(int(round(p_env["n_step"])), 1)
+        lo, hi = max(int(p_env["n_min"]), int(x) - passo + 1), min(int(p_env["n_max"]), int(x) + passo - 1)
+        return tuple(float(n) for n in range(lo, hi + 1) if n != int(x))
 
     def envelope_case_params(self, conss, p_env):
         """P-45: banda inteira no caso de projeto; nos de turndown só o teto (a velocidade abaixo
@@ -518,17 +760,42 @@ class SaariLMTD(MetodoTOML):
         turndown = {**p_env, "v_min": 0.0}
         return [p_env if i == projeto else turndown for i in range(len(conss))]
 
+    def comprimento_instalado(self, conss, n):
+        """Comprimento de tubo por casco do feixe escolhido: o máximo entre os casos que
+        DIMENSIONAM (no modo do Julia, todos; com ADR 0005, só o caso de projeto)."""
+        if conss and conss[0].l_fixo > 0:
+            return conss[0].l_fixo
+        exigem = [c for c in conss if not c.rating_apenas]
+        return max((_tubo(c, n)["l"] for c in exigem or conss), default=math.inf)
+
     def operacao_por_caso(self, conss, n, pcs):
         """Cada caso no feixe escolhido (mesma física): papel (projeto/turndown pela P-45), v, Re,
-        Dittus-Boelter válido, h_i, h_o, U, comprimento exigido e alerta de v abaixo do piso."""
+        Dittus-Boelter válido, h_i, h_o, U, comprimento exigido e alerta de v abaixo do piso.
+
+        Com o rating fora do projeto (ADR 0005), cada caso traz também o que a geometria
+        escolhida REALIZA nele: Q realizado, fração do alvo, temperaturas de saída e o desvio
+        de temperatura média em que as propriedades foram avaliadas."""
         projeto = self.caso_projeto(conss) if conss else -1
         v_min = max((pc["v_min"] for pc in pcs), default=0.0)
+        modo_rating = any(c.rating_apenas for c in conss)
+        l_inst = self.comprimento_instalado(conss, n)
         out = []
+        v_max = min((pc["v_max"] for pc in pcs), default=math.inf)
         for i, c in enumerate(conss):
             t = _tubo(c, n)
+            classificacao = rating_do_caso(c, n, l_inst) if modo_rating else {}
+            dp, f_darcy, regime_dp, dp_conf = perda_carga_tubo(c, n, l_inst)
+            dp_c, pc_casco = perda_carga_casco_conjunto(c, n, l_inst)
             out.append(dict(papel="projeto" if i == projeto else "turndown", v=t["v"], re=t["re"],
                             nu_valido=bool(t["nu_valido"]), h_i=t["h_i"], h_o=t["h_o"], u=t["u"], l=t["l"], q=c.q,
-                            abaixo_v_min=t["v"] < v_min,
+                            abaixo_v_min=t["v"] < v_min, rating=classificacao,
+                            dimensiona=not c.rating_apenas, dp=pa_para_kpa(dp),
+                            dp_max=pa_para_kpa(c.dp_max_pa), f_darcy=f_darcy,
+                            regime_dp=regime_dp, dp_confiavel=dp_conf,
+                            dp_casco=pa_para_kpa(dp_c), dp_max_casco=pa_para_kpa(c.dp_max_casco_pa),
+                            dp_casco_validado=pc_casco.validado, re_casco=pc_casco.re,
+                            violacoes=violacoes_do_caso(t, v_max, v_min if i == projeto else 0.0, dp, c.dp_max_pa,
+                                                        dp_c, pc_casco, c.dp_max_casco_pa),
                             # extensão do V2: o regime do lado tubo, a correlação que produziu h_i,
                             # o peso da interpolação na transição e a temperatura de parede da
                             # eq. 2-9 — é o que o relatório e o MC citam ao lado do coeficiente
@@ -545,7 +812,8 @@ class SaariLMTD(MetodoTOML):
         ls = []
         for i, (c, pc) in enumerate(zip(conss, pcs)):
             t = _tubo(c, n)
-            ls.append(t["l"])
+            if not c.rating_apenas:   # ADR 0005: caso só classificado não impõe comprimento
+                ls.append(t["l"])
             if not t["ok"]:
                 out.append(("calculo", i))
                 continue
@@ -561,23 +829,68 @@ class SaariLMTD(MetodoTOML):
             out.append(("comprimento", -1))
         if d_shell > p_env["d_casco_max"]:
             out.append(("casco", -1))
+        limite = p_env.get("dp_max", 0.0)
+        limite_casco = p_env.get("dp_max_casco", 0.0)
+        for i, c in enumerate(conss):
+            l_caso = comprimento_do_caso(c, n) if c.dimensionantes else l_max
+            if limite > 0:
+                dp = pa_para_kpa(perda_carga_tubo(c, n, l_caso)[0])
+                if not (math.isfinite(dp) and dp <= limite):
+                    out.append(("perda_carga", i))
+            if limite_casco > 0:
+                dp_c, pc = perda_carga_casco_conjunto(c, n, l_caso)
+                if self._casco_reprova(pa_para_kpa(dp_c), pc.validado, limite_casco):
+                    out.append(("perda_carga_casco", i))
         return out
 
     def envelope_derived(self, n, conss, pcs, p_env):
         """Conjunto de cascos no ponto escolhido: número em série e em paralelo, área por casco e
-        total, caso de projeto e alertas de operabilidade/incrustação (P-45)."""
+        total, caso de projeto e alertas de operabilidade/incrustação (P-45).
+
+        Com o rating fora do projeto (ADR 0005), acrescenta o que a geometria REALIZA em cada
+        caso: U·A instalado, Q realizado, fração do alvo e temperaturas de saída. É esta a
+        tabela por caso que o relatório, o JSON e o memorial leem — ninguém recalcula."""
         if not conss:
             return {}
         c0 = conss[0]
-        if c0.n_serie == 1 and c0.n_paralelo == 1 and not p_env.get("banda_caso_projeto", 0.0):
+        modo_rating = bool(p_env.get("rating_fora_do_projeto", 0.0)) or c0.l_fixo > 0
+        reserva = int(p_env.get("trens_reserva", 0.0))
+        if (c0.n_serie == 1 and c0.n_paralelo == 1 and not reserva and not p_env.get("banda_caso_projeto", 0.0)
+                and not modo_rating):
             return {}
         op = self.operacao_por_caso(conss, n, pcs)
-        l_max = max(o["l"] for o in op)
+        l_max = self.comprimento_instalado(conss, n)
         area_casco = n * c0.passes * math.pi * c0.d_o * l_max
         alertas = [i for i, o in enumerate(op) if o["papel"] == "turndown" and o["abaixo_v_min"]]
-        return {"cascos_serie": float(c0.n_serie), "cascos_paralelo": float(c0.n_paralelo),
-                "area_por_casco": area_casco, "area_total": area_casco * c0.n_serie * c0.n_paralelo,
-                "caso_projeto": float(self.caso_projeto(conss)), "casos_abaixo_v_min": [float(i) for i in alertas]}
+        # trens em operação = cascos em paralelo; a reserva instalada não recebe carga (servico.py)
+        servico = ConfiguracaoServico(c0.n_paralelo + reserva, c0.n_paralelo, reserva, 1 / c0.n_paralelo)
+        area = servico.totais_extensivos(area_casco * c0.n_serie, c0.n_paralelo)
+        d = {"cascos_serie": float(c0.n_serie), "cascos_paralelo": float(c0.n_paralelo),
+             "trens_reserva": float(reserva), "area_instalada": area["instalado"],
+             "area_por_casco": area_casco, "area_total": area["operando"],
+             "caso_projeto": float(self.caso_projeto(conss)), "casos_abaixo_v_min": [float(i) for i in alertas]}
+        d = {**d, "dp_casco_por_caso": [o["dp_casco"] for o in op],
+             "dp_casco_validado_por_caso": [1.0 if o["dp_casco_validado"] else 0.0 for o in op],
+             "violacoes_por_caso": [list(o["violacoes"]) for o in op],
+             "geometria_congelada": 1.0 if c0.l_fixo > 0 else 0.0}
+        if not modo_rating:
+            return d
+        rat = [o["rating"] for o in op]
+        return {**d, "rating_fora_do_projeto": 1.0, "comprimento_por_casco": l_max,
+                # a GEOMETRIA é uma só; U (e com ele o U·A instalado) muda com o caso,
+                # porque muda a velocidade no tubo e as propriedades dos dois lados
+                "ua_instalado_por_caso": [r["ua_instalado"] for r in rat],
+                "ua_exigido_por_caso": [r["ua_exigido"] for r in rat],
+                "q_alvo_por_caso": [r["q_alvo"] for r in rat],
+                "q_realizado_por_caso": [r["q_realizado"] for r in rat],
+                "q_nao_recuperado_por_caso": [r["q_nao_recuperado"] for r in rat],
+                "fracao_realizada_por_caso": [r["fracao_realizada"] for r in rat],
+                "t_tubo_out_por_caso": [r["t_tubo_out"] for r in rat],
+                "t_casco_out_por_caso": [r["t_casco_out"] for r in rat],
+                "q_alvo_total": sum(r["q_alvo"] for r in rat),
+                "q_realizado_total": sum(r["q_realizado"] for r in rat),
+                "dp_por_caso": [o["dp"] for o in op], "dp_max": pa_para_kpa(c0.dp_max_pa),
+                "estado_rating_por_caso": [r["estado"] for r in rat]}
 
     def selection_message(self, rows, teto, p, mechanism="none"):
         if not rows:
@@ -610,6 +923,18 @@ class SaariLMTD(MetodoTOML):
             return (f"Na banda de velocidade {banda} todos os feixes pedem tubo mais longo que o limite de "
                     f"{jl(p['l_tubo_max'])} m — o mais curto dá {jl_round(menor_l, 2)} m. Amplie a grade para mais "
                     "tubos, aceite tubo mais longo, ou melhore o coeficiente do casco.")
+        limite_dp = p.get("dp_max", 0.0)
+        if limite_dp > 0:
+            dentro = [r for r in curto if math.isfinite(r.derivados.get("dp", math.nan))
+                      and r.derivados["dp"] <= limite_dp]
+            if not dentro:
+                dps = [x for x in (r.derivados.get("dp", math.nan) for r in curto) if math.isfinite(x)]
+                menor_dp = min(dps) if dps else math.nan
+                return (f"Na banda de velocidade {banda} todos os feixes passam do limite de perda de carga do "
+                        f"lado tubo ({jl(limite_dp)} kPa) — o menor atrito em tubo reto dá "
+                        f"{jl_round(menor_dp, 1)} kPa. Use tubo de maior diâmetro, menos passes, menos cascos em "
+                        "série, ou reveja a premissa de ΔP por lado de trocador.")
+            curto = dentro
         menor = min(r.derivados.get("d_shell", math.inf) for r in curto)
         if not menor > p["d_casco_max"]:   # V2: a recusa veio de outro caso (Julia não chega aqui num caso só)
             return (f"Há feixes na banda de velocidade {banda}, dentro da faixa de Dittus-Boelter, com tubo até "
@@ -661,8 +986,50 @@ class SaariLMTD(MetodoTOML):
             ResultField("Carga térmica q", der(r, "q"), unit="W", digits=0),
             ResultField("ΔT médio logarítmico", der(r, "dt_lm"), unit="K"),
             ResultField("Fator de correção F", der(r, "f"), digits=3),
+            *self._campos_perda_carga(r),
+            *self._campos_conjunto(r),
             ResultField("Caso governante", driver_case(r) if tem else "—"),
         ]
+
+    def _campos_perda_carga(self, r):
+        """ΔP do lado tubo (piso: só tubo reto) no cartão, SÓ quando há limite declarado — o
+        cartão mostra critério verificado. Sem limite, o número continua nos derivados, no
+        JSON, no CSV da varredura e no memorial: é reportado, e não some."""
+        dp, limite = der(r, "dp"), der(r, "dp_max")
+        campos = []
+        if math.isfinite(dp) and math.isfinite(limite) and limite > 0:
+            campos += [ResultField("ΔP no lado tubo (tubo reto)", dp, unit="kPa",
+                                   status="ok" if dp <= limite else "erro"),
+                       ResultField("ΔP máximo declarado (P-17)", limite, unit="kPa")]
+        dp_c, lim_c = der(r, "dp_casco"), der(r, "dp_max_casco")
+        if math.isfinite(dp_c) and math.isfinite(lim_c) and lim_c > 0:
+            validado = bool(der(r, "dp_casco_validado"))
+            campos += [ResultField("ΔP no lado casco (Bell-Delaware, sem bocais)", dp_c, unit="kPa",
+                                   status=("neutro" if not validado else ("ok" if dp_c <= lim_c else "erro"))),
+                       ResultField("ΔP máximo declarado no casco", lim_c, unit="kPa")]
+        return campos
+
+    def _campos_conjunto(self, r):
+        """Conjunto de cascos e, com o rating fora do projeto, a recuperação realizada."""
+        v2 = getattr(r, "derivados_v2", {}) or {}
+        if not v2:
+            return []
+        campos = [ResultField("Cascos em série", v2["cascos_serie"], digits=0),
+                  ResultField("Trens em operação (cascos em paralelo)", v2["cascos_paralelo"], digits=0),
+                  ResultField("Área de operação (trens em serviço)", v2["area_total"], unit="m²", digits=1)]
+        if v2.get("trens_reserva"):
+            campos += [ResultField("Trens de reserva instalada", v2["trens_reserva"], digits=0),
+                       ResultField("Área instalada (operação + reserva)", v2["area_instalada"], unit="m²", digits=1)]
+        if not v2.get("rating_fora_do_projeto"):
+            return campos
+        alvo, real = v2["q_alvo_total"], v2["q_realizado_total"]
+        # soma entre casos: indicador COMPARATIVO entre geometrias/premissas — os casos do BOT não
+        # operam simultaneamente, e a soma não é demanda nem energia anual
+        return campos + [
+            ResultField("Carga do balanço, soma dos casos (indicador comparativo)", alvo, unit="W", digits=0),
+            ResultField("Recuperação realizada, soma dos casos (indicador comparativo)", real, unit="W", digits=0),
+            ResultField("Fração da carga do balanço realizada", real / alvo if alvo > 0 else math.nan, digits=3,
+                        highlight=True)]
 
     def sweep_columns(self):
         return [SweepColumn("tubos/passe", "x", 0), SweepColumn("L (m)", "y"), SweepColumn("A (m²)", "area", 1),

@@ -151,12 +151,19 @@ def test_propostas_fecham_as_lacunas_com_origem_propria(planta_propostas, propos
 
 def test_valores_com_fonte_e_calculados_nao_mudam(planta_base, planta_propostas):
     """V-001/V-002 (sem lacunas) e o SG-001 dão o mesmo resultado com e sem propostas; os
-    valores do balanço e dos defaults com fonte dos TAGs com proposta também."""
+    valores do balanço e dos defaults com fonte dos TAGs com proposta também. Ficam de fora os
+    TAGs da integração térmica realizada (ADR 0005): só com as propostas o P-001 tem geometria,
+    e então as propriedades dos três são lidas na temperatura REALIZADA e as cargas do P-002 e
+    do P-003 passam a ser as residuais — mudança declarada, coberta em test_integracao_termica."""
+    from fpso_siz.pfd import integracao_termica as itg
+
+    integracao = {itg.cfg()["tag_recuperador"]} | {l["tag_residual"] for l in itg.cfg()["lado"]}
+    assert not planta_base.contexto.integracao.aplicavel and planta_propostas.contexto.integracao.aplicavel
     for ident in ("V-001", "V-002", "SG-001"):
         a, b = planta_base.tag(ident).resultado, planta_propostas.tag(ident).resultado
         assert (a.feasible, a.x, a.y, a.ceiling) == (b.feasible, b.x, b.y, b.ceiling) or \
             (math.isnan(a.x) and math.isnan(b.x) and a.ceiling == b.ceiling)
-    for ident in TAGS_COM_LACUNA:
+    for ident in sorted(set(TAGS_COM_LACUNA) - integracao):
         for ca, cb in zip(planta_base.tag(ident).entradas.casos, planta_propostas.tag(ident).entradas.casos):
             for k, va in ca.valores.items():
                 if va.origem in ("balanco", "propriedade", "premissa", "recomendada", "metodo"):
@@ -188,9 +195,19 @@ def test_propostas_levam_os_tratadores_ao_dimensionamento(planta_propostas):
 
 
 def test_trocador_inviavel_ainda_mostra_o_perfil_tq(planta_propostas):
-    rt = planta_propostas.tag("P-001")
-    s = mc.documento(planta_propostas.contexto, rt)["calculo"]["series"]
+    """O perfil T × Q só depende do balanço térmico do caso, e por isso sai mesmo sem geometria
+    selecionada. O trocador inviável aqui é o P-001 com o teto de diâmetro de casco no mínimo
+    do descritor: nenhum feixe cabe."""
+    ctx = planta_propostas.contexto
+    est = servico.estado_inicial("P-001")
+    est.editar("d_casco_max", 100.0)
+    rt = servico.dimensionar(servico.preparar(ctx, est), est)
+    s = mc.documento(ctx, rt)["calculo"]["series"]
     assert rt.status == "inviavel" and len(s["perfil_tq"]) == 2 and "resistencias" not in s
+    # com a geometria registrada o mesmo TAG fica dimensionado, com as parcelas de 1/U
+    viavel = planta_propostas.tag("P-001")
+    assert viavel.status == "dimensionado"
+    assert "resistencias" in mc.documento(ctx, viavel)["calculo"]["series"]
 
 
 def test_json_e_mc_separam_as_propostas(planta_propostas, tmp_path):
@@ -212,7 +229,9 @@ def test_sem_propostas_nada_muda(planta_base):
 
 # ------------------------------------------------------------------ CLI e modo interativo
 def test_cli_pfd_com_propostas(tmp_path):
-    assert main(["pfd", "--casos", str(CASOS), "--propostas", str(ARQ), "--saida", str(tmp_path)]) == 1
+    """Com as propostas os 11 TAGs são dimensionados — o P-001 inclusive —, e a planta completa
+    sai com código 0."""
+    assert main(["pfd", "--casos", str(CASOS), "--propostas", str(ARQ), "--saida", str(tmp_path)]) == 0
     j = json.loads((tmp_path / "TO-001.json").read_text(encoding="utf-8"))
     assert j["status"] == "dimensionado" and j["lacunas"] == []
 
@@ -250,7 +269,7 @@ def test_padrao_do_pacote_e_o_arquivo_versionado():
 
 
 def test_cli_carrega_as_propostas_por_padrao(tmp_path, capsys):
-    assert main(["pfd", "--casos", str(CASOS), "--saida", str(tmp_path / "a")]) == 1
+    assert main(["pfd", "--casos", str(CASOS), "--saida", str(tmp_path / "a")]) == 0
     j = json.loads((tmp_path / "a" / "TO-001.json").read_text(encoding="utf-8"))
     assert j["status"] == "dimensionado" and j["proveniencia"]["propostas"]["arquivo"] == mod.ARQUIVO_PADRAO
     assert main(["pfd", "--casos", str(CASOS), "--sem-propostas", "--saida", str(tmp_path / "b")]) == 1

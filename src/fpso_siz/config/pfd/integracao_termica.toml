@@ -1,0 +1,98 @@
+# Integração térmica REALIZADA do pré-aquecedor (ADR 0005; docs/validacao/43).
+#
+# O balanço preliminar escreve a carga do pré-aquecedor como MÁXIMA RECUPERAÇÃO na aproximação
+# P-32: Q_pre = min(C_frio, C_quente)·(T_22 − T_06 − ΔT_app) (balanco/modelo.py). Isso é ALVO
+# TERMODINÂMICO — o mesmo limite que a Análise Pinch devolve (config/pfd/pinch.toml) —, não
+# carga realizável: quem diz quanto do alvo a geometria instalada entrega em cada caso é o
+# rating (sizing/rating.py), e o que ela não entrega continua sendo exigido do processo, porque
+# o óleo precisa chegar à temperatura de tratamento e o tratado à de estocagem.
+#
+# O DESTINO de cada lado é a PREMISSA (T_trat, T_store), nunca a temperatura que o arranjo
+# realizou — a mesma decisão que torna honesta a comparação do pinch. A utilidade residual é
+# então o que o processo AINDA exige depois do que o pré-aquecedor de fato recuperou.
+#
+# O que esta integração reescreve, e só isso: a carga recuperada, as duas temperaturas de saída
+# do pré-aquecedor e as duas cargas de utilidade. Nada mais do balanço muda, e isso é
+# VERIFICADO caso a caso (`verificar_destino`): nas condições da planta do BOT a saída fria
+# realizada fica abaixo de T_trat e a quente acima de T_store, de modo que T_08 = T_trat e
+# T_24 = T_store continuam valendo e o reciclo não é tocado. Se num caso isso deixar de valer,
+# o caso sai com aviso declarado — a integração NÃO reabre o balanço por conta própria.
+
+tag_recuperador = "P-001"
+carga_recuperada = "Q_pre"
+fonte = "ADR 0005 (docs/decisoes/0005-design-rating-multiplicidade.md) e docs/validacao/43; alternativa A5 da árvore de docs/validacao/36"
+
+# Ponto fixo das propriedades: o rating muda a temperatura de saída, a temperatura média muda
+# µ(T) e ρ(T), e com elas o Reynolds, a película e o U. Reavalia-se até a saída não mudar mais.
+[iteracao]
+tolerancia_K = 1.0e-4
+max_iteracoes = 25
+fonte = "critério numérico interno: o ponto fixo é em temperatura de saída, e 1e-4 K está muito abaixo de qualquer resolução de processo; 25 passagens é margem larga para uma contração observada em 3 a 5"
+
+# Os dois lados do pré-aquecedor. `saida` é a corrente cuja temperatura o rating reescreve, e
+# é também a corrente em que a propriedade do lado passa a ser avaliada (temperatura média de
+# mistura, Saari Eq. 6.21).
+[[lado]]
+id = "tubo"
+rotulo = "óleo vivo do SG-001 (lado frio, no tubo)"
+entrada = "C-06"
+saida = "C-07"
+capacidade = "C-06"
+sentido = "aquecer"
+destino_premissa = "T_trat"
+corrente_destino = "C-08"
+carga_residual = "Q_H"
+tag_residual = "P-002"
+correntes_no_destino = []
+fonte = "balanco/modelo.py: T_07 = T_06 + Q_pre/C(C-06); T_08 = max(T_trat, T_07); Q_H = C(C-06)·(T_08 − T_07). O destino T_trat é a premissa F-05/P-33 (BOT 2.7.1.4)"
+
+[[lado]]
+id = "casco"
+rotulo = "óleo tratado antes do cargo tank (lado quente, no casco)"
+entrada = "C-22"
+saida = "C-23"
+capacidade = "C-21"
+sentido = "resfriar"
+destino_premissa = "T_store"
+corrente_destino = "C-24"
+carga_residual = "Q_C"
+tag_residual = "P-003"
+correntes_no_destino = ["C-25", "C-26"]
+fonte = "balanco/modelo.py: T_23 = T_22 − Q_pre/C(C-21); T_24 = min(T_23, T_store); Q_C = C(C-21)·(T_23 − T_24). O destino T_store é a premissa F-08 (BOT 2.7.1.10)"
+
+[notas]
+carga = "carga REALIZADA pelo rating da geometria instalada do {tag} (ADR 0005), no lugar da carga do balanço preliminar"
+temperatura = "temperatura de saída REALIZADA pelo rating da geometria instalada do {tag} (ADR 0005), no lugar da do balanço preliminar"
+residual = "carga RESIDUAL: o que o processo ainda exige para alcançar o destino da premissa depois do que o {tag} recuperou de fato (ADR 0005)"
+
+[avisos]
+destino_frio = "a saída fria realizada ({t_real} °C) alcança ou passa a temperatura de destino ({t_destino} °C): o balanço preliminar escreve T_08 = max(T_trat, T_07) e, nesta condição, a integração realizada mudaria T_08 e com ela o reciclo — o resultado não é absorvido sem reabrir o balanço"
+destino_quente = "a saída quente realizada ({t_real} °C) fica em ou abaixo da temperatura de destino ({t_destino} °C): o balanço preliminar escreve T_24 = min(T_23, T_store) e, nesta condição, a carga residual do resfriador é nula por construção"
+nao_avaliavel = "rating não avaliável neste caso ({motivo}): a carga realizada e as utilidades residuais ficam como NaN, e não como zero"
+sem_ponto_fixo = "o ponto fixo das propriedades não fechou em {iteracoes} passagens (desvio {desvio} K): as propriedades do último passo não são as da temperatura realizada"
+manual = "o {tag} está em modo manual: as entradas não vêm do balanço, não há carga do balanço a classificar, e a integração realizada é INVÁLIDA"
+nao_dimensionado = "o {tag} está {status}: não há geometria instalada para classificar, e a integração realizada é INVÁLIDA"
+bypass = "CENÁRIO EXPLÍCITO DE BYPASS: o {tag} está {status} e foi declarado fora de operação; o calor recuperado é ZERO em todos os casos (Q_real = 0), e o aquecedor e o resfriador recebem a carga inteira"
+
+
+# estado do TAG recuperador em texto corrido (o código vem de pfd/equipamento.py)
+[estados]
+dimensionado = "dimensionado"
+aguardando_entrada = "aguardando entrada"
+inviavel = "inviável"
+inativo = "inativo"
+
+# Avaliação integrada INVÁLIDA (Fase C, nota 46): quando o recuperador não tem geometria
+# avaliada, os TAGs de carga residual NÃO são dimensionados com a recuperação preliminar (que
+# seria idealizada): ficam aguardando, com esta lacuna não editável. O cenário de bypass
+# (Q_real = 0) só existe quando é pedido explicitamente (Contexto(..., cenario_recuperador="bypass")).
+[lacuna]
+chave = "integracao_termica"
+rotulo = "integração térmica realizada do {tag}"
+dica = "{motivo}. Sem ela, a carga deste TAG não é a do estado operacional avaliado: dimensione o {tag}, ou declare o cenário explícito de bypass (Q_real = 0)"
+
+[cenarios]
+realizada = "integração realizada: rating da geometria instalada no ponto fixo das propriedades"
+bypass = "bypass declarado do recuperador: Q_real = 0 em todos os casos"
+invalida = "integração inválida: o recuperador não tem geometria avaliada"
+sem_carga = "nenhum caso tem carga a recuperar: a integração é trivial"

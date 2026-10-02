@@ -20,10 +20,9 @@ from fpso_siz.core import registro
 from fpso_siz.core.casos import case_set_from_config
 from fpso_siz.core.contrato import infeasible_envelope
 from fpso_siz.core.motor import size_envelope
-from fpso_siz.sizing import bombas_paralelo, rating
 from fpso_siz.termo import servico as termo
-from fpso_siz.pfd.ajustes import AUTOMATICO, MANUAL, EstadoTAG, canonico_estado, contexto_de
-from fpso_siz.pfd.entradas import cfg, especificacoes, montar, montar_manual
+from fpso_siz.pfd.ajustes import AUTOMATICO, MANUAL, Ajustes, EstadoTAG, canonico_estado, contexto_de
+from fpso_siz.pfd.entradas import Lacuna, cfg, especificacoes, montar, montar_manual
 from fpso_siz.pfd.propostas import NENHUMA, conferir_casos
 from fpso_siz.pfd.tags import avulso, tag, tags
 
@@ -60,8 +59,16 @@ class ResultadoTAG:
 class Contexto:
     """Dados compartilhados por todos os TAGs de uma execução ou sessão."""
 
-    def __init__(self, dados, prem=None, alteracoes=None, balanco=None, propostas=None):
+    def __init__(self, dados, prem=None, alteracoes=None, balanco=None, propostas=None, ajustes=None,
+                 cenario_recuperador=None):
         self.dados = dados
+        # Fase C (nota 46): o que fazer quando o recuperador da integração realizada não tem
+        # geometria avaliada. None = a avaliação integrada é INVÁLIDA e os TAGs de carga residual
+        # ficam aguardando; "bypass" = cenário EXPLÍCITO de recuperador fora de operação (Q_real = 0).
+        self.cenario_recuperador = cenario_recuperador
+        # estado de sessão dos TAGs: o serviço precisa dele para dimensionar o recuperador no
+        # modo salvo quando monta a integração realizada (ADR 0005)
+        self.ajustes = ajustes if ajustes is not None else Ajustes()
         # valores propostos para as lacunas (pfd/propostas.py); vazio = nenhum arquivo carregado
         self.propostas = propostas if propostas is not None else NENHUMA
         if self.propostas and dados is not None:
@@ -74,6 +81,7 @@ class Contexto:
         self._resultados = balanco
         self._balanco = None
         self._versoes = None
+        self._integracao = None
         self.cache = {}
 
     @property
@@ -109,6 +117,91 @@ class Contexto:
             self._versoes = termo.versoes()
         return self._versoes
 
+    def estado_tag(self, ident):
+        """EstadoTAG salvo na sessão, ou o inicial (automático)."""
+        return self.ajustes.tags.get(ident) or estado_inicial(ident)
+
+    def adotar_ajustes(self, ajustes):
+        """Passa a usar `ajustes` como estado de sessão. O cache é pela forma canônica do estado
+        de cada TAG e continua válido; só o que depende do RECUPERADOR (a integração realizada e
+        os TAGs de carga residual) é descartado, e só se o estado dele mudou."""
+        from fpso_siz.pfd import integracao_termica as integracao
+        rec = integracao.cfg()["tag_recuperador"]
+        antes = repr(canonico_estado(self.estado_tag(rec)))
+        self.ajustes = ajustes
+        if repr(canonico_estado(self.estado_tag(rec))) != antes:
+            self._integracao = None
+            for ident in [rec, *(l["tag_residual"] for l in integracao.cfg()["lado"])]:
+                self.cache.pop(ident, None)
+
+    def fixar_estado(self, estado):
+        """Troca o estado de sessão de UM TAG e descarta o que dependia dele.
+
+        É o que a busca discreta de layout (`pfd/layout.py`) precisa: cada candidato é um
+        estado diferente do mesmo TAG, e tanto a integração realizada quanto os TAGs que
+        consomem carga residual têm de ser recalculados. O balanço NÃO é descartado: ele não
+        depende do candidato, e resolvê-lo de novo por candidato só gastaria tempo."""
+        self.ajustes.tags[estado.id] = estado
+        self.cache.clear()
+        self._integracao = None
+
+    @property
+    def integracao(self):
+        """Integração térmica REALIZADA (ADR 0005): o recuperador dimensionado no ponto fixo das
+        propriedades e o estado de processo realizado de cada caso. Resolvida uma vez por
+        contexto, e só se algum TAG consumir carga residual."""
+        if self._integracao is None:
+            from fpso_siz.pfd import integracao_termica as integracao
+            self._integracao = integracao.integrar(self)
+        return self._integracao
+
+    def resultado_integrado(self, estado):
+        """O ResultadoTAG do TAG recuperador é o do PONTO FIXO das propriedades, e não o de uma
+        passagem só: é um caminho produtivo só (ADR 0005).
+
+        Sem isto, a planta dimensionaria o recuperador numa passagem (propriedades na
+        temperatura do ALVO) enquanto a integração realizada o dimensionaria no ponto fixo
+        (propriedades na temperatura REALIZADA) — dois números para o mesmo TAG na mesma
+        execução. None para qualquer outro TAG, e também para um estado que não é o da sessão
+        (uma variante de estudo é avaliada sozinha, sem o laço)."""
+        from fpso_siz.pfd import integracao_termica as integracao
+        if estado.avulso or estado.id != integracao.cfg()["tag_recuperador"]:
+            return None
+        if repr(canonico_estado(estado)) != repr(canonico_estado(self.estado_tag(estado.id))):
+            return None
+        integrada = self.integracao
+        return integrada.resultado if integrada.aplicavel or integrada.resultado is not None else None
+
+    def lacuna_integracao(self, ident, entradas):
+        """Lacuna NÃO editável de um TAG de carga residual quando a integração realizada é
+        inválida (Fase C, nota 46): a carga que ele receberia seria a da recuperação preliminar,
+        idealizada, e não a do estado operacional avaliado. None nos demais casos."""
+        from fpso_siz.pfd import integracao_termica as integracao
+        c = integracao.cfg()
+        if ident not in {l["tag_residual"] for l in c["lado"]} or self.integracao.aplicavel:
+            return None
+        ativos = tuple(x.num for x in entradas.casos if x.ativo)
+        if not ativos:
+            return None
+        tag_rec = c["tag_recuperador"]
+        return Lacuna(c["lacuna"]["chave"], c["lacuna"]["rotulo"].format(tag=tag_rec), "", (),
+                      c["lacuna"]["dica"].format(tag=tag_rec, motivo=self.integracao.motivo), ativos,
+                      editavel=False)
+
+    def balanco_do_tag(self, ident):
+        """O estado de processo com que ESTE TAG é preparado.
+
+        Quem consome CARGA RESIDUAL do pré-aquecedor (config/pfd/integracao.toml) é preparado
+        com o estado REALIZADO: a carga que ainda falta depois do que a geometria instalada
+        recuperou de fato. Todos os outros — inclusive o próprio recuperador, cujo alvo é o
+        limite do Pinch — são preparados com o balanço preliminar. A escolha é declarada no
+        TOML, não aqui."""
+        from fpso_siz.pfd import integracao_termica as integracao
+        if ident not in {l["tag_residual"] for l in integracao.cfg()["lado"]}:
+            return self.balanco
+        integrada = self.integracao
+        return list(integrada.estados) if integrada.aplicavel else self.balanco
+
     def casos(self):
         """[(num, nome)] dos casos do arquivo, com o nome usado no envelope."""
         if self.dados is None:
@@ -140,7 +233,7 @@ def ordem_chaves(estado):
     return [*especificacoes(t, not estado.avulso)[2], *t.insumos]
 
 
-def preparar(ctx, estado):
+def preparar(ctx, estado, temperaturas=None):
     """EntradasTAG do equipamento no modo do estado (automático: balanço + propriedades;
     manual: usuário, arquivo e defaults com fonte)."""
     if estado.avulso:
@@ -150,14 +243,22 @@ def preparar(ctx, estado):
     if (estado.equipamento, estado.metodo) != (t.equipamento, t.metodo):
         raise ValueError(f"{t.tag}: o estado usa {estado.equipamento}/{estado.metodo}, mas o TAG é "
                          f"dimensionado por {t.equipamento}/{t.metodo}")
-    return preparar_tag(ctx, t, estado)
+    return preparar_tag(ctx, t, estado, temperaturas=temperaturas)
 
 
-def preparar_tag(ctx, t, estado):
-    """preparar com o descritor `t` dado (o do catálogo, ou uma topologia alternativa de estudo)."""
+def preparar_tag(ctx, t, estado, temperaturas=None):
+    """preparar com o descritor `t` do catálogo.
+
+    `temperaturas`: {num do caso: {corrente: T}} em que as PROPRIEDADES são avaliadas, no lugar
+    das do balanço — o ponto fixo da integração realizada (pfd/integracao.py, ADR 0005)."""
     if estado.modo == MANUAL:
         return montar_manual(t, ctx.casos(), estado, propostas=ctx.propostas)
-    return montar(t, ctx.balanco, ctx.dados, ctx.prem, estado=estado, propostas=ctx.propostas)
+    entradas = montar(t, ctx.balanco_do_tag(t.tag), ctx.dados, ctx.prem, estado=estado,
+                      propostas=ctx.propostas, temperaturas=temperaturas)
+    lacuna = ctx.lacuna_integracao(t.tag, entradas)
+    if lacuna is not None:
+        entradas.lacunas.append(lacuna)
+    return entradas
 
 
 def dimensionar(entradas, estado=None):
@@ -188,12 +289,18 @@ def dividir_vazao(ctx, estado, chaves, fator):
 
 
 def executar(ctx, estado):
-    """preparar + dimensionar, com cache no contexto pela forma canônica do estado."""
+    """preparar + dimensionar, com cache no contexto pela forma canônica do estado.
+
+    O TAG recuperador da integração térmica (ADR 0005) tem o seu resultado vindo do ponto fixo
+    das propriedades — ver `Contexto.resultado_integrado`. Qualquer outro TAG, e qualquer
+    variante de estudo, é dimensionado aqui mesmo, numa passagem."""
     chave = repr(canonico_estado(estado))
     guardado = ctx.cache.get(estado.id)
     if guardado is not None and guardado[0] == chave:
         return guardado[1]
-    rt = dimensionar(preparar(ctx, estado), estado)
+    rt = ctx.resultado_integrado(estado)
+    if rt is None:
+        rt = dimensionar(preparar(ctx, estado), estado)
     ctx.cache[estado.id] = (chave, rt)
     return rt
 
@@ -231,7 +338,3 @@ def dimensionar_arquivo(cfg_casos, equipamento=None, metodo=None):
     casos = case_set_from_config(cfg_casos)
     return eq, m, casos, size_envelope(eq, m, casos)
 
-
-def api_operacao():
-    """APIs físicas de off-design expostas pelo mesmo serviço usado pelos TAGs."""
-    return {"rating_trocador": rating.rating, "bombas_paralelo": bombas_paralelo.operar}

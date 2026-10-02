@@ -26,18 +26,16 @@ def test_variantes_tem_origem_e_existem():
                 assert inv.variante(nome)["origem"].strip()
 
 
-def test_p001_um_passe_troca_o_dominio_de_f_pela_area(planta_propostas):
-    """Cadeia de hipóteses do P-001, com a física completa: com 2 passes o impedimento é o domínio
-    do fator F; com 1 passe ele desaparece e o que resta é ÁREA — o comprimento de tubo exigido,
-    não mais a correlação do lado tubo, que agora existe nos três regimes."""
-    rt = planta_propostas.tag("P-001")
-    assert "fator de correção F" in rt.resultado.message
-    r = inv.executar_variante(planta_propostas.contexto, "P-001", inv.variante("passes_1"), rt.estado).resultado
-    assert not r.feasible and "Dittus-Boelter" not in r.message
-    # Com Standing o bloqueio era o comprimento ("tubo mais longo"). Com o trem produtivo
-    # (docs/validacao/39) o lado tubo leva mais gás dissolvido (ṁ +8 %) e μ menor (Rs maior no
-    # Beggs & Robinson), e a variante para antes, na banda de velocidade da grade de tubos.
-    assert "velocidade no tubo na banda" in r.message
+def test_p001_dimensionado_e_alarme_fechado(planta_propostas):
+    """O P-001 é dimensionado pela regra da ADR 0005 — DESIGN no caso de projeto, RATING nos
+    demais, a diferença para a carga do balanço compensada pelas utilidades —, e o registro do
+    alarme diz isso, sem variante de estudo pendurada."""
+    from fpso_siz.pfd import equipamento as servico
+
+    assert planta_propostas.tag("P-001").status == servico.DIMENSIONADO
+    reg = inv.registro("P-001")
+    assert reg["estado"].startswith("fechada") and "ADR 0005" in reg["resumo"]
+    assert all(not h.get("variantes") for h in reg["hipoteses"])
 
 
 # ------------------------------------------------------------------ P-44 (F10x.6)
@@ -77,25 +75,32 @@ def test_p44b_so_no_caso_6_do_b001(planta_propostas):
     assert all(not o["politica_transicao"] for o in op if o["papel"] == "projeto")
 
 
-def test_p001_emulsao_no_casco_segue_sem_correlacao(planta_propostas):
-    """Óleo/óleo: trocar os lados não tira o óleo laminar do tubo (Re < 10⁴ com 1 passe)."""
+def test_a_planta_produtiva_nao_tem_alarme_aberto(planta_propostas):
+    """Nenhum TAG da planta produtiva fica inviável: não há seção de alarme em MC nenhum."""
     ctx = planta_propostas.contexto
-    v = dict(inv.variante("p_001_emulsao_casco"))
-    assert "fator de correção F" in inv.executar_variante(ctx, "P-001", v).resultado.message
-    v["geral"] = {"passes_tubo": 1.0}
-    assert "Dittus-Boelter" in inv.executar_variante(ctx, "P-001", v).resultado.message
+    assert list(inv.alarmes(planta_propostas)) == []
+    for rt in planta_propostas.tags:
+        assert mc.documento(ctx, rt)["alarme"] is None, rt.tag.tag
 
 
 def test_alarme_no_memorial_e_registro_sem_execucao(planta_propostas):
-    """O MC do TAG inviável traz o alarme como está registrado; as variantes aparecem com rótulo
-    e origem, e NENHUM resultado de variante — o memorial não recalcula engenharia."""
-    d = mc.documento(planta_propostas.contexto, planta_propostas.tag("P-001"))
-    a = d["alarme"]
-    assert a["registrado"] and a["estado"] == "aberta"
+    """A mecânica do alarme continua exercitada: num TAG forçado a inviável (B-001 com a banda
+    de velocidade em todos os casos, o estado anterior à P-44), o MC traz o alarme como está
+    REGISTRADO, com as variantes identificadas por rótulo e origem e NENHUM resultado de
+    variante — o memorial não recalcula engenharia."""
+    from fpso_siz.pfd import equipamento as servico
+
+    ctx = planta_propostas.contexto
+    est = servico.estado_inicial("B-001")
+    for chave, valor in inv.variante("sem_p44")["geral"].items():
+        est.editar(chave, float(valor))
+    rt = servico.dimensionar(servico.preparar(ctx, est), est)
+    assert rt.status == servico.INVIAVEL
+    a = mc.documento(ctx, rt)["alarme"]
+    assert a["registrado"] and a["estado"] == inv.registro("B-001")["estado"]
     variantes = [v for h in a["hipoteses"] for v in h["variantes"]]
-    assert {v["nome"] for v in variantes} == {"passes_1", "p_001_emulsao_casco"}
+    assert {v["nome"] for v in variantes} == {"vmin_0"}
     assert all(set(v) == {"nome", "rotulo", "origem"} for v in variantes)
-    assert mc.documento(planta_propostas.contexto, planta_propostas.tag("V-001"))["alarme"] is None
 
 
 def test_variante_de_premissa_nao_toca_o_contexto(planta_propostas):
@@ -116,12 +121,6 @@ def test_trens_dividem_a_vazao_pelo_mesmo_servico(planta_propostas):
     for c2, c1 in zip(rt.entradas.casos, base.entradas.casos, strict=True):
         if c1.ativo:
             assert c2.valores["q_oil"].valor == c1.valores["q_oil"].valor / 2
-
-
-def test_topologia_de_outro_tag_e_recusada(planta_propostas):
-    v = {"rotulo": "teste", "topologia": "p_001_emulsao_casco", "origem": "teste"}
-    with pytest.raises(ValueError, match="topologia de P-001"):
-        inv.executar_variante(planta_propostas.contexto, "P-003", v)
 
 
 @pytest.mark.parametrize("ident", ["P-002", "P-003"])

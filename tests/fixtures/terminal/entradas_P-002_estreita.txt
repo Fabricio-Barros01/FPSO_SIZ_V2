@@ -1,45 +1,49 @@
 
   ENTRADAS · BOT 01 — Early Life
-  Chave                  Valor  Unidade  Origem
-  ───────────────────  ───────  ───────  ───────────
-  m_tubo                     —  kg/s     lacuna
-  cp_tubo                    —  J/kg·K   lacuna
-  t_tubo_in                  —  °C       lacuna
-  t_tubo_out                 —  °C       lacuna
-  rho_tubo                   —  kg/m³    lacuna
-  mu_tubo                    —  cP       lacuna
-  k_tubo                     —  W/m·K    lacuna
-  m_casco              308,304  kg/s     balanço
-  cp_casco             1980,16  J/kg·K   balanço
-  t_casco_in           79,7723  °C       balanço
-  mu_casco             3,10591  cP       correlação
-  k_casco                    —  W/m·K    lacuna
-  h_casco                  500  W/m²·K   default
-  corte_chicana           0,25  –        default
-  espacamento_chicana      0,2  –        recomendada
-  layout_tubos              90  °        recomendada
-  pares_veda                 1  –        default
-  folga_furo_chicana       0,8  mm       default
-  faixas_divisoras           0  –        default
-  d_externo               12,7  mm       recomendada
-  espessura               2,11  mm       default
-  k_parede                   —  W/m·K    lacuna
-  rf_tubo                    —  m²·K/W   lacuna
-  rf_casco                   —  m²·K/W   lacuna
-  razao_passo             1,25  –        recomendada
-  passes_tubo                1  –        recomendada
-  n_min                      —  –        lacuna
-  n_max                      —  –        lacuna
-  n_step                     5  –        default
-  v_min                      1  m/s      default
-  v_max                      3  m/s      default
-  d_casco_max             2500  mm       default
-  l_tubo_max                 6  m        default
-  banda_caso_projeto         1  –        recomendada
-  cascos_serie               1  –        default
-  cascos_paralelo            1  –        default
-  pelicula_baixo_re          1  –        recomendada
-  razao_visc_parede          1  –        default
+  Chave                     Valor  Unidade  Origem
+  ──────────────────────  ───────  ───────  ───────────
+  m_tubo                        —  kg/s     lacuna
+  cp_tubo                       —  J/kg·K   lacuna
+  t_tubo_in                     —  °C       lacuna
+  t_tubo_out                    —  °C       lacuna
+  rho_tubo                      —  kg/m³    lacuna
+  mu_tubo                       —  cP       lacuna
+  k_tubo                        —  W/m·K    lacuna
+  m_casco                 308,304  kg/s     balanço
+  cp_casco                1980,16  J/kg·K   balanço
+  t_casco_in               79,706  °C       balanço
+  mu_casco                3,10591  cP       correlação
+  k_casco                       —  W/m·K    lacuna
+  h_casco                     500  W/m²·K   default
+  corte_chicana              0,25  –        default
+  espacamento_chicana         0,2  –        recomendada
+  layout_tubos                 90  °        recomendada
+  pares_veda                    1  –        default
+  folga_furo_chicana          0,8  mm       default
+  faixas_divisoras              0  –        default
+  d_externo                  12,7  mm       recomendada
+  espessura                  2,11  mm       default
+  k_parede                      —  W/m·K    lacuna
+  rf_tubo                       —  m²·K/W   lacuna
+  rf_casco                      —  m²·K/W   lacuna
+  razao_passo                1,25  –        recomendada
+  passes_tubo                   1  –        recomendada
+  n_min                         —  –        lacuna
+  n_max                         —  –        lacuna
+  n_step                        5  –        default
+  v_min                         1  m/s      default
+  v_max                         3  m/s      default
+  d_casco_max                2500  mm       default
+  l_tubo_max                    6  m        default
+  banda_caso_projeto            1  –        recomendada
+  cascos_serie                  1  –        default
+  cascos_paralelo               1  –        default
+  trens_reserva                 0  –        default
+  pelicula_baixo_re             1  –        recomendada
+  razao_visc_parede             1  –        default
+  rating_fora_do_projeto        0  –        default
+  rugosidade                0,045  mm       default
+  dp_max                        0  kPa      default
     m_tubo · Entrada: Vazão mássica no tubo
     m_tubo · Fonte: t_agua_in, t_agua_out
     cp_tubo · Entrada: Calor específico no tubo
@@ -184,6 +188,11 @@
     cascos_paralelo · Fonte: um casco (regra do Julia);
     cascos em paralelo só pela reotimização do TAG
     (F10x.7)
+    trens_reserva · Entrada: Trens de reserva instalada
+    trens_reserva · Revisão: revisão pendente
+    trens_reserva · Fonte: sem reserva instalada (0); o
+    P-001 declara o trem de reserva que o BOT 2.7.1.11
+    exige em [recomendadas]
     pelicula_baixo_re · Entrada: Película do lado tubo
     nos três regimes
     pelicula_baixo_re · Revisão: revisão pendente
@@ -204,5 +213,23 @@
     das eq. 2-10/2-11 do Branan omitido (razão 1,0):
     hipótese declarada, conservadora ao aquecer líquido;
     a temperatura de parede da eq. 2-9 vai ao rastro
+    rating_fora_do_projeto · Entrada: Classificar
+    (rating) os casos fora do de projeto
+    rating_fora_do_projeto · Revisão: revisão pendente
+    rating_fora_do_projeto · Fonte: regra do Julia: todo
+    caso exige da geometria a sua carga inteira (0); o
+    P-001 adota o DESIGN × RATING da ADR 0005 (1) em
+    [recomendadas]
+    rugosidade · Entrada: Rugosidade absoluta ε do tubo
+    rugosidade · Revisão: revisão pendente
+    rugosidade · Fonte: Moran (2016), descritor ε da
+    bomba (config/equipment/pump/moran.toml): 0,045 mm é
+    aço-carbono comercial novo
+    dp_max · Entrada: Perda de carga máxima no lado tubo
+    dp_max · Revisão: revisão pendente
+    dp_max · Fonte: 0 = perda de carga do lado tubo NÃO
+    verificada (sem limite declarado); os TAGs de
+    trocador da planta leem a premissa P-17 (ΔP por lado
+    de trocador) em [entradas]
   ! C-07: viscosidade do óleo limitado a 70 °C (tabela do
   BOT; P-40)

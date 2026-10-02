@@ -41,6 +41,20 @@ max      = 10.0
 advanced = true
 note     = "N cascos iguais em paralelo: cada um recebe 1/N das vazões dos dois lados e 1/N da carga térmica, com as mesmas temperaturas terminais. Saari Tab. 3.1: casco de chapa enrolada vai a 2500 mm; acima disso o serviço é dividido em cascos em paralelo."
 
+# Reserva INSTALADA (filosofia de serviço, sizing/servico.ConfiguracaoServico): trens iguais aos
+# de operação que não recebem vazão nem carga. `cascos_paralelo` é o número de trens EM OPERAÇÃO
+# (duty); a reserva só entra na área instalada e na contagem de cascos — a física do envelope
+# não muda.
+[[parameter]]
+key      = "trens_reserva"
+label    = "Trens de reserva instalada"
+unit     = "–"
+default  = 0.0
+min      = 0.0
+max      = 10.0
+advanced = true
+note     = "Trens iguais aos de operação, instalados e sem carga em operação. Área de operação = cascos em série × trens em operação × área por casco; área instalada = cascos em série × (trens em operação + reserva) × área por casco."
+
 # Película do lado tubo nos TRÊS regimes (Branan, cap. 2, pp. 40-41; constantes, domínios,
 # política de transição e a errata do denominador de Hausen em
 # config/equipment/comum/pelicula_tubo.toml). Com o default (0) a física é a do Julia: só
@@ -70,3 +84,106 @@ min      = 0.01
 max      = 100.0
 advanced = true
 note     = "Fator (µ/µ_parede)^0,14 das eq. 2-10/2-11 do Branan. Em 1,0 o fator é omitido, o que é conservador ao aquecer líquido; a temperatura de parede da eq. 2-9 aparece no rastro e no MC para quem quiser fechar a razão com a curva µ(T)."
+
+# DESIGN × RATING fora do caso de projeto (ADR 0005; docs/validacao/43). Com o default (0) a
+# física é a do Julia: TODO caso exige da geometria o comprimento que realiza a sua carga
+# inteira, e o equipamento é o envelope dessas exigências. Isso é DESIGN aplicado como
+# off-design: num serviço com turndown grande, os casos de baixa vazão caem no laminar, U
+# despenca e o envelope pede uma área que o caso de projeto não precisa — foi o que manteve o
+# P-001 inviável (docs/validacao/36, alternativa A5 da árvore).
+#
+# Com 1, a geometria é dimensionada pelo caso de PROJETO (o de maior vazão volumétrica no
+# tubo, a mesma regra da P-45) e os demais casos são CLASSIFICADOS nela: o Q de cada um é o
+# que a área instalada entrega, resolvido por `sizing/rating.py`, e a recuperação não
+# realizada é declarada caso a caso. Não é relaxamento de critério: velocidade máxima, faixa
+# da correlação de película e tetos de casco e de comprimento continuam exigidos em TODOS os
+# casos — o que deixa de ser exigido é que todo caso realize a sua carga inteira.
+[[parameter]]
+key      = "rating_fora_do_projeto"
+label    = "Classificar (rating) os casos fora do de projeto"
+unit     = "–"
+default  = 0.0
+min      = 0.0
+max      = 1.0
+advanced = true
+note     = "1 = ADR 0005: o caso de projeto dimensiona a geometria; nos demais o Q é o que a área instalada realiza (Q = U·A·F·ΔT_lm resolvido em Q, limitado pela carga do balanço e sem cruzamento), e a diferença para a carga do balanço é declarada por caso e compensada pelas utilidades. 0 = todo caso exige a sua carga inteira da mesma geometria (regra do Julia)."
+
+# Perda de carga do lado tubo (extensão do V2; verificação pedida pelo usuário em 2026-10-02).
+# O balanço assume ΔP por lado de trocador (premissa P-17, config/premissas.toml); a geometria
+# escolhida tem de caber nessa premissa, e isso é verificável sem nenhum dado novo: o atrito em
+# tubo reto é Darcy-Weisbach, com f de Colebrook-White no turbulento e f = 64/Re no laminar —
+# as MESMAS correlações e as mesmas fronteiras que a bomba já usa (Moran, 2016).
+#
+# O QUE ESTA VERIFICAÇÃO NÃO COBRE, e é lacuna declarada, não zero: perda nos bocais, nos
+# cabeçotes e nos retornos entre passes e entre cascos em série, e a perda do lado CASCO
+# (Bell-Delaware tem correlação para ela, mas o acervo local não traz os fatores de atrito do
+# feixe). O número abaixo é portanto um PISO da perda real do lado tubo.
+[[parameter]]
+key      = "rugosidade"
+label    = "Rugosidade absoluta ε do tubo"
+unit     = "mm"
+default  = 0.045
+min      = 0.0
+max      = 5.0
+advanced = true
+note     = "Entra em Colebrook-White como ε/d_i. 0,045 mm é aço-carbono comercial novo (mesmo valor e mesma fonte do descritor da bomba, config/equipment/pump/moran.toml)."
+
+[[parameter]]
+key      = "dp_max"
+label    = "Perda de carga máxima no lado tubo"
+unit     = "kPa"
+default  = 0.0
+min      = 0.0
+max      = 5000.0
+advanced = true
+note     = "0 = NÃO verificada (sem limite declarado, a perda de carga é só reportada). Acima de zero, o feixe cujo atrito em tubo reto passar deste valor é recusado, e o motivo entra no diagnóstico. Nos TAGs da planta o limite é a premissa P-17 (ΔP por lado de trocador), lida do balanço — não há valor novo suposto aqui."
+
+# Perda de carga do lado CASCO por Bell-Delaware (Branan 2012, pp. 46-47; Fase C, nota 46). Pede
+# a densidade do fluido do casco, que o coeficiente de troca não usava. 0 = não informada: a ΔP
+# do casco fica NaN declarada, nunca zero.
+[[parameter]]
+key      = "rho_casco"
+label    = "Densidade do fluido do casco"
+unit     = "kg/m³"
+default  = 0.0
+min      = 0.0
+max      = 2000.0
+advanced = true
+note     = "Só entra na perda de carga do lado casco (Branan Eq. 2-33, 2-36, 2-37). 0 = não informada: ΔP do casco não avaliada."
+
+[[parameter]]
+key      = "dp_max_casco"
+label    = "ΔP máximo no lado casco"
+unit     = "kPa"
+default  = 0.0
+min      = 0.0
+max      = 5000.0
+advanced = true
+note     = "0 = perda de carga do casco NÃO verificada (só reportada). Com limite, só aprova o valor calculado com coeficiente VALIDADO e dentro do limite: numa faixa não validada da Tabela 2-5 o resultado é reportado como não validado e o feixe não é aprovado (como NaN). Bocais não incluídos (Eq. 2-38)."
+
+# GEOMETRIA CONGELADA (Fase C, nota 46): com l_instalado > 0 e n_min = n_max, nenhum caso
+# dimensiona — TODOS, inclusive o de projeto, são CLASSIFICADOS (rating) no feixe dado. Velocidade,
+# domínio da correlação e perdas de carga não reprovam: são REPORTADOS por caso, para que
+# "insuficiente para a carga" não se confunda com "não opera".
+[[parameter]]
+key      = "l_instalado"
+label    = "Comprimento instalado por casco (geometria congelada)"
+unit     = "m"
+default  = 0.0
+min      = 0.0
+max      = 30.0
+advanced = true
+note     = "0 = dimensionar. > 0: comprimento de tubo por casco da geometria existente; todos os casos são classificados nele, e as violações (velocidade, faixa da correlação, ΔP) são reportadas por caso, não usadas para recusar o feixe."
+
+# Refinamento local da grade de tubos por passe (Fase C, nota 46): depois da varredura com o passo
+# `n_step`, os números de tubos entre o ponto escolhido e os vizinhos da grade são avaliados com
+# passo de um tubo, e o melhor admissível é o resultado. Não muda a física, só a resolução.
+[[parameter]]
+key      = "refino_local"
+label    = "Refinar a grade de tubos com passo de um tubo"
+unit     = "–"
+default  = 0.0
+min      = 0.0
+max      = 1.0
+advanced = true
+note     = "0 = só a grade de passo n_step (regra do Julia). 1 = refino local com passo de 1 tubo em torno do ponto escolhido."

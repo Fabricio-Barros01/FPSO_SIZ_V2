@@ -129,24 +129,22 @@ Os resultados daquela versão ficaram congelados como **oráculo**: um conjunto 
 referência que os testes comparam a cada mudança, número por número. Melhorar a organização do
 código é permitido; mudar um resultado sem justificativa escrita, não.
 
-Existem hoje **1.177 testes automatizados**, e mudar um número exige documentar por quê em
+Existem hoje **1.426 testes automatizados**, e mudar um número exige documentar por quê em
 `docs/validacao/`.
 
 ---
 
 ## 6. Em que ponto o projeto está
 
-Dos onze equipamentos, **dez estão dimensionados**.
+Os **onze equipamentos estão dimensionados** nos 16 casos do BOT, e o gate de sanidade da saída
+passa.
 
-O que falta é o **P-001**, o pré-aquecedor óleo/óleo — e a razão é física, não do programa. Ele
-troca calor entre dois óleos viscosos, e óleo viscoso escoando devagar é um mau condutor de calor:
-nos casos de baixa vazão a capacidade de troca do equipamento satura (cerca de 25 W por metro
-quadrado e por grau de diferença de temperatura) muito abaixo do que o serviço pedido exige. Para
-dar conta, o equipamento precisaria de uma área de troca absurda — o cálculo pede tubos de 434
-metros de comprimento, contra um limite prático de seis metros.
-
-O programa **diz isso com número**, em vez de entregar um equipamento que não funcionaria. Essa é
-exatamente a regra da seção anterior em funcionamento.
+O **P-001**, o pré-aquecedor óleo/óleo, recebe a carga do balanço preliminar. A geometria é
+dimensionada pelo caso de projeto (o de maior vazão) e verificada nos demais casos: nos de baixa
+vazão o óleo viscoso escoa devagar e troca menos calor, então o pré-aquecedor recupera um pouco
+menos que a carga do balanço. Essa diferença é compensada pelas utilidades: o aquecedor (P-002) e
+o resfriador (P-003) são dimensionados pelas cargas que sobram depois do que o P-001 recuperou de
+fato, caso a caso. O balanço preliminar não é reaberto por isso.
 
 ---
 

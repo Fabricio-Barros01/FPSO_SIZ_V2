@@ -54,6 +54,7 @@ dittus_boelter = "fora da faixa de validade de Dittus-Boelter"
 v_max = "velocidade no tubo acima de v_max"
 v_min = "velocidade no tubo abaixo de v_min"
 v_min_projeto = "velocidade abaixo de v_min no caso de projeto"
+perda_carga = "perda de carga no lado tubo acima do limite declarado (P-17)"
 calculo = "o cálculo do feixe não fecha"
 
 [textos]
@@ -86,17 +87,23 @@ funcao = "Pré-aquecedor óleo/óleo: recupera o calor do óleo tratado quente (
 hipoteses = [
     "Troca só de calor sensível entre correntes de processo, com a aproximação mínima de @P:dT_app@ da P-32 no balanço.",
     "Casos sem carga de pré-aquecimento no balanço (10 e 12--16) ficam inativos neste TAG.",
-    "Lacuna metodológica (decisão do usuário): o óleo no tubo escoa em regime laminar ou de transição, fora de Dittus-Boelter, e não há correlação laminar com fonte no acervo; nenhuma correlação sem referência rastreável é usada. Quando houver fonte, ela entra como ramo próprio do método.",
-    "Velocidade no tubo pela P-45: o teto vale em todos os casos; a banda inteira, no caso de projeto (maior vazão volumétrica no tubo); abaixo do piso no turndown há alerta de operabilidade/incrustação, não reprovação; a faixa de Dittus-Boelter é exigida em cada caso.",
+    "Película do lado tubo nos três regimes declarados por Branan (2012, cap.~2, pp.~40--41): Hausen (eq.~2-10) até $Re = 2000$, interpolação da eq.~2-12 até $10^4$ e Dittus-Boelter (Saari eq.~6.23) acima. O óleo escoa laminar ou em transição nos casos de baixa carga, e é essa correlação --- com fonte --- que o cobre; nenhuma correlação sem referência rastreável é usada (docs/validacao/24).",
+    "Velocidade no tubo pela P-45: o teto vale em todos os casos; a banda inteira, no caso de projeto (maior vazão volumétrica no tubo); abaixo do piso no turndown há alerta de operabilidade/incrustação, não reprovação; a faixa de validade da correlação de película é exigida em cada caso.",
+    "DESIGN × RATING (ADR~0005): a geometria é dimensionada pelo caso de PROJETO, com a carga do balanço preliminar (P-32), e CLASSIFICADA nos demais: em cada caso de turndown o calor trocado é o que a área instalada entrega, e a diferença para a carga do balanço é compensada pelas utilidades --- o P-002 e o P-003 são dimensionados pelas cargas residuais (seção da integração térmica realizada).",
+    "As propriedades dos dois lados são reavaliadas na temperatura média REALIZADA, por ponto fixo: o $U$ deste memorial não é o do ponto de projeto.",
+    "Multiplicidade física: trens iguais em paralelo (duty) com reserva INSTALADA exigida pelo BOT 2.7.1.11, e cascos iguais em série dentro de cada trem. A reserva conta na área instalada e não recebe carga em operação; cascos em série somam $U\\!A$ e dividem o comprimento por casco.",
+    "Perda de carga do lado tubo verificada contra a premissa P-17 ($\\Delta P$ por lado de trocador), por Darcy-Weisbach com as mesmas correlações e fronteiras que a bomba usa (Moran, 2016). É PISO da perda real: bocais, cabeçotes, retornos entre passes e entre cascos e o lado casco não estão modelados (sem fator de atrito de feixe no acervo).",
 ]
 [tags."P-002"]
-funcao = "Aquecedor de óleo: leva a emulsão pré-aquecida (C-07, lado casco) à temperatura mínima de tratamento (C-08, @P:T_trat@, F-05/BOT 2.7.1.4) com água quente de utilidade nos tubos; a carga é a $\\dot Q_{\\mbox{P-002}}$ do balanço."
+funcao = "Aquecedor de óleo: leva a emulsão pré-aquecida (C-07, lado casco) à temperatura mínima de tratamento (C-08, @P:T_trat@, F-05/BOT 2.7.1.4) com água quente de utilidade nos tubos. A carga é a RESIDUAL: o que o processo ainda exige depois do que a geometria instalada do P-001 recuperou de fato (ADR~0005); a seção da integração térmica realizada mostra, caso a caso, a carga preliminar do balanço e a residual."
 hipoteses = [
     "Meio de aquecimento: água pura como líquido saturado na temperatura média da utilidade, com o suprimento limitado pelo BOT 2.7.1.4 (limite declarado no TAG).",
     "Casos em que o óleo já chega à temperatura de tratamento (10 e 12--16) não têm carga e ficam inativos.",
     "Topologia P-46 (premissa de projeto deste TAG): o óleo, mais viscoso, no casco (Bell-Delaware cobre o laminar, fator Jr); a água de utilidade nos tubos (Dittus-Boelter).",
     "Velocidade no tubo pela P-45: o teto vale em todos os casos; a banda inteira, no caso de projeto (maior vazão volumétrica no tubo); abaixo do piso no turndown há alerta de operabilidade/incrustação, não reprovação; a faixa de Dittus-Boelter é exigida em cada caso.",
-    "Geometria e número de cascos pela reotimização discreta F10x.7 (docs/validacao/18-trocadores.md), com o comprimento de tubo limitado a 6 m (cascos em série) e o casco a 2.500 mm. A vazão da utilidade acompanha a carga de cada caso (ΔT da utilidade fixo).",
+    "Geometria e número de cascos pela reotimização discreta F10x.7 (docs/validacao/18-trocadores.md), com o comprimento de tubo limitado a 6 m (cascos em série) e o casco a 2.500 mm. A vazão da utilidade acompanha a carga de cada caso ($\\Delta T$ da utilidade fixo).",
+    "A carga de cada caso é a RESIDUAL da integração térmica realizada (ADR~0005), não a do balanço preliminar: o envelope deste TAG é o das cargas residuais, e é maior nos casos em que o P-001 recupera menos que a carga do balanço.",
+    "A perda de carga calculada é a do lado TUBO, que aqui é a utilidade; a premissa P-17 ($\\Delta P$ por lado de trocador) é a que o balanço aplica ao lado do PROCESSO, que neste TAG é o casco (P-46). Por isso ela é reportada e não aprovada contra a P-17, e a perda do lado casco é lacuna declarada (sem fator de atrito de feixe no acervo).",
 ]
 [tags."V-001"]
 funcao = "Desgaseificador 1: recebe a emulsão aquecida (C-08) a @P:P_D1@ (P-18) e separa o gás liberado (C-09, ao 2º estágio da VRU) do líquido que segue ao desidratador (C-10)."
@@ -147,12 +154,14 @@ hipoteses = [
     "Turndown: a razão entre a maior e a menor vazão da linha é grande; a vazão mínima contínua da bomba (dado do fabricante) não está no acervo, e a operação dos casos de menor vazão pode exigir bombas em paralelo ou recirculação de mínimo fluxo (não modelado).",
 ]
 [tags."P-003"]
-funcao = "Resfriador de óleo: resfria o óleo tratado que sai do pré-aquecedor (C-23, lado casco) à temperatura de armazenamento de @P:T_store@ (C-24, F-08/BOT 2.7.1.10) com água de resfriamento nos tubos; a carga é a $\\dot Q_C$ do balanço."
+funcao = "Resfriador de óleo: resfria o óleo tratado que sai do pré-aquecedor (C-23, lado casco) à temperatura de armazenamento de @P:T_store@ (C-24, F-08/BOT 2.7.1.10) com água de resfriamento nos tubos. A carga é a RESIDUAL: o que o processo ainda exige depois do que a geometria instalada do P-001 recuperou de fato (ADR~0005); a seção da integração térmica realizada mostra, caso a caso, a carga preliminar do balanço e a residual."
 hipoteses = [
     "Meio de resfriamento: água pura como líquido saturado na temperatura média da utilidade; pressão do circuito não informada.",
     "Topologia P-46 (premissa de projeto deste TAG): o óleo no casco, a água de resfriamento nos tubos.",
     "Velocidade no tubo pela P-45: o teto vale em todos os casos; a banda inteira, no caso de projeto (maior vazão volumétrica no tubo); abaixo do piso no turndown há alerta de operabilidade/incrustação, não reprovação; a faixa de Dittus-Boelter é exigida em cada caso.",
     "Geometria pela reotimização discreta F10x.7 (docs/validacao/18-trocadores.md); casco limitado a 2.500 mm (cascos em paralelo se excedido) e tubo a 6 m.",
+    "A carga de cada caso é a RESIDUAL da integração térmica realizada (ADR~0005), não a do balanço preliminar: o óleo tratado sai do P-001 mais quente quando a geometria instalada recupera menos que a carga do balanço, e é esse resíduo que este TAG remove.",
+    "A perda de carga calculada é a do lado TUBO, que aqui é a utilidade; a premissa P-17 ($\\Delta P$ por lado de trocador) é a que o balanço aplica ao lado do PROCESSO, que neste TAG é o casco (P-46). Por isso ela é reportada e não aprovada contra a P-17, e a perda do lado casco é lacuna declarada.",
 ]
 
 # ------------------------------------------------------------------ conteúdo por método
@@ -529,14 +538,17 @@ metodologia = [
 
 [metodos.saari_lmtd]
 objetivo = "Dimensionar o trocador casco-e-tubos (área, número e comprimento dos tubos, diâmetro do casco) que atenda à carga térmica dos casos ativos do TAG, pelo método LMTD com fator F e coeficiente do casco por Bell--Delaware."
-escopo = "Dimensionamento térmico de processo. Não inclui perda de carga detalhada, projeto mecânico (TEMA) nem vibração."
+escopo = "Dimensionamento térmico de processo, com a classificação (rating) da geometria escolhida em cada caso (ADR~0005) e a perda de carga do lado tubo em tubo reto. Não inclui a perda de carga de bocais, cabeçotes e retornos, a do lado casco, o projeto mecânico (TEMA) nem a análise de vibração."
 referencias = [
     "Saari, J. \\emph{Heat Exchanger Dimensioning}. Lappeenranta University of Technology, cap.~3--6 (Algoritmo 4.1; Eq.~4.4--4.9, 5.7a, 6.23).",
     "Branan, C. R. \\emph{Rules of Thumb for Chemical Engineers}. 5.~ed. Elsevier, 2012, cap.~2 (Eq.~2-13, 2-18 a 2-31).",
 ]
 hipoteses = [
-    "Propriedades constantes na temperatura média de cada lado; $(\\mu/\\mu_{parede})^{0,14}=1$.",
+    "Propriedades de cada lado avaliadas na sua temperatura média de mistura (Saari Eq.~6.21); $(\\mu/\\mu_{parede})^{0,14}=1$, hipótese declarada e conservadora ao aquecer líquido (a temperatura de parede da eq.~2-9 do Branan vai ao rastro).",
     "Condutividades, incrustações e temperaturas da utilidade sem fonte no acervo ficam como lacunas.",
+    "Classificação (rating) da geometria escolhida: o calor de cada caso é a raiz de $\\dot Q = U\\!A\\,F(\\dot Q)\\,\\Delta T_{lm}(\\dot Q)$ com a área instalada, limitada pela carga do balanço no caso e sem cruzamento de temperatura. $F$ é recalculado a cada iteração da raiz; $U\\!A$ não avaliável é declarado como tal, e não como carga nula.",
+    "Cascos iguais em série recebem as vazões inteiras e $1/N$ do $U\\!A$ exigido; cascos iguais em paralelo recebem $1/N$ das vazões dos dois lados e a mesma temperatura terminal. O fator $F$ do conjunto é o do arranjo calculado com as temperaturas terminais, o que é conservador.",
+    "Perda de carga do lado tubo por Darcy--Weisbach no caminho total de tubo (passes $\\times$ comprimento por casco $\\times$ cascos em série), com $f$ de Colebrook--White no turbulento e $f = 64/Re$ no laminar (Moran, 2016). É piso da perda real.",
 ]
 eixo = "N"
 colunas_casos = []

@@ -16,16 +16,18 @@ id = "P-17"
 descricao = "ΔP por lado de trocador"
 
 [P_D1]
-valor = 700.0
+valor = 500.0
 unidade = "kPa"
 id = "P-18"
-descricao = "Pressão do desgaseificador 1 e do desidratador"
+descricao = "Pressão absoluta do desgaseificador 1 e do desidratador (premissa preliminar do autor)"
+fonte = "docs/validacao/44-premissa-pressao-tvp.md: ponto exato (500; 130) kPa da grade-oráculo da nota 42, TVP ≤ 70 kPa (BOT §2.3.1.1, §2.7.1.10) nos 12 casos avaliáveis com g_TVP = −0,034. A folga não é margem de segurança validada; TVP não verificada nos casos 9, 11, 15 e 16 (gás de lift sem composição); compatibilidade com a sucção da VRU não verificada. Antes: 700 kPa"
 
 [P_D2]
-valor = 200.0
+valor = 130.0
 unidade = "kPa"
 id = "P-19"
-descricao = "Pressão do desgaseificador 2 e do dessalinizador"
+descricao = "Pressão absoluta do desgaseificador 2 e do dessalinizador (premissa preliminar do autor)"
+fonte = "docs/validacao/44-premissa-pressao-tvp.md (ver P-18). Antes: 200 kPa"
 
 [P_pump_oil]
 valor = 800.0

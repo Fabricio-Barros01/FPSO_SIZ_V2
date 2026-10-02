@@ -89,8 +89,9 @@ def test_achados_de_premissa_fixados(v):
     (reciclo de óleo da Nota 11 não modelado, P-41). A6: γ do gás além da água de Standing."""
     exc = {x["num"]: x["excesso_rel"] for x in v["diluicao"]}
     # 0,3668 com Standing; com o trem produtivo (docs/validacao/39) o óleo tratado perde a fração
-    # do óleo morto que vaporiza a 90 °C, e os casos 2 (Early Life) e 3 (Blend) deixam de coincidir
-    assert exc[2] == pytest.approx(0.3665, abs=1e-4) and exc[3] == pytest.approx(0.3666, abs=1e-4)
+    # do óleo morto que vaporiza a 90 °C, e os casos 2 (Early Life) e 3 (Blend) deixam de coincidir;
+    # 0,3665/0,3666 com P-18/P-19 = 700/200 kPa, 0,3647/0,3644 com 500/130 (docs/validacao/44)
+    assert exc[2] == pytest.approx(0.3647, abs=1e-4) and exc[3] == pytest.approx(0.3644, abs=1e-4)
     assert all(e >= 0 for e in exc.values()) and max(exc, key=exc.get) in (2, 3)
     assert v["abaixo_T_fwko"] == [5, 6] and v["t_fwko_min"] == 40.0
     assert min(v["gamma_gas"].values()) == pytest.approx(0.811, abs=1e-3)

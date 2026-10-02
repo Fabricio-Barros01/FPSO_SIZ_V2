@@ -158,21 +158,31 @@ def _size_envelope(eq, m, cases, max_corners):
         return infeasible_envelope(f"Grade de {eixo.label} vazia.", case_names=names, per_case=per_case,
                                    metodo=m, preparo=preparo, p_env=p_env)
 
+    # extensão do V2: o método pode marcar as restrições com que o envelope varre a grade
+    # (um caso só classificado, não dimensionante). O default devolve as mesmas, e aí nada muda.
+    conss = list(m.envelope_constraints(conss, p_env))
+    preparo = [(nome, entrada, c, p) for (nome, entrada, _, p), c in zip(preparo, conss)]
     teto, i_teto = _menor_teto(m, conss)
     mecan = m.ceiling_mechanism_of(conss[i_teto])
     pcs = m.envelope_case_params(conss, p_env)
-    rows = []
-    for x in eixo.values:
+    def linha(x):
         per_case_y = [m.requirement(x, c) for c in conss]
         idx = max(range(len(per_case_y)), key=per_case_y.__getitem__)
         y = per_case_y[idx]
         gov = m.governing_of(x, conss[idx])
         d = m.derived(x, y, gov, conss[idx], k, p_env)
         ok = x <= teto and all(m.case_admissible(x, c, pc) for c, pc in zip(conss, pcs)) and m.admissible(x, d, p_env)
-        rows.append(EnvelopeRow(x, y, d, gov, names[idx], per_case_y, ok,
-                                m.presentation_data(x, conss[idx], k, p_env)))
+        return EnvelopeRow(x, y, d, gov, names[idx], per_case_y, ok, m.presentation_data(x, conss[idx], k, p_env))
 
+    rows = [linha(x) for x in eixo.values]
     admissivel = [r for r in rows if r.ok]
+    if admissivel:   # refino local (extensão do V2): o método diz que abscissas extra avaliar
+        escolhido = min(admissivel, key=lambda r: m.objective(r.x, r.derivados, p_env))
+        vistos = {r.x for r in rows}
+        extra = [linha(x) for x in m.refinar_eixo(p_env, escolhido.x, eixo) if x not in vistos]
+        if extra:
+            rows = sorted(rows + extra, key=lambda r: r.x)
+            admissivel = [r for r in rows if r.ok]
     if not admissivel:
         msg = m.selection_message(rows, teto, p_env, mechanism=mecan) + _sem_intersecao(m, eixo, conss, names, pcs)
         return infeasible_envelope(f"Não há equipamento que atenda simultaneamente aos {len(names)} casos. " + msg,

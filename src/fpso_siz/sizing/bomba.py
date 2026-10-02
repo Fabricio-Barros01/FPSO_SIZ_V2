@@ -249,7 +249,8 @@ class MoranPumpSizing(MetodoTOML):
         for i, (c, pc) in enumerate(zip(conss, pcs)):
             h = _hidraulica(c, dn)
             out.append(dict(papel="projeto" if i == projeto else "turndown", q=c.q_m3h, v=h["v"], re=h["re"],
-                            regime=h["regime"], f=h["f"], h=h["h_total"], folga_npsh=h["npsh"] - c.npsh_exigido,
+                            regime=h["regime"], f=h["f"], h=h["h_total"], npsh=h["npsh"], npsh_exigido=c.npsh_exigido,
+                            folga_npsh=h["npsh"] - c.npsh_exigido,
                             potencia=potencia_hidraulica_kw(c.rho, c.q_m3h, h["h_total"], c.rendimento, c.g),
                             politica_transicao=not h["confiavel"] and bool(pc.get("aceita_transicao", 0.0))
                             and _politica_transicao(h, c.k)))

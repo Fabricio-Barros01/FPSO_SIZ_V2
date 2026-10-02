@@ -6,9 +6,9 @@ numérico ou de modelo (config/pfd/alarmes.toml). Aqui:
 - `alarmes(planta)`: um alarme por TAG inviável, com a evidência do próprio resultado (o
   que falhou, que casos têm solução isolados e com que x) e as hipóteses registradas;
 - `executar_variante(ctx, ident, v)`: o mesmo serviço por TAG com a alteração declarada
-  (premissa do balanço, entrada geral do TAG, vazão dividida por trens em paralelo ou outra
-  alocação das correntes). A variante é estudo: não muda o contexto nem o resultado padrão, e
-  só é executada por ferramenta (`tools/investigar_alarmes.py`), nunca dentro do memorial.
+  (premissa do balanço, entrada geral do TAG ou vazão dividida por trens em paralelo). A
+  variante é estudo: não muda o contexto nem o resultado padrão, e só é executada por
+  ferramenta (`tools/investigar_alarmes.py`), nunca dentro do memorial.
 
 Nada aqui é física nova: só se escolhe o que o motor avalia.
 """
@@ -19,7 +19,6 @@ from dataclasses import dataclass
 from fpso_siz.core.configuracao import carregar
 from fpso_siz.pfd import equipamento as servico
 from fpso_siz.pfd.equipamento import INVIAVEL
-from fpso_siz.pfd.tags import topologia_alternativa
 
 
 def cfg():
@@ -65,11 +64,6 @@ def executar_variante(ctx, ident, v, estado=None):
     base = copy.deepcopy(estado) if estado is not None else servico.estado_inicial(ident)
     for chave, valor in v.get("geral", {}).items():
         base.editar(chave, float(valor), None, {})
-    if v.get("topologia"):   # outra alocação das correntes no mesmo equipamento
-        t = topologia_alternativa(v["topologia"])
-        if t.tag != ident:
-            raise ValueError(f"variante {v['rotulo']!r}: topologia de {t.tag}, não de {ident}")
-        return servico.dimensionar(servico.preparar_tag(ctx, t, base), base)
     if v.get("fator_vazao"):
         servico.dividir_vazao(ctx, base, v["chaves_vazao"], v["fator_vazao"])
     return servico.dimensionar(servico.preparar(ctx, base), base)

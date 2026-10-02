@@ -172,12 +172,46 @@ def detalhes_planta(resultados, estilo, colunas):
     return out
 
 
+def tela_integracao(planta, estilo, colunas):
+    """Integração térmica realizada: recuperação por caso e utilidades residuais (ADR 0005).
+
+    Composição só. Os números vêm do serviço, que é quem dimensiona o recuperador no ponto
+    fixo das propriedades; a tela não avalia nada."""
+    from fpso_siz.pfd import integracao_termica as itg
+    tx = textos()
+    c = itg.cfg()
+    i = planta.contexto.integracao
+    out = ["", *titulo(estilo.t(tx["integracao_titulo"].format(tag=c["tag_recuperador"])), estilo, colunas)]
+    if not i.aplicavel:
+        return out + quebrar(estilo.t(tx["integracao_nao_aplicavel"].format(motivo=i.motivo)), colunas)
+    alvo, real = i.q_alvo_total, i.q_realizado_total
+    out += quebrar(estilo.t(tx["integracao_total"].format(
+        realizado=num(real, 1), alvo=num(alvo, 1), nao=num(alvo - real, 1),
+        fracao=num(real / alvo if alvo > 0 else 1.0, 4), iteracoes=i.iteracoes)), colunas, "  ")
+    out += quebrar(estilo.t(tx["integracao_residual"].format(
+        lista=", ".join(f"{l['tag_residual']} ({l['carga_residual']})" for l in c["lado"]))), colunas, "  ")
+    for x in i.casos:
+        if not x.ativo:
+            continue
+        quente = next(l for l in x.lados if l.aquece)
+        fria = next(l for l in x.lados if not l.aquece)
+        out += quebrar(estilo.t(tx["integracao_caso"].format(
+            num=x.num, estado=x.estado_rating, realizado=num(x.q_realizado, 1), alvo=num(x.q_alvo, 1),
+            fracao=num(x.fracao_realizada, 4), qh=num(quente.q_residual, 1),
+            qh0=num(quente.q_residual_preliminar, 1), qc=num(fria.q_residual, 1),
+            qc0=num(fria.q_residual_preliminar, 1))), colunas, "    ")
+        for a in x.avisos:
+            out += [estilo.aviso(y) for y in quebrar(estilo.t(a), colunas, "      ")]
+    return out
+
+
 def resumo(planta, estilo, colunas, caso=None):
     """Tela da planta e o detalhe por TAG (comando `pfd`)."""
     out = tela_planta(planta.contexto, planta.tags, estilo, colunas, caso)
     out += detalhes_planta(planta.tags, estilo, colunas)
     out += ["", *quebrar(estilo.t(textos()["blocos_sem"].format(lista=", ".join(planta.sem_dimensionamento))),
                          colunas)]
+    out += tela_integracao(planta, estilo, colunas)
     return [estilo.t(x) for x in out]
 
 

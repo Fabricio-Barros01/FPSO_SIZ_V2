@@ -84,9 +84,10 @@ def test_criterio_1_o_avaliador_reproduz_o_ponto_do_projeto_atual(dados):
     assert a.convergiu
     for ident, estado in a.estados.items():
         assert planta.tag(ident).status == estado, ident
-    # só o P-001 ainda viola: P-002 e P-003 fecharam quando a película do lado tubo passou a ter os
-    # três regimes (docs/validacao/24-pelicula-baixo-reynolds.md)
-    assert not a.viavel and {t for t, g in a.restricoes.items() if g > 0} == {"P-001"}
+    # nenhum TAG viola: os alarmes dos trocadores fecharam com a película nos três regimes
+    # (docs/validacao/24) e o do P-001 com o DESIGN × RATING da ADR 0005 (docs/validacao/43)
+    assert {t for t, g in a.restricoes.items() if g > 0} == set()
+    assert a.viavel and not a.sem_dado
 
 
 def test_a_decodificacao_respeita_destino_e_tipo(dados):
@@ -166,11 +167,15 @@ def test_o_algoritmo_recebe_o_dado_ausente_como_restricao_a_mais():
 
 def test_a_violacao_soma_so_os_tags_que_violam(dados):
     """A métrica de violação é a distância ao admissível: quem está dimensionado não entra, e o
-    total é a soma do que violou. Com os alarmes dos trocadores fechados, sobra o P-001."""
+    total é a soma do que violou. No ponto de projeto, com os alarmes dos trocadores fechados
+    (docs/validacao/24 e 43), nenhum TAG viola — e o total é zero por soma, não por atalho."""
     a = ot.avaliar(dados, x_do_projeto(dados))
-    assert a.restricoes["P-002"] == 0.0 and a.restricoes["P-003"] == 0.0
-    assert a.restricoes["P-001"] > 0
-    assert a.violacao_total == sum(g for g in a.restricoes.values() if g > 0)
+    assert a.restricoes["P-001"] == a.restricoes["P-002"] == a.restricoes["P-003"] == 0.0
+    assert a.violacao_total == sum(g for g in a.restricoes.values() if g > 0) == 0.0
+    # e a métrica continua medindo distância ao admissível quando algum TAG volta a violar
+    import dataclasses
+    violando = dataclasses.replace(a, restricoes={**a.restricoes, "P-001": 3.0})
+    assert violando.violacao_total == 3.0
 
 
 @pytest.mark.otim

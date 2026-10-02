@@ -67,8 +67,12 @@ def dimensionar(dados=None, prem=None, ajustes=None, balanco=None, contexto=None
     outros, então o recorte não muda o resultado dos que ficam."""
     ctx = contexto if contexto is not None else Contexto(dados, prem=prem, balanco=balanco)
     aj = normalizar(ajustes)
-    estados = [aj.tags.get(t.tag) or equipamento.estado_inicial(t.tag) for t in tags()
-               if somente is None or t.tag in somente]
+    # o serviço precisa do estado de sessão para dimensionar o recuperador da integração
+    # realizada no modo salvo (ADR 0005). Ajustes passados são os desta planta, mesmo num
+    # contexto reaproveitado; sem ajustes, vale o estado de sessão que o contexto já tem
+    if aj.tags:
+        ctx.adotar_ajustes(aj)
+    estados = [ctx.estado_tag(t.tag) for t in tags() if somente is None or t.tag in somente]
     if any(e.modo == equipamento.AUTOMATICO for e in estados):
         ctx.balanco  # noqa: B018  (valida uma vez, antes de percorrer os TAGs)
     return Planta(ctx, [equipamento.executar(ctx, e) for e in estados], aj)

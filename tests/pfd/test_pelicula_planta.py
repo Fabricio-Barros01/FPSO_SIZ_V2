@@ -2,8 +2,9 @@
 
 É o item do aceite que amarra a física nova aos casos reais: BOT 04, BOT 05 e BOT 06 (os de
 baixa carga) e os dez casos ativos do P-001. O que se prova aqui é que NENHUM caso é mais
-recusado por falta de correlação, e que o que restou de inviabilidade tem restrição governante
-identificada — a ÁREA no P-001. No P-003 o comprimento só volta a bloquear com o tubo de 25,4 mm.
+recusado por falta de correlação. O P-001 é dimensionado pela regra da ADR 0005 (DESIGN no
+caso de projeto, RATING nos demais) com a geometria registrada no TAG. No P-003 o
+comprimento só volta a bloquear com o tubo de 25,4 mm.
 
 Os regimes afirmados aqui são os medidos na geometria recomendada de cada TAG (12,7 mm, um
 passe): o Reynolds de cada caso está no teste, e a tabela completa está em
@@ -54,9 +55,15 @@ def test_a_pelicula_esta_ligada_nos_tres_tags_com_fonte():
 
 def test_p002_viavel_e_os_casos_de_baixa_carga_calculam(planta_propostas):
     """O BOT 06 (3,6 % da carga de projeto) era o único bloqueio do P-002. Na geometria que a
-    reotimização escolhe (12,7 mm, um passe) ele cai no LAMINAR, Re ≈ 1.416, e é calculado por
-    Hausen; o BOT 04 (Re ≈ 4.145) e o BOT 05 (Re ≈ 5.461) caem na transição. O TAG fica viável —
-    sem circulação fixa e sem mudar arquitetura."""
+    reotimização escolhe ele cai no LAMINAR e é calculado por Hausen; o BOT 04 cai na transição.
+    O TAG fica viável — sem circulação fixa e sem mudar arquitetura.
+
+    Com a integração realizada (ADR 0005) a carga deste TAG é a RESIDUAL, maior que a
+    preliminar nos casos em que o pré-aquecedor não realiza o alvo do Pinch: a vazão da
+    utilidade cresce na mesma proporção e o Reynolds sobe com ela. É por isso que o BOT 05, que
+    antes estava na transição, hoje está no turbulento — a física da película é a mesma, o que
+    mudou é a carga que este TAG tem de atender. Os três regimes continuam todos exercidos pela
+    planta, e é isso que o teste cobra."""
     ctx = planta_propostas.contexto
     c = candidato(ctx, "P-002")
     assert c.viavel and not c.bloqueios
@@ -66,11 +73,13 @@ def test_p002_viavel_e_os_casos_de_baixa_carga_calculam(planta_propostas):
     assert seis["re"] <= 2000 and math.isfinite(seis["h_i"]) and seis["h_i"] > 0
     assert "2-10" in seis["correlacao"]
     # a interpolação da transição é exercida pela planta, e não só pelo caso-ouro
-    for caso in ("BOT 04", "BOT 05"):
+    for caso in ("BOT 04",):
         o = op[caso]
         assert o["regime"] == pel.TRANSICAO and o["nu_valido"], caso
         assert 2000 < o["re"] < 1e4 and o["h_i"] > 0, caso
         assert "2-12" in o["correlacao"], caso
+    # e os três regimes aparecem nos casos deste TAG
+    assert {o["regime"] for o in op.values()} == {pel.LAMINAR, pel.TRANSICAO, pel.TURBULENTO}
     # e o estado do TAG na planta é dimensionado
     assert planta_propostas.tag("P-002").status == servico.DIMENSIONADO
 
@@ -121,29 +130,10 @@ def test_p003_o_comprimento_deixa_de_bloquear_com_o_tubo_menor(planta_propostas)
         assert "dittus_boelter" not in {crit for crit, _ in c.bloqueios}
 
 
-def test_p001_todos_os_casos_calculam_e_o_que_governa_e_area(planta_propostas):
-    """No P-001 a lacuna metodológica fechou: os dez casos ativos calculam. O que impede é a área
-    — comprimento de tubo muito acima do limite —, e com 2 passes o domínio do fator F vem antes."""
-    ctx = planta_propostas.contexto
-    dois_passes = planta_propostas.tag("P-001")
-    assert dois_passes.status == servico.INVIAVEL and "fator de correção F" in dois_passes.resultado.message
-    c = candidato(ctx, "P-001", {"passes_tubo": 1.0})
-    assert not c.viavel and {crit for crit, _ in c.bloqueios} == {"comprimento"}
-    op = operacao(c)
-    assert len(op) == 10
-    assert all(o["nu_valido"] and o["h_i"] > 0 for o in op.values())
-    assert {o["regime"] for o in op.values()} <= {pel.LAMINAR, pel.TRANSICAO, pel.TURBULENTO}
-    # o platô laminar é o que explica a área: h_i de uma ordem de grandeza abaixo do turbulento
-    laminares = [o["h_i"] for o in op.values() if o["regime"] == pel.LAMINAR]
-    turbulentos = [o["h_i"] for o in op.values() if o["regime"] == pel.TURBULENTO]
-    if laminares and turbulentos:
-        assert max(laminares) < min(turbulentos)
-
-
 def test_nenhum_caso_dos_tres_tags_e_recusado_por_correlacao(planta_propostas):
     """A varredura do aceite: em nenhum dos três TAGs sobra recusa por correlação do lado tubo."""
     ctx = planta_propostas.contexto
-    for ident, edits in (("P-001", {"passes_tubo": 1.0}), ("P-002", {}), ("P-003", {})):
+    for ident, edits in (("P-001", {}), ("P-002", {}), ("P-003", {})):
         c = candidato(ctx, ident, edits)
         assert "dittus_boelter" not in {crit for crit, _ in c.bloqueios}, ident
         assert all(o["nu_valido"] for _, o in c.operacao), ident

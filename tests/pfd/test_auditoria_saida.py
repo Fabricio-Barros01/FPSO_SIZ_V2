@@ -129,7 +129,12 @@ def test_a_planta_atual_passa_no_gate(relatorio):
 def test_o_gate_classifica_toda_ausencia(relatorio, gate):
     assert {a["categoria"] for a in relatorio["achados"]} <= set(gate.CATEGORIAS)
     assert all(a["justificativa"] for a in relatorio["achados"])
-    assert relatorio["contagem"]["NAO_APLICAVEL"] and relatorio["contagem"]["INVIAVEL"]
+    # NAO_APLICAVEL continua existindo (critério que não se aplica ao caso, P-42; caso só
+    # classificado, ADR 0005). Nenhum TAG fica sem equipamento: INVIAVEL só sobra em caso que,
+    # SOZINHO, não teria solução e é coberto pelo envelope (turndown das bombas, P-44).
+    assert relatorio["contagem"]["NAO_APLICAVEL"]
+    inviaveis = [a for a in relatorio["achados"] if a["categoria"] == "INVIAVEL"]
+    assert all(a["caminho"].endswith(".x_isolado") for a in inviaveis), inviaveis
 
 
 def test_o_gate_confere_os_tres_niveis(relatorio, planta_propostas):

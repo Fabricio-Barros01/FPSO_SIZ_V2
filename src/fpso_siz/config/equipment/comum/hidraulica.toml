@@ -14,3 +14,15 @@ f0 = 0.02
 tolerancia = 1e-10
 max_iteracoes = 60
 fonte = "FPSO_Siz Julia, sizing/pump/hydraulics.jl (colebrook_white)"
+
+# Fronteiras de regime e iteração de Darcy-Weisbach para quem NÃO é a bomba (o método da
+# bomba passa as suas, de moran.toml, e estes valores são os mesmos, da mesma fonte). O
+# trocador usa isto para a perda de carga do lado tubo (verificação contra a premissa P-17).
+[darcy]
+colebrook_initial   = 0.02
+colebrook_tolerance = 1e-10
+colebrook_max_iter  = 60
+laminar_coefficient = 64.0
+reynolds_laminar_max   = 2300.0
+reynolds_turbulent_min = 4000.0
+fonte = "Moran (2016): Colebrook-White declarada para Re > 4000; f = 64/Re (Hagen-Poiseuille) exata no laminar plenamente desenvolvido; 2300 é o Reynolds crítico clássico de duto circular. Valores idênticos aos de config/equipment/pump/moran.toml — uma correlação só, citada uma vez."

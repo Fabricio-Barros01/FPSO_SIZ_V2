@@ -112,6 +112,14 @@ cascos_serie = { tipo = "escolha", fonte = "um casco (regra do Julia); cascos em
 cascos_paralelo = { tipo = "escolha", fonte = "um casco (regra do Julia); cascos em paralelo só pela reotimização do TAG (F10x.7)" }
 pelicula_baixo_re = { tipo = "escolha", fonte = "só Dittus-Boelter (regra do Julia, 0); os TAGs de trocador da planta adotam os três regimes de Branan pp. 40-41 (1) em [recomendadas]" }
 razao_visc_parede = { tipo = "escolha", fonte = "fator (µ/µ_parede)^0,14 das eq. 2-10/2-11 do Branan omitido (razão 1,0): hipótese declarada, conservadora ao aquecer líquido; a temperatura de parede da eq. 2-9 vai ao rastro" }
+rating_fora_do_projeto = { tipo = "escolha", fonte = "regra do Julia: todo caso exige da geometria a sua carga inteira (0); o P-001 adota o DESIGN × RATING da ADR 0005 (1) em [recomendadas]" }
+rugosidade = { tipo = "fonte", fonte = "Moran (2016), descritor ε da bomba (config/equipment/pump/moran.toml): 0,045 mm é aço-carbono comercial novo" }
+rho_casco = { tipo = "escolha", fonte = "0 = não informada: ΔP do casco não avaliada; os TAGs de trocador da planta leem a ρ da fase líquida da corrente do casco em [entradas]" }
+dp_max_casco = { tipo = "escolha", fonte = "0 = perda de carga do lado casco NÃO verificada (só reportada)" }
+l_instalado = { tipo = "escolha", fonte = "0 = dimensionar a geometria; > 0 só em estudo de geometria congelada (nota 46)" }
+refino_local = { tipo = "escolha", fonte = "0 = grade com passo n_step (regra do Julia); 1 = refino local com passo de 1 tubo (nota 46)" }
+trens_reserva = { tipo = "escolha", fonte = "sem reserva instalada (0); o P-001 declara o trem de reserva que o BOT 2.7.1.11 exige em [recomendadas]" }
+dp_max = { tipo = "escolha", fonte = "0 = perda de carga do lado tubo NÃO verificada (sem limite declarado); os TAGs de trocador da planta leem a premissa P-17 (ΔP por lado de trocador) em [entradas]" }
 
 [saari_lmtd.dicas]
 k_tubo = "Condutividade térmica do fluido do tubo. Petróleo e emulsão: sem correlação no acervo nem no ChEDL; salmoura: o banco de Magomedov do thermo não tem NaCl."

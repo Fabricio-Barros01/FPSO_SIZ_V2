@@ -52,7 +52,7 @@
 
   Nao ha equipamento que atenda simultaneamente aos 16 casos. Nenhum diametro admissivel tem
   esbeltez na banda 3.0-5.0: abaixo do teto de decantacao (2399.0 mm) o SR varia de 71.67 a
-  6975.69. Amplie a grade de diametros ou a banda de SR.
+  6975.63. Amplie a grade de diametros ou a banda de SR.
 
   Casos
   Caso                       Sozinho   d (mm)

@@ -206,6 +206,14 @@ titulo_planta_caso = "Planta / PFD · {arquivo} · filtro: {caso}"
 contagem = "{dimensionado} dimensionado(s) · {aguardando} aguardando entrada · {inviavel} inviável(is) · {inativo} inativo(s)"
 nota_filtro = "Marcador do caso filtrado: atividade/pendência do caso; a viabilidade do envelope segue na tabela."
 blocos_sem = "Blocos sem dimensionamento: {lista}"
+
+# Integração térmica realizada (ADR 0005): o que a geometria do pré-aquecedor entrega e o que
+# sobra para as utilidades. A tela só compõe; os números são do serviço (pfd/integracao_termica.py).
+integracao_titulo = "Integração térmica realizada ({tag}, ADR 0005)"
+integracao_total = "Recuperação, soma entre casos (indicador comparativo, não demanda simultânea): {realizado} de {alvo} kW da carga do balanço ({fracao}) · compensado pelas utilidades {nao} kW · ponto fixo em {iteracoes} passagens"
+integracao_caso = "caso {num}: {estado} · {realizado}/{alvo} kW ({fracao}) · utilidade quente {qh} kW (preliminar {qh0}) · fria {qc} kW (preliminar {qc0})"
+integracao_nao_aplicavel = "Integração térmica realizada: não se aplica — {motivo}"
+integracao_residual = "Cargas residuais alimentam: {lista}"
 sem_pendencias = "nenhum TAG aguardando entrada."
 pendencias_tag = "Pendências de {id}"
 filtro_prompt = "Caso para filtrar ({min}–{max}; Enter remove o filtro)"

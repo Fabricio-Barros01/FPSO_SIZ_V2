@@ -204,6 +204,9 @@ def tabela_casos(rt, x):
     colunas = conteudo_metodo(m).get("colunas_casos", [])
     linha_env = _linha_em(r.rows, x) if x is not None else None
     govs = memoria.governantes(r, x)
+    # ADR 0005: o caso só CLASSIFICADO não exige comprimento do equipamento, e por isso não
+    # tem folga comparável à dos dimensionantes — ela sai como ausente, não como número.
+    dimensiona = [not getattr(c, "rating_apenas", False) for _, _, c, _ in r.preparo] or None
     out = []
     for i, (nome, pc) in enumerate(zip(r.case_names, r.per_case)):
         vals = []
@@ -212,16 +215,19 @@ def tabela_casos(rt, x):
             vals.append(ent.value if ent is not None else None)
         y = linha_env.per_case_y[i] if linha_env is not None else None
         rotulo_mec = getattr(m, "rotulo_mecanismo", str)
-        out.append(dict(caso=nome, valores=vals, y=y,
+        dim = dimensiona[i] if dimensiona and i < len(dimensiona) else True
+        out.append(dict(caso=nome, valores=vals, y=y if dim else None, dimensiona=dim,
                         governante=m.governing_label(govs[i]) if govs[i] is not None else None,
-                        folga=(r.slack[i] if r.feasible and r.slack else None),
+                        folga=(r.slack[i] if r.feasible and r.slack and dim else None),
                         teto=pc.ceiling if math.isfinite(pc.ceiling) else None,
                         mecanismo=rotulo_mec(pc.ceiling_mechanism), mecanismo_id=pc.ceiling_mechanism,
                         teto_aplicavel=m.teto_aplicavel(pc.ceiling_mechanism),
                         criterio_aplicavel=pc.ceiling_mechanism not in m.mecanismos_nao_aplicaveis(),
                         viavel_isolado=pc.feasible,
                         x_isolado=pc.x if pc.feasible else None))
-    return dict(colunas=[c["rotulo"] for c in colunas], linhas=out, tem_teto=any(l["teto"] is not None for l in out))
+    return dict(colunas=[c["rotulo"] for c in colunas], linhas=out,
+                tem_teto=any(l["teto"] is not None for l in out),
+                tem_classificado=any(not l["dimensiona"] for l in out))
 
 
 def criterios(rt, x):
@@ -423,6 +429,47 @@ def _sem_fonte(e):
     return out
 
 
+def integracao_termica(ctx, rt):
+    """A integração térmica REALIZADA (ADR 0005), do ponto de vista DESTE TAG.
+
+    Só o TAG que recupera calor e os que consomem a carga residual participam dela; nos outros
+    a seção não existe. Leitura, não cálculo: quem dimensiona o recuperador no ponto fixo das
+    propriedades é `pfd/integracao.py`, e o resultado é do contexto, o mesmo que preparou as
+    entradas deste TAG."""
+    from fpso_siz.pfd import integracao_termica as mod
+    e = rt.entradas
+    if e.avulso or e.modo == "manual" or ctx.dados is None:
+        return None
+    c = mod.cfg()
+    papel = ("recuperador" if rt.tag.tag == c["tag_recuperador"]
+             else "residual" if rt.tag.tag in {l["tag_residual"] for l in c["lado"]} else None)
+    if papel is None:
+        return None
+    i = ctx.integracao
+    lados = {l["id"]: l for l in c["lado"]}
+    casos_int = [dict(
+        num=x.num, nome=x.nome, ativo=x.ativo, estado=x.estado_rating, dimensiona=x.dimensionante,
+        q_alvo=x.q_alvo, q_realizado=x.q_realizado, q_nao_recuperado=x.q_nao_recuperado,
+        fracao=x.fracao_realizada, avisos=list(x.avisos),
+        lados=[dict(id=l.id, rotulo=l.rotulo, aquece=l.aquece, capacidade=l.capacidade,
+                    t_in=l.t_in, t_out_alvo=l.t_out_alvo, t_out_real=l.t_out_real,
+                    t_destino=l.t_destino, carga=l.carga_residual, tag=l.tag_residual,
+                    q_preliminar=l.q_residual_preliminar, q_residual=l.q_residual,
+                    destino_alterado=l.destino_cruzado, fonte=lados[l.id]["fonte"])
+               for l in x.lados]) for x in i.casos]
+    return dict(papel=papel, tag_recuperador=c["tag_recuperador"], aplicavel=i.aplicavel,
+                cenario=i.cenario, cenario_texto=c["cenarios"].get(i.cenario, i.cenario),
+                motivo=i.motivo, fonte=c["fonte"], carga=c["carga_recuperada"],
+                ponto_fixo=dict(iteracoes=i.iteracoes, convergiu=i.convergiu, desvio=i.desvio_K,
+                                tolerancia=float(c["iteracao"]["tolerancia_K"]),
+                                fonte=c["iteracao"]["fonte"]),
+                total=dict(alvo=i.q_alvo_total, realizado=i.q_realizado_total,
+                           nao_recuperado=i.q_alvo_total - i.q_realizado_total),
+                casos=casos_int,
+                destinos_alterados=[x["num"] for x in casos_int
+                                    if any(l["destino_alterado"] for l in x["lados"])])
+
+
 def documento(ctx, rt):
     """As dez seções do MC do TAG, como dados (números em precisão total)."""
     ident = identificacao(ctx, rt)
@@ -430,7 +477,7 @@ def documento(ctx, rt):
     doc = dict(identificacao=ident, alarme=alarme(rt), conteudo=conteudo_metodo(m), conteudo_tag=cfg().get("tags", {}).get(rt.tag.tag, {}),
                correntes=correntes(ctx, rt), casos=casos(rt), entradas=entradas(rt),
                lacunas=lacunas(rt), premissas=premissas(ctx, rt, ident), pendencias=pendencias(rt),
-               calculo=None)
+               integracao=integracao_termica(ctx, rt), calculo=None)
     r = rt.resultado
     if r is None:
         return doc

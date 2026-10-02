@@ -265,19 +265,19 @@ tipo = 'PREMISSA'
 
 [[linhas]]
 id = 'P-18'
-parametro = '''Pressão do desgaseificador 1 e do desidratador'''
+parametro = '''Pressão absoluta do desgaseificador 1 e do desidratador'''
 valor = '''<< P['P_D1']|mb >>'''
 unidade = '''kPa'''
-justificativa = '''Vaso desgaseificador/pré-tratador conjugado (BOT 2.7.1.7)'''
+justificativa = '''Premissa preliminar do autor: ponto da grade da otimização das pressões que atende a TVP $\le$ 70~kPa (BOT 2.3.1.1, 2.7.1.10) nos 12 casos avaliáveis, com folga de 3,4~\% que não é margem de segurança validada (nota 44)'''
 impacto = '''Liberação de gás; VRU'''
 tipo = 'A VALIDAR'
 
 [[linhas]]
 id = 'P-19'
-parametro = '''Pressão do desgaseificador 2 e do dessalinizador'''
+parametro = '''Pressão absoluta do desgaseificador 2 e do dessalinizador'''
 valor = '''<< P['P_D2']|mb >>'''
 unidade = '''kPa'''
-justificativa = '''Último estágio próximo da atmosfera (TVP/RVP)'''
+justificativa = '''Como P-18. TVP não verificada nos casos 9, 11, 15 e 16 (gás de lift sem composição); compatibilidade com a sucção da VRU não verificada'''
 impacto = '''Liberação de gás; bomba'''
 tipo = 'A VALIDAR'
 

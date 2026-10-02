@@ -39,15 +39,6 @@ def _tag(nome_arquivo, pasta=PASTA):
                dict(d.get("inativo_se", {})))
 
 
-VARIANTES = "pfd/variantes"
-
-
-def topologia_alternativa(nome):
-    """TAG com outra alocação de correntes (estudo de alarme, F13): mesmo esquema de
-    pfd/tags, em pfd/variantes/<nome>.toml. Não entra na planta."""
-    return _tag(f"{nome}.toml", VARIANTES)
-
-
 @cache
 def tags():
     """Os TAGs da planta, em ordem de TAG."""

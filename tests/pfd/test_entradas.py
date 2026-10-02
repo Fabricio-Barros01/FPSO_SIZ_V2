@@ -87,13 +87,13 @@ def test_todas_entradas_tem_fonte_e_rastro(planta_base, planta_ajustada):
 
 def test_11_envelopes(planta_ajustada, planta_propostas):
     """Os 11 TAGs dimensionam: com as entradas sintéticas (o P-002 e o P-003 esperam as
-    temperaturas da utilidade, que só as propostas dão) e na planta produtiva (onde o P-001 é o
-    alarme aberto, por área)."""
+    temperaturas da utilidade, que só as propostas dão) e na planta produtiva (onde os 11 TAGs
+    são dimensionados)."""
     for t in planta_ajustada.tags:
         esperado = "aguardando_entrada" if t.tag.tag in ("P-002", "P-003") else "dimensionado"
         assert t.status == esperado, t.tag.tag
     for t in planta_propostas.tags:
-        assert t.status == ("inviavel" if t.tag.tag == "P-001" else "dimensionado"), t.tag.tag
+        assert t.status == "dimensionado", t.tag.tag
     for p in (planta_ajustada, planta_propostas):
         for t in p.tags:
             if t.status != "dimensionado":
@@ -119,15 +119,23 @@ def test_precedencia_e_dependencias(planta_base):
 
 
 def test_balanco_energia_utilidades_e_pv(planta_propostas):
-    """P-46: a utilidade vai nos tubos; a vazão dela fecha a carga do balanço."""
+    """P-46: a utilidade vai nos tubos; a vazão dela fecha a carga do estado que preparou o TAG.
+
+    Esse estado é o REALIZADO (ADR 0005): a carga do aquecedor e do resfriador é a residual, a
+    que o processo ainda exige depois do que a geometria do pré-aquecedor recuperou de fato. É
+    por isso que a comparação é com `balanco_do_tag`, e não com o balanço preliminar."""
+    ctx = planta_propostas.contexto
     for nome, carga, sinal in (("P-002", "Q_H", 1), ("P-003", "Q_C", -1)):
-        for c, r in zip(planta_propostas.tag(nome).entradas.casos, planta_propostas.balanco):
+        for c, r in zip(planta_propostas.tag(nome).entradas.casos, ctx.balanco_do_tag(nome)):
             if not c.ativo:
                 continue
             vs = c.valores
             delta = c.insumos["t_agua_in"].valor - c.insumos["t_agua_out"].valor
             assert vs["m_tubo"].valor * vs["cp_tubo"].valor * delta * sinal == pytest.approx(r.duties[carga]*1000)
             assert set(c.insumos) == {"t_agua_in", "t_agua_out"}
+            # e a residual é maior ou igual à preliminar: o que não foi recuperado vira utilidade
+            preliminar = next(x for x in planta_propostas.balanco if x.num == r.num)
+            assert r.duties[carga] >= preliminar.duties[carga] - 1e-9
     for nome in ("B-001", "B-002", "B-003"):
         for c in planta_propostas.tag(nome).entradas.casos:
             assert c.valores["pv_informada"].valor == c.valores["pressure"].valor

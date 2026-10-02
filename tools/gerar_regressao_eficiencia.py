@@ -5,7 +5,8 @@ O balanço não tem oráculo externo: esta fixture congela o resultado que o usu
 2026-09-25 (tabela dos 16 casos em docs/validacao/12-eficiencia-fwko.md), para que uma
 refatoração não mude número sem ser notada. Revista em 2026-09-28 pela mudança física
 deliberada do trem produtivo (docs/validacao/39): os 12 casos avaliáveis mudam, os 4 com gás de
-lift ficam idênticos. Saída determinística (sem data nem caminho).
+lift ficam idênticos. Revista em 2026-10-02 pela premissa de pressão P-18/P-19 = 500/130 kPa
+(docs/validacao/44, aprovada pelo usuário): mudam os 16 casos. Saída determinística (sem data nem caminho).
 
 Uso:
     uv run python tools/gerar_regressao_eficiencia.py [--saida tests/fixtures/python_ref]

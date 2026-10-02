@@ -24,7 +24,15 @@ m_casco = { regra = "vazao_massica", corrente = "C-07" }
 cp_casco = { regra = "cp_corrente", corrente = "C-07" }
 t_casco_in = { regra = "temperatura", corrente = "C-07" }
 mu_casco = { regra = "viscosidade_fase", corrente = "C-07", fase = "liquido", continua = "oleo", t = ["C-07", "C-08"] }
+rho_casco = { regra = "densidade_fase", corrente = "C-07", fase = "liquido", t = ["C-07", "C-08"] }  # só a ΔP do casco (Branan 2-33)
 
+# A perda de carga do lado TUBO deste TAG é a da UTILIDADE (água de circuito fechado), e a
+# premissa P-17 (ΔP por lado de trocador) é a que o balanço aplica ao lado do PROCESSO, que
+# aqui é o CASCO (P-46). Não há, no acervo, fator de atrito de feixe para calcular a perda do
+# lado casco, e não há limite de ΔP do circuito de utilidade informado. Por isso `dp_max` fica
+# em zero: a perda do lado tubo é CALCULADA e REPORTADA (atrito em tubo reto), sem limite
+# declarado contra o qual aprová-la, e a do lado casco é lacuna declarada. Aplicar a P-17 ao
+# lado da utilidade seria usar a premissa de um lado para julgar o outro.
 [insumos.t_agua_in]
 rotulo = "Temperatura de entrada da água quente (meio de aquecimento)"
 unidade = "°C"

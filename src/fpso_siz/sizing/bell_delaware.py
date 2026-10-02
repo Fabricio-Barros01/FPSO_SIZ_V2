@@ -107,19 +107,22 @@ def j_baffle_cut(g, k):
     return float(k["jc_a"]) + float(k["jc_b"]) * fc
 
 
+def _janela(g):
+    """(θ1 meio ângulo, θ2 ângulo da janela, f_w fração de tubos na janela) — Eq. 2-24 a 2-26."""
+    c = _clamp(1 - 2 * g.l_c / g.d_s, -1.0, 1.0)
+    c1 = g.d_s - g.d_otl
+    den = g.d_s - c1
+    t3 = 2 * math.acos(_clamp((g.d_s - 2 * g.l_c) / den, -1.0, 1.0)) if den > 0 else 0.0
+    return math.acos(c), 2 * math.acos(c), (t3 - math.sin(t3)) / (2 * math.pi)
+
+
 def leakage_areas(g):
     """(A_sb, A_tb, A_w) — Eq. 2-24 (meio ângulo), 2-25 e 2-26 (ângulo inteiro)."""
     if not g.d_s > 0:
         return math.nan, math.nan, math.nan
-    c = _clamp(1 - 2 * g.l_c / g.d_s, -1.0, 1.0)
-    t1 = math.acos(c)
+    t1, t2, f_w = _janela(g)
     a_sb = 0.5 * (math.pi - t1) * g.d_s * g.d_sb
-    t2 = 2 * math.acos(c)
     a_wg = (g.d_s * g.d_s) / 8 * (t2 - math.sin(t2))
-    c1 = g.d_s - g.d_otl
-    den = g.d_s - c1
-    t3 = 2 * math.acos(_clamp((g.d_s - 2 * g.l_c) / den, -1.0, 1.0)) if den > 0 else 0.0
-    f_w = (t3 - math.sin(t3)) / (2 * math.pi)
     a_tb = math.pi * g.d_o * (1 - f_w) * g.n_t * g.d_tb / 4
     a_wt = math.pi / 4 * (f_w * g.n_t) * (g.d_o * g.d_o)
     return a_sb, a_tb, a_wg - a_wt
@@ -252,3 +255,97 @@ def com_chicanas(feixe, n_b, l_bi, l_bo, l_bc, k):
 def bell_delaware(g, w_s, cp_s, mu_s, k_s, n_b, l_bi, l_bo, k):
     """(h_o, fatores, ok). Avalia o feixe e combina com o número de chicanas, numa passagem."""
     return com_chicanas(feixe_ideal(g, w_s, cp_s, mu_s, k_s, k), n_b, l_bi, l_bo, g.l_bc, k)
+
+
+# ------------------------------------------------------------------ perda de carga do casco
+def _faixa_re(re_s, k):
+    tetos = [float(t) for t in k["re_max"]]
+    return next((i for i, t in enumerate(tetos) if re_s <= t), len(tetos) - 1)
+
+
+def _dp():
+    return carregar("equipment/comum/bell_delaware_dp.toml")
+
+
+def friction_ideal(re_s, layout, p_t, d_o, k):
+    """(f_ideal, validado) do feixe ideal — Eq. 2-32 com os b da Tabela 2-5. `validado` é falso
+    nas faixas que o TOML declara não validadas (`b_nao_validado`): o valor IMPRESSO é usado,
+    e quem consome o resultado não pode aprová-lo nem reprová-lo."""
+    if not (math.isfinite(re_s) and re_s > 0 and d_o > 0):
+        return math.nan, False
+    lays = [int(x) for x in k["layouts"]]
+    if int(layout) not in lays:
+        return math.nan, False
+    il, ir = lays.index(int(layout)), _faixa_re(re_s, k)
+    d = _dp()
+    b1, b2 = float(d[f"b1_{int(layout)}"][ir]), float(d[f"b2_{int(layout)}"][ir])
+    b = float(d["b3"][il]) / (1 + float(d["coef_b"]) * re_s ** float(d["b4"][il]))
+    f = b1 * (_t()["colburn"]["base_passo"] / (p_t / d_o)) ** b * re_s ** b2
+    validado = [int(layout), ir] not in [[int(a), int(i)] for a, i in d["b_nao_validado"]]
+    return f, validado
+
+
+@dataclass(frozen=True)
+class PerdaCasco:
+    """ΔP de UM casco, entre os bocais (Eq. 2-38 exclui os bocais), e as parcelas."""
+    dp: float = math.nan            # Pa
+    dp_cruzado_ideal: float = math.nan
+    dp_janela_ideal: float = math.nan
+    f_ideal: float = math.nan
+    rb: float = math.nan
+    rl: float = math.nan
+    n_rcc: float = math.nan
+    n_rtw: float = math.nan
+    n_tw: float = math.nan
+    re: float = math.nan
+    validado: bool = False
+    motivo: str = ""
+
+
+def perda_carga_casco(g, w_s, rho_s, mu_s, n_b, k, mu_ratio=1.0):
+    """ΔP do lado casco de UM casco por Bell-Delaware (Branan 2012, Eq. 2-32 a 2-38), com as
+    divergências 6 a 11 do TOML (`equipment/comum/bell_delaware_dp.toml`): A_s² na 2-33 e Ws²
+    na 2-36/2-37 (a forma impressa não tem dimensão de pressão), as duas faixas da Tabela 2-5
+    não validadas e n_r,tw (fileiras na janela) no lugar de n_tw na 2-36.
+
+    ΔP_s = [(n_b − 1)·ΔP_b,ideal·R_b + n_b·ΔP_w,ideal]·R_l + 2·ΔP_b,ideal·R_b·(1 + n_r,tw/n_r,cc)
+
+    Os vãos de entrada e saída são os do vão central (mesma premissa de Js = 1), e os bocais
+    não entram."""
+    if not (rho_s > 0 and mu_s > 0 and w_s > 0 and n_b >= 1):
+        return PerdaCasco(motivo="sem ρ, µ ou vazão do casco")
+    a_s = crossflow_area(g, k)
+    re = shell_reynolds(g.d_o, w_s, mu_s, a_s)
+    if not (math.isfinite(a_s) and a_s > 0 and math.isfinite(re) and re > 0):
+        return PerdaCasco(motivo="área de escoamento cruzado ou Reynolds do casco indefinidos")
+    f, validado = friction_ideal(re, g.layout, g.p_t, g.d_o, k)
+    k = {**k, **_dp()}   # constantes das Eq. 2-33 a 2-38 (as do coeficiente de troca seguem em `k`)
+    n_rcc = (g.d_s - 2 * g.l_c) / g.p_p if g.p_p > 0 else math.nan
+    a_sb, a_tb, a_w = leakage_areas(g)
+    _t1, t2, f_w = _janela(g)
+    n_tw = f_w * g.n_t
+    n_rtw = float(k["nrtw_coef"]) * (g.l_c - float(k["nrtw_meio"]) * (g.d_s - g.d_otl + g.d_o)) / g.p_p
+    if not (math.isfinite(f) and n_rcc > 0 and a_w > 0 and a_sb + a_tb > 0):
+        return PerdaCasco(f_ideal=f, re=re, n_rcc=n_rcc, validado=validado, motivo="geometria da janela indefinida")
+    expo = _t()["casco"]["expoente_viscosidade"]
+    dp_b = float(k["dpb_coef"]) * f * w_s * w_s * n_rcc / (2 * rho_s * a_s * a_s) * mu_ratio ** expo   # 2-33
+    z = g.n_ss / n_rcc                                                                                   # 2-34
+    if z >= float(k["rb_zeta_max"]):
+        rb = 1.0
+    else:
+        rc = g.l_bc * (g.d_s - g.d_otl + 0.5 * g.n_dp * g.w_p) / a_s
+        cbp = float(k["rb_c_laminar"]) if re <= float(k["jb_re_corte"]) else float(k["rb_c_turbulento"])
+        rb = math.exp(-cbp * rc * (1 - math.cbrt(2 * z)))
+    ra, rb_vaz = a_sb / (a_sb + a_tb), (a_sb + a_tb) / a_w                                                # 2-35
+    c = float(k["rl_c_a"]) * (1 + ra) + float(k["rl_c_b"])
+    rl = math.exp(-float(k["rl_a"]) * (1 + ra) * rb_vaz ** c)
+    if re >= float(k["dpw_re_corte"]):                                                                   # 2-36
+        # divergência 11: o 0,6 é por FILEIRA cruzada na janela (n_r,tw), não por tubo (n_tw)
+        dp_w = w_s * w_s * (float(k["dpw_base"]) + float(k["dpw_coef"]) * n_rtw) / (2 * a_s * a_w * rho_s)
+    else:                                                                                                # 2-37
+        d_w = float(k["dw_coef"]) * a_w / (math.pi * g.d_o * n_tw + g.d_s * t2 / 2)
+        dp_w = (float(k["dpw_laminar_coef"]) * mu_s * w_s / (math.sqrt(a_s * a_w) * rho_s)
+                * (n_rtw / (g.p_t - g.d_o) + g.l_bc / (d_w * d_w)) + w_s * w_s / (a_s * a_w * rho_s))
+    dp = ((n_b - 1) * dp_b * rb + n_b * dp_w) * rl + 2 * dp_b * rb * (1 + n_rtw / n_rcc)                # 2-38
+    return PerdaCasco(dp, dp_b, dp_w, f, rb, rl, n_rcc, n_rtw, n_tw, re, validado,
+                      "" if validado else "coeficiente b da Tabela 2-5 numa faixa não validada")

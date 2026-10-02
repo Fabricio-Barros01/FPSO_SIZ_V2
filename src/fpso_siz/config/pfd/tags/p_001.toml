@@ -20,6 +20,13 @@ m_casco = { regra = "vazao_massica", corrente = "C-22" }
 cp_casco = { regra = "cp_corrente", corrente = "C-22" }
 t_casco_in = { regra = "temperatura", corrente = "C-22" }
 mu_casco = { regra = "viscosidade_fase", corrente = "C-22", fase = "liquido", continua = "oleo", t = ["C-22", "C-23"] }
+rho_casco = { regra = "densidade_fase", corrente = "C-22", fase = "liquido", t = ["C-22", "C-23"] }  # só a ΔP do casco (Branan 2-33)
+
+# ΔP máximo do lado tubo: a premissa P-17 do balanço (ΔP por lado de trocador). Não é valor
+# novo — é a mesma premissa que o balanço usa para escrever a pressão de C-07, lida do balanço.
+[entradas.dp_max]
+regra = "premissa"
+nome = "dP_HX"
 
 [inativo_se]
 carga_nula = "Q_pre"
@@ -31,3 +38,63 @@ fonte = "P-45 (decisão do usuário, 2026-09-26; específica de trocadores): tet
 [recomendadas.pelicula_baixo_re]
 valor = 1.0
 fonte = "Branan (2012), cap. 2, pp. 40-41: a película do lado tubo tem correlação declarada nos três regimes — Hausen (eq. 2-10) em Re ≤ 2000, interpolação (eq. 2-12) em 2000 < Re < 10⁴ e Dittus-Boelter (Saari eq. 6.23) em Re ≥ 10⁴. Este TAG opera em baixa carga fora da faixa turbulenta, e sem os três regimes os casos de turndown eram RECUSADOS por falta de correlação, não por limite físico (docs/validacao/24-pelicula-baixo-reynolds.md)"
+
+[recomendadas.rating_fora_do_projeto]
+valor = 1.0
+fonte = "ADR 0005 (docs/decisoes/0005-design-rating-multiplicidade.md), alternativa A5 de docs/validacao/36: a geometria é dimensionada pelo caso de PROJETO e CLASSIFICADA (rating) nos de turndown; a carga é a do balanço preliminar (P-32), e o que a área instalada não recuperar em cada caso é compensado pelas utilidades, com o P-002 e o P-003 dimensionados pelas cargas residuais (docs/validacao/43)"
+
+# ---------------------------------------------------------------------------------------------
+# GEOMETRIA ESCOLHIDA (ADR 0005; docs/validacao/43). Vem da busca discreta
+# `tools/buscar_layout_trocador.py` sobre os eixos declarados em config/pfd/layout_trocador.toml:
+# 1.024 candidatos térmicos no estágio 1 (380 viáveis, frente de Pareto de 59) e 220
+# empacotamentos no estágio 2 (191 viáveis, frente de 44). Cada candidato foi avaliado pelo
+# caminho produtivo inteiro — DESIGN no caso de projeto, RATING nos 16 casos com as propriedades
+# reavaliadas no ponto fixo, velocidade, faixa da correlação de película, diâmetro de casco,
+# comprimento por casco e perda de carga cobrados em todos os casos, e o aquecedor e o
+# resfriador redimensionados pelas cargas residuais.
+#
+# O candidato registrado é o de menor ÁREA INSTALADA POR kW RECUPERADO entre os da frente com
+# comprimento de tubo dentro do acervo (≤ 6 m, Branan p. 38). Na busca (P-18/P-19 = 700/200
+# kPa): 4.537,6 m² de operação (4 trens) + 1 trem de reserva = 5.672 m² instalados, 96,10 % da
+# carga do balanço realizada, ΔP de 98,2 kPa contra os 100 kPa da P-17. Com 500/130 kPa
+# (docs/validacao/44), a mesma geometria dá 4.392,5 m² de operação e 5.490,7 m² instalados. A faixa de 7 a 9 m pedida
+# pelo usuário foi varrida e o que ela compraria está tabelado em docs/validacao/43 (4.191 m²
+# com 95,17 %, em 45 cascos de 7 m) — mas 7 m não tem fonte no acervo e por isso não vai ao
+# catálogo. Trocar a regra de seleção ou o limite de acervo é trocar uma linha em
+# config/pfd/layout_trocador.toml e rodar a busca de novo.
+
+[recomendadas.d_externo]
+valor = 19.05
+fonte = "melhor candidato da busca discreta de layout (tools/buscar_layout_trocador.py; eixos, regra de seleção e limite de acervo em config/pfd/layout_trocador.toml; frente de Pareto, alternativas e tabela dos 16 casos em docs/validacao/43-design-rating-multiplicidade.md). Avaliado pelo caminho produtivo inteiro: DESIGN no caso de projeto, RATING nos 16 casos com as propriedades reavaliadas no ponto fixo, e o conjunto integrado (P-002 e P-003 pelas cargas residuais, temperaturas finais da ET) verificado."
+
+[recomendadas.razao_passo]
+valor = 1.25
+fonte = "melhor candidato da busca discreta de layout (tools/buscar_layout_trocador.py; eixos, regra de seleção e limite de acervo em config/pfd/layout_trocador.toml; frente de Pareto, alternativas e tabela dos 16 casos em docs/validacao/43-design-rating-multiplicidade.md). Avaliado pelo caminho produtivo inteiro: DESIGN no caso de projeto, RATING nos 16 casos com as propriedades reavaliadas no ponto fixo, e o conjunto integrado (P-002 e P-003 pelas cargas residuais, temperaturas finais da ET) verificado."
+
+[recomendadas.layout_tubos]
+valor = 45.0
+fonte = "melhor candidato da busca discreta de layout (tools/buscar_layout_trocador.py; eixos, regra de seleção e limite de acervo em config/pfd/layout_trocador.toml; frente de Pareto, alternativas e tabela dos 16 casos em docs/validacao/43-design-rating-multiplicidade.md). Avaliado pelo caminho produtivo inteiro: DESIGN no caso de projeto, RATING nos 16 casos com as propriedades reavaliadas no ponto fixo, e o conjunto integrado (P-002 e P-003 pelas cargas residuais, temperaturas finais da ET) verificado."
+
+[recomendadas.espacamento_chicana]
+valor = 0.2
+fonte = "melhor candidato da busca discreta de layout (tools/buscar_layout_trocador.py; eixos, regra de seleção e limite de acervo em config/pfd/layout_trocador.toml; frente de Pareto, alternativas e tabela dos 16 casos em docs/validacao/43-design-rating-multiplicidade.md). Avaliado pelo caminho produtivo inteiro: DESIGN no caso de projeto, RATING nos 16 casos com as propriedades reavaliadas no ponto fixo, e o conjunto integrado (P-002 e P-003 pelas cargas residuais, temperaturas finais da ET) verificado."
+
+[recomendadas.passes_tubo]
+valor = 1.0
+fonte = "melhor candidato da busca discreta de layout (tools/buscar_layout_trocador.py; eixos, regra de seleção e limite de acervo em config/pfd/layout_trocador.toml; frente de Pareto, alternativas e tabela dos 16 casos em docs/validacao/43-design-rating-multiplicidade.md). Avaliado pelo caminho produtivo inteiro: DESIGN no caso de projeto, RATING nos 16 casos com as propriedades reavaliadas no ponto fixo, e o conjunto integrado (P-002 e P-003 pelas cargas residuais, temperaturas finais da ET) verificado. Um passe é contracorrente puro (F = 1, Saari §4.2.1): com dois passes o fator F do arranjo 1-2 sai do domínio da Fig. 4.3 nesta troca quase simétrica (R ≈ 1), e NENHUM candidato de 2 passes foi viável na busca."
+
+[recomendadas.l_tubo_max]
+valor = 6.0
+fonte = "melhor candidato da busca discreta de layout (tools/buscar_layout_trocador.py; eixos, regra de seleção e limite de acervo em config/pfd/layout_trocador.toml; frente de Pareto, alternativas e tabela dos 16 casos em docs/validacao/43-design-rating-multiplicidade.md). Avaliado pelo caminho produtivo inteiro: DESIGN no caso de projeto, RATING nos 16 casos com as propriedades reavaliadas no ponto fixo, e o conjunto integrado (P-002 e P-003 pelas cargas residuais, temperaturas finais da ET) verificado. É o default do método e o limite do acervo (Branan p. 38: 4 a 20 ft). A busca varreu 6, 7, 8 e 9 m a pedido do usuário; o candidato registrado fica em 6 m porque acima disso não há fonte — docs/validacao/43 mostra o que os 7 m comprariam."
+
+[recomendadas.cascos_paralelo]
+valor = 4.0
+fonte = "melhor candidato da busca discreta de layout (tools/buscar_layout_trocador.py; eixos, regra de seleção e limite de acervo em config/pfd/layout_trocador.toml; frente de Pareto, alternativas e tabela dos 16 casos em docs/validacao/43-design-rating-multiplicidade.md). Avaliado pelo caminho produtivo inteiro: DESIGN no caso de projeto, RATING nos 16 casos com as propriedades reavaliadas no ponto fixo, e o conjunto integrado (P-002 e P-003 pelas cargas residuais, temperaturas finais da ET) verificado. Quatro trens em paralelo, cada um com 1/4 das vazões dos dois lados. Com reserva INSTALADA exigida pela ET (BOT 2.7.1.11), dividir o serviço em mais trens reduz a penalidade da reserva: ela passa a ser 1/4 da área de operação em vez de uma segunda planta inteira."
+
+[recomendadas.trens_reserva]
+valor = 1.0
+fonte = "BOT 2.7.1.11: reserva INSTALADA para o pré-aquecedor (minimo_exigido do eixo standby em config/pfd/layout_trocador.toml, com que a busca discreta escolheu esta geometria). Um trem igual aos quatro de operação, sem carga em operação: conta na área instalada, não na de operação"
+
+[recomendadas.cascos_serie]
+valor = 8.0
+fonte = "melhor candidato da busca discreta de layout (tools/buscar_layout_trocador.py; eixos, regra de seleção e limite de acervo em config/pfd/layout_trocador.toml; frente de Pareto, alternativas e tabela dos 16 casos em docs/validacao/43-design-rating-multiplicidade.md). Avaliado pelo caminho produtivo inteiro: DESIGN no caso de projeto, RATING nos 16 casos com as propriedades reavaliadas no ponto fixo, e o conjunto integrado (P-002 e P-003 pelas cargas residuais, temperaturas finais da ET) verificado. Oito cascos iguais em série por trem: o caminho de tubo que a troca exige (47,8 m) dividido pelo comprimento de estoque (6 m). Cascos em série somam U·A e dividem o comprimento por casco; o fator F do conjunto é o calculado com as temperaturas terminais, o que é conservador."

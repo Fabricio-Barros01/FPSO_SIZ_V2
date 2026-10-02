@@ -162,7 +162,7 @@ def _dimensionar_equipamento(a):
             raise ValueError("--tag exige --casos (o JSON do BOT que identifica o contexto)")
         t = tag(a.tag)
         ctx = servico.Contexto(carregar_casos(a.casos), alteracoes=_alteracoes(a.premissa),
-                               propostas=_propostas(a))
+                               propostas=_propostas(a), ajustes=aj)
         estado = _estado_do_tag(a, t, aj)
         _verificar_contexto(aj, ctx, [estado])
     else:
@@ -240,8 +240,9 @@ def cmd_pfd(a):
     from fpso_siz.output.terminal.pfd import resumo
     from fpso_siz.pfd.planta import dimensionar
 
-    ctx = servico.Contexto(carregar_casos(a.casos), alteracoes=_alteracoes(a.premissa), propostas=_propostas(a))
     aj = _ler_ajustes(a.ajustes)
+    ctx = servico.Contexto(carregar_casos(a.casos), alteracoes=_alteracoes(a.premissa), propostas=_propostas(a),
+                           ajustes=aj)
     _verificar_contexto(aj, ctx, aj.todos())
     _validar_mc(a)
     planta = dimensionar(contexto=ctx, ajustes=aj)

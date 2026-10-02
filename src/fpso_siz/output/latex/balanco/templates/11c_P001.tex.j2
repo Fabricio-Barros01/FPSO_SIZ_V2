@@ -13,7 +13,8 @@ Caso << DEMO >>: $\dot C_{C06}=<< Cc|mb(1) >>$, $\dot C_{C22}=<< Ch|mb(1) >>$~\s
 \paragraph{Balanço de massa:} <% set b = bb(RD, blocos['P-001']) %>cada lado conserva massa; $\varepsilon_m=$<< b['em']|sci >>.
 \paragraph{Balanço de energia:} $\dot C_{C06}(T_{C07}-T_{C06})=\dot C_{C22}(T_{C22}-T_{C23})$; $\varepsilon_E=$<< b['eE']|sci >>.
 \paragraph{Resultado preliminar:} <% set mx, idx = maximo("r.duties['Q_pre']") %>maior carga recuperada: << (mx / 1e3)|br(2) >>~\si{\mega\watt} (caso << idx|ids >>). Nos casos << ind.casos_sem_preaquecimento(R)|ids >> a alimentação chega a $\approx$90~\si{\celsius} e não há força motriz: o pré-aquecedor fica sem função térmica.
-\paragraph{Validação recomendada em etapa posterior:} $\Delta T_{app}$ e $\Delta P$ pelo dimensionamento Bell--Delaware; propriedades da emulsão (viscosidade, $c_p$) e fator de incrustação.
+\paragraph{Integração com as utilidades:} esta é a carga do P-001 no balanço preliminar. O memorial do P-001 dimensiona a geometria pelo caso de projeto e a classifica nos demais casos; o que a área instalada não recuperar num caso é compensado pelas utilidades, com o P-002 e o P-003 dimensionados pelas cargas residuais e a perda de carga do lado tubo verificada contra a P-17 (ADR~0005). O balanço preliminar não é reaberto por isso.
+\paragraph{Validação recomendada em etapa posterior:} revisão da própria $\Delta T_{app}$ (P-32), que fixa simultaneamente a recuperação e a área exigida; propriedades da emulsão (viscosidade, $c_p$) e fatores de incrustação, hoje PROPOSTOS; perda de carga do lado casco e dos bocais, não modelada.
 {\footnotesize\setlength{\tabcolsep}{3.5pt}\begin{longtable}{rrrrrrrrrr}
 \caption{P-001 --- pré-aquecedor (todos os casos).\label{tab:b03}}\\\toprule
 Caso & $T_{C06}$ & $T_{C07}$ & $T_{C22}$ & $T_{C23}$ & $\dot C_{frio}$ & $\dot C_{quente}$ & $\dot Q_{\mbox{P-001}}$ & $\varepsilon_m$ & $\varepsilon_E$\\

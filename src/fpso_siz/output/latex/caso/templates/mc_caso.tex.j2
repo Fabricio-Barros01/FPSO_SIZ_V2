@@ -88,13 +88,23 @@ Bloco & Nome & $\dot m_{in}$ (kg/s) & $\dot m_{out}$ (kg/s) & $\varepsilon_m$ & 
 \section{Cargas térmicas e potências}
 <% set du = r.duties %>
 \begin{tabular}{lr}\toprule
-Calor recuperado P-001 (kW) & << du['Q_pre']|br(1) >>\\
+$\dot Q_{\mbox{P-001}}$ (kW) & << du['Q_pre']|br(1) >>\\
 $\dot Q_{\mbox{P-002}}$ (kW) & << du['Q_H']|br(1) >>\\
 $\dot Q_{\mbox{DWH-001}}$ (kW) & << du['Q_D']|br(1) >>\\
 $\dot Q_H=\dot Q_{\mbox{P-002}}+\dot Q_{\mbox{DWH-001}}$ (kW) & << (du['Q_H'] + du['Q_D'])|br(1) >>\\
 $\dot Q_C$ (P-003) (kW) & << du['Q_C']|br(1) >>\\
 $\dot W_{\mbox{B-002}}$ / $\dot W_{\mbox{B-003}}$ / $\dot W_{\mbox{B-001}}$ (kW) & << du['W_B1']|br(1) >> / << du['W_B2']|br(1) >> / << du['W_Bo']|br(1) >>\\\bottomrule
 \end{tabular}
+
+A carga do P-001 é a do balanço preliminar: a recuperação com a aproximação
+térmica da premissa P-32. O P-001 é dimensionado pelo caso de projeto; nos casos em
+que a área instalada recupera menos que esta carga, a diferença é compensada pelas
+utilidades --- o P-002 e o P-003 são dimensionados pelas cargas residuais, e o balanço
+preliminar não é reaberto. A conta caso a caso está na seção de integração térmica
+realizada dos memoriais do P-001, do P-002 e do P-003 (ADR~0005).
+As potências das bombas neste balanço usam vazão volumétrica, diferença de pressão
+e rendimento; o dimensionamento hidráulico acrescenta desnível e perdas de carga,
+e suas potências não são realimentadas neste balanço preliminar.
 
 \section{Eficiências e BSW}
 \begin{tabular}{lr}\toprule

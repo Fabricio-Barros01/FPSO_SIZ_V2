@@ -112,6 +112,7 @@ class Lacuna:
     dica: str
     casos: tuple            # números dos casos ativos que dependem dela
     dependentes: tuple = ()  # outras entradas que só se calculam com ela
+    editavel: bool = True    # False: não é número a informar (ex.: integração térmica inválida)
 
 
 @dataclass(frozen=True)
@@ -199,9 +200,15 @@ class _Pendente(Exception):
 # ------------------------------------------------------------------ contexto de um caso
 class _Caso:
     def __init__(self, tag, metodo, specs, r, dados, prem, ajustes, importados=None, arquivo="", propostas=None,
-                 num=None):
+                 num=None, temperaturas=None):
         self.tag, self.metodo, self.specs = tag, metodo, specs
         self.propostas, self.num_caso = propostas, num
+        # temperaturas de AVALIAÇÃO DE PROPRIEDADE substituídas (ADR 0005, pfd/integracao.py):
+        # {corrente: T}. Afeta SÓ `temperatura()`, isto é, a T em que ρ(T), µ(T) e k(T) são
+        # lidas. As temperaturas TERMINAIS do caso continuam vindo do balanço (`r_temperatura`
+        # lê r.T direto): o alvo do trocador não muda, o que muda é a T em que as propriedades
+        # do fluido são avaliadas quando o rating diz que a saída realizada é outra.
+        self.temperaturas = dict(temperaturas or {})
         self.r, self.dados, self.prem, self.aj = r, dados, prem, ajustes
         self.manual = importados is not None     # manual: não consulta balanço nem ChEDL
         self.imp, self.arquivo = importados or {}, arquivo
@@ -253,7 +260,21 @@ class _Caso:
         if not math.isfinite(v.valor):
             return Valor(math.nan, LACUNA, v.fonte + "; resultado não finito", pendente=(chave,))
         prop = proveniencia.da_regra(regra["regra"])
-        return replace(v, propriedade=prop) if prop and not v.propriedade else v
+        v = replace(v, propriedade=prop) if prop and not v.propriedade else v
+        nota = self._nota_integracao(regra)
+        return replace(v, fonte=f"{v.fonte}; {nota}") if nota else v
+
+    def _nota_integracao(self, regra):
+        """Nota de proveniência quando a regra leu uma grandeza REESCRITA pela integração
+        térmica realizada (ADR 0005). As chaves reescritas e as notas estão no próprio estado
+        (`EstadoProcesso.integracao`); aqui só se confere se esta regra citou alguma delas."""
+        integ = getattr(self.r, "integracao", None) or {}
+        if not integ:
+            return ""
+        citadas = set()
+        for valor in regra.values():
+            citadas.update(valor if isinstance(valor, (list, tuple)) else [valor])
+        return "; ".join(dict.fromkeys(nota for chave, nota in integ.items() if chave in citadas))
 
     def _proposta(self, chave):
         """Valor do pendencias_propostas.toml para a lacuna, se carregado (origem própria)."""
@@ -296,14 +317,20 @@ class _Caso:
         for a in avisos:
             self.aviso(f"{contexto}: {a}")
 
+    def _T(self, corrente):
+        """T da corrente para avaliar propriedade: a substituída pela integração realizada, se
+        houver; a do balanço, caso contrário."""
+        return self.temperaturas.get(corrente, self.r.T[corrente] if self.r is not None else math.nan)
+
     def temperatura(self, t):
         """T para avaliar propriedades: a da condição do TAG, a de uma corrente ou a média de
         duas (temperatura média de mistura, Saari Eq. 6.21)."""
         t = t or self.tag.condicao
         if isinstance(t, str):
-            return self.r.T[t], t
+            return self._T(t), t
         a, b = t
-        return (self.r.T[a] + self.r.T[b]) / 2, f"{a}→{b}"
+        sufixo = "*" if self.temperaturas.keys() & {a, b} else ""
+        return (self._T(a) + self._T(b)) / 2, f"{a}→{b}{sufixo}"
 
 
 def _informado(v, origem, fonte):
@@ -781,10 +808,16 @@ def especificacoes(tag, pfd=True):
     return eq, m, specs
 
 
-def montar(tag, balanco, dados, prem, ajustes=None, estado=None, propostas=None):
+def montar(tag, balanco, dados, prem, ajustes=None, estado=None, propostas=None, temperaturas=None):
     """Adaptador automático: entradas do TAG nos casos do balanço (`balanco`: EstadoProcesso
     de cada caso). `estado` (EstadoTAG) ou `ajustes` (formato F10b) trazem o que o usuário
-    informou e revisou."""
+    informou e revisou.
+
+    `temperaturas`: {num do caso: {corrente: T}} — temperaturas em que as PROPRIEDADES são
+    avaliadas, no lugar das do balanço. É o laço de `pfd/integracao.py` (ADR 0005): quando o
+    rating diz que a saída realizada do trocador é outra, as propriedades dos dois lados são
+    reavaliadas na temperatura média realizada, e o U deixa de ser o do ponto de projeto. As
+    temperaturas terminais do caso NÃO mudam com isso."""
     eq, m, specs = especificacoes(tag)
     conferir_tag(tag, specs)
     if estado is None:
@@ -792,7 +825,8 @@ def montar(tag, balanco, dados, prem, ajustes=None, estado=None, propostas=None)
     _validar_estado(tag, estado, specs, {r.num for r in balanco})
     casos = []
     for r in balanco:
-        ctx = _Caso(tag, m, specs, r, dados, prem, estado.ajustes_do_caso(r.num), propostas=propostas, num=r.num)
+        ctx = _Caso(tag, m, specs, r, dados, prem, estado.ajustes_do_caso(r.num), propostas=propostas, num=r.num,
+                    temperaturas=(temperaturas or {}).get(r.num))
         valores = _auditar(_fase_aquosa(m, {k: ctx.valor(k) for k in specs}), estado, r.num)
         _rastrear(ctx, valores, specs)
         ativo, motivo = _atividade(tag, ctx, valores, specs)

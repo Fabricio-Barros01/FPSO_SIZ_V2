@@ -19,7 +19,8 @@ def _arquivos(pasta):
 @pytest.fixture(scope="module")
 def lote(tmp_path_factory):
     pasta = tmp_path_factory.mktemp("lote")
-    assert main(["pfd", "--casos", str(CASOS), "--saida", str(pasta), "--mc", "--data", DATA]) == 1
+    # 0 = planta completa: com o DESIGN × RATING da ADR 0005 nenhum TAG fica inviável
+    assert main(["pfd", "--casos", str(CASOS), "--saida", str(pasta), "--mc", "--data", DATA]) == 0
     return pasta
 
 

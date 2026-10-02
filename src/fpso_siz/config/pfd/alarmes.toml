@@ -13,13 +13,11 @@ classes = { premissa = "premissa", numerico = "numérico", modelo = "modelo" }
 
 [[alarme]]
 tag = "P-001"
-estado = "aberta"
-resumo = "Óleo/óleo. A LACUNA METODOLÓGICA FOI FECHADA: a película do lado tubo passou a ter correlação nos três regimes (Hausen em Re ≤ 2000, interpolação em 2000 < Re < 10⁴, Dittus-Boelter acima — Branan pp. 40-41), e todos os dez casos ativos agora CALCULAM. O que restou é físico e construtivo, não metodológico: com 2 passes o fator F do arranjo 1-2 sai do domínio da Fig. 4.3 (cruzamento interno); com 1 passe (contracorrente) o impedimento é a ÁREA. No platô laminar o h_i do óleo satura em cerca de 34 W/(m²·K) e o U em cerca de 25 W/(m²·K), contra um U·A exigido de 1,55 MW/K no caso de projeto: o feixe mais curto de toda a grade pede 186,4 m de tubo (o escolhido, 434,4 m) contra o limite de 6 m. No topo da banda de velocidade (3 m/s, teto de erosão de Saari) o óleo ainda está em transição, com U de cerca de 388 W/(m²·K) e área de cerca de 4.000 m². Nenhuma correlação resolve isto: é a troca óleo/óleo com aproximação de 10 K (P-32) que exige essa área. Ver docs/validacao/24-pelicula-baixo-reynolds.md."
+estado = "fechada pela regra de dimensionamento"
+resumo = "FECHADO pela ADR 0005 (docs/validacao/43): a geometria é dimensionada pelo caso de PROJETO, com a carga do balanço preliminar, e CLASSIFICADA (rating) nos demais; o que a área instalada não recupera num caso é compensado pelas utilidades (P-002 e P-003 pelas cargas residuais). Com as mesmas correlações (película do lado tubo nos três regimes, Branan pp. 40-41) e os mesmos limites, o TAG é dimensionado nos dez casos ativos: um passe (contracorrente, F = 1), quatro trens em paralelo e oito cascos em série de 6 m por trem."
 hipoteses = [
-    { classe = "premissa", texto = "Arranjo de 2 passes no tubo (default 'escolha' de Saari Tab. 3.1): com a aproximação de P-32 a troca óleo/óleo é quase simétrica (R ≈ 1) e P alto, fora do alcance de um casco 1-2. Contracorrente pura (1 passe) resolve o domínio de F — e aí o impedimento passa a ser a área.", variantes = ["passes_1"] },
-    { classe = "modelo", texto = "RESOLVIDA: faltava correlação do lado tubo fora da faixa de Dittus-Boelter. A fonte existia (Branan pp. 40-41) e está implementada e validada (caso-ouro independente em tests/fixtures/python_ref/golden_pelicula_tubo.json). Os dez casos calculam; o alarme deixou de ser metodológico." },
-    { classe = "premissa", texto = "A área exigida vem da APROXIMAÇÃO de 10 K da P-32 entre duas correntes de óleo. O teto de velocidade de 3 m/s (erosão, Saari Tab. 3.1) impede o óleo de chegar ao turbulento: a 3 m/s o Reynolds é de cerca de 7.000. Aumentar o ΔT de aproximação reduz a recuperação do pré-aquecedor e a área na mesma direção — é decisão de projeto, com efeito no balanço, e não foi tomada aqui." },
-    { classe = "modelo", texto = "No platô laminar o Nusselt é constante (3,66 mais o termo de entrada), então acrescentar tubos reduz o comprimento sem piorar o coeficiente: de 1.994 tubos/passe (piso de 1 m/s) a 50.000 tubos/passe o comprimento exigido cai de 266 m para 21 m, e a área fica em cerca de 60.000 m². Ou seja: nem relaxando o piso de velocidade o equipamento cabe no limite de 6 m — o impedimento é a área, não a banda.", variantes = ["p_001_emulsao_casco"] },
+    { classe = "modelo", texto = "RESOLVIDA (docs/validacao/24): faltava correlação do lado tubo fora da faixa de Dittus-Boelter; a fonte existia (Branan pp. 40-41) e está implementada, com caso-ouro independente." },
+    { classe = "premissa", texto = "RESOLVIDA (ADR 0005): exigir de uma única geometria a carga inteira de TODOS os casos era DESIGN aplicado como off-design. O caso de projeto dimensiona; os demais são classificados, e a diferença é das utilidades." },
 ]
 
 [[alarme]]
@@ -76,11 +74,6 @@ hipoteses = [
 # todos os casos; `fator_vazao`: divide as vazões do TAG (trens em paralelo). `origem` diz de
 # onde vem cada valor usado.
 
-[variantes.passes_1]
-rotulo = "1 passe no tubo (contracorrente pura)"
-geral = { passes_tubo = 1.0 }
-origem = "limite inferior do descritor passes_tubo (Saari §4.2.1: contracorrente puro, F = 1), sugerido pela própria mensagem do motor"
-
 [variantes.vmin_0]
 rotulo = "sem piso de velocidade (líquido limpo)"
 geral = { v_min = 0.0 }
@@ -90,12 +83,3 @@ origem = "nota do descritor v_min em equipment/pump/moran.toml (Moran 2016: piso
 rotulo = "banda de velocidade em todos os casos (sem a P-44; regra do Julia)"
 geral = { piso_caso_projeto = 0.0, transicao_turndown = 0.0, v_min = 1.0 }
 origem = "defaults do método de Moran (2016) e regra do Julia: estudo do estado anterior à P-44"
-
-# Topologias alternativas (config/pfd/variantes/): outra alocação das correntes no mesmo
-# trocador. Os valores de `geral` são os PROPOSTOS do próprio TAG (pendencias_propostas.toml)
-# trocados de lado junto com os fluidos: k do óleo 0,13 W/m·K e incrustação do óleo 0,00035
-# m²K/W no casco; incrustação da água de utilidade 0,00018 m²K/W nos tubos.
-[variantes.p_001_emulsao_casco]
-rotulo = "emulsão fria no casco, óleo tratado quente nos tubos"
-topologia = "p_001_emulsao_casco"
-origem = "prática de alocar o fluido mais viscoso no casco (hipótese do alarme); k e incrustações do P-001 são as mesmas propostas nos dois lados"

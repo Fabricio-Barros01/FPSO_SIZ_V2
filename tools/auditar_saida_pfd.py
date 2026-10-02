@@ -208,14 +208,27 @@ class Justificador:
 
     def _r_tabela_linhas_x_isolado(self, caminho, valor):
         linha = self._linha(caminho)
+        if self._classificado(caminho):
+            return self._classificado(caminho)
         if linha is not None and not linha["viavel_isolado"]:
             return "INVIAVEL", "o caso não tem solução nem isolado"
         return None
 
+    def _classificado(self, caminho):
+        """ADR 0005: o caso só CLASSIFICADO (rating) não exige do equipamento — não tem
+        exigência nem folga, e o MC as deixa ausentes de propósito."""
+        linha = self._linha(caminho)
+        if linha is not None and not linha.get("dimensiona", True):
+            return "NAO_APLICAVEL", "caso só classificado (rating, ADR 0005): não exige do equipamento"
+        return None
+
+    def _r_tabela_linhas_y(self, caminho, valor):
+        return self._classificado(caminho)
+
     def _r_tabela_linhas_folga(self, caminho, valor):
         if not self.r.feasible:
             return "INVIAVEL", "sem ponto escolhido: não há folga a medir"
-        return None
+        return self._classificado(caminho)
 
     def _r_tabela_linhas_valores(self, caminho, valor):
         linha = self._linha(caminho)
@@ -426,7 +439,7 @@ def _conferir_niveis(rt, cartao, envelope, mc_json):
     linha_motor = next((li for li in r.rows if li.x == x), None) if x is not None else None
     if linha_motor is not None:
         for i, y in enumerate(linha_motor.per_case_y):
-            if i < len(linhas) and not igual(y, linhas[i]["y"]):
+            if i < len(linhas) and linhas[i].get("dimensiona", True) and not igual(y, linhas[i]["y"]):
                 achados.append(achado("ERRO_OUTPUT", f"nivel3.casos[{i}].y", (y, linhas[i]["y"]),
                                       "a exigência do caso no MC não reproduz a linha do envelope"))
     return achados

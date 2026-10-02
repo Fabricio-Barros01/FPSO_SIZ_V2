@@ -188,7 +188,13 @@ A constante de campo << e.conversao.campo|mbn >>, convertida, vale $<< e.conv_te
 
 <% endfor %>
 <% elif metodologia %>
-Equações do método (nenhuma foi avaliada: o TAG está << textos['aguardando'] >>).
+<% if doc.calculo and doc.calculo.rastro %>
+Equações do método, na forma e com a fonte da referência. Neste método a substituição numérica não é reproduzida equação a equação NESTA seção: ela está no rastro do caso governante (seção~6), que traz, na ordem em que o programa avaliou, a equação citada, a grandeza, a fórmula, o valor e a unidade de cada passo. Os dois registros são a mesma física --- o rastro é emitido pelo próprio cálculo, não redigido depois dele.
+<% elif doc.identificacao.status == 'inviavel' %>
+Equações do método, na forma e com a fonte da referência. O dimensionamento parou antes de produzir rastro; o motivo está no diagnóstico da seção~8.
+<% else %>
+Equações do método, na forma e com a fonte da referência. Nenhuma foi avaliada porque o TAG está << textos['aguardando'] >>: ver a seção~4.
+<% endif %>
 
 <% for m in metodologia %>
 \subsection{<< m.titulo >>}
@@ -229,7 +235,9 @@ $i$ & $C_D^{(i)}$ & $V_t$ (m/s) & $Re$ & $f(Re)$ & $C_D^{(i+1)}$\\\midrule\endhe
 <% elif calc and not calc.rastro %>
 O dimensionamento parou na preparação dos casos, antes do envelope; o motivo está no diagnóstico da seção 8.
 <% elif calc %>
-Caso: \textbf{<< calc.caso_governante|tx >>}. Este método ainda não tem substituição numérica declarada; segue o rastro do caso, na ordem de avaliação (equação, fórmula e resultado).
+Caso do passo a passo: \textbf{<< calc.caso_governante|tx >>}. A tabela abaixo é o RASTRO emitido pelo próprio cálculo, na ordem em que o programa avaliou cada passo: a equação citada, a grandeza, a fórmula e o resultado com a unidade. É a memória de cálculo completa deste caso --- a diferença em relação aos vasos é só de forma de registro: ali a substituição é reproduzida equação a equação, aqui ela é registrada passo a passo pelo rastro.
+
+\paragraph{Base do rastro: este caso dimensionado ISOLADAMENTE.} O rastro mostra o que o caso pediria sozinho, com a geometria que ele escolheria para si. A geometria INSTALADA é a do envelope --- um equipamento para todos os casos --- e está na seção~9, com a operação de cada caso nela. As duas coisas não se confundem: não se deve ler a seleção da tabela abaixo como geometria instalada.
 
 {\footnotesize\begin{longtable}{L{1.6cm}L{2.6cm}L{6.4cm}rl}\toprule
 Equação & Grandeza & Fórmula & Resultado & Unidade\\\midrule\endhead
@@ -247,6 +255,9 @@ Equação & Grandeza & Fórmula & Resultado & Unidade\\\midrule\endhead
 Sem resultados por caso: ver o diagnóstico da seção 8.
 <% elif calc %>
 Resultados intermediários de cada caso (rastro do caso) e exigência em << calc.eixo|tx >> = << calc.x_referencia|sigt >> << calc.unidade_eixo|unid >> <% if calc.viavel %>(ponto escolhido)<% elif calc.banda %>(menor diâmetro da grade com a esbeltez na banda)<% else %>(primeiro ponto da grade)<% endif %>.
+<% if calc.tabela.tem_classificado %>
+Neste equipamento a geometria é DIMENSIONADA pelo caso de projeto e os demais são CLASSIFICADOS nela (ADR~0005): o caso classificado não impõe exigência ao equipamento --- o que a geometria entrega nele é o resultado do \emph{rating} da seção~9, e por isso a sua exigência e a sua folga saem como ``--'' nesta tabela. O comprimento que cada caso pediria isoladamente, se tivesse de realizar a sua carga inteira, está na coluna $L$ da tabela de operação da seção~9.
+<% endif %>
 
 {\scriptsize\begin{longtable}{L{2.7cm}<% for c in calc.tabela.colunas %>r<% endfor %>r<% if calc.viavel %>r<% endif %>L{1.8cm}<% if calc.tabela.tem_teto %>r<% endif %>}\toprule
 Caso<% for c in calc.tabela.colunas %> & << c >><% endfor %> & \makecell[r]{<< calc.exigencia[0]|tx >>\\(<< calc.exigencia[1]|unid >>)}<% if calc.viavel %> & \makecell[r]{folga\\(<< calc.exigencia[1]|unid >>)}<% endif %> & Governa<% if calc.tabela.tem_teto %> & Teto (mm)<% endif %>\\\midrule\endhead
@@ -445,18 +456,79 @@ Caso & Papel & $Q$ (m³/h) & $v$ (m/s) & Re & Regime & $H$ (m) & folga NPSH (m) 
 <% else %>
 \paragraph{Operação de cada caso no feixe escolhido.}
 <% endif %>
-Mesma física do dimensionamento. O caso de \emph{projeto} é o de maior vazão volumétrica no tubo: nele vale a banda inteira de velocidade; nos de \emph{turndown}, só o teto, e velocidade abaixo do piso é alerta de operabilidade/incrustação, não reprovação (P-45). A faixa de validade de Dittus-Boelter é exigida em todos os casos.<% if sm.v2.get('cascos_serie', 1) > 1 or sm.v2.get('cascos_paralelo', 1) > 1 %> Conjunto: << sm.v2.cascos_serie|sigt >> casco(s) em série × << sm.v2.cascos_paralelo|sigt >> em paralelo; área por casco << sm.v2.area_por_casco|sigt >> m², total << sm.v2.area_total|sigt >> m².<% endif %>
+Mesma física do dimensionamento. O caso de \emph{projeto} é o de maior vazão volumétrica no tubo: nele vale a banda inteira de velocidade; nos de \emph{turndown}, só o teto, e velocidade abaixo do piso é alerta de operabilidade/incrustação, não reprovação (P-45). A faixa de validade de Dittus-Boelter é exigida em todos os casos.<% if sm.v2.get('cascos_serie', 1) > 1 or sm.v2.get('cascos_paralelo', 1) > 1 %> Conjunto: << sm.v2.cascos_serie|sigt >> casco(s) em série $\times$ << sm.v2.cascos_paralelo|sigt >> em paralelo; área por casco << sm.v2.area_por_casco|sigt >> m², área de operação << sm.v2.area_total|sigt >> m²<% if sm.v2.get('trens_reserva', 0) > 0 %>; com << sm.v2.trens_reserva|sigt >> trem(ns) de reserva instalada, área instalada << sm.v2.area_instalada|sigt >> m²<% endif %>.<% endif %>
 
-{\footnotesize\begin{longtable}{L{3.0cm}L{1.4cm}R{1.4cm}R{1.2cm}R{1.4cm}L{1.6cm}R{1.4cm}R{1.4cm}R{1.4cm}}\toprule
-Caso & Papel & $q$ (kW) & $v$ (m/s) & Re & Dittus-Boelter & $h_i$ (W/m²K) & $h_o$ (W/m²K) & $L$ (m)\\\midrule\endhead
+{\footnotesize\begin{longtable}{L{2.6cm}L{1.2cm}R{1.2cm}R{1.0cm}R{1.2cm}L{1.4cm}R{1.2cm}R{1.2cm}R{1.1cm}R{1.1cm}R{1.3cm}}\toprule
+Caso & Papel & $q$ (kW) & $v$ (m/s) & Re & Dittus-Boelter & $h_i$ (W/m²K) & $h_o$ (W/m²K) & $L$ (m) & $\Delta P$ tubo (kPa) & $\Delta P$ casco (kPa)\\\midrule\endhead
 <% for o in sm.operacao %>
-<< o.caso|tx >> & << o.papel >><% if o.abaixo_v_min and o.papel == 'turndown' %>$^\dagger$<% endif %> & << (o.q / 1000)|sigt >> & << o.v|sigt >> & << o.re|sigt >> & <% if o.nu_valido %>válida<% else %>\textbf{fora}<% endif %> & << o.h_i|sigt >> & << o.h_o|sigt >> & << o.l|sigt >>\\
+<< o.caso|tx >> & << o.papel >><% if o.abaixo_v_min and o.papel == 'turndown' %>$^\dagger$<% endif %> & << (o.q / 1000)|sigt >> & << o.v|sigt >> & << o.re|sigt >> & <% if o.nu_valido %>válida<% else %>\textbf{fora}<% endif %> & << o.h_i|sigt >> & << o.h_o|sigt >> & << o.l|sigt >> & << o.dp|sigt >> & << o.get('dp_casco', none)|sigt >><% if o.get('dp_casco') is not none and not o.get('dp_casco_validado', true) %>$^\ddagger$<% endif %>\\
 <% endfor %>
 \bottomrule\end{longtable}}
-{\footnotesize $^\dagger$ turndown abaixo do piso de velocidade: alerta de operabilidade/incrustação (Saari Tab.~3.1).}
+{\footnotesize $^\dagger$ turndown abaixo do piso de velocidade: alerta de operabilidade/incrustação (Saari Tab.~3.1).
+A coluna $L$ é o comprimento de tubo por casco que o caso pediria SOZINHO, se tivesse de realizar a sua carga inteira; o comprimento instalado é o do caso que dimensiona o feixe. O $\Delta P$ é o atrito em tubo reto (Darcy-Weisbach, com $f$ de Colebrook-White no turbulento e $f = 64/Re$ no laminar, Moran 2016), no caminho total de tubo do caso --- passes $\times$ comprimento por casco $\times$ cascos em série. É PISO da perda real: bocais, cabeçotes e retornos entre passes e entre cascos não estão modelados. A ΔP do casco é a de Bell-Delaware (Branan 2012, Eq. 2-32 a 2-38, com as divergências documentadas na nota 46), por trem, sem os bocais; $^\ddagger$ coeficiente da Tabela 2-5 numa faixa não validada.<% if sm.v2.get('dp_max', 0) > 0 %> Limite declarado: << sm.v2.dp_max|sigt >> kPa (premissa P-17, $\Delta P$ por lado de trocador, a mesma que o balanço usa).<% endif %>}
+<% if sm.v2.get('rating_fora_do_projeto') %>
+
+\paragraph{Classificação (\emph{rating}) de cada caso na geometria escolhida.} A geometria é dimensionada pelo caso de projeto e CLASSIFICADA nos demais (ADR~0005): em cada caso, o calor trocado é a raiz de $\dot Q = U\!A \cdot F(\dot Q) \cdot \Delta T_{lm}(\dot Q)$ com a área instalada, limitada pela carga do balanço e sem cruzamento de temperatura. O estado \texttt{limitado\_pelo\_alvo} quer dizer que a área instalada transferiria mais e o caso realiza a carga do balanço inteira; \texttt{limitado\_pela\_area} quer dizer que a raiz é interior, e a diferença é compensada pelas utilidades. Soma entre os casos, como indicador COMPARATIVO (os casos do BOT não operam simultaneamente; a soma não é demanda simultânea nem energia anual): balanço << sm.v2.q_alvo_total|sigt >> W, realizado << sm.v2.q_realizado_total|sigt >> W.
+
+{\footnotesize\begin{longtable}{L{2.8cm}L{2.6cm}R{1.5cm}R{1.5cm}R{1.2cm}R{1.6cm}R{1.5cm}R{1.5cm}}\toprule
+Caso & Estado do \emph{rating} & $U\!A$ exigido (kW/K) & $U\!A$ instalado (kW/K) & fração do balanço & $\Delta T_{lm}$ (K) & $T$ tubo saída (°C) & $T$ casco saída (°C)\\\midrule\endhead
+<% for o in sm.operacao %>
+<% if o.rating %>
+<< o.caso|tx >> & << o.rating.estado|tx >> & << (o.rating.ua_exigido / 1000)|sigt >> & << (o.rating.ua_instalado / 1000)|sigt >> & << o.rating.fracao_realizada|sigt >> & << o.rating.dt_lm|sigt >> & << o.rating.t_tubo_out|sigt >> & << o.rating.t_casco_out|sigt >>\\
+<% endif %>
+<% endfor %>
+\bottomrule\end{longtable}}
+<% endif %>
 <% endif %>
 <% else %>
 \aguarda.
+<% endif %>
+
+<# ------------------------------------------------------------ 9b #>
+<% set itg = doc.integracao %>
+<% if itg %>
+\section{Integração térmica realizada}
+A carga do pré-aquecedor e as temperaturas de saída dos dois lados são as do balanço preliminar (aproximação térmica da premissa P-32). A geometria instalada é dimensionada por essa carga no caso de projeto e, nos casos de turndown, onde o óleo cai no regime laminar e o coeficiente global diminui, pode recuperar menos que ela. A diferença é compensada pelas utilidades: o óleo precisa chegar à temperatura de tratamento e o óleo tratado à de estocagem, e é essa carga residual que dimensiona o aquecedor e o resfriador.
+
+Fonte da decisão: << itg.fonte|tx >>. Cenário avaliado: << itg.cenario_texto|tx >>.
+<% if not itg.aplicavel %>
+\paragraph{Avaliação integrada INVÁLIDA nesta execução.} << itg.motivo|tx >>. Os TAGs de carga residual NÃO são dimensionados com a recuperação preliminar, que seria idealizada: ficam aguardando, e a seção de pendências registra o motivo. O cenário de bypass do recuperador ($\dot Q_{real} = 0$) só existe quando é declarado explicitamente.
+<% else %>
+<% if itg.papel == 'residual' %>
+Este TAG é dimensionado pela carga RESIDUAL: a que o processo ainda exige depois do que o << itg.tag_recuperador|tx >> recuperou de fato. A proveniência de cada entrada, na seção~4, registra isso ao lado do número.
+<% else %>
+Este é o TAG que recupera o calor; as cargas residuais abaixo são o que ele deixa para os TAGs de utilidade.
+<% endif %>
+
+\paragraph{Ponto fixo das propriedades.} O \emph{rating} muda a temperatura de saída; a temperatura média muda $\mu(T)$ e $\rho(T)$; e com elas mudam o Reynolds, a película e o $U$. As propriedades são reavaliadas na temperatura média REALIZADA e o laço é repetido até a saída não mudar mais: << itg.ponto_fixo.iteracoes|sigt >> passagens, desvio final << itg.ponto_fixo.desvio|sigt >>~K contra a tolerância << itg.ponto_fixo.tolerancia|sigt >>~K (<% if itg.ponto_fixo.convergiu %>convergiu<% else %>\textbf{não convergiu}<% endif %>). O $U$ deste memorial não é o do ponto de projeto. Critério: << itg.ponto_fixo.fonte|tx >>.
+
+\paragraph{Os 16 casos do BOT.} Carga do balanço preliminar, calor realizado, temperaturas de saída e as duas cargas de utilidade, preliminar e residual. Caso sem carga a recuperar (o óleo já chega à temperatura de tratamento) entra com carga nula: é resultado, não falta de dado.
+
+{\scriptsize\begin{longtable}{r L{2.2cm} R{1.4cm} R{1.4cm} R{1.0cm} R{1.3cm} R{1.3cm} R{1.3cm} R{1.3cm} R{1.3cm} R{1.3cm}}\toprule
+BOT & Estado do \emph{rating} & \makecell[r]{$\dot Q$ balanço\\(kW)} & \makecell[r]{$\dot Q$ real\\(kW)} & fração & \makecell[r]{$T$ frio\\balanço (°C)} & \makecell[r]{$T$ frio\\real (°C)} & \makecell[r]{$T$ quente\\balanço (°C)} & \makecell[r]{$T$ quente\\real (°C)} & \makecell[r]{$\dot Q_H$\\(kW)} & \makecell[r]{$\dot Q_C$\\(kW)}\\\midrule\endhead
+<% for c in itg.casos %>
+<% set frio = (c.lados|selectattr('aquece')|list)[0] %>
+<% set quente = (c.lados|rejectattr('aquece')|list)[0] %>
+<< c.num >> & << c.estado|tx >><% if c.dimensiona %>$^\ast$<% endif %> & << c.q_alvo|sigt >> & << c.q_realizado|sigt >> & << c.fracao|sigt >> & << frio.t_out_alvo|sigt >> & << frio.t_out_real|sigt >> & << quente.t_out_alvo|sigt >> & << quente.t_out_real|sigt >> & << frio.q_residual|sigt >> & << quente.q_residual|sigt >>\\
+<% endfor %>
+\midrule
+soma$^\dagger$ & & << itg.total.alvo|sigt >> & << itg.total.realizado|sigt >> & << (itg.total.realizado / itg.total.alvo if itg.total.alvo > 0 else 1.0)|sigt >> & & & & & & \\
+\bottomrule\end{longtable}}
+{\footnotesize $^\ast$ caso que DIMENSIONA a geometria (caso de projeto); os demais são classificados nela. $\dot Q_H$ e $\dot Q_C$ são as cargas RESIDUAIS, já com o calor efetivamente recuperado descontado. $^\dagger$ Soma entre os casos: indicador comparativo, não demanda simultânea nem energia anual.}
+
+\paragraph{Quanto as utilidades absorvem.} A diferença entre a carga do balanço e a realizada aparece integralmente nas utilidades, caso a caso: o lado frio sai mais frio e o aquecedor cobre a diferença até a temperatura de tratamento; o lado quente sai mais quente e o resfriador cobre a diferença até a temperatura de estocagem.
+
+{\footnotesize\begin{longtable}{r R{1.8cm} R{2.1cm} R{2.1cm} R{2.1cm} R{2.1cm}}\toprule
+BOT & \makecell[r]{compensado\\(kW)} & \makecell[r]{$\dot Q_H$ preliminar\\(kW)} & \makecell[r]{$\dot Q_H$ residual\\(kW)} & \makecell[r]{$\dot Q_C$ preliminar\\(kW)} & \makecell[r]{$\dot Q_C$ residual\\(kW)}\\\midrule\endhead
+<% for c in itg.casos %>
+<% set frio = (c.lados|selectattr('aquece')|list)[0] %>
+<% set quente = (c.lados|rejectattr('aquece')|list)[0] %>
+<< c.num >> & << c.q_nao_recuperado|sigt >> & << frio.q_preliminar|sigt >> & << frio.q_residual|sigt >> & << quente.q_preliminar|sigt >> & << quente.q_residual|sigt >>\\
+<% endfor %>
+\bottomrule\end{longtable}}
+
+\paragraph{O que esta integração reescreve, e só isso.} A carga recuperada, as duas temperaturas de saída do pré-aquecedor e as duas cargas de utilidade. Nada mais do balanço muda, e isso é VERIFICADO caso a caso: enquanto a temperatura de DESTINO de cada lado não se altera --- a temperatura de tratamento é PISO e a de estocagem é TETO, e o balanço escreve $T_{08} = \max(T_{trat}, T_{07})$ e $T_{24} = \min(T_{23}, T_{store})$ ---, o reciclo da planta não é tocado e o balanço preliminar absorve o resultado sem ser reaberto. <% if itg.destinos_alterados %>\textbf{Nos casos << itg.destinos_alterados|ids >> essa condição não vale}, e o aviso correspondente está na seção~10.<% else %>Em todos os casos avaliados a condição vale: nenhuma temperatura de destino mudou.<% endif %>
+<% endif %>
 <% endif %>
 
 <# ------------------------------------------------------------ 10 #>

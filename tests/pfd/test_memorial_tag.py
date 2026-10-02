@@ -197,8 +197,9 @@ def test_knockout_conta_a_mao_reproduz_o_rastro(docs, ident):
     if ident != "V-001":
         return
     # números do cartão em 4 algarismos (o que o leitor confere no PDF)
-    # com Standing: 11,74 / 16,44 / 3,499 / 285,3 (docs/validacao/39)
-    assert [formatacao.texto_sig(s[k]) for k in ("leff", "lss", "sr", "volume")] == ["11,72", "16,42", "3,493", "284,9"]
+    # com Standing: 11,74 / 16,44 / 3,499 / 285,3 (docs/validacao/39); com P-18/P-19 = 700/200 kPa:
+    # 11,72 / 16,42 / 3,493 / 284,9; com 500/130 kPa (docs/validacao/44):
+    assert [formatacao.texto_sig(s[k]) for k in ("leff", "lss", "sr", "volume")] == ["11,66", "16,36", "3,481", "283,8"]
 
 
 def test_v001_constantes_de_campo_convertidas(docs):

@@ -43,7 +43,7 @@ sem fonte, refatoração não muda número, contrato de dimensionamento — cont
   (`tools/auditar_saida_pfd.py`). Mudar um resultado ativo exige parar, identificar a causa e
   justificar por escrito em `docs/validacao/` antes de rever a regressão.
 - **Pronto é o caminho inteiro**: entrada → processo → propriedades → correntes →
-  dimensionamento → saída → memorial → gate. Comparação, modo sombra, estudo e protótipo são
+  dimensionamento → integração térmica realizada → saída → memorial → gate. Comparação, modo sombra, estudo e protótipo são
   marcos internos, não capacidade entregue; nada fica em paralelo ao caminho produtivo.
 - Toda fase fecha com os testes verdes, cobertura ≥ 90 % no núcleo e o SPRINTS.md
   atualizado.
@@ -79,6 +79,18 @@ sem fonte, refatoração não muda número, contrato de dimensionamento — cont
    `config/termo/proveniencia.toml`, com `validade` e `origem` independentes e os
    **consumidores reais** (lista vazia = diagnóstico); o `EstadoProcesso` e cada entrada de TAG
    apontam para ela, e um teste prova que a declaração descreve o código.
+
+## DESIGN × RATING (ADR 0005)
+Um trocador que recebe o alvo de máxima recuperação do balanço em TODOS os casos é DESIGN
+aplicado como off-design. O P-001 é dimensionado pelo caso de **projeto** e **classificado**
+(rating) nos de turndown: `sizing/rating.py` resolve Q = U·A·F(Q)·ΔT_lm(Q) com a área
+instalada, limitado pelo alvo do Pinch; `pfd/integracao_termica.py` reavalia as propriedades na
+temperatura REALIZADA por ponto fixo e entrega as cargas **residuais**, que dimensionam o
+P-002 e o P-003. O balanço preliminar **não** é reaberto, e isso é verificado caso a caso (as
+temperaturas de destino não mudam). `U·A` não avaliável é NaN declarado, nunca carga zero.
+A geometria vem de busca discreta (`pfd/layout.py`, `tools/buscar_layout_trocador.py`) e está
+registrada em `config/pfd/tags/p_001.toml` com a fonte; os números estão em
+`docs/validacao/43-design-rating-multiplicidade.md`.
 
 ## Contrato de dimensionamento
 Todo método herda `core.contrato.MetodoDimensionamento` e implementa os hooks com os
@@ -139,6 +151,8 @@ uv run fpso-siz dimensionar --exemplo pinch_kemp             # Análise Pinch (F
 uv run python tools/pinch_planta.py          # alvos do pré-aquecedor pela rede do balanço (F8)
 uv run python tools/relatorio_trem.py        # trem SG-001 → V-001 → V-002 de cada caso (diagnóstico)
 uv run python tools/investigar_alarmes.py    # variantes de estudo dos alarmes, pelo mesmo serviço
+uv run python tools/buscar_layout_trocador.py --estagio 1 --processos 4   # busca de layout do P-001 (ADR 0005; lenta)
+uv run python tools/buscar_layout_trocador.py --geometria    # a geometria registrada no TAG + tabela dos 16 casos
 uv run python tools/otimizar.py [--sub sg_001 --varredura]   # otimização NSGA-II (F15; lenta)
 uv run python tools/otimizar.py --sub pressao --processos 4 [--repetir]   # P_D1 × P_D2: grade-oráculo + NSGA-II (nota 42; horas)
 FPSO_SNAPSHOTS=1 uv run pytest tests/test_terminal_pfd.py   # regenera os snapshots de tela

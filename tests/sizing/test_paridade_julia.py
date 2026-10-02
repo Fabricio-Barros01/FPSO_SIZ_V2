@@ -33,17 +33,26 @@ VASOS = [("separador-3f", Separator(), StewartArnold(), 1e-13),
          ("analise-pinch", PinchTarget(), PinchKemp(), 0.0)]
 
 
-def envelope_puro(r):
+def envelope_puro(r, extensao=()):
     # o que o motor guarda para a memória de cálculo ler (core/memoria.py) não tem par no Julia
     d = puro(replace(r, metodo=None, preparo=(), p_env=None, pcs=()))
     for k in ("derivados_v2", "metodo", "preparo", "p_env", "pcs"):   # extensões do V2
         d.pop(k)
+
+    def sem_extensao(derivados):
+        for k in extensao:
+            derivados.pop(k, None)
+
+    sem_extensao(d["derivados"])
     for row in d["rows"]:
         row["tem_presentation"] = row.pop("presentation") is not None
+        sem_extensao(row["derivados"])
     for pc, orig in zip(d["per_case"], r.per_case):
         pc["trace"] = [puro(e) for e in orig.trace.entries]
+        sem_extensao(pc["derivados"])
         for s in pc["sweep"]:
             s["tem_presentation"] = s.pop("presentation") is not None
+            sem_extensao(s["derivados"])
     return d
 
 
@@ -56,8 +65,8 @@ def vaso(request):
 
 
 def test_envelope_completo(vaso):
-    fx, _, _, rtol, r = vaso
-    assert diferencas(envelope_puro(r), fx["envelope"], rtol) == []
+    fx, _, m, rtol, r = vaso
+    assert diferencas(envelope_puro(r, m.derivados_extensao), fx["envelope"], rtol) == []
     assert (r.x, r.y, r.driver_case) == (fx["envelope"]["x"], fx["envelope"]["y"], fx["envelope"]["driver_case"])
 
 

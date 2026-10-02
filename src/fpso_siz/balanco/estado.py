@@ -54,6 +54,12 @@ class EstadoProcesso:
     trem: object = None                             # balanco/trem.TremSeparacao (produtivo ou não avaliável)
     gas_padrao: dict = field(default_factory=dict)  # Sm³/d do componente G por corrente (casos avaliáveis)
     T_tvp_C: float = math.nan                       # T em que a TVP do óleo tratado é lida (trem.toml [tvp])
+    # Grandezas REESCRITAS pela integração térmica realizada (ADR 0005, pfd/integracao.py):
+    # {corrente ou chave de carga: nota de proveniência}. Vazio = este é o estado do balanço
+    # PRELIMINAR, de máxima recuperação. Quem lê uma dessas grandezas numa entrada de TAG
+    # recebe a nota junto (pfd/entradas.py), de modo que o número nunca se apresente como do
+    # balanço preliminar quando não é.
+    integracao: dict = field(default_factory=dict)
 
     @property
     def avaliavel(self):

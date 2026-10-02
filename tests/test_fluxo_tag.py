@@ -186,8 +186,11 @@ def test_equipamento_planta_equipamento_reaproveita(monkeypatch):
     rc, out, s = rodar(*abrir_tag("V-001", "automatico"), "0", "0",
                        op("principal", "planta"), op("planta", "abrir"), str(ids.index("V-001") + 1), "0", "0", "0")
     assert rc == 0
-    assert chamadas.count("V-001") == 1 and sorted(set(chamadas)) == sorted(ids)
-    assert all(chamadas.count(i) == 1 for i in ids)  # a planta não recalculou o que já estava pronto
+    # o recuperador sai do ponto fixo da integração realizada (ADR 0005), não de `preparar`
+    from fpso_siz.pfd import integracao_termica as itg
+    da_planta = [i for i in ids if i != itg.cfg()["tag_recuperador"]]
+    assert chamadas.count("V-001") == 1 and sorted(set(chamadas)) == sorted(da_planta)
+    assert all(chamadas.count(i) == 1 for i in da_planta)  # a planta não recalculou o que já estava pronto
 
 
 def test_trocar_premissa_invalida_o_contexto(monkeypatch):
@@ -268,7 +271,7 @@ def test_planta_filtro_e_exportacao_igual_ao_comando(tmp_path):
     assert comandos_repetir(out) == [["pfd", "--sem-propostas", "--casos", str(CASOS), "--ajustes", str(pasta / saida_ajustes.NOME),
                                       "--saida", str(pasta)]]
     feitos = {p: p.read_bytes() for p in pasta.iterdir() if p.name != saida_ajustes.NOME}
-    assert len(feitos) == 23
+    assert len(feitos) == 25   # 11 TAGs × (JSON + varredura) + planta.csv + integração térmica (JSON e CSV)
     for p in feitos:
         p.unlink()
     assert repetir_comando(out) == [1]

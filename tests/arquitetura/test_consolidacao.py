@@ -97,6 +97,11 @@ def test_o_trem_e_parte_do_estado_e_nao_um_segundo_modelo():
     donos = [rotulo(p) for p in MODULOS if "TremSeparacao" in definicoes(p)]
     assert donos == ["balanco/trem.py"]
     assert not (PACOTE / "pfd" / "cascata.py").exists() and not (PACOTE / "pfd" / "integracao.py").exists()
+    # `pfd/integracao_termica.py` (ADR 0005) NÃO é um segundo modelo de processo: ele não
+    # resolve caso nenhum, não define corrente e lê o EstadoProcesso que `balanco/` produziu.
+    itg = PACOTE / "pfd" / "integracao_termica.py"
+    assert not {"resolver_caso", "resolver_todos", "flash_tp"} & chamadas_de_atributo(itg)
+    assert "TremSeparacao" not in definicoes(itg)
 
 
 # ------------------------------------------------------------------ dimensionamento
@@ -152,7 +157,9 @@ PONTOS_DE_ENTRADA = {"fpso_siz", "fpso_siz.cli", "fpso_siz.__main__", "fpso_siz.
                      # (tools/otimizar.py) e pela suíte, ainda sem comando na CLI
                      "fpso_siz._otim", "fpso_siz.pfd.otimizacao",
                      # análise do pré-aquecedor sobre o EstadoProcesso (tools/pinch_planta.py)
-                     "fpso_siz.pfd.pinch"}
+                     "fpso_siz.pfd.pinch",
+                     # busca discreta de layout do trocador (tools/buscar_layout_trocador.py)
+                     "fpso_siz.pfd.layout"}
 
 
 def test_nenhum_modulo_sem_consumidor():

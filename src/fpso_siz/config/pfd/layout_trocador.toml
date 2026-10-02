@@ -1,0 +1,202 @@
+# Busca discreta de layout de um TAG de trocador (ADR 0005; docs/validacao/43).
+#
+# Cada eixo abaixo é uma DECISÃO DE PROJETO discreta, com os valores dentro da faixa que a
+# fonte do descritor declara (config/equipment/exchanger/saari_lmtd.toml). Nada aqui é ajuste
+# numérico: é o conjunto de geometrias que o projetista poderia especificar, e a busca diz
+# quais delas atendem aos 16 casos do BOT e a que custo.
+#
+# O que a busca NÃO varia, e por quê: espessura de parede (Branan p. 38, "start with 14 BWG"),
+# corte e folga de chicana, pares de vedação e faixas divisoras (defaults com fonte conferida),
+# banda de velocidade (Saari Tab. 3.1), diâmetro máximo de casco (Saari Tab. 3.1) e as
+# incrustações (Tab. 8.1, hoje PROPOSTAS a confirmar). Mudar qualquer um deles é mudar
+# premissa, não escolher layout.
+
+tag = "P-001"
+tags_integrados = ["P-002", "P-003"]
+fonte = "docs/validacao/43 — busca pedida pelo usuário em 2026-10-02: geometria fixa para os 16 casos do BOT, comprimento de tubo de 6 a 9 m, configurações de unidades físicas, maximizando a recuperação útil sem exigir 100 % do alvo do Pinch"
+
+# Fase C (nota 46): o que cada candidato — e o aquecedor e o resfriador redimensionados com ele —
+# recebe além da geometria. A perda de carga do lado CASCO (Bell-Delaware, Branan pp. 46-47) passa
+# a ser verificada contra a MESMA premissa do lado tubo (P-17, ΔP por lado de trocador): no P-001
+# o casco é o óleo tratado quente; no P-002 e no P-003, a emulsão/óleo de processo. A busca da
+# ADR 0005 não a verificava (não era modelada) e escolheu cascos de 570 mm com chicana a cada
+# 114 mm — 6,4 m/s de óleo no casco e ~78 MPa no trem. A grade de tubos ganha o refino local de
+# passo 1.
+[estudo]
+limite_casco_premissa = "dP_HX"
+edicoes = { refino_local = 1.0 }
+tags = ["P-001", "P-002", "P-003"]
+fonte = "Fase C aprovada pelo usuário em 2026-10-02: ΔP do casco por Bell-Delaware verificada contra a P-17 e grade refinada localmente com passo de um tubo"
+
+[eixo.d_externo]
+rotulo = "Diâmetro externo do tubo (mm)"
+valores = [12.7, 15.875, 19.05, 25.4]
+fonte = "Saari Tab. 3.1 (p. 21): tubos padronizados, 'tipicamente 12,7 a 25,4 mm'; 15,875 mm é o 5/8 in da mesma série"
+
+[eixo.razao_passo]
+rotulo = "Passo do feixe / d_o"
+valores = [1.25, 1.5]
+fonte = "Saari Tab. 3.1 (p. 21): passo de 1,25 a 1,5·d_o — as duas pontas da faixa"
+
+[eixo.layout_tubos]
+rotulo = "Ângulo do arranjo do feixe (°)"
+valores = [30.0, 45.0, 60.0, 90.0]
+fonte = "Branan (2012) Tab. 2-6: os quatro arranjos com fatores de Bell-Delaware tabelados"
+
+[eixo.espacamento_chicana]
+rotulo = "Espaçamento de chicana / D_casco"
+valores = [0.2, 0.3, 0.4, 0.5]
+fonte = "Saari Tab. 3.1 (p. 21): 0,2 a 1,0·Ds; acima de 0,5 o coeficiente do casco só piora, e a busca não precisa percorrer a metade estéril da faixa"
+
+[eixo.passes_tubo]
+rotulo = "Passes no lado tubo"
+valores = [1.0, 2.0]
+fonte = "Saari §4.2.1 (contracorrente puro, F = 1) e Fig. 4.3 (arranjo 1-2): os dois arranjos com fórmula na fonte"
+
+[eixo.l_tubo_max]
+rotulo = "Comprimento máximo de tubo por casco (m)"
+valores = [6.0, 7.0, 8.0, 9.0]
+fonte = "Branan (2012) p. 38: tubos de trocador de 4 a 20 ft; a faixa de 6 a 9 m foi pedida pelo usuário em 2026-10-02 (20 ft a 30 ft, comprimentos de estoque correntes em serviço de processo)"
+
+[eixo.cascos_paralelo]
+rotulo = "Trens iguais em paralelo (duty)"
+valores = [1.0, 2.0, 3.0, 4.0]
+fonte = "Saari Tab. 3.1 (p. 21): acima de 2500 mm de casco o serviço é dividido em cascos em paralelo; a divisão do serviço é decisão de projeto, e aqui vai até quatro trens"
+
+[eixo.cascos_serie]
+rotulo = "Cascos em série por trem"
+valores = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+fonte = "comprimento de tubo excedente vira casco em série (nota do descritor `cascos_serie`); o teto de 10 é o do próprio descritor"
+
+# Reserva INSTALADA, exigida pela ET para o pré-aquecedor. Ela não recebe vazão nem carga em
+# operação, mas conta na área instalada e na contagem de cascos — é isso que o contrato de
+# serviço (sizing/servico.py) separa de duty simultâneo.
+[eixo.standby]
+rotulo = "Trens de reserva instalada"
+valores = [0.0, 1.0]
+fonte = "BOT 2.7.1.11 (reserva instalada para o pré-aquecedor); 0 entra na busca só para medir quanto a reserva custa em área instalada, e não é candidato aceitável"
+minimo_exigido = 1.0
+
+# Regra de seleção entre os candidatos da frente de Pareto. NÃO é otimização econômica: o
+# acervo não tem dado de custo, e a troca entre área instalada e utilidade é decisão de
+# projeto. As duas regras abaixo são as duas leituras defensáveis dessa troca, e a frente
+# inteira fica registrada em docs/validacao/43 para que a decisão seja informada.
+#
+#   area_especifica    minimiza a ÁREA INSTALADA POR kW RECUPERADO (m²/kW), somando os casos.
+#                      É a leitura de projeto: a recuperação satura (a frente anda poucos
+#                      décimos de ponto percentual) enquanto a área e o número de cascos
+#                      crescem muito, e esta regra é a que não paga área por ganho marginal.
+#                      Pesa todos os casos igualmente, porque o acervo não traz horas de
+#                      operação por caso — isso é premissa declarada, não dado.
+#   maior_recuperacao  maximiza a recuperação realizada; empate pela menor área instalada e,
+#                      depois, pelo menor número de cascos instalados. É a leitura literal de
+#                      "maximizar a recuperação útil", e escolhe o extremo da frente.
+[selecao]
+regra = "area_especifica"
+# Restrição de ACERVO sobre o candidato REGISTRADO. O comprimento de tubo acima de 6 m (20 ft)
+# não tem fonte no acervo: Branan (2012) p. 38 declara "4 to 20 ft", e é essa a origem do
+# default do descritor `l_tubo_max`. A faixa de 6 a 9 m foi pedida pelo usuário em 2026-10-02 e
+# é VARRIDA — ela entra na comparação e está tabelada em docs/validacao/43 —, mas o candidato
+# que vai para o catálogo do TAG fica dentro do que o acervo sustenta. Quem tiver fonte para
+# tubo mais longo (catálogo de fabricante, norma) troca este valor e a busca escolhe o outro.
+l_tubo_max_com_fonte = 6.0
+fonte_limite_acervo = "Branan (2012) p. 38: tubos de trocador de 4 a 20 ft (6,1 m); é a fonte do default do descritor l_tubo_max. Acima disso não há fonte no acervo, e a regra das fontes do projeto não permite registrar o valor como premissa de projeto."
+fonte = "decisão de projeto declarada (2026-10-02): sem dado de custo no acervo, a troca área × utilidade é escolhida pela área instalada específica (m²/kW recuperado). A outra leitura (maior_recuperacao) está implementada e o seu candidato está tabelado em docs/validacao/43 — trocar a regra é trocar esta linha."
+
+# Temperaturas finais exigidas pela ET, verificadas no conjunto integrado (não é o rating do
+# pré-aquecedor que as atende: são o aquecedor e o resfriador que as alcançam).
+[[verificacao_final]]
+premissa = "T_trat"
+corrente = "C-08"
+sentido = "minimo"
+rotulo = "temperatura de entrada dos tratadores"
+fonte = "BOT 2.7.1.4 (F-05/P-33): 'the oil temperature at the treatment section inlet shall be at least 90 °C'"
+
+[[verificacao_final]]
+premissa = "T_store"
+corrente = "C-24"
+sentido = "maximo"
+rotulo = "temperatura de estocagem do óleo tratado"
+fonte = "BOT 2.7.1.10 (F-08): temperatura de armazenamento de 40 °C"
+
+# ------------------------------------------------------------------------------------------------
+# GEOMETRIA CLASSIFICADA EM TODOS OS CASOS (Fase C, nota 46). Com a ΔP do casco verificada contra a
+# P-17, o DESIGN do P-001 no caso de projeto com a aproximação da P-32 pede de 17 a 33 m de tubo por
+# casco nos candidatos sondados: a recuperação plena no caso de projeto não cabe nas duas perdas de
+# carga. A busca passa a admitir RECUPERAÇÃO PARCIAL também no caso de projeto (o que falta é das
+# utilidades, decisão do usuário de 2026-10-02): a geometria é dada — tubos por passe e caminho total
+# de tubo — e TODOS os casos são classificados nela. As duas perdas de carga crescem com o caminho
+# total, e a recuperação também: para cada geometria térmica, o caminho é o MAIOR que cabe na P-17
+# dos dois lados em todos os casos, e frações dele dão a troca área × utilidade.
+[classificada]
+# velocidade no tubo no caso de projeto (P-45: a banda vale no caso de projeto), que fixa os tubos
+# por passe de cada geometria térmica. Os cinco pontos cobrem a banda de Saari Tab. 3.1.
+velocidades_projeto = [1.0, 1.5, 2.0, 2.5, 3.0]
+velocidade_fonte = "Saari Tab. 3.1 (p. 21): 1 a 3 m/s no tubo"
+# caminho de referência para medir a ΔP por metro de caminho (um casco de comprimento máximo)
+fracoes_caminho = [0.5, 0.75, 1.0]
+# ajuste do caminho máximo quando as propriedades na temperatura realizada mudam a ΔP: o caminho é
+# reduzido nesta razão até caber (no máximo `max_reducoes` vezes)
+reducao = 0.97
+max_reducoes = 6
+# refino local do número de tubos do candidato selecionado, de um em um
+refino_tubos = 5
+# Regra de seleção da busca classificada. A `area_especifica` da busca DESIGN × RATING degenera aqui:
+# com recuperação parcial admitida, um trocador minúsculo tem a menor área por kW (0,26 m de caminho,
+# 13 m², 1,2 % de recuperação na rodada da nota 46). A escolha é a outra regra declarada, a leitura
+# literal de "maximizar a recuperação útil"; a frente inteira fica tabelada na nota 46.
+regra = "maior_recuperacao"
+fonte = "Fase C aprovada pelo usuário em 2026-10-02: geometria congelada classificada nos 16 casos, comprimentos de 6 a 9 m como alternativas de estudo, unidades ativas e reserva"
+
+[classificada.eixo.espacamento_chicana]
+valores = [0.4, 0.6, 0.8, 1.0]
+fonte = "Saari Tab. 3.1 (p. 21): 0,2 a 1,0·Ds. Com a ΔP do casco verificada, 0,2·Ds deu 6,4 m/s de óleo no casco (nota 46); a faixa útil passa a ser a de chicana mais aberta"
+
+[classificada.eixo.cascos_paralelo]
+valores = [2.0, 3.0, 4.0, 5.0, 6.0]
+fonte = "Saari Tab. 3.1 (p. 21): divisão do serviço em cascos em paralelo; com a ΔP do casco verificada, mais trens baixam a velocidade no casco. Um trem só não cabe no casco de 2500 mm (nota 43)"
+
+[classificada.eixo.passes_tubo]
+valores = [1.0]
+fonte = "nota 43: nenhum candidato de 2 passes foi viável — o fator F do arranjo 1-2 sai do domínio da Fig. 4.3 nesta troca quase simétrica (R ≈ 1), o que depende só das temperaturas, não da geometria"
+
+# Busca do aquecedor e do resfriador nas cargas RESIDUAIS do pré-aquecedor escolhido: DESIGN em
+# todos os casos (são utilidades e têm de alcançar a temperatura de destino), com a P-17 no casco
+# (o lado de processo) e o refino local. Mesmos eixos térmicos e o mesmo raciocínio de dois
+# estágios da busca do P-001: o empacotamento só divide o caminho total de tubo.
+[residual]
+tags = ["P-002", "P-003"]
+regra = "area_instalada"
+fonte = "Fase C (nota 46): as geometrias recomendadas do P-002 e do P-003 (F10x.7) foram escolhidas sem a ΔP do casco e a violam por 17 a 120 vezes"
+
+[residual.eixo.d_externo]
+valores = [12.7, 19.05, 25.4]
+fonte = "Saari Tab. 3.1 (p. 21): tubos de 12,7 a 25,4 mm"
+
+[residual.eixo.razao_passo]
+valores = [1.25, 1.5]
+fonte = "Saari Tab. 3.1 (p. 21): passo de 1,25 a 1,5·d_o"
+
+[residual.eixo.layout_tubos]
+valores = [30.0, 45.0, 90.0]
+fonte = "Branan (2012) Tab. 2-6; 60° tem os mesmos coeficientes da Tab. 2-5 que 30° e só muda o passo normal"
+
+[residual.eixo.espacamento_chicana]
+valores = [0.4, 0.6, 0.8, 1.0]
+fonte = "Saari Tab. 3.1 (p. 21): 0,2 a 1,0·Ds; a faixa de chicana aberta pela ΔP do casco"
+
+[residual.eixo.passes_tubo]
+valores = [1.0, 2.0]
+fonte = "Saari §4.2.1 e Fig. 4.3"
+
+[residual.eixo.cascos_paralelo]
+valores = [1.0, 2.0, 3.0, 4.0]
+fonte = "Saari Tab. 3.1 (p. 21): divisão do serviço em cascos em paralelo"
+
+[residual.eixo.cascos_serie]
+valores = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+fonte = "comprimento de tubo excedente vira casco em série (nota do descritor `cascos_serie`)"
+
+[residual.eixo.l_tubo_max]
+valores = [6.0, 7.0, 8.0, 9.0]
+fonte = "Branan (2012) p. 38 (até 6,1 m com fonte); 7 a 9 m pedidos pelo usuário como alternativas de estudo"

@@ -1,0 +1,274 @@
+\section*{Identificação e rastreabilidade}
+\begin{tabularx}{\textwidth}{lX}\toprule
+Documento & << d.meta.numero|texto >>; revisão << d.meta.revisao|texto >>\\
+Equipamento & << d.tag.tag|texto >> --- << d.tag.nome|texto >>\\
+Método & << d.tag.metodo|texto >>\\
+Estado & \textbf{<< d.status|texto >>}; << 'preliminar, revisão pendente' if d.preliminar else 'revisões registradas' >>\\
+Entrada & << d.modo|texto >>; regra FWKO: << d.regra_fwko|texto >>\\
+Software & fpso-siz << d.rastreio.versao|texto >>; árvore << 'com alterações locais' if d.rastreio.arvore_alterada else 'limpa' >>\\
+Data & << d.rastreio.data|texto >>\\
+\bottomrule\end{tabularx}
+\smallskip
+{\scriptsize
+Commit: \texttt{<< d.rastreio.commit|texto >>}\par
+SHA-256 do software/configuração/templates: \texttt{<< d.rastreio.sha256_software >>}\par
+SHA-256 dos casos: \texttt{<< d.hash_casos or 'não aplicável' >>}\par}
+\medskip
+\textbf{Regra de apresentação: quatro algarismos significativos}, em notação científica
+explícita (mantissa com três casas decimais). Nenhum arredondamento é realimentado no
+cálculo. Os ids \texttt{Nxxxx} ligam cada número ao valor integral, unidade, caminho e
+fonte em \texttt{rastro.json}; unidades nas tabelas e nas substituições. Números de
+equações, casos, revisões, datas e constantes matemáticas exatas são identificadores
+ou definições, não resultados sujeitos ao arredondamento.
+\par\smallskip
+O JSON também contém a exportação de origem do TAG. Os CSVs preservam a precisão
+integral da varredura. Os gráficos abaixo são lidos desses CSVs pelo \texttt{pgfplots}.
+\tableofcontents\clearpage
+
+\section{Objetivo}
+<< d.catalogo.objetivo|texto >>
+<% if d.status != 'dimensionado' %>
+\par\textbf{MC de diagnóstico: não há dimensionamento concluído.}
+<< d.mensagem|texto >>
+<% endif %>
+\par\smallskip
+Esquema local conforme o mapeamento do TAG: bloco << d.tag.bloco|texto >>;
+condição de operação na corrente << d.tag.condicao|texto >>.
+<% if d.governante %>
+Caso governante do envelope: \textbf{<< d.governante|texto >>}.
+<% endif %>
+
+\section{Referências}
+\begin{enumerate}
+<% for ref in d.catalogo.referencias %>
+\item << ref|texto >>
+<% endfor %>
+\end{enumerate}
+
+\section{Premissas e tipo de fonte}
+\begin{enumerate}
+<% for h in d.catalogo.hipoteses %>
+\item << h|texto >>
+<% endfor %>
+\end{enumerate}
+<% if d.premissas %>
+As premissas abaixo são as do contexto de balanço que forneceu as entradas; não são
+substituídas pelos defaults do método. Os identificadores repetidos mantêm a
+classificação original do catálogo. Uma classificação ``A VALIDAR'' permanece pendente.
+\small
+\begin{longtable}{p{12mm}p{69mm}p{37mm}p{49mm}}
+\toprule ID & Premissa & Valor / unidade & Tipo de fonte\\\midrule\endhead
+<% for p in d.premissas %>
+<< p.id|texto >> & << p.descricao|texto >> & << n(p.numero, True) >> & << p.tipo_fonte|texto >>\\
+& \multicolumn{3}{p{157mm}}{\footnotesize Fonte: << p.fonte_documental >>}\\\midrule
+<% endfor %>
+\bottomrule\end{longtable}\normalsize
+<% for p in d.notas_premissas %>
+\paragraph{<< p.id|texto >> --- << p.tipo|texto >>}
+<< p.parametro >>. << p.justificativa >>.
+<% endfor %>
+<% else %>
+Entradas manuais; nenhuma premissa de balanço foi aplicada para fabricar dados ausentes.
+<% endif %>
+
+\section{Entradas com origem}
+As unidades desta seção são as do formulário e do JSON legado. As substituições
+posteriores convertem para SI por fatores exatos. Revisão pendente é independente de
+viabilidade. O gás é informado em volume padrão; a condição padrão consta do BOT.
+<% for c in d.casos %>
+\subsection{<< c.nome|texto >>}
+Estado: << 'ativo' if c.ativo else 'inativo' >>. << c.motivo|texto >>
+\small\begin{longtable}{p{55mm}p{43mm}p{69mm}}
+\toprule Entrada & Valor / unidade & Origem e revisão\\\midrule\endhead
+<% for v in c.valores %>
+<< v.rotulo|texto >> & << n(v.numero, True) >> & << v.origem|texto >>; << v.revisao|texto >>\\
+\multicolumn{3}{p{172mm}}{\footnotesize << v.fonte|texto >>
+<% if v.tipo == 'valor_usual' %>
+\textbf{valor usual --- sem fonte rastreável}
+<% endif %>
+}\\\midrule
+<% endfor %>
+\bottomrule\end{longtable}\normalsize
+<% for aviso in c.avisos %>
+\textbf{Aviso:} << aviso|texto >>\par
+<% endfor %>
+<% endfor %>
+
+\section{Metodologia: equações numeradas e referenciadas}
+As formas de campo originais são transcritas da fonte, com suas unidades originais.
+A forma SI base é obtida da versão SI publicada, preservando seus coeficientes
+arredondados. Não se usa a conversão da forma de campo para substituir silenciosamente
+o coeficiente SI. As constantes matemáticas de geometria são exatas.
+<% if d.passos %>
+Coeficientes SI publicados: Eq.~3.7b: << n(d.passos.vtpublicado) >>;
+Eq.~3.8b: << n(d.passos.gaspublicado) >>; Eq.~3.9b: << n(d.passos.liqpublicado) >>.
+As unidades originais de campo para a velocidade são
+<< d.valores[d.passos.vtcampo].unidade|texto >>; para gás,
+<< d.valores[d.passos.gascampo].unidade|texto >>; para líquido,
+<< d.valores[d.passos.liqcampo].unidade|texto >>.
+<% for eq in d.catalogo.equacoes %>
+\subsection{<< eq.titulo|texto >>}
+<< eq.fonte|texto >>.
+\begin{equation}\label{eq:<< eq.id >>}
+\begin{aligned}
+\text{Original:}\quad & << equacao(eq.original) >>\\[4pt]
+\text{SI:}\quad & << equacao(eq.si) >>
+\end{aligned}
+\end{equation}
+<% endfor %>
+<% else %>
+O método possui as equações descritas na referência, mas faltam entradas ou uma
+seleção viável. Nenhuma substituição numérica de dimensionamento é fabricada.
+<% endif %>
+
+\section{Passo a passo completo do caso governante}
+<% if d.passos %>
+Caso: \textbf{<< d.governante|texto >>}. A cadeia começa pelas entradas/propriedades
+registradas anteriormente; a iteração resolve simultaneamente arrasto, velocidade e
+Reynolds. A grade e o envelope são avaliados antes da escolha final.
+\paragraph{Controle da iteração}
+Valor inicial de arrasto: << n(d.passos.cd0) >>; relaxação: << n(d.passos.relaxacao) >>;
+tolerância relativa (estritamente numérica): << n(d.passos.tolerancia) >>;
+limite de iterações: << n(d.passos.maxiter) >>.
+A atualização é $C_{D,n+1}=C_{D,n}+\omega(C_{D,calculado}-C_{D,n})$;
+o erro absoluto é comparado com a tolerância vezes $\max(|C_{D,n}|,1)$.
+Ao convergir, velocidade e Reynolds são atualizados com o último coeficiente.
+\small\begin{longtable}{p{27mm}p{34mm}p{34mm}p{34mm}p{34mm}}
+\toprule Iteração & $C_D$ entrada & $V_t$ (m/s) & $Re$ & $C_D$ calculado\\\midrule\endhead
+<% for it in d.iteracoes %>
+<< n(it.iteracao) >> & << n(it.cd_entrada) >> & << n(it.vt) >> & << n(it.re) >> & << n(it.cd_calculado) >>\\
+<% endfor %>
+\bottomrule\end{longtable}
+\begin{longtable}{p{32mm}p{42mm}p{42mm}p{42mm}}
+\toprule Iteração & $C_D$ atualizado & Erro & Limite\\\midrule\endhead
+<% for it in d.iteracoes %>
+<< n(it.iteracao) >> & << n(it.cd_saida) >> & << n(it.erro) >> & << n(it.limite) >>\\
+<% endfor %>
+\bottomrule\end{longtable}\normalsize
+\newsavebox{\conta}
+<% for eq in d.catalogo.equacoes %>
+\subsection{<< eq.titulo|texto >> --- Equação~\ref{eq:<< eq.id >>}}
+Substituição com os operandos registrados, convertidos para SI. O resultado preserva
+a precisão interna; somente a apresentação está arredondada.
+\par\medskip
+\sbox{\conta}{$\displaystyle << equacao(eq.substituicao, True) >>$}
+\noindent\ifdim\wd\conta>\textwidth\resizebox{\textwidth}{!}{\usebox{\conta}}\else\usebox{\conta}\fi
+\par\medskip Resultado: \textbf{<< n(d.passos[eq.resultado], True) >>}.\par
+<% endfor %>
+\paragraph{Busca na grade e formação do envelope}
+Diâmetro mínimo: << n(d.passos.d_min, True) >>; máximo: << n(d.passos.d_max, True) >>;
+passo: << n(d.passos.d_step, True) >>. Banda de esbeltez:
+<< n(d.passos.sr_min) >> a << n(d.passos.sr_max) >>; alvo: << n(d.passos.sr_target) >>.
+Em cada diâmetro, toma-se o maior comprimento requerido entre os casos ativos;
+descartam-se os pontos que não atendem aos critérios. O ponto escolhido é o admissível
+de menor distância ao alvo. O arquivo \texttt{varredura.csv} contém todos os pontos.
+<% else %>
+Não há caso governante de um envelope viável. Ver diagnóstico e pendências.
+<% endif %>
+
+\section{Demais casos: intermediários e critério governante}
+As tabelas incluem também o governante para comparação. Cada linha usa o diâmetro
+único do envelope; não usa o ótimo isolado do caso. A folga é o comprimento do envelope
+menos o requerido pelo caso. ``gas'' e ``liquid'' identificam as capacidades de gás
+e de líquido, respectivamente. Casos inativos não governam.
+<% if d.intermediarios %>
+\small\begin{longtable}{p{22mm}p{35mm}p{35mm}p{35mm}p{35mm}}
+\toprule Caso & $C_D$ & $V_t$ (m/s) & $Re$ & $K$ (m$^{-1/2}$)\\\midrule\endhead
+<% for c in d.intermediarios %>
+<< loop.index >> & << n(c.cd) >> & << n(c.vt) >> & << n(c.re) >> & << n(c.k) >>\\
+<% endfor %>
+\bottomrule\end{longtable}
+\begin{longtable}{p{22mm}p{35mm}p{35mm}p{35mm}p{35mm}}
+\toprule Caso & $(dL)_g$ (m²) & $(d²L)_l$ (m³) & $L_g$ (m) & $L_l$ (m)\\\midrule\endhead
+<% for c in d.intermediarios %>
+<< loop.index >> & << n(c.gas) >> & << n(c.liquid) >> & << n(c.gas_leff) >> & << n(c.liq_leff) >>\\
+<% endfor %>
+\bottomrule\end{longtable}
+\begin{longtable}{p{70mm}p{35mm}p{35mm}p{25mm}}
+\toprule Caso & $L_{eff}$ (m) & Folga (m) & Critério\\\midrule\endhead
+<% for c in d.intermediarios %>
+<< c.nome|texto >> & << n(c.leff) >> & << n(c.folga) >> & << c.criterio|texto >>\\
+<% endfor %>
+\bottomrule\end{longtable}\normalsize
+\begin{figure}[H]\centering
+\begin{tikzpicture}\begin{axis}[width=0.93\textwidth,height=70mm,ymode=log,
+xlabel={Diâmetro (m)},ylabel={Comprimento efetivo (m)},grid=both,
+legend style={font=\scriptsize,at={(0.5,-0.25)},anchor=north,legend columns=2}]
+\addplot[thick,blue] table[x=d,y=leff,col sep=comma]{varredura.csv};\addlegendentry{Envelope}
+\addplot[dashed,red] table[x=d,y=gas,col sep=comma]{varredura.csv};\addlegendentry{Gás do caso governante}
+\addplot[dotted,black] table[x=d,y=liquido,col sep=comma]{varredura.csv};\addlegendentry{Líquido do caso governante}
+\end{axis}\end{tikzpicture}
+\caption{Curvas de capacidade na grade completa; eixo vertical logarítmico. Admissibilidade no CSV.}
+\end{figure}
+\begin{figure}[H]\centering
+\begin{tikzpicture}\begin{axis}[width=0.93\textwidth,height=65mm,
+xlabel={Ordem dos casos ativos na tabela},ylabel={Comprimento requerido (m)},grid=major,
+legend style={font=\scriptsize,at={(0.5,-0.25)},anchor=north,legend columns=3}]
+\addplot[blue,mark=*] table[x=caso,y=gas,col sep=comma]{casos.csv};\addlegendentry{Gás}
+\addplot[red,mark=square*] table[x=caso,y=liquido,col sep=comma]{casos.csv};\addlegendentry{Líquido}
+\addplot[black,dashed] table[x=caso,y=envelope,col sep=comma]{casos.csv};\addlegendentry{Envelope}
+\end{axis}\end{tikzpicture}
+\caption{O maior dos dois critérios governa cada caso no diâmetro selecionado.}
+\end{figure}
+<% else %>
+Intermediários de um envelope viável indisponíveis; casos sem dados permanecem sem valores.
+<% endif %>
+
+\section{Verificação dos critérios}
+\small\begin{longtable}{p{50mm}p{42mm}p{42mm}p{27mm}}
+\toprule Critério & Obtido & Limite & Estado\\\midrule\endhead
+<% for c in d.criterios %>
+<< c.nome|texto >> & << n(c.obtido, True) >> & << c.sentido|texto >> << n(c.limite, True) >> & << 'atende' if c.atende else 'não atende' >>\\
+<% endfor %>
+\bottomrule\end{longtable}\normalsize
+A tabela de folgas verifica todos os casos ativos. Não há critério líquido--líquido
+neste método bifásico. A aprovação da geometria de processo não confirma os dados de
+entrada pendentes de revisão nem elimina as limitações do balanço preliminar.
+
+\section{Resultados}
+Estado: \textbf{<< d.status|texto >>}. << d.mensagem|texto >>
+\begin{longtable}{p{100mm}p{64mm}}\toprule Grandeza & Valor / unidade\\\midrule\endhead
+<% for rotulo, ident in d.resultado.items() %>
+<< rotulo|texto >> & << n(ident, True) >>\\
+<% endfor %>
+\bottomrule\end{longtable}
+<% if not d.resultado %>
+Dimensões não selecionadas: ---.
+<% endif %>
+
+\section{Pendências}
+<% for l in d.lacunas %>
+\paragraph{<< l.rotulo|texto >>} << l.dica|texto >>. Unidade: << l.unidade|texto >>.
+<% endfor %>
+<% if not d.lacunas %>
+Não há lacunas numéricas obrigatórias no TAG. Isso não equivale à confirmação das premissas.
+<% endif %>
+\begin{itemize}
+<% for r in d.revisoes %>
+\item << r.chave|texto >>: << r.estado|texto >>; origem << r.origem|texto >>.
+<< r.fonte|texto >>.
+<% endfor %>
+\end{itemize}
+Valores usuais sem referência, quando informados como tal, são identificados como
+``valor usual --- sem fonte rastreável''. Permanecem as limitações de propriedades,
+as pendências de engenharia do SG-001 e a revisão documental pelo responsável.
+
+\appendix
+\section{Propriedades e rastro das entradas por caso}
+<% for c in d.casos %>
+\subsection{<< c.nome|texto >>}
+\small\begin{longtable}{p{34mm}p{42mm}p{92mm}}\toprule Variável & Valor / unidade & Equação e origem\\\midrule\endhead
+<% for p in c.propriedades %>
+<< p.variavel|texto >> & << n(p.numero, True) >> & << p.equacao|texto >>; << p.formula|texto >>\\
+<% endfor %>
+\bottomrule\end{longtable}\normalsize
+<% endfor %>
+\section{Operandos e constantes complementares do rastro}
+Os valores abaixo completam os operandos capturados e as conversões não repetidas
+nas tabelas anteriores. Não são dados ajustados para obter o resultado.
+\small\begin{longtable}{p{70mm}p{43mm}p{54mm}}\toprule Caminho & Valor / unidade & Fonte\\\midrule\endhead
+<% for ident, valor in restantes() %>
+<< valor.caminho|texto >> & << n(ident, True) >> & << valor.fonte|texto >>\\
+<% endfor %>
+\bottomrule\end{longtable}\normalsize
+\end{document}

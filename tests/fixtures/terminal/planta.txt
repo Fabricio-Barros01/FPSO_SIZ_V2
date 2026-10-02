@@ -49,7 +49,7 @@
     revisão pendente: Velocidade mínima = 0 m/s (recomendada); casos 1–16
     revisão pendente: Velocidade máxima = 1,5 m/s (default); casos 1–16
     … +2
-    8 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
+    9 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
 
   B-002 — Bomba de água produzida do desidratador
     ! h_geometrica — Desnível geométrico [m]; casos 2–3, 8–16
@@ -81,7 +81,7 @@
     revisão pendente: Velocidade máxima = 1,5 m/s (default); casos 2–3, 8–16
     … +2
     Casos inativos: 1, 4–7
-    8 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
+    9 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
 
   P-001 — Pré-aquecedor óleo/óleo
     ! k_tubo — Condutividade do fluido do tubo [W/m·K]; casos 1–9, 11
@@ -90,10 +90,10 @@
     ! rf_tubo — Incrustação no lado tubo [m²·K/W]; casos 1–9, 11
     ! rf_casco — Incrustação no lado casco [m²·K/W]; casos 1–9, 11
     revisão pendente: Corte da chicana / diâmetro do casco = 0,25 – (default); casos 1–9, 11
-    revisão pendente: Espaçamento de chicana / diâmetro do casco = 0,4 – (default); casos 1–9,
-    11
-    revisão pendente: Arranjo do feixe = 30 ° (default); casos 1–9, 11
-    … +17
+    revisão pendente: Espaçamento de chicana / diâmetro do casco = 0,2 – (recomendada); casos
+    1–9, 11
+    revisão pendente: Arranjo do feixe = 45 ° (recomendada); casos 1–9, 11
+    … +20
     Casos inativos: 10, 12–16
     7 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
 
@@ -109,7 +109,7 @@
     revisão pendente: Espaçamento de chicana / diâmetro do casco = 0,2 – (recomendada); casos
     1–9, 11
     revisão pendente: Arranjo do feixe = 90 ° (recomendada); casos 1–9, 11
-    … +17
+    … +21
     Casos inativos: 10, 12–16
     1 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
 
@@ -126,8 +126,8 @@
     revisão pendente: Espaçamento de chicana / diâmetro do casco = 0,2 – (recomendada); casos
     1–16
     revisão pendente: Arranjo do feixe = 30 ° (recomendada); casos 1–16
-    … +17
-    4 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
+    … +21
+    5 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
 
   SG-001 — Separador trifásico de água livre (FWKO)
     revisão pendente: Gotícula no gás = 100 µm (default); casos 1–16
@@ -142,7 +142,7 @@
     revisão pendente: Passo da grade = 150 mm (default); casos 1–16
     revisão pendente: Esbeltez mínima = 3 – (default); casos 1–16
     … +4
-    4 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
+    7 aviso(s) de propriedades/faixas; detalhe no JSON do TAG e no rastro.
 
   TO-002 — Dessalinizador (tratador eletrostático)
     ! dm_water — Gotícula de água após coalescência [µm]; casos 2–3, 8–16
@@ -165,3 +165,8 @@
     … +3
 
   Blocos sem dimensionamento: M-01, DWH-001, M-02, M-03, MED-001
+
+
+━━ Integração térmica realizada (P-001, ADR 0005) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Integração térmica realizada: não se aplica — o P-001 está aguardando entrada: não há geometria
+  instalada para classificar, e a integração realizada não se aplica

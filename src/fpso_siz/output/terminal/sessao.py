@@ -697,6 +697,9 @@ class Sessao:
             lac = next((l for l in rt.entradas.lacunas if l.chave == chave), None)
             if lac is None:
                 continue
+            if not lac.editavel:   # não é número a informar: só se mostra o porquê
+                self.dizer("", *(self.e.fraco(x) for x in rel.quebrar(f"{lac.rotulo}: {lac.dica}", self.colunas, "  ")))
+                continue
             self.dizer("", self.e.negrito(f"  {lac.chave} — {lac.rotulo} [{lac.unidade}] · casos "
                                           f"{tela.faixa_casos(lac.casos)}"))
             det = []

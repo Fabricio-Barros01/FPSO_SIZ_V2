@@ -158,6 +158,10 @@ class MetodoDimensionamento:
     """Base de todo método. Hooks sem default levantam NotImplementedError."""
     method_id = ""
     label = ""
+    # chaves de `derived` que são EXTENSÃO do V2 (sem par no Julia). Ficam declaradas aqui para
+    # que a comparação de paridade continue possível: ela as desconsidera, como desconsidera
+    # `derivados_v2`. Vazio = o método devolve exatamente os derivados do Julia.
+    derivados_extensao = ()
 
     # --- identidade e entradas
     def applies_to(self):
@@ -242,6 +246,22 @@ class MetodoDimensionamento:
         """Grandezas do ponto escolhido que dependem de todos os casos (EnvelopeResult.
         derivados_v2; extensão do V2). Padrão: nenhuma, como no Julia."""
         return {}
+
+    def envelope_constraints(self, conss, p_env):
+        """Restrições com que o ENVELOPE varre a grade (extensão do V2, sem par no Julia).
+
+        Padrão: as próprias restrições de cada caso, que é a regra do Julia — todo caso impõe
+        exigência ao equipamento. Um método pode devolver restrições marcadas para declarar
+        que um caso NÃO dimensiona o equipamento, apenas é classificado nele (DESIGN no caso
+        de projeto, RATING fora dele; ADR 0005). O motor não sabe o que a marca significa:
+        ele só varre com o que o método devolver."""
+        return tuple(conss)
+
+    def refinar_eixo(self, p_env, x, eixo):
+        """Abscissas EXTRA a avaliar em torno do ponto escolhido `x` (extensão do V2, sem par no
+        Julia): refino local da grade. Padrão: nenhuma, que é a regra do Julia. O motor as avalia
+        com a mesma física e escolhe o melhor admissível entre a grade e o refino."""
+        return ()
 
     def envelope_case_params(self, conss, p_env):
         """Parâmetros com que cada caso é admitido no envelope (extensão do V2, sem par no

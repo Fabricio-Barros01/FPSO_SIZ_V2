@@ -1,45 +1,49 @@
 
   ENTRADAS . BOT 01 - Early Life
-  Chave                  Valor  Unidade  Origem       Revisao
-  -------------------  -------  -------  -----------  ----------------
-  m_tubo                     -  kg/s     lacuna
-  cp_tubo                    -  J/kg.K   lacuna
-  t_tubo_in                  -  degC     lacuna
-  t_tubo_out                 -  degC     lacuna
-  rho_tubo                   -  kg/m3    lacuna
-  mu_tubo                    -  cP       lacuna
-  k_tubo                     -  W/m.K    lacuna
-  m_casco              308,304  kg/s     balanco
-  cp_casco             1980,16  J/kg.K   balanco
-  t_casco_in           79,7723  degC     balanco
-  mu_casco             3,10591  cP       correlacao
-  k_casco                    -  W/m.K    lacuna
-  h_casco                  500  W/m2.K   default
-  corte_chicana           0,25  -        default      revisao pendente
-  espacamento_chicana      0,2  -        recomendada  revisao pendente
-  layout_tubos              90  deg      recomendada  revisao pendente
-  pares_veda                 1  -        default      revisao pendente
-  folga_furo_chicana       0,8  mm       default      revisao pendente
-  faixas_divisoras           0  -        default      revisao pendente
-  d_externo               12,7  mm       recomendada  revisao pendente
-  espessura               2,11  mm       default      revisao pendente
-  k_parede                   -  W/m.K    lacuna
-  rf_tubo                    -  m2.K/W   lacuna
-  rf_casco                   -  m2.K/W   lacuna
-  razao_passo             1,25  -        recomendada  revisao pendente
-  passes_tubo                1  -        recomendada  revisao pendente
-  n_min                      -  -        lacuna
-  n_max                      -  -        lacuna
-  n_step                     5  -        default      revisao pendente
-  v_min                      1  m/s      default      revisao pendente
-  v_max                      3  m/s      default      revisao pendente
-  d_casco_max             2500  mm       default      revisao pendente
-  l_tubo_max                 6  m        default      revisao pendente
-  banda_caso_projeto         1  -        recomendada  revisao pendente
-  cascos_serie               1  -        default      revisao pendente
-  cascos_paralelo            1  -        default      revisao pendente
-  pelicula_baixo_re          1  -        recomendada  revisao pendente
-  razao_visc_parede          1  -        default      revisao pendente
+  Chave                     Valor  Unidade  Origem       Revisao
+  ----------------------  -------  -------  -----------  ----------------
+  m_tubo                        -  kg/s     lacuna
+  cp_tubo                       -  J/kg.K   lacuna
+  t_tubo_in                     -  degC     lacuna
+  t_tubo_out                    -  degC     lacuna
+  rho_tubo                      -  kg/m3    lacuna
+  mu_tubo                       -  cP       lacuna
+  k_tubo                        -  W/m.K    lacuna
+  m_casco                 308,304  kg/s     balanco
+  cp_casco                1980,16  J/kg.K   balanco
+  t_casco_in               79,706  degC     balanco
+  mu_casco                3,10591  cP       correlacao
+  k_casco                       -  W/m.K    lacuna
+  h_casco                     500  W/m2.K   default
+  corte_chicana              0,25  -        default      revisao pendente
+  espacamento_chicana         0,2  -        recomendada  revisao pendente
+  layout_tubos                 90  deg      recomendada  revisao pendente
+  pares_veda                    1  -        default      revisao pendente
+  folga_furo_chicana          0,8  mm       default      revisao pendente
+  faixas_divisoras              0  -        default      revisao pendente
+  d_externo                  12,7  mm       recomendada  revisao pendente
+  espessura                  2,11  mm       default      revisao pendente
+  k_parede                      -  W/m.K    lacuna
+  rf_tubo                       -  m2.K/W   lacuna
+  rf_casco                      -  m2.K/W   lacuna
+  razao_passo                1,25  -        recomendada  revisao pendente
+  passes_tubo                   1  -        recomendada  revisao pendente
+  n_min                         -  -        lacuna
+  n_max                         -  -        lacuna
+  n_step                        5  -        default      revisao pendente
+  v_min                         1  m/s      default      revisao pendente
+  v_max                         3  m/s      default      revisao pendente
+  d_casco_max                2500  mm       default      revisao pendente
+  l_tubo_max                    6  m        default      revisao pendente
+  banda_caso_projeto            1  -        recomendada  revisao pendente
+  cascos_serie                  1  -        default      revisao pendente
+  cascos_paralelo               1  -        default      revisao pendente
+  trens_reserva                 0  -        default      revisao pendente
+  pelicula_baixo_re             1  -        recomendada  revisao pendente
+  razao_visc_parede             1  -        default      revisao pendente
+  rating_fora_do_projeto        0  -        default      revisao pendente
+  rugosidade                0,045  mm       default      revisao pendente
+  dp_max                        0  kPa      default      revisao pendente
     m_tubo . Entrada: Vazao massica no tubo
     m_tubo . Fonte: t_agua_in, t_agua_out
     cp_tubo . Entrada: Calor especifico no tubo
@@ -121,6 +125,9 @@
     cascos_serie . Fonte: um casco (regra do Julia); cascos em serie so pela reotimizacao do TAG (F10x.7)
     cascos_paralelo . Entrada: Cascos em paralelo
     cascos_paralelo . Fonte: um casco (regra do Julia); cascos em paralelo so pela reotimizacao do TAG (F10x.7)
+    trens_reserva . Entrada: Trens de reserva instalada
+    trens_reserva . Fonte: sem reserva instalada (0); o P-001 declara o trem de reserva que o BOT 2.7.1.11 exige em
+    [recomendadas]
     pelicula_baixo_re . Entrada: Pelicula do lado tubo nos tres regimes
     pelicula_baixo_re . Fonte: Branan (2012), cap. 2, pp. 40-41: a pelicula do lado tubo tem correlacao declarada
     nos tres regimes - Hausen (eq. 2-10) em Re <= 2000, interpolacao (eq. 2-12) em 2000 < Re < 104 e Dittus-Boelter
@@ -130,4 +137,13 @@
     razao_visc_parede . Entrada: Razao u_medio/u_parede no lado tubo
     razao_visc_parede . Fonte: fator (u/u_parede)^0,14 das eq. 2-10/2-11 do Branan omitido (razao 1,0): hipotese
     declarada, conservadora ao aquecer liquido; a temperatura de parede da eq. 2-9 vai ao rastro
+    rating_fora_do_projeto . Entrada: Classificar (rating) os casos fora do de projeto
+    rating_fora_do_projeto . Fonte: regra do Julia: todo caso exige da geometria a sua carga inteira (0); o P-001
+    adota o DESIGN x RATING da ADR 0005 (1) em [recomendadas]
+    rugosidade . Entrada: Rugosidade absoluta ? do tubo
+    rugosidade . Fonte: Moran (2016), descritor ? da bomba (config/equipment/pump/moran.toml): 0,045 mm e
+    aco-carbono comercial novo
+    dp_max . Entrada: Perda de carga maxima no lado tubo
+    dp_max . Fonte: 0 = perda de carga do lado tubo NAO verificada (sem limite declarado); os TAGs de trocador da
+    planta leem a premissa P-17 (dP por lado de trocador) em [entradas]
   ! C-07: viscosidade do oleo limitado a 70 degC (tabela do BOT; P-40)

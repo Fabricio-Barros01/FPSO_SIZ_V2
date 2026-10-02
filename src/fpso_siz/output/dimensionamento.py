@@ -26,6 +26,7 @@ def _entrada(v):
 
 def estrutura(eq, m, casos, r, origem):
     folgas = list(r.slack) + [None] * (len(r.case_names) - len(r.slack))
+    dimensiona = _dimensionam(r)
     return {
         "equipamento": {"id": eq.method_id, "rotulo": eq.label},
         "metodo": {"id": m.method_id, "rotulo": m.label,
@@ -38,13 +39,30 @@ def estrutura(eq, m, casos, r, origem):
             "x": _num(r.x), "y": _num(r.y), "governante": r.governing, "caso_governante": r.driver_case,
             "teto": _num(r.ceiling), "caso_teto": r.ceiling_case, "mecanismo_teto": r.ceiling_mechanism,
             "derivados": {k: _num(v) for k, v in r.derivados.items()},
+            # grandezas do ponto escolhido que dependem de TODOS os casos (conjunto de cascos,
+            # recuperação realizada caso a caso): extensão do V2, e é por aqui que a saída e o
+            # gate as leem — nenhuma delas é recalculada fora do motor
+            "derivados_conjunto": {k: [_num(x) for x in v] if isinstance(v, list) else _num(v)
+                                   for k, v in r.derivados_v2.items()},
             "cartao": [{"rotulo": f.label, "valor": _num(f.value), "unidade": f.unit, "status": f.status}
                        for f in m.result_fields(r)],
         },
+        # `dimensiona` distingue o caso que DIMENSIONA o equipamento do que é só CLASSIFICADO
+        # nele (ADR 0005). A folga de comprimento de um caso classificado não é comparável com
+        # a de um caso dimensionante, e por isso sai como null em vez de número.
         "casos": [{"nome": n, "viavel": pc.feasible, "mensagem": pc.message, "x": _num(pc.x), "y": _num(pc.y),
-                   "governante": pc.governing, "folga": _num(f)}
-                  for n, pc, f in zip(r.case_names, r.per_case, folgas)],
+                   "governante": pc.governing, "folga": _num(f) if d else None, "dimensiona": d}
+                  for n, pc, f, d in zip(r.case_names, r.per_case, folgas, dimensiona)],
     }
+
+
+def _dimensionam(r):
+    """[bool] por caso: o caso impõe exigência ao equipamento, ou só é classificado nele?
+    Lido do que o motor preparou — a saída não reavalia física (core/memoria.py faz o mesmo)."""
+    cons = [c for _, _, c, _ in getattr(r, "preparo", ())]
+    if len(cons) != len(r.case_names) or any(c is None for c in cons):
+        return [True] * len(r.case_names)
+    return [not getattr(c, "rating_apenas", False) for c in cons]
 
 
 def linhas_varredura(m, r):

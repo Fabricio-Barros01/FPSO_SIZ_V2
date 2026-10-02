@@ -14,11 +14,12 @@ AJUSTES = FIXTURES / "pfd" / "ajustes_sinteticos.toml"
 
 @pytest.mark.parametrize("nome", ["planta_base", "planta_propostas"])
 def test_exportacao_estrita_com_lacunas_e_inviabilidade(request, nome, tmp_path):
-    """Sem as propostas a planta tem lacunas (aguardando entrada); com elas, o P-001 é o alarme
-    aberto (inviável). O JSON é estrito nos três estados."""
+    """Sem as propostas a planta tem lacunas (aguardando entrada); com elas, os 11 TAGs são
+    dimensionados. O JSON é estrito nos dois estados."""
     p = request.getfixturevalue(nome)
     arquivos = pfd.gravar(p, tmp_path)
-    assert len(arquivos) == 23  # JSON + CSV de varredura por TAG, e planta.csv
+    # JSON + CSV de varredura por TAG, planta.csv e a integração térmica realizada (JSON + CSV)
+    assert len(arquivos) == 25
     for t in p.tags:
         texto = (tmp_path / f"{t.tag.tag}.json").read_text(encoding="utf-8")
         obj = json.loads(texto, parse_constant=lambda x: pytest.fail(f"JSON não estrito: {x}"))
@@ -36,7 +37,7 @@ def test_exportacao_estrita_com_lacunas_e_inviabilidade(request, nome, tmp_path)
     with (tmp_path / "planta.csv").open(encoding="utf-8", newline="") as f:
         linhas = list(csv.DictReader(f))
     assert len(linhas) == 11 and tuple(linhas[0]) == pfd.COLUNAS
-    esperado = {"aguardando_entrada", "dimensionado"} if nome == "planta_base" else {"inviavel", "dimensionado"}
+    esperado = {"aguardando_entrada", "dimensionado"} if nome == "planta_base" else {"dimensionado"}
     assert {x["status"] for x in linhas} == esperado
 
 
@@ -58,6 +59,9 @@ def test_cli_exporta_os_mesmos_bytes(planta_ajustada, tmp_path, capsys):
     assert {p.name: p.read_bytes() for p in a.iterdir()} == {p.name: p.read_bytes() for p in b.iterdir()}
     for caminho in b.glob("*.json"):
         obj = json.loads(caminho.read_text(encoding="utf-8"))
+        if "envelope" not in obj:          # integracao_termica.json não é o JSON de um TAG
+            assert caminho.name == pfd.ARQ_INTEGRACAO
+            continue
         if obj["envelope"] is not None:
             assert obj["envelope"]["resultado"]["caso_governante"]
             assert obj["envelope"]["rastros"] and obj["envelope"]["varredura"]
@@ -78,7 +82,8 @@ def test_erro_ajustes_claro(tmp_path, capsys, texto, mensagem):
 
 
 def test_cli_premissa_registrada(tmp_path, capsys):
-    assert main(["pfd", "--casos", str(CASOS), "--premissa", "eta_pump=0.8", "--saida", str(tmp_path)]) == 1
+    # 0 = planta completa (ADR 0005); o que o teste cobra é a premissa alterada no JSON
+    assert main(["pfd", "--casos", str(CASOS), "--premissa", "eta_pump=0.8", "--saida", str(tmp_path)]) == 0
     capsys.readouterr()
     obj = json.loads((tmp_path/"B-001.json").read_text(encoding="utf-8"))
     assert obj["premissas"]["eta_pump"] == 0.8

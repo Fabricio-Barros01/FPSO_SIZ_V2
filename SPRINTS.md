@@ -15,6 +15,9 @@ arquivo do BOT + premissas
   → balanco/modelo.resolver_todos          → EstadoProcesso (balanco/estado.py; trem em balanco/trem.py)
   → pfd/entradas.montar (termo/servico)    → entradas dos 11 TAGs, cada propriedade com proveniência
   → pfd/equipamento → core/motor + sizing  → envelopes (EnvelopeResult guarda o que avaliou)
+  → pfd/integracao_termica                 → rating do P-001 no ponto fixo das propriedades;
+                                             cargas RESIDUAIS dimensionam P-002/P-003 (ADR 0005)
+  → pfd/layout (+ tools/buscar_layout_…)   → busca discreta da geometria, frente de Pareto física
   → pfd/otimizacao + _otim                 → objetivos e restrições (NSGA-II; subproblema de pressão, nota 42)
   → output/* e pfd/memorial (+ core/memoria) → JSON, CSV, MC em LaTeX
   → tools/auditar_saida_pfd.py             → gate
@@ -27,8 +30,10 @@ arquivo do BOT + premissas
   Nota 4 (referência do FWKO, premissa de modelagem, `docs/validacao/38`) e flash em cascata; o
   gás de cada estágio é o do flash. Casos 9, 11, 15, 16 (gás de lift sem composição): não
   avaliáveis, Standing (`docs/validacao/39`).
-- **Planta produtiva (16 casos, propostas do pacote):** 10 TAGs dimensionados; **P-001 inviável**
-  (alarme aberto). Gate aprovado.
+- **Planta produtiva (16 casos, propostas do pacote):** 11 TAGs dimensionados, incluindo o
+  **P-001** — DESIGN no caso de projeto, RATING nos de turndown, e o calor efetivamente
+  recuperado propagado ao P-002 e ao P-003 pelas cargas residuais (ADR 0005,
+  `docs/validacao/43`). Gate aprovado.
 - **Otimização das pressões de separação (nota 42):** P_D1 × P_D2 → mesmo resolvedor → trem →
   SG-001/V-001/V-002 → perda de óleo estabilizado e carga de vapor da VRU, com TVP ≤ 70 kPa como
   restrição contínua (12 casos avaliáveis). Frente do NSGA-II conferida contra grade-oráculo de
@@ -40,7 +45,7 @@ arquivo do BOT + premissas
 
 | etapa | commit | resumo |
 |---|---|---|
-| DESIGN × RATING e multiplicidade | (este) | rating térmico limitado por Pinch, contrato genérico de unidades físicas, bombas em paralelo, busca discreta/Pareto e reauditoria atual do P-001 — `docs/validacao/43`, ADR 0005 |
+| DESIGN × RATING conectado ao P-001 | (este) | geometria escolhida por busca discreta, rating dos 16 casos com propriedades reavaliadas no ponto fixo, perda de carga verificada contra a P-17, cargas residuais dimensionando P-002/P-003 e tabela dos 16 casos — `docs/validacao/43`, ADR 0005 |
 | Otimização das pressões | (este) | subproblema P_D1 × P_D2: TVP no estado, objetivos e restrições no TOML, grade-oráculo, NSGA-II, frente reproduzida na resolução da grade — `docs/validacao/42` |
 | Mapa de pressão e viscosidade | `d9c565d` | Rs do trem → Beggs & Robinson (nota 40); mapa determinístico P_D1 × P_D2, conclusão C (nota 41) |
 | Trem produtivo | (este) | recombinação da Nota 4 + flash no gás de SG-001/V-001/V-002 nos 12 casos avaliáveis; Standing só nos 4 com lift — `docs/validacao/39` |
@@ -53,14 +58,19 @@ arquivo do BOT + premissas
 
 ## Pendências físicas reais
 
-1. **P-001 inviável** — troca óleo/óleo com aproximação de 10 K (P-32) exige ~186 m de tubo
-   contra 6 m; nenhuma correlação resolve. Decisão de projeto (P-32, arranjo, ou aceitar).
-   Diagnóstico e árvore de alternativas: `docs/validacao/36-p001-diagnostico.md` (no modelo atual,
-   por Standing, a sensibilidade do P-001 a P_D1/P_D2 é desprezível, ~0,2 %; a reconferir com o flash).
+1. ~~**P-001 inviável**~~ — **resolvida** pela alternativa A5 da árvore de
+   `docs/validacao/36-p001-diagnostico.md` (DESIGN no caso de projeto, RATING nos demais;
+   ADR 0005, `docs/validacao/43`). A carga do P-001 é a do balanço preliminar; o que a área
+   instalada não recupera num caso de turndown é compensado pelas utilidades (P-002 e P-003
+   dimensionados pelas cargas residuais). O alarme está fechado em `config/pfd/alarmes.toml`, e
+   os testes que reconstruíam o impedimento antigo (regra do Julia aplicada ao P-001, variantes
+   "1 passe" e "emulsão no casco") saíram em 2026-10-02.
 2. ~~O trem não reconcilia com o BOT~~ — **resolvida** pela recombinação da Nota 4 (nota 38,
-   aprovada) e pelo trem produtivo (nota 39). Decisão pendente dela: aceitar ou não a propagação
-   do Rs do trem à μ do óleo vivo (Beggs & Robinson), que muda SG-001 (teto), P-001, P-002 e
-   TO-001 (nota 39 §8).
+   aprovada) e pelo trem produtivo (nota 39). A propagação do Rs do trem à μ do óleo vivo (Beggs
+   & Robinson) foi APROVADA em 2026-09-28 (nota 40: rota produtiva, proibido voltar a Standing só
+   para a viscosidade). Fase B ENCERRADA (2026-10-02) como sensibilidade documentada: rota vigente
+   mantida pela consistência das bases e do modelo (não pela viabilidade do P-001) —
+   `tools/comparar_rs_viscosidade.py`, nota 45.
 3. **Composição do gás de lift** — ausente na fonte (BOT §2.3.3 só dá especificação); casos 9, 11,
    15 e 16.
 4. **h e cp dos pseudo-componentes** — sem Cp_ig com fonte (a rota PNA para H/C não fecha).
@@ -71,13 +81,34 @@ arquivo do BOT + premissas
    restrição contínua; o piso de P_D2 (sucção da VRU) segue sem fonte e não vira bound.
    Com as premissas atuais (P-19 = 200 kPa) a TVP é 110,8 kPa: a P-19 não atende o BOT —
    `docs/validacao/37`, `41`, `42`.
-8. **Otimização F15 (problema completo)** — `docs/validacao/23-otimizacao.md` segue como
-   diagnóstico do alarme do P-001; o subproblema de pressão (nota 42) é a otimização que o TCC
+   **Fase A — CONSOLIDADA (2026-10-02):** P-18/P-19 = 500/130 kPa absolutos, premissa preliminar
+   do autor (`config/premissas.toml`, fonte na nota 44): o ponto exato da grade da nota 42 com
+   g_TVP = −0,034 (TVP máxima 67,6 kPa nos 12 avaliáveis). Avisos que permanecem: TVP não
+   verificada nos casos 9, 11, 15, 16; compatibilidade de P_D2 com a sucção da VRU não verificada.
+   Regressões revistas pela nota 44. Fases seguintes: B — comparação Rs → μ (nota 45);
+   C — ΔP do casco por Bell-Delaware (Branan pp. 46-47, Tab. 2-5) + refinamento local da grade +
+   nova busca de layout do P-001; D — sensibilidades e tabela de atendimento à ET.
+8. **Otimização F15 (problema completo)** — `docs/validacao/23-otimizacao.md` é registro
+   histórico (de quando o P-001 estava em alarme); o subproblema de pressão (nota 42) é a otimização que o TCC
    defende.
+
+9. **Multiplicidade de BOMBAS** — o contrato genérico de serviço (`sizing/servico.py`:
+   instaladas × duty × standby) existe e é exercitado pela busca de layout do trocador, mas
+   **nenhum TAG de bomba o usa**: B-001/B-002/B-003 continuam dimensionadas como uma unidade
+   só. A vazão mínima contínua e a curva do fabricante não estão no acervo, e sem elas não há
+   como declarar a filosofia de paralelo das bombas. Pendência declarada — não entrega.
+10. **Perda de carga do lado CASCO** — não modelada em nenhum trocador. CORREÇÃO (2026-10-02): o
+   acervo TEM a correlação — Branan pp. 46-47 (eqs. 2-32 a 2-38) com os coeficientes b1–b4 da
+   Tab. 2-5, a mesma tabela do h_o; a conferir a linha 90°/Re 10–100 (b2 = 0,0963 impresso). Fase C. A do lado tubo é calculada (Darcy-Weisbach,
+   Moran 2016) e verificada contra a P-17 no P-001, onde o lado tubo é o processo; no P-002 e
+   no P-003 o lado tubo é a utilidade, e ali ela é reportada, não aprovada.
 
 Pendências de engenharia de software (não físicas): o leitor do formato de ajustes da F10b
 (`pfd/ajustes.estado_legado`) ainda existe — a fixture de teste `ajustes_sinteticos.toml` usa
-esse formato; R3/R4 do P-003 (mudam o que o MC mostra).
+esse formato; R3/R4 do P-003 (mudam o que o MC mostra). A otimização do problema COMPLETO
+(F15) ficou mais lenta: ela dimensiona P-002 e P-003, e por isso cada indivíduo paga o ponto
+fixo da integração realizada do P-001 (uma vez por indivíduo, não por TAG). O subproblema de
+pressão (nota 42) não é afetado — ele não dimensiona trocador.
 
 ## Próximo marco
 

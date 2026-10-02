@@ -1,0 +1,8 @@
+# Premissas CANDIDATAS: valores em revisão pelo usuário, que NÃO são vigentes. O caminho
+# produtivo continua lendo config/premissas.toml; uma candidata só entra no cálculo por
+# alteração explícita (Contexto(..., alteracoes=...), `--premissa` da CLI ou
+# `tools/comparar_premissas.py --candidata <id>`). Quando o usuário aprova, o valor passa para
+# premissas.toml, a candidata sai daqui e as regressões são revistas com a nota citada.
+#
+# Nenhuma candidata em revisão. A `fase_a_pressao` (P-18/P-19 = 500/130 kPa) foi aprovada em
+# 2026-10-02 e consolidada em premissas.toml (docs/validacao/44).
