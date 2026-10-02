@@ -1,4 +1,6 @@
 """O caminho PFD normal não pode voltar a deixar DESIGN/RATING como API paralela."""
+import json
+from pathlib import Path
 from fpso_siz.pfd import equipamento
 from fpso_siz.pfd.planta import dimensionar
 
@@ -23,7 +25,9 @@ def test_pfd_bot_alcanca_busca_rating_e_propaga_cargas(monkeypatch, planta_base)
     planta = dimensionar(contexto=ctx)
 
     p001 = planta.tag("P-001")
-    assert chamadas == {"rating": len(planta.balanco), "busca": 1}
+    assert chamadas["busca"] == 1
+    assert chamadas["rating"] >= len(planta.balanco)
+    assert chamadas["rating"] % len(planta.balanco) == 0
     assert len(p001.operacao.casos) == len(planta.balanco)
     for op, estado in zip(p001.operacao.casos, planta.balanco):
         assert estado.duties["Q_pre"] == op.Q_real
@@ -33,3 +37,8 @@ def test_pfd_bot_alcanca_busca_rating_e_propaga_cargas(monkeypatch, planta_base)
         assert estado.T["C-23"] == op.t_quente_out
     assert planta.tag("P-002").entradas.caso(2).valores["t_casco_in"].valor == planta.balanco[1].T["C-07"]
     assert planta.tag("P-003").entradas.caso(2).valores["t_casco_in"].valor == planta.balanco[1].T["C-23"]
+    esperado = json.loads((Path(__file__).parents[1] / "fixtures/pfd/p001_busca_regressao.json").read_text())
+    atual = p001.operacao.estrutura()
+    assert atual["geometria"] == esperado["geometria"]
+    assert atual["criterio_desempate"] == esperado["criterio_desempate"]
+    assert [c["Q_real"] for c in atual["casos"]] == esperado["q_real_kW"]

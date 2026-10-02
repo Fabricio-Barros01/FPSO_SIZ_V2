@@ -12,6 +12,7 @@ estados — não pergunta, não imprime, não desenha, não grava.
   aguardando entrada; entrada inválida ou contexto incompatível é ValueError.
 """
 import math
+import itertools
 from dataclasses import asdict, dataclass, replace
 from types import SimpleNamespace
 
@@ -22,9 +23,10 @@ from fpso_siz.core.casos import case_set_from_config
 from fpso_siz.core.contrato import infeasible_envelope
 from fpso_siz.core.motor import size_envelope
 from fpso_siz.core.parametros import with_defaults
+from fpso_siz.core.configuracao import carregar
 from fpso_siz.core.unidades import kw_para_w, mm_para_m, w_para_kw
 from fpso_siz.sizing import rating
-from fpso_siz.sizing.servico import ConfiguracaoServico, buscar_layouts
+from fpso_siz.sizing.servico import ConfiguracaoServico, buscar_layouts, frente_pareto
 from fpso_siz.termo import servico as termo
 from fpso_siz.pfd.ajustes import AUTOMATICO, MANUAL, EstadoTAG, canonico_estado, contexto_de
 from fpso_siz.pfd.entradas import cfg, especificacoes, montar, montar_manual
@@ -209,6 +211,15 @@ class GeometriaP001:
     tubos_por_passe: float
     comprimento_tubo: float
     area_unitaria: float
+    diametro_externo_mm: float
+    passes_tubo: int
+    razao_passo: float
+    layout_tubos_graus: int
+    corte_chicana: float
+    espacamento_chicana: float
+    instaladas: int
+    duty: int
+    standby: int
 
 
 @dataclass(frozen=True)
@@ -228,12 +239,37 @@ class CasoOperacaoP001:
 class OperacaoP001:
     geometria: GeometriaP001
     casos: tuple
+    criterio_desempate: tuple = ()
 
     def caso(self, num):
         return next(c for c in self.casos if c.num == num)
 
     def estrutura(self):
-        return {"geometria": asdict(self.geometria), "casos": [asdict(c) for c in self.casos]}
+        return {"geometria": asdict(self.geometria), "criterio_desempate": list(self.criterio_desempate),
+                "casos": [asdict(c) for c in self.casos]}
+
+
+def _grade(inicio, fim, passo):
+    n = round((fim - inicio) / passo)
+    return tuple(inicio + i * passo for i in range(n + 1))
+
+
+def _espaco_p001():
+    """Traduz o TOML de engenharia para os objetos da busca genérica."""
+    c = carregar("pfd/p_001_busca.toml")
+    reserva = int(c["reserva_et"]["standby_minimo"])
+    servicos = tuple(ConfiguracaoServico(int(s["instaladas"]), int(s["duty"]), int(s["standby"]),
+                                         1 / int(s["duty"]), int(s["minimo_ativas"]))
+                     for s in c["servico"] if int(s["standby"]) >= reserva)
+    g = c["geometria"]
+    geometrias = itertools.product(
+        _grade(**{"inicio": c["tubos_por_passe"]["min"], "fim": c["tubos_por_passe"]["max"],
+                  "passo": c["tubos_por_passe"]["passo"]}),
+        _grade(**{"inicio": c["comprimento_m"]["min"], "fim": c["comprimento_m"]["max"],
+                  "passo": c["comprimento_m"]["passo"]}),
+        g["diametros_externos_mm"], g["passes_tubo"], g["razoes_passo"], g["layouts_tubos_graus"],
+        g["cortes_chicana"], g["espacamentos_chicana_sobre_casco"])
+    return c, servicos, tuple(geometrias)
 
 
 def avaliar_p001(estados, entradas):
@@ -252,58 +288,78 @@ def avaliar_p001(estados, entradas):
         p = with_defaults(specs, valores)
         # Contracorrente é a geometria materializável para rating parcial; o arranjo 1-2
         # falha antes de produzir geometria no alvo ideal do balanço.
-        p["passes_tubo"] = float(cfg()["p001_integrado"]["passes_tubo"])
         entrada = metodo.case_input(valores)
         preparados.append((estado, caso, entrada, p))
 
-    projeto = max(preparados, key=lambda x: x[2].m_tubo / x[2].rho_tubo)
-    p_projeto = projeto[3]
-    eixo = metodo.sweep_axis(p_projeto)
-    n = min(eixo.values, key=lambda x: abs(x - p_projeto["n_min"]))
-    comprimento = float(p_projeto["l_tubo_max"])
+    config_busca, configuracoes, especificacoes = _espaco_p001()
 
     def design(configuracao, especificacao, casos):
-        del configuracao, casos
-        n_tubos = especificacao
-        d_o = mm_para_m(p_projeto["d_externo"])
-        area = n_tubos * p_projeto["passes_tubo"] * math.pi * d_o * comprimento
-        return GeometriaP001(n_tubos, comprimento, area)
+        del casos
+        n_tubos, comprimento, d_ext, passes, razao, layout, corte, espacamento = especificacao
+        area = n_tubos * passes * math.pi * mm_para_m(d_ext) * comprimento
+        return GeometriaP001(n_tubos, comprimento, area, d_ext, int(passes), razao, int(layout), corte,
+                             espacamento, configuracao.instaladas, configuracao.duty_projeto,
+                             configuracao.standby)
 
     def avaliar(configuracao, geometria, preparado):
-        del configuracao
         estado, caso_tag, entrada, p = preparado
+        p.update(d_externo=geometria.diametro_externo_mm, passes_tubo=float(geometria.passes_tubo),
+                 razao_passo=geometria.razao_passo, layout_tubos=float(geometria.layout_tubos_graus),
+                 corte_chicana=geometria.corte_chicana, espacamento_chicana=geometria.espacamento_chicana,
+                 l_tubo_max=geometria.comprimento_tubo)
+        entrada_unidade = replace(entrada, m_tubo=entrada.m_tubo / configuracao.duty_projeto,
+                                  m_casco=entrada.m_casco / configuracao.duty_projeto)
         alvo = kw_para_w(estado.duties["Q_pre"])
         c_rating = rating.CasoRating(entrada.t_tubo_in, entrada.t_casco_in,
                                      entrada.m_tubo * entrada.cp_tubo,
                                      entrada.m_casco * entrada.cp_casco, alvo)
 
         def coeficientes(q, tc, th):
-            e = replace(entrada, t_tubo_out=tc)
+            # As restrições são reconstruídas em toda iteração nas temperaturas que o Q produz;
+            # assim Re, películas, U, F, LMTD e Bell-Delaware não são congelados com o alvo Pinch.
+            e = replace(entrada_unidade, t_tubo_out=tc)
             ok, cons, _ = metodo.sizing_constraints(e, p, constantes)
             if not ok:
-                return 0.0, 0.0
+                return 0.0, 0.0, {}
             derivados = metodo.derived(geometria.tubos_por_passe, geometria.comprimento_tubo,
                                        "termica", cons, constantes, p)
-            return derivados.get("u", 0.0) * geometria.area_unitaria, cons.f
+            admissivel = (metodo.case_admissible(geometria.tubos_por_passe, cons, {**p, "v_min": 0.0})
+                           and metodo.admissible(geometria.tubos_por_passe, derivados, p))
+            derivados["admissivel_fisica"] = admissivel
+            return (derivados.get("u", 0.0) * geometria.area_unitaria * configuracao.duty_projeto,
+                    cons.f, derivados)
 
         rr = rating.rating(c_rating, lambda q, tc, th: coeficientes(q, tc, th)[0],
                            lambda q, tc, th: coeficientes(q, tc, th)[1])
+        _, _, derivados = coeficientes(rr.q_real, rr.t_fria_out, rr.t_quente_out)
         integrado = rating.integrar(c_rating, rr, estado.T["C-08"], estado.T["C-24"])
         resultado = CasoOperacaoP001(
             estado.num, caso_tag.nome, w_para_kw(rr.q_rec_max), w_para_kw(rr.q_real),
             rr.t_fria_out, rr.t_quente_out, w_para_kw(integrado.q_p002), w_para_kw(integrado.q_p003),
             {"Q_rating_kW": w_para_kw(rr.q_rating), "UA_W_K": rr.ua, "F": rr.fator_f,
              "dT_lm_K": rr.dt_lm, "recuperacao_nao_realizada_kW": w_para_kw(rr.recuperacao_nao_realizada),
-             "convergiu": rr.convergiu, "iteracoes": rr.iteracoes})
-        return SimpleNamespace(admissivel=rr.convergiu, utilidade_quente=integrado.utilidade_quente_residual,
+             "convergiu": rr.convergiu, "iteracoes": rr.iteracoes,
+             "Re_tubo": derivados.get("re"), "Re_casco": derivados.get("re_casco"),
+             "h_tubo_W_m2K": derivados.get("h_tubo"), "h_casco_W_m2K": derivados.get("h_casco"),
+             "U_W_m2K": derivados.get("u"), "diametro_casco_mm": derivados.get("d_shell"),
+             "velocidade_tubo_m_s": derivados.get("v"), "perda_carga_tubo_Pa": math.nan,
+             "perda_carga_casco_Pa": math.nan})
+        caso_inativo = alvo == 0
+        return SimpleNamespace(admissivel=rr.convergiu and (caso_inativo or derivados.get("admissivel_fisica", False)),
+                               recuperacao=rr.q_real, utilidade_quente=integrado.utilidade_quente_residual,
                                utilidade_fria=integrado.utilidade_fria_residual, resultado=resultado)
 
-    configuracao = ConfiguracaoServico(1, 1, 0, 1.0)
-    layouts = buscar_layouts((configuracao,), (n,), tuple(preparados), design, avaliar)
+    layouts = buscar_layouts(configuracoes, especificacoes, tuple(preparados), design, avaliar)
     if not layouts:
         raise ValueError("P-001: nenhuma geometria fixa pôde ser avaliada nos casos BOT")
-    escolhido = min(layouts, key=lambda x: (x.utilidade_quente + x.utilidade_fria, x.area_instalada))
-    return OperacaoP001(escolhido.geometria, tuple(x.resultado for x in escolhido.casos))
+    frente = frente_pareto(layouts)
+    escolhido = min(frente, key=lambda x: (x.utilidade_quente + x.utilidade_fria, x.area_instalada,
+        x.configuracao.instaladas, x.configuracao.duty_projeto, x.geometria.tubos_por_passe,
+        x.geometria.comprimento_tubo, x.geometria.diametro_externo_mm, x.geometria.passes_tubo,
+        x.geometria.layout_tubos_graus, x.geometria.razao_passo, x.geometria.corte_chicana,
+        x.geometria.espacamento_chicana))
+    return OperacaoP001(escolhido.geometria, tuple(x.resultado for x in escolhido.casos),
+                        tuple(config_busca["selecao"]["desempate"]))
 
 
 def blocos_sem_dimensionamento(topologia):

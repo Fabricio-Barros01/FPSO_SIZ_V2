@@ -80,6 +80,10 @@ class CandidatoLayout:
     utilidade_fria: float
 
     @property
+    def recuperacao(self):
+        return sum(getattr(c, "recuperacao", 0.0) for c in self.casos)
+
+    @property
     def area_instalada(self):
         return self.configuracao.instaladas * self.area_unitaria
 
@@ -105,10 +109,10 @@ def buscar_layouts(configuracoes_admissiveis, geometrias, casos, design, avaliar
 
 
 def frente_pareto(candidatos):
-    """Frente física (área instalada, QH, QC), sem inventar custos."""
+    """Frente física (recuperação máxima, área e utilidades mínimas), sem custos."""
     def domina(a, b):
-        va = (a.area_instalada, a.utilidade_quente, a.utilidade_fria)
-        vb = (b.area_instalada, b.utilidade_quente, b.utilidade_fria)
+        va = (-a.recuperacao, a.area_instalada, a.utilidade_quente + a.utilidade_fria)
+        vb = (-b.recuperacao, b.area_instalada, b.utilidade_quente + b.utilidade_fria)
         return all(x <= y for x, y in zip(va, vb)) and any(x < y for x, y in zip(va, vb))
 
     return tuple(c for c in candidatos if not any(domina(outro, c) for outro in candidatos if outro is not c))
