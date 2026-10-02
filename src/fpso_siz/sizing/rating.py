@@ -34,6 +34,7 @@ class ResultadoRating:
     iteracoes: int
     estado: str
     mensagem: str
+    diagnostico: dict
 
     @property
     def avaliavel(self):
@@ -49,6 +50,7 @@ class _EstadoRating:
     dt_lm: float
     avaliavel: bool
     mensagem: str = ""
+    diagnostico: dict = None
 
 
 def _estado(caso, q, ua, fator):
@@ -57,18 +59,20 @@ def _estado(caso, q, ua, fator):
     if not all(math.isfinite(v) for v in (q, tc, th)):
         return _EstadoRating(tc, th, math.nan, math.nan, math.nan, False,
                             "temperaturas intermediárias não finitas")
-    u = ua(q, tc, th)
-    f = fator(q, tc, th)
+    if hasattr(ua, "avaliar"):
+        u, f, diagnostico = ua.avaliar(q, tc, th)
+    else:
+        u, f, diagnostico = ua(q, tc, th), fator(q, tc, th), {}
     dt = lmtd(caso.t_quente_in - tc, th - caso.t_fria_in)
     valores = (("UA", u), ("fator F", f), ("LMTD", dt))
     invalidos = [nome for nome, valor in valores if not math.isfinite(valor)]
     if invalidos:
         return _EstadoRating(tc, th, u, f, dt, False,
-                            f"propriedade não finita: {', '.join(invalidos)}")
+                            f"propriedade não finita: {', '.join(invalidos)}", diagnostico)
     if any(valor < 0 for _, valor in valores):
         return _EstadoRating(tc, th, u, f, dt, False,
-                            "UA, fator F e LMTD devem ser não negativos")
-    return _EstadoRating(tc, th, u, f, dt, True)
+                            "UA, fator F e LMTD devem ser não negativos", diagnostico)
+    return _EstadoRating(tc, th, u, f, dt, True, "", diagnostico)
 
 
 def _resultado(caso, q, estado, situacao, mensagem, iteracoes):
@@ -81,14 +85,16 @@ def _resultado(caso, q, estado, situacao, mensagem, iteracoes):
         recuperacao = caso.q_rec_max - q_real
     return ResultadoRating(caso.q_rec_max, q, q_real, estado.t_fria_out,
                            estado.t_quente_out, estado.ua, estado.fator_f, estado.dt_lm,
-                           recuperacao, convergiu, iteracoes, situacao, mensagem)
+                           recuperacao, convergiu, iteracoes, situacao, mensagem,
+                           estado.diagnostico or {})
 
 
 def rating(caso, ua, fator=lambda q, tc, th: 1.0):
     """Resolve ``Q = UA(Q) F(Q) LMTD(Q)`` por bisseção robusta.
 
-    ``ua`` e ``fator`` recebem Q e as duas temperaturas de saída, permitindo que
-    propriedades, Reynolds, películas e F sejam reavaliados em cada iteração.
+    ``ua`` e ``fator`` recebem Q e as duas temperaturas de saída. Alternativamente,
+    ``ua`` pode ser um avaliador de geometria fixa com método ``avaliar``; nesse caso
+    UA, F e o diagnóstico físico são obtidos na mesma avaliação de cada ponto da raiz.
     """
     cfg = carregar("equipment/comum/servico.toml")["rating"]
     tol = float(cfg["tolerancia_relativa"])

@@ -17,9 +17,9 @@ from fpso_siz.core.ieee import div
 from fpso_siz.core.trace import Rastro
 from fpso_siz.core.unidades import cp_para_pas, m_para_mm, mm_para_m
 from fpso_siz.sizing.base import MetodoTOML, driver_case
-from fpso_siz.sizing.bell_delaware import (ShellGeometry, baffle_clearance, com_chicanas, feixe_ideal,
-                                           layout_pitches)
-from fpso_siz.sizing.hidraulica import reynolds_pipe
+from fpso_siz.sizing.bell_delaware import (ShellGeometry, baffle_clearance, com_chicanas, crossflow_area,
+                                           feixe_ideal, layout_pitches)
+from fpso_siz.sizing.hidraulica import darcy_friction, reynolds_pipe
 from fpso_siz.sizing.pelicula import depende_do_comprimento, filme_tubo, temperatura_parede
 
 EXCHANGER_KEYS = ("m_tubo", "cp_tubo", "t_tubo_in", "t_tubo_out", "rho_tubo", "mu_tubo", "k_tubo",
@@ -188,6 +188,122 @@ VAZIO = dict(v=math.inf, re=math.nan, h_i=math.nan, h_o=math.nan, u=math.nan, ar
              d_casco=math.inf, d_shell=math.inf, re_casco=math.nan, jc=math.nan, jl=math.nan, jb=math.nan,
              js=math.nan, jr=math.nan, j_produto=math.nan, h_ideal=math.nan, n_chicanas=math.nan, nu_valido=False,
              ok=False, regime="", correlacao="", motivo="", peso_transicao=math.nan, t_parede=math.nan)
+
+
+@dataclass(frozen=True)
+class GeometriaRating:
+    """Geometria instalada necessária ao rating (todas as dimensões em SI).
+
+    ``rugosidade_tubo`` é declarada pelo chamador: rating não inventa material nem
+    rugosidade. A área é externa e inclui todas as unidades em serviço.
+    """
+    tubos_por_passe: int
+    comprimento: float
+    area: float
+    unidades: int = 1
+    rugosidade_tubo: float = 0.0
+
+
+@dataclass(frozen=True)
+class PropriedadesRating:
+    rho: float
+    mu: float                 # Pa.s
+    cp: float
+    k: float
+    avisos: tuple = ()
+
+
+def propriedades_declaradas(rho, mu, cp, k):
+    """Fornecedor para propriedades declaradas quando o serviço não possui correlação válida."""
+    return lambda _t, _rastro=None: PropriedadesRating(rho, mu, cp, k)
+
+
+def _feixe_fixo(c, n, comprimento, rho_casco, rugosidade_tubo):
+    """Avalia películas na geometria instalada, sem resolver novamente seu comprimento."""
+    if not (n >= 1 and comprimento > 0):
+        return dict(VAZIO)
+    n_total = n * c.passes
+    v = c.m_tubo / (c.rho_tubo * n * c.area_tubo)
+    re = reynolds_pipe(c.rho_tubo, v, c.d_i, c.mu_tubo)
+    h_i, nu_valido, diag = _pelicula(c, _caminho(c, comprimento), re)
+    d_feixe = math.sqrt(4 * n_total * c.area_celula * c.passo_m ** 2 / math.pi)
+    d_s = d_feixe + 2 * c.d_o
+    area_casco = math.nan
+    if not c.bd_ativo:
+        h_o, re_casco, fat = c.h_casco, math.nan, None
+    else:
+        kbd = c.kbd
+        p_n, p_p, _ = layout_pitches(c.layout, c.passo_m, kbd)
+        l_bc = c.espac_chicana * d_s
+        geo = ShellGeometry(d_s, d_feixe, c.d_o, c.passo_m, p_n, p_p,
+                            c.corte_chicana * d_s, l_bc,
+                            mm_para_m(baffle_clearance(m_para_mm(d_s), kbd)),
+                            c.folga_furo_m, float(n_total), c.pares_veda,
+                            c.faixas_divisoras, 2 * c.d_o, c.layout)
+        area_casco = crossflow_area(geo, kbd)
+        ideal = feixe_ideal(geo, c.m_casco, c.cp_casco, c.mu_casco, c.k_casco, kbd)
+        n_b = max(comprimento / l_bc - 1, 1.0)
+        h_o, fat, ok = com_chicanas(ideal, n_b, l_bc, l_bc, l_bc, kbd)
+        if not ok:
+            return dict(VAZIO, v=v, re=re, h_i=h_i, re_casco=fat.re, **diag)
+        re_casco = fat.re
+    u = overall_u(h_i, h_o, c.rf_tubo, c.rf_casco, c.d_i, c.d_o, c.k_parede)
+    # Perdas distribuídas na trajetória real do tubo e, no casco, na sucessão de
+    # seções de escoamento cruzado. Esta última é diagnóstico hidráulico conservador,
+    # não uma correlação mecânica de bocais.
+    kh = _t()["rating_hidraulica"]
+    f_t, regime_t, ok_t = darcy_friction(re, rugosidade_tubo / c.d_i, kh)
+    dp_t = f_t * (_caminho(c, comprimento) / c.d_i) * c.rho_tubo * v * v / 2 if ok_t else math.nan
+    v_s = c.m_casco / (rho_casco * area_casco) if rho_casco > 0 and area_casco > 0 else math.nan
+    f_s, regime_s, ok_s = darcy_friction(re_casco, 0.0, kh)
+    dp_s = f_s * (comprimento / c.d_o) * rho_casco * v_s * v_s / 2 if ok_s else math.nan
+    return dict(VAZIO, v=v, re=re, h_i=h_i, h_o=h_o, u=u, area=c.d_o * math.pi * n_total * comprimento,
+                l=comprimento, n_total=float(n_total), d_casco=d_feixe, d_shell=d_s,
+                re_casco=re_casco, nu_valido=nu_valido, ok=math.isfinite(u) and u > 0,
+                velocidade_casco=v_s, perda_carga_tubo=dp_t, perda_carga_casco=dp_s,
+                regime_hidraulico_tubo=regime_t, regime_hidraulico_casco=regime_s, **diag)
+
+
+class AvaliadorGeometriaFixa:
+    """Rating termo-hidráulico de uma geometria, reavaliado integralmente para cada Q."""
+
+    def __init__(self, metodo, geometria, entrada, parametros, constantes,
+                 propriedades_tubo, propriedades_casco, rastro=None):
+        self.metodo, self.geometria, self.entrada = metodo, geometria, entrada
+        self.parametros, self.constantes = dict(parametros), constantes
+        self.propriedades_tubo, self.propriedades_casco = propriedades_tubo, propriedades_casco
+        self.rastro = rastro
+        self.historico_u = []
+
+    def avaliar(self, q, t_tubo_out, t_casco_out):
+        tt = (self.entrada.t_tubo_in + t_tubo_out) / 2
+        ts = (self.entrada.t_casco_in + t_casco_out) / 2
+        pt = self.propriedades_tubo(tt, self.rastro)
+        ps = self.propriedades_casco(ts, self.rastro)
+        # Q=0 ainda precisa de UA para o diagnóstico da geometria. O método de design
+        # corretamente recusa um serviço sem carga; para rating usamos apenas um incremento
+        # numérico declarado, sem alterar as temperaturas devolvidas pelo balanço.
+        t_calculo = t_tubo_out
+        if q == 0 and t_calculo == self.entrada.t_tubo_in:
+            margem = carregar("equipment/comum/servico.toml")["rating"]["margem_temperatura_K"]
+            t_calculo += margem
+        e = replace(self.entrada, t_tubo_out=t_calculo, rho_tubo=pt.rho,
+                    mu_tubo=pt.mu, cp_tubo=pt.cp, k_tubo=pt.k,
+                    mu_casco=ps.mu, cp_casco=ps.cp, k_casco=ps.k)
+        ok, c, _ = self.metodo.sizing_constraints(e, self.parametros, self.constantes)
+        if not ok:
+            return math.nan, math.nan, {"mensagem": c, "t_media_tubo": tt, "t_media_casco": ts}
+        t = _feixe_fixo(c, self.geometria.tubos_por_passe,
+                        self.geometria.comprimento, ps.rho, self.geometria.rugosidade_tubo)
+        ua = t["u"] * self.geometria.area * self.geometria.unidades
+        self.historico_u.append(t["u"])
+        diagnostico = {**t, "t_media_tubo": tt, "t_media_casco": ts,
+                       "pr_tubo": c.pr_tubo, "pr_casco": ps.cp * ps.mu / ps.k,
+                       "ua": ua, "fator_f": c.f,
+                       "resistencias": parcelas_resistencia(t["h_i"], t["h_o"], c.rf_tubo,
+                                                             c.rf_casco, c.d_i, c.d_o, c.k_parede),
+                       "avisos": tuple(pt.avisos) + tuple(ps.avisos)}
+        return ua, c.f, diagnostico
 
 
 def _pelicula(c, l_caminho, re):
