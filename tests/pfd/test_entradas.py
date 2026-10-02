@@ -93,7 +93,7 @@ def test_11_envelopes(planta_ajustada, planta_propostas):
         esperado = "aguardando_entrada" if t.tag.tag in ("P-002", "P-003") else "dimensionado"
         assert t.status == esperado, t.tag.tag
     for t in planta_propostas.tags:
-        assert t.status == ("inviavel" if t.tag.tag == "P-001" else "dimensionado"), t.tag.tag
+        assert t.status == "dimensionado", t.tag.tag
     for p in (planta_ajustada, planta_propostas):
         for t in p.tags:
             if t.status != "dimensionado":

@@ -68,6 +68,7 @@ def estrutura_tag(ctx, rt):
                    "insumos": {k: asdict(v) for k, v in c.insumos.items()},
                    "rastro": [asdict(x) for x in c.rastro], "avisos": c.avisos} for c in e.casos],
         "envelope": envelope,
+        "operacao_integrada": rt.operacao.estrutura() if rt.operacao is not None else None,
     })
 
 
@@ -81,7 +82,14 @@ def gravar_tag(ctx, rt, pasta):
     colunas = [{"id": c.label} for c in m.sweep_columns()] + [{"id": k} for k in dimensionamento.COLUNAS_FIXAS]
     linhas = dimensionamento.linhas_varredura(m, rt.resultado) if rt.resultado is not None else []
     escrever_csv(colunas, linhas, arq_csv)
-    return [arq_json, arq_csv]
+    arquivos = [arq_json, arq_csv]
+    if rt.operacao is not None:
+        caminho_operacao = pasta / f"{ident}_operacao.csv"
+        campos = ("num", "nome", "Q_Pinch", "Q_real", "t_fria_out", "t_quente_out", "q_p002", "q_p003")
+        escrever_csv([{"id": k} for k in campos],
+                     [{k: getattr(c, k) for k in campos} for c in rt.operacao.casos], caminho_operacao)
+        arquivos.append(caminho_operacao)
+    return arquivos
 
 
 def linhas(resultados):

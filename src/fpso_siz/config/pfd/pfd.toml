@@ -65,3 +65,6 @@ fonte = "PFD: líquido bombeado pode ser água produzida (P-08 e Laliberté 2009
 [faixas.stewart_arnold_2f.rho_oil]
 max = 1500.0
 fonte = "PFD: fase líquida pode conter salmoura (P-08 e Laliberté 2009)."
+[p001_integrado]
+passes_tubo = 1
+fonte = "Contracorrente puro para materializar a geometria física do rating; o arranjo 1-2 não produz geometria no alvo ideal (docs/validacao/43-design-rating-multiplicidade.md)"

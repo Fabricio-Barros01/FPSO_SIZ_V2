@@ -27,8 +27,9 @@ arquivo do BOT + premissas
   Nota 4 (referência do FWKO, premissa de modelagem, `docs/validacao/38`) e flash em cascata; o
   gás de cada estágio é o do flash. Casos 9, 11, 15, 16 (gás de lift sem composição): não
   avaliáveis, Standing (`docs/validacao/39`).
-- **Planta produtiva (16 casos, propostas do pacote):** 10 TAGs dimensionados; **P-001 inviável**
-  (alarme aberto). Gate aprovado.
+- **Planta produtiva (16 casos, propostas do pacote):** os 11 TAGs dimensionados. O P-001
+  materializa um feixe físico único, executa rating off-design nos 16 casos e propaga o calor
+  efetivamente recuperado e as temperaturas a P-002/P-003. Gate aprovado.
 - **Otimização das pressões de separação (nota 42):** P_D1 × P_D2 → mesmo resolvedor → trem →
   SG-001/V-001/V-002 → perda de óleo estabilizado e carga de vapor da VRU, com TVP ≤ 70 kPa como
   restrição contínua (12 casos avaliáveis). Frente do NSGA-II conferida contra grade-oráculo de
@@ -40,6 +41,7 @@ arquivo do BOT + premissas
 
 | etapa | commit | resumo |
 |---|---|---|
+| Integração produtiva P-001 | (este) | `balanço → entradas → geometria fixa → rating → P-002/P-003 → saídas`, com JSON/CSV/MC/gate lendo o mesmo resultado e teste arquitetural de alcance — `docs/validacao/43`, ADR 0005 |
 | DESIGN × RATING e multiplicidade | (este) | rating térmico limitado por Pinch, contrato genérico de unidades físicas, bombas em paralelo, busca discreta/Pareto e reauditoria atual do P-001 — `docs/validacao/43`, ADR 0005 |
 | Otimização das pressões | (este) | subproblema P_D1 × P_D2: TVP no estado, objetivos e restrições no TOML, grade-oráculo, NSGA-II, frente reproduzida na resolução da grade — `docs/validacao/42` |
 | Mapa de pressão e viscosidade | `d9c565d` | Rs do trem → Beggs & Robinson (nota 40); mapa determinístico P_D1 × P_D2, conclusão C (nota 41) |
@@ -53,10 +55,11 @@ arquivo do BOT + premissas
 
 ## Pendências físicas reais
 
-1. **P-001 inviável** — troca óleo/óleo com aproximação de 10 K (P-32) exige ~186 m de tubo
-   contra 6 m; nenhuma correlação resolve. Decisão de projeto (P-32, arranjo, ou aceitar).
-   Diagnóstico e árvore de alternativas: `docs/validacao/36-p001-diagnostico.md` (no modelo atual,
-   por Standing, a sensibilidade do P-001 a P_D1/P_D2 é desprezível, ~0,2 %; a reconferir com o flash).
+1. **P-001 integrado por rating** — o alvo ideal com aproximação de 10 K (P-32) exigia
+   redimensionamento por caso. A planta agora instala o tubo físico de 6 m declarado, calcula a
+   recuperação parcial off-design e transfere a parcela não recuperada às utilidades de P-002 e
+   P-003. Permanecem pendentes a confirmação das propostas de propriedades e a decisão mecânica
+   final do feixe. Diagnóstico histórico: `docs/validacao/36-p001-diagnostico.md`.
 2. ~~O trem não reconcilia com o BOT~~ — **resolvida** pela recombinação da Nota 4 (nota 38,
    aprovada) e pelo trem produtivo (nota 39). Decisão pendente dela: aceitar ou não a propagação
    do Rs do trem à μ do óleo vivo (Beggs & Robinson), que muda SG-001 (teto), P-001, P-002 e

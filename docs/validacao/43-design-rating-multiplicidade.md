@@ -29,9 +29,21 @@ pelas restrições simultâneas, não pelo rótulo histórico do caso 5.
   discreta e frente de Pareto física.
 - `sizing/bombas_paralelo.py`: divisão de vazão e avaliação separada de potência/NPSH.
 
+## Integração no caminho produtivo
+
+O serviço `pfd/equipamento.py` materializa uma única geometria do P-001 (comprimento físico
+limitado pelo método e número fixo de tubos por passe), chama a busca discreta e executa o
+rating para os 16 `EstadoProcesso`. O resultado guarda `Q_Pinch`, `Q_real`, ambas as
+temperaturas de saída, cargas residuais de P-002/P-003 e diagnóstico numérico de cada caso.
+
+`pfd/planta.py` substitui no estado produtivo `Q_pre`, `Q_H`, `Q_C`, `T_C07` e `T_C23`
+antes de preparar P-002 e P-003. O JSON, o CSV de operação, o memorial por TAG e o gate de
+auditoria recebem esse mesmo objeto; não há API de operação paralela. O teste
+`tests/arquitetura/test_p001_integrado.py` instrumenta o PFD normal e falha se a busca, o
+rating ou a propagação deixarem de ser alcançados.
+
 ## Limitação declarada
 
 A correlação de Beggs & Robinson não recebe composição do gás. O alto teor de CO₂ segue
 como incerteza de aplicabilidade já documentada na nota 40. Não foi criado caminho
 produtivo alternativo por Standing e nenhum fouling, condutividade ou limite foi alterado.
-
