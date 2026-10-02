@@ -14,16 +14,21 @@ class ConfiguracaoServico:
     standby: int
     fracao_nominal: float
     minimo_ativas: int = 1
+    reserva_minima: int = 0
 
     def __post_init__(self):
         if self.instaladas < 1 or self.duty_projeto < 1:
             raise ValueError("o serviço precisa de ao menos uma unidade instalada e duty")
+        if self.reserva_minima < 0:
+            raise ValueError("a reserva mínima não pode ser negativa")
         if self.standby < 0 or self.duty_projeto + self.standby != self.instaladas:
             raise ValueError("instaladas deve ser igual a duty_projeto + standby")
         if not 0 < self.fracao_nominal <= 1:
             raise ValueError("a fração nominal por unidade deve estar em (0, 1]")
         if not 1 <= self.minimo_ativas <= self.duty_projeto:
             raise ValueError("número mínimo de unidades ativas inválido")
+        if self.standby < self.reserva_minima:
+            raise ValueError("a configuração não atende à reserva mínima declarada")
 
     def capacidades(self):
         """Números admissíveis de unidades ativas, do menor ao duty de projeto."""
@@ -76,16 +81,56 @@ class CandidatoLayout:
     geometria: object
     casos: tuple
     area_unitaria: float
-    utilidade_quente: float
-    utilidade_fria: float
+    recuperacao_total: float
+    recuperacao_por_caso: tuple
+    fracao_alvo_pinch: float
+    fracao_alvo_pinch_por_caso: tuple
+    area_duty: float
+    area_total_instalada: float
+    demanda_maxima_utilidade_quente: float
+    perfil_utilidade_quente: tuple
+    demanda_maxima_utilidade_fria: float
+    perfil_utilidade_fria: tuple
+    casos_governantes: dict
+    margens_restricoes: dict
 
     @property
     def recuperacao(self):
-        return sum(getattr(c, "recuperacao", 0.0) for c in self.casos)
+        """Nome histórico mantido para consumidores que leem a recuperação agregada."""
+        return self.recuperacao_total
 
     @property
     def area_instalada(self):
-        return self.configuracao.instaladas * self.area_unitaria
+        """A área instalada inclui duty e standby, mesmo sem operação simultânea."""
+        return self.area_total_instalada
+
+    @property
+    def utilidade_quente(self):
+        """Energia agregada dos casos; não é capacidade instalada."""
+        return sum(self.perfil_utilidade_quente)
+
+    @property
+    def utilidade_fria(self):
+        """Energia agregada dos casos; não é capacidade instalada."""
+        return sum(self.perfil_utilidade_fria)
+
+
+def _margens_e_governantes(configuracao, resultados):
+    """Consolida margens assinadas (atende quando >= 0) e seu caso governante."""
+    por_restricao = {"reserva_et": tuple(configuracao.standby - configuracao.reserva_minima
+                                           for _ in resultados)}
+    for i, resultado in enumerate(resultados):
+        margens = getattr(resultado, "margens_restricoes", getattr(resultado, "margens", {}))
+        for nome, valor in margens.items():
+            por_restricao.setdefault(nome, [None] * len(resultados))[i] = valor
+    governantes = {}
+    for nome, margens in por_restricao.items():
+        validas = [(i, margem) for i, margem in enumerate(margens) if margem is not None]
+        if validas:
+            indice, _ = min(validas, key=lambda item: item[1])
+            governantes[nome] = getattr(resultados[indice], "nome", indice)
+        por_restricao[nome] = tuple(margens)
+    return governantes, por_restricao
 
 
 def buscar_layouts(configuracoes_admissiveis, geometrias, casos, design, avaliar):
@@ -101,18 +146,44 @@ def buscar_layouts(configuracoes_admissiveis, geometrias, casos, design, avaliar
             geometria = design(configuracao, especificacao, casos)
             resultados = tuple(avaliar(configuracao, geometria, caso) for caso in casos)
             if resultados and all(r.admissivel and getattr(r, "avaliavel", True) for r in resultados):
+                recuperacoes = tuple(getattr(r, "recuperacao", 0.0) for r in resultados)
+                alvos = tuple(getattr(r, "alvo_pinch", getattr(r, "Q_Pinch", q))
+                              for r, q in zip(resultados, recuperacoes))
+                quentes = tuple(r.utilidade_quente for r in resultados)
+                frias = tuple(r.utilidade_fria for r in resultados)
+                recuperacao_total = sum(recuperacoes)
+                alvo_total = sum(alvos)
+                governantes, margens = _margens_e_governantes(configuracao, resultados)
+                indice_quente = max(range(len(quentes)), key=quentes.__getitem__)
+                indice_frio = max(range(len(frias)), key=frias.__getitem__)
+                governantes.update(
+                    utilidade_quente=getattr(resultados[indice_quente], "nome", indice_quente),
+                    utilidade_fria=getattr(resultados[indice_frio], "nome", indice_frio))
                 aceitos.append(CandidatoLayout(
                     configuracao, geometria, resultados, geometria.area_unitaria,
-                    sum(r.utilidade_quente for r in resultados),
-                    sum(r.utilidade_fria for r in resultados)))
+                    recuperacao_total, recuperacoes,
+                    recuperacao_total / alvo_total if alvo_total > 0 else 1.0,
+                    tuple(q / alvo if alvo > 0 else 1.0 for q, alvo in zip(recuperacoes, alvos)),
+                    configuracao.duty_projeto * geometria.area_unitaria,
+                    configuracao.instaladas * geometria.area_unitaria,
+                    max(quentes), quentes, max(frias), frias, governantes, margens))
     return tuple(aceitos)
 
 
 def frente_pareto(candidatos):
-    """Frente física (recuperação máxima, área e utilidades mínimas), sem custos."""
+    """Frente física sem pesos econômicos.
+
+    Energia agregada mede a operação no conjunto de casos. Os dois picos, mantidos
+    separados, dimensionam os envelopes quente e frio; somá-los produziria uma
+    capacidade fictícia porque as utilidades não são intercambiáveis.
+    """
     def domina(a, b):
-        va = (-a.recuperacao, a.area_instalada, a.utilidade_quente + a.utilidade_fria)
-        vb = (-b.recuperacao, b.area_instalada, b.utilidade_quente + b.utilidade_fria)
+        va = (-a.fracao_alvo_pinch, a.area_total_instalada,
+              a.utilidade_quente, a.utilidade_fria,
+              a.demanda_maxima_utilidade_quente, a.demanda_maxima_utilidade_fria)
+        vb = (-b.fracao_alvo_pinch, b.area_total_instalada,
+              b.utilidade_quente, b.utilidade_fria,
+              b.demanda_maxima_utilidade_quente, b.demanda_maxima_utilidade_fria)
         return all(x <= y for x, y in zip(va, vb)) and any(x < y for x, y in zip(va, vb))
 
     return tuple(c for c in candidatos if not any(domina(outro, c) for outro in candidatos if outro is not c))

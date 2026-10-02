@@ -1,7 +1,11 @@
 {
   "criterio_desempate": [
-    "utilidades",
-    "area_instalada",
+    "fracao_alvo_pinch",
+    "pico_quente",
+    "pico_frio",
+    "energia_quente",
+    "energia_fria",
+    "area_total_instalada",
     "instaladas",
     "duty",
     "tubos_por_passe",

@@ -64,10 +64,21 @@ descartado. Perda de carga ainda aparece como `NaN`: o acervo tem Darcy–Weisba
 mas não tem uma correlação de perda no casco; inventar a segunda parcela contrariaria a regra
 das fontes. Portanto ela é diagnóstico explícito, não uma restrição silenciosamente suposta.
 
-A frente não dominada maximiza recuperação e minimiza área instalada e soma das utilidades.
+A frente não dominada maximiza a fração agregada do alvo Pinch realizada e minimiza a
+área total instalada (duty mais standby). Energia agregada quente e fria avalia a operação
+do conjunto de casos; os máximos dos respectivos perfis são objetivos independentes para
+dimensionar os dois envelopes. Eles não são somados como se fossem uma capacidade instalada
+única: calor e frio não são intercambiáveis e os casos governantes podem ser diferentes.
+O candidato conserva recuperação e utilidades por caso, áreas unitária/duty/instalada,
+filosofia duty/standby e, para cada restrição declarada, margens e caso governante. A reserva
+mínima da ET é uma dessas restrições: reprova a configuração se faltar e entra na área total,
+mas suas unidades standby não entram na capacidade operacional simultânea.
+
 O alvo Pinch é teto (`Q_Pinch`), não restrição de recuperação integral. Dentro da frente, o
-desempate lexicográfico é: utilidades, área instalada, instaladas, duty, tubos por passe,
-comprimento, diâmetro, passes, layout, razão de passo, corte e espaçamento de chicana. A
+critério de escolha é uma ordem lexicográfica declarada: maior fração Pinch; menores picos
+quente e frio; menores energias agregadas quente e fria; menor área instalada; e só então
+instaladas, duty e geometria. Isso torna a escolha reproduzível sem inventar preços, converter
+área em energia ou atribuir pesos econômicos que a fonte não forneceu. A
 fixture `tests/fixtures/pfd/p001_busca_regressao.json` congela tanto essa ordem quanto a
 seleção atual: **3 instaladas, 2 duty, 1 standby; 400 tubos/passe; 9,0 m; 19,05 mm; um
 passe; layout 45°; razão 1,25; corte 0,25; espaçamento 0,40**, área unitária
