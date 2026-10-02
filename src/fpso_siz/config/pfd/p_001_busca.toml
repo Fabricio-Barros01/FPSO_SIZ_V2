@@ -1,0 +1,46 @@
+# Espaço discreto para a seleção do pré-aquecedor P-001.
+# Fonte de processo: ET/BOT, §§ 2.7.1.1, 2.7.1.11 e 10.3.4 (existência do serviço,
+# reserva instalada e construção TEMA/API 660). Os valores geométricos são domínio
+# de busca de engenharia — não são apresentados como dimensões impostas pela ET.
+fonte = "ET/BOT §§ 2.7.1.1, 2.7.1.11 e 10.3.4; domínio discreto documentado em docs/validacao/43-design-rating-multiplicidade.md"
+
+[tubos_por_passe]
+min = 50
+max = 400
+passo = 25
+
+[comprimento_m]
+min = 6.0
+max = 9.0
+passo = 1.5
+
+[geometria]
+diametros_externos_mm = [19.05]
+passes_tubo = [1]
+razoes_passo = [1.25]
+layouts_tubos_graus = [30, 45]
+cortes_chicana = [0.25]
+espacamentos_chicana_sobre_casco = [0.40]
+
+# Cada linha significa instaladas/duty/standby. A terceira unidade da filosofia
+# 3 × 50 % é a reserva exigida pela ET; standby não aumenta capacidade simultânea.
+[[servico]]
+instaladas = 2
+duty = 1
+standby = 1
+minimo_ativas = 1
+
+[[servico]]
+instaladas = 3
+duty = 2
+standby = 1
+minimo_ativas = 1
+
+[reserva_et]
+standby_minimo = 1
+fonte = "ET/BOT § 2.7.1.11 — equipamento reserva instalado"
+
+[selecao]
+objetivos = ["recuperacao", "area_instalada", "utilidades"]
+desempate = ["utilidades", "area_instalada", "instaladas", "duty", "tubos_por_passe", "comprimento_m", "diametro_externo_mm", "passes_tubo", "layout_tubos_graus", "razao_passo", "corte_chicana", "espacamento_chicana"]
+fonte = "decisão de modelagem: frente não dominada recuperação × área instalada × utilidades; ordem lexicográfica explícita para reprodutibilidade"
