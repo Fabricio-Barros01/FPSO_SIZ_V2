@@ -2,7 +2,8 @@
 import dataclasses
 
 from fpso_siz.balanco.balancos import balanco_bloco, balanco_global, balancos_por_bloco, topologia
-from fpso_siz.balanco.modelo import COMP, corrente
+from fpso_siz.balanco.dados import premissas
+from fpso_siz.balanco.modelo import COMP, aplicar_rating_termico, corrente
 
 
 def test_topologia_16_blocos_26_correntes():
@@ -28,6 +29,19 @@ def test_fechamento_global(resultados):
         g = balanco_global(r)
         assert g["em"] < 1e-12 and g["eE"] < 1e-12, r.num
         assert g["W"] == r.duties["W_Bo"] + r.duties["W_B1"] + r.duties["W_B2"]
+
+
+def test_segunda_etapa_termica_fecha_energia_em_cada_caso(resultados, dados):
+    """Uma recuperação física menor redistribui energia para as duas utilidades."""
+    prem = premissas(dados)
+    for original in resultados:
+        realizado = aplicar_rating_termico(original, original.duties["Q_pre"] / 2, prem)
+        assert balanco_global(realizado)["eE"] < 1e-12, original.num
+        for bloco in ("P-001", "P-002", "P-003"):
+            assert balancos_por_bloco(realizado)[bloco]["eE"] < 1e-12, (original.num, bloco)
+        assert realizado.trace.passo("carga_preaquecedor", "P-001").valor == realizado.duties["Q_pre"]
+        assert realizado.trace.passo("carga_aquecedor", "P-002").valor == realizado.duties["Q_H"]
+        assert realizado.trace.passo("carga_resfriador", "P-003").valor == realizado.duties["Q_C"]
 
 
 def test_bloco_sem_vazao_nao_divide_por_zero(resultados):

@@ -22,6 +22,9 @@ condição padrão) e, como G, o resto: O e G se conservam cada um, e a energia 
 cp constante por componente) fecha sem calor latente, que o modelo não tem. A vazão de gás do
 estágio é o vapor inteiro, ṅ_V·V_M. Nos casos não avaliáveis, o ΔRs de Standing (docs/validacao/39).
 """
+import math
+from dataclasses import replace
+
 from fpso_siz.balanco import trem as trem_mod
 from fpso_siz.balanco.dados import constantes, pocos, premissas
 from fpso_siz.balanco.estado import COMP, K_DIA, EstadoProcesso
@@ -324,6 +327,46 @@ def resolver_caso(caso, dados, prem=None):
                           proveniencia=proveniencia.consumidas("balanco", avaliavel=aval),
                           trem=tr if aval else trem_mod.nao_avaliavel(motivo), gas_padrao=gas_padrao,
                           T_tvp_C=p[trem_mod.cfg()["tvp"]["premissa_T"]])
+
+
+def aplicar_rating_termico(estado, q_real, prem):
+    """Refaz a etapa térmica depois do rating da geometria instalada do P-001.
+
+    O primeiro passe do resolvedor determina massas, propriedades e o teto Pinch. O rating
+    fornece a recuperação que o equipamento físico realmente entrega; este segundo passe
+    recalcula as quatro correntes térmicas e as utilidades residuais sem reexecutar o trem.
+    ``CalcTrace`` também é copiado e sobrescrito, para que estado e rastro continuem sendo uma
+    única representação do mesmo cálculo.
+    """
+    if not math.isfinite(q_real) or q_real < 0 or q_real > estado.duties["Q_pre"]:
+        raise ValueError("Q_real deve estar entre zero e o teto Pinch do caso")
+
+    cc = estado.C(estado.streams["C-06"])
+    ch = estado.C(estado.streams["C-22"])
+    t06, t22 = estado.T["C-06"], estado.T["C-22"]
+    t07 = t06 + q_real / cc
+    t23 = t22 - q_real / ch
+    t08 = max(prem["T_trat"], t07)
+    t24 = min(t23, prem["T_store"])
+    qh = cc * (t08 - t07)
+    qc = ch * (t23 - t24)
+
+    trace = CalcTrace()
+    for passo in estado.trace:
+        trace.reg(passo.equacao, passo.escopo, passo.valor, **passo.entradas)
+    trace.reg("carga_preaquecedor", "P-001", q_real, C_frio=cc, C_quente=ch,
+              T_frio=t06, T_quente=t22, dT_app=prem["dT_app"], etapa="rating")
+    trace.reg("temperatura_preaquecedor", "C-07", t07, T_in=t06, Q=q_real, C=cc,
+              etapa="rating")
+    trace.reg("temperatura_preaquecedor", "C-23", t23, T_in=t22, Q=q_real, C=ch,
+              etapa="rating")
+    trace.reg("carga_aquecedor", "P-002", qh, T07=t07, T08=t08, C=cc, etapa="rating")
+    trace.reg("carga_resfriador", "P-003", qc, T23=t23, T24=t24, C=ch, etapa="rating")
+
+    temperaturas = dict(estado.T, **{"C-07": t07, "C-08": t08, "C-23": t23,
+                                    "C-24": t24, "C-25": t24, "C-26": t24})
+    cargas = dict(estado.duties, Q_pre=q_real, Q_H=qh, Q_C=qc)
+    return replace(estado, T=temperaturas, duties=cargas, trace=trace)
 
 
 def _condicoes_mudaram(tr, TF, TD1, TD2):

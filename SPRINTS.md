@@ -28,8 +28,9 @@ arquivo do BOT + premissas
   gás de cada estágio é o do flash. Casos 9, 11, 15, 16 (gás de lift sem composição): não
   avaliáveis, Standing (`docs/validacao/39`).
 - **Planta produtiva (16 casos, propostas do pacote):** os 11 TAGs dimensionados. O P-001
-  materializa um feixe físico único, executa rating off-design nos 16 casos e propaga o calor
-  efetivamente recuperado e as temperaturas a P-002/P-003. Gate aprovado.
+  materializa um feixe físico único, executa rating off-design nos 16 casos e dispara a segunda
+  etapa térmica do resolvedor: temperaturas, cargas e `CalcTrace` são refeitos com `Q_real`
+  antes de preparar e dimensionar P-002/P-003. Gate aprovado.
 - **Otimização das pressões de separação (nota 42):** P_D1 × P_D2 → mesmo resolvedor → trem →
   SG-001/V-001/V-002 → perda de óleo estabilizado e carga de vapor da VRU, com TVP ≤ 70 kPa como
   restrição contínua (12 casos avaliáveis). Frente do NSGA-II conferida contra grade-oráculo de
