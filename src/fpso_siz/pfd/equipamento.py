@@ -261,8 +261,8 @@ def _espaco_p001():
     c = carregar("pfd/p_001_busca.toml")
     reserva = int(c["reserva_et"]["standby_minimo"])
     servicos = tuple(ConfiguracaoServico(int(s["instaladas"]), int(s["duty"]), int(s["standby"]),
-                                         1 / int(s["duty"]), int(s["minimo_ativas"]))
-                     for s in c["servico"] if int(s["standby"]) >= reserva)
+                                         1 / int(s["duty"]), int(s["minimo_ativas"]), reserva)
+                     for s in c["servico"])
     g = c["geometria"]
     geometrias = itertools.product(
         _grade(**{"inicio": c["tubos_por_passe"]["min"], "fim": c["tubos_por_passe"]["max"],
@@ -294,6 +294,9 @@ def avaliar_p001(estados, entradas):
         preparados.append((estado, caso, entrada, p))
 
     config_busca, configuracoes, especificacoes = _espaco_p001()
+    indice_projeto = max(range(len(preparados)),
+                         key=lambda i: preparados[i][2].m_tubo / preparados[i][2].rho_tubo)
+    indices_preparados = {id(preparado): i for i, preparado in enumerate(preparados)}
 
     def design(configuracao, especificacao, casos):
         del casos
@@ -330,6 +333,16 @@ def avaliar_p001(estados, entradas):
         rr = rating.rating(c_rating, avaliador)
         derivados = rr.diagnostico
         derivados["admissivel_fisica"] = bool(derivados.get("ok"))
+        indice = indices_preparados[id(preparado)]
+        margens = {
+            "velocidade_maxima": p["v_max"] - derivados.get("v", math.inf),
+            "reynolds_minimo": derivados.get("re", -math.inf) - constantes["dittus_boelter_re_min"],
+            "reynolds_maximo": constantes["dittus_boelter_re_max"] - derivados.get("re", math.inf),
+            "casco_maximo": p["d_casco_max"] - derivados.get("d_shell", math.inf),
+            "comprimento_maximo": p["l_tubo_max"] - geometria.comprimento_tubo,
+        }
+        if indice == indice_projeto:
+            margens["velocidade_minima_caso_projeto"] = derivados.get("v", -math.inf) - p["v_min"]
         integrado = rating.integrar(c_rating, rr, estado.T["C-08"], estado.T["C-24"])
         resultado = CasoOperacaoP001(
             estado.num, caso_tag.nome, w_para_kw(rr.q_rec_max), w_para_kw(rr.q_real),
@@ -346,14 +359,18 @@ def avaliar_p001(estados, entradas):
         caso_inativo = alvo == 0
         return SimpleNamespace(admissivel=rr.convergiu and (caso_inativo or derivados.get("admissivel_fisica", False)),
                                avaliavel=rr.avaliavel,
-                               recuperacao=rr.q_real, utilidade_quente=integrado.utilidade_quente_residual,
-                               utilidade_fria=integrado.utilidade_fria_residual, resultado=resultado)
+                               nome=caso_tag.nome, recuperacao=rr.q_real, alvo_pinch=alvo,
+                               utilidade_quente=integrado.utilidade_quente_residual,
+                               utilidade_fria=integrado.utilidade_fria_residual,
+                               margens_restricoes=margens, resultado=resultado)
 
     layouts = buscar_layouts(configuracoes, especificacoes, tuple(preparados), design, avaliar)
     if not layouts:
         raise ValueError("P-001: nenhuma geometria fixa pôde ser avaliada nos casos BOT")
     frente = frente_pareto(layouts)
-    escolhido = min(frente, key=lambda x: (x.utilidade_quente + x.utilidade_fria, x.area_instalada,
+    escolhido = min(frente, key=lambda x: (-x.fracao_alvo_pinch,
+        x.demanda_maxima_utilidade_quente, x.demanda_maxima_utilidade_fria,
+        x.utilidade_quente, x.utilidade_fria, x.area_total_instalada,
         x.configuracao.instaladas, x.configuracao.duty_projeto, x.geometria.tubos_por_passe,
         x.geometria.comprimento_tubo, x.geometria.diametro_externo_mm, x.geometria.passes_tubo,
         x.geometria.layout_tubos_graus, x.geometria.razao_passo, x.geometria.corte_chicana,
