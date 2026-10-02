@@ -156,7 +156,9 @@ def test_valores_com_fonte_e_calculados_nao_mudam(planta_base, planta_propostas)
         a, b = planta_base.tag(ident).resultado, planta_propostas.tag(ident).resultado
         assert (a.feasible, a.x, a.y, a.ceiling) == (b.feasible, b.x, b.y, b.ceiling) or \
             (math.isnan(a.x) and math.isnan(b.x) and a.ceiling == b.ceiling)
-    for ident in TAGS_COM_LACUNA:
+    # Os três trocadores consomem deliberadamente o balanço térmico realizado pelo rating
+    # integrado; os demais continuam invariantes às propostas que apenas fecham lacunas.
+    for ident in set(TAGS_COM_LACUNA) - {"P-001", "P-002", "P-003"}:
         for ca, cb in zip(planta_base.tag(ident).entradas.casos, planta_propostas.tag(ident).entradas.casos):
             for k, va in ca.valores.items():
                 if va.origem in ("balanco", "propriedade", "premissa", "recomendada", "metodo"):
@@ -187,10 +189,11 @@ def test_propostas_levam_os_tratadores_ao_dimensionamento(planta_propostas):
         assert mc.documento(planta_propostas.contexto, rt)["calculo"]["series"]["diagrama"]
 
 
-def test_trocador_inviavel_ainda_mostra_o_perfil_tq(planta_propostas):
+def test_trocador_integrado_mostra_perfil_e_resistencias(planta_propostas):
     rt = planta_propostas.tag("P-001")
     s = mc.documento(planta_propostas.contexto, rt)["calculo"]["series"]
-    assert rt.status == "inviavel" and len(s["perfil_tq"]) == 2 and "resistencias" not in s
+    assert rt.status == "dimensionado" and len(s["perfil_tq"]) == 2 and s["resistencias"]
+    assert rt.operacao is not None
 
 
 def test_json_e_mc_separam_as_propostas(planta_propostas, tmp_path):

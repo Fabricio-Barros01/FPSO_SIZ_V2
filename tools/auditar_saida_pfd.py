@@ -287,6 +287,20 @@ def auditar_tag(ctx, rt, pasta):
                               "o TAG está aguardando entrada e não diz qual entrada falta"))
 
     envelope = nucleo_json.get("envelope")
+    if rt.operacao is not None:
+        esperado = rt.operacao.estrutura()
+        if nucleo_json.get("operacao_integrada") != esperado or mc_json.get("operacao_integrada") != esperado:
+            achados.append(achado("ERRO_OUTPUT", "operacao_integrada", None,
+                                  "rating integrado do P-001 diverge entre resultado, JSON e memorial"))
+        for caso in rt.operacao.casos:
+            balan = next(r for r in ctx.balanco if r.num == caso.num)
+            if not all(igual(a, b) for a, b in ((caso.Q_real, balan.duties["Q_pre"]),
+                                                (caso.q_p002, balan.duties["Q_H"]),
+                                                (caso.q_p003, balan.duties["Q_C"]),
+                                                (caso.t_fria_out, balan.T["C-07"]),
+                                                (caso.t_quente_out, balan.T["C-23"]))):
+                achados.append(achado("ERRO_OUTPUT", f"operacao_integrada.caso[{caso.num}]", None,
+                                      "cargas ou temperaturas não foram propagadas ao balanço produtivo"))
     cartao = _cartao(m, r)
     if status == servico.DIMENSIONADO:
         achados += _conferir_dimensionado(rt, cartao)

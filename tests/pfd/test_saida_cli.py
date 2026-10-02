@@ -14,11 +14,10 @@ AJUSTES = FIXTURES / "pfd" / "ajustes_sinteticos.toml"
 
 @pytest.mark.parametrize("nome", ["planta_base", "planta_propostas"])
 def test_exportacao_estrita_com_lacunas_e_inviabilidade(request, nome, tmp_path):
-    """Sem as propostas a planta tem lacunas (aguardando entrada); com elas, o P-001 é o alarme
-    aberto (inviável). O JSON é estrito nos três estados."""
+    """Sem propostas há lacunas; com elas, o rating integrado fecha a planta. JSON estrito."""
     p = request.getfixturevalue(nome)
     arquivos = pfd.gravar(p, tmp_path)
-    assert len(arquivos) == 23  # JSON + CSV de varredura por TAG, e planta.csv
+    assert len(arquivos) == (24 if nome == "planta_propostas" else 23)  # inclui rating do P-001
     for t in p.tags:
         texto = (tmp_path / f"{t.tag.tag}.json").read_text(encoding="utf-8")
         obj = json.loads(texto, parse_constant=lambda x: pytest.fail(f"JSON não estrito: {x}"))
@@ -36,7 +35,7 @@ def test_exportacao_estrita_com_lacunas_e_inviabilidade(request, nome, tmp_path)
     with (tmp_path / "planta.csv").open(encoding="utf-8", newline="") as f:
         linhas = list(csv.DictReader(f))
     assert len(linhas) == 11 and tuple(linhas[0]) == pfd.COLUNAS
-    esperado = {"aguardando_entrada", "dimensionado"} if nome == "planta_base" else {"inviavel", "dimensionado"}
+    esperado = {"aguardando_entrada", "dimensionado"} if nome == "planta_base" else {"dimensionado"}
     assert {x["status"] for x in linhas} == esperado
 
 
@@ -78,7 +77,7 @@ def test_erro_ajustes_claro(tmp_path, capsys, texto, mensagem):
 
 
 def test_cli_premissa_registrada(tmp_path, capsys):
-    assert main(["pfd", "--casos", str(CASOS), "--premissa", "eta_pump=0.8", "--saida", str(tmp_path)]) == 1
+    assert main(["pfd", "--casos", str(CASOS), "--premissa", "eta_pump=0.8", "--saida", str(tmp_path)]) == 0
     capsys.readouterr()
     obj = json.loads((tmp_path/"B-001.json").read_text(encoding="utf-8"))
     assert obj["premissas"]["eta_pump"] == 0.8

@@ -430,7 +430,7 @@ def documento(ctx, rt):
     doc = dict(identificacao=ident, alarme=alarme(rt), conteudo=conteudo_metodo(m), conteudo_tag=cfg().get("tags", {}).get(rt.tag.tag, {}),
                correntes=correntes(ctx, rt), casos=casos(rt), entradas=entradas(rt),
                lacunas=lacunas(rt), premissas=premissas(ctx, rt, ident), pendencias=pendencias(rt),
-               calculo=None)
+               operacao_integrada=rt.operacao.estrutura() if rt.operacao is not None else None, calculo=None)
     r = rt.resultado
     if r is None:
         return doc
