@@ -1,9 +1,18 @@
 import math
+import tomllib
+from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 from fpso_siz.sizing import rating as rating_mod
 from fpso_siz.sizing.rating import CasoRating, integrar, rating
+from fpso_siz.core.parametros import with_defaults
+from fpso_siz.core.unidades import cp_para_pas
+from fpso_siz.sizing import SaariLMTD
+from fpso_siz.sizing.trocador import (AvaliadorGeometriaFixa, GeometriaRating,
+                                      PropriedadesRating, propriedades_declaradas)
+from fpso_siz.termo import servico as termo
 
 
 CASO = CasoRating(20.0, 100.0, 10.0, 20.0, 500.0)
@@ -92,3 +101,48 @@ def test_esgotamento_real_das_iteracoes(monkeypatch):
     r = rating(CASO, constante(1.0))
     assert r.iteracoes == 1 and r.estado == "nao_convergido" and not r.convergiu
     assert "1 iterações" in r.mensagem
+
+
+def test_geometria_fixa_reconsulta_propriedades_e_nao_congela_u(monkeypatch):
+    """Uma curva forte de µ(T) torna observável tanto U(Q) quanto o erro do U congelado."""
+    chamadas = []
+
+    def agua_dependente(t, _rastro=None):
+        chamadas.append(t)
+        return SimpleNamespace(rho=1000.0, mu=4.0 * math.exp(-(t - 20.0) / 20.0),
+                               cp=4180.0, k=0.6, avisos=())
+
+    monkeypatch.setattr(termo, "agua_saturada", agua_dependente)
+
+    def agua_saturada_rating(t, rastro=None):
+        p_agua = termo.agua_saturada(t, rastro)
+        return PropriedadesRating(p_agua.rho, cp_para_pas(p_agua.mu), p_agua.cp,
+                                  p_agua.k, p_agua.avisos)
+    arquivo = Path(__file__).parents[1] / "fixtures/julia/casos/exemplo_trocador.toml"
+    valores = tomllib.loads(arquivo.read_text())["case"][0]
+    metodo = SaariLMTD()
+    p = with_defaults(metodo.parameters(), {**valores, "passes_tubo": 1.0,
+                                            "pelicula_baixo_re": 1.0})
+    entrada = metodo.case_input(valores)
+    area = 50 * math.pi * 0.01905 * 5.0
+    geometria = GeometriaRating(50, 5.0, area)
+    avaliador = AvaliadorGeometriaFixa(metodo, geometria, entrada, p, metodo.constants(),
+                                       agua_saturada_rating, agua_saturada_rating)
+    caso = CasoRating(entrada.t_tubo_in, entrada.t_casco_in,
+                      entrada.m_tubo * entrada.cp_tubo,
+                      entrada.m_casco * entrada.cp_casco, 2.0e6)
+    variavel = rating(caso, avaliador)
+
+    # Rating de referência deliberadamente antigo: propriedades fixadas na condição inicial.
+    pt = agua_saturada_rating(entrada.t_tubo_in)
+    congelado = AvaliadorGeometriaFixa(metodo, geometria, entrada, p, metodo.constants(),
+                                       propriedades_declaradas(pt.rho, pt.mu, pt.cp, pt.k),
+                                       propriedades_declaradas(pt.rho, pt.mu, pt.cp, pt.k))
+    fixo = rating(caso, congelado)
+
+    assert len(chamadas) > 2 and len({round(t, 6) for t in chamadas}) > 2
+    assert max(avaliador.historico_u) - min(avaliador.historico_u) > 1.0
+    assert variavel.q_real != pytest.approx(fixo.q_real, rel=1e-4)
+    assert variavel.diagnostico["resistencias"]
+    assert math.isfinite(variavel.diagnostico["perda_carga_tubo"])
+    assert math.isfinite(variavel.diagnostico["perda_carga_casco"])

@@ -26,6 +26,8 @@ from fpso_siz.core.parametros import with_defaults
 from fpso_siz.core.configuracao import carregar
 from fpso_siz.core.unidades import kw_para_w, mm_para_m, w_para_kw
 from fpso_siz.sizing import rating
+from fpso_siz.sizing.trocador import (AvaliadorGeometriaFixa, GeometriaRating,
+                                      propriedades_declaradas)
 from fpso_siz.sizing.servico import ConfiguracaoServico, buscar_layouts, frente_pareto
 from fpso_siz.termo import servico as termo
 from fpso_siz.pfd.ajustes import AUTOMATICO, MANUAL, EstadoTAG, canonico_estado, contexto_de
@@ -314,25 +316,20 @@ def avaliar_p001(estados, entradas):
                                      entrada.m_tubo * entrada.cp_tubo,
                                      entrada.m_casco * entrada.cp_casco, alvo)
 
-        def coeficientes(q, tc, th):
-            # As restrições são reconstruídas em toda iteração nas temperaturas que o Q produz;
-            # assim Re, películas, U, F, LMTD e Bell-Delaware não são congelados com o alvo Pinch.
-            e = replace(entrada_unidade, t_tubo_out=tc)
-            ok, cons, _ = metodo.sizing_constraints(e, p, constantes)
-            if not ok:
-                return 0.0, 0.0, {}
-            derivados = metodo.derived(geometria.tubos_por_passe, geometria.comprimento_tubo,
-                                       "termica", cons, constantes, p)
-            admissivel = (metodo.case_admissible(geometria.tubos_por_passe, cons, {**p, "v_min": 0.0})
-                           and metodo.admissible(geometria.tubos_por_passe, derivados, p))
-            derivados["admissivel_fisica"] = admissivel
-            return (derivados.get("u", 0.0) * geometria.area_unitaria * configuracao.duty_projeto,
-                    cons.f, derivados)
-
-        rr = rating.rating(c_rating, lambda q, tc, th: coeficientes(q, tc, th)[0],
-                           lambda q, tc, th: coeficientes(q, tc, th)[1])
-        derivados = (coeficientes(rr.q_real, rr.t_fria_out, rr.t_quente_out)[2]
-                     if rr.avaliavel else {})
+        # O óleo não possui k validado no serviço termodinâmico; portanto o P-001 conserva
+        # explicitamente as propriedades propostas. O avaliador ainda refaz toda a física
+        # termo-hidráulica a cada Q e outros serviços podem fornecer adaptadores de `termo`.
+        prop_t = propriedades_declaradas(entrada_unidade.rho_tubo, entrada_unidade.mu_tubo,
+                                         entrada_unidade.cp_tubo, entrada_unidade.k_tubo)
+        prop_s = propriedades_declaradas(entrada_unidade.rho_tubo, entrada_unidade.mu_casco,
+                                         entrada_unidade.cp_casco, entrada_unidade.k_casco)
+        avaliador = AvaliadorGeometriaFixa(
+            metodo, GeometriaRating(geometria.tubos_por_passe, geometria.comprimento_tubo,
+                                    geometria.area_unitaria, configuracao.duty_projeto),
+            entrada_unidade, p, constantes, prop_t, prop_s)
+        rr = rating.rating(c_rating, avaliador)
+        derivados = rr.diagnostico
+        derivados["admissivel_fisica"] = bool(derivados.get("ok"))
         integrado = rating.integrar(c_rating, rr, estado.T["C-08"], estado.T["C-24"])
         resultado = CasoOperacaoP001(
             estado.num, caso_tag.nome, w_para_kw(rr.q_rec_max), w_para_kw(rr.q_real),
@@ -341,10 +338,11 @@ def avaliar_p001(estados, entradas):
              "dT_lm_K": rr.dt_lm, "recuperacao_nao_realizada_kW": w_para_kw(rr.recuperacao_nao_realizada),
              "convergiu": rr.convergiu, "iteracoes": rr.iteracoes,
              "Re_tubo": derivados.get("re"), "Re_casco": derivados.get("re_casco"),
-             "h_tubo_W_m2K": derivados.get("h_tubo"), "h_casco_W_m2K": derivados.get("h_casco"),
+             "h_tubo_W_m2K": derivados.get("h_i"), "h_casco_W_m2K": derivados.get("h_o"),
              "U_W_m2K": derivados.get("u"), "diametro_casco_mm": derivados.get("d_shell"),
-             "velocidade_tubo_m_s": derivados.get("v"), "perda_carga_tubo_Pa": math.nan,
-             "perda_carga_casco_Pa": math.nan})
+             "velocidade_tubo_m_s": derivados.get("v"),
+             "perda_carga_tubo_Pa": derivados.get("perda_carga_tubo"),
+             "perda_carga_casco_Pa": derivados.get("perda_carga_casco")})
         caso_inativo = alvo == 0
         return SimpleNamespace(admissivel=rr.convergiu and (caso_inativo or derivados.get("admissivel_fisica", False)),
                                avaliavel=rr.avaliavel,

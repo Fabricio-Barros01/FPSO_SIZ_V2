@@ -33,3 +33,11 @@ fonte = "Branan (2012), Eq. 2-13 e 2-14"
 tolerancia = 1e-9
 max_iteracoes = 60
 fonte = "FPSO_Siz Julia, sizing/exchanger/shell_and_tube.jl (_tubo_bell_delaware)"
+[rating_hidraulica]
+reynolds_laminar_max = 2300.0
+reynolds_turbulent_min = 4000.0
+laminar_coefficient = 64.0
+colebrook_initial = 0.02
+colebrook_tolerance = 1e-10
+colebrook_max_iter = 60
+fonte = "Hagen-Poiseuille e Colebrook-White (1939), forma de Moran (2016), Eq. 2; perda distribuída de Darcy-Weisbach"
