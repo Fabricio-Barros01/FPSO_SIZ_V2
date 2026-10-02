@@ -9,6 +9,13 @@ equipamento = "exchanger"
 metodo = "saari_lmtd"
 bloco = "P-001"
 
+[servico]
+status = "busca"
+instaladas_admissiveis = [1, 2, 3]
+duty_admissiveis = [1, 2, 3]
+standby_admissiveis = [0, 1, 2]
+fonte = "Domínio inicial de estudo solicitado em 2026-09-30; não é filosofia instalada aprovada"
+
 [entradas]
 m_tubo = { regra = "vazao_massica", corrente = "C-06" }
 cp_tubo = { regra = "cp_corrente", corrente = "C-06" }

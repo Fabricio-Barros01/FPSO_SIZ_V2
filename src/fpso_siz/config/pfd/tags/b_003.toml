@@ -9,6 +9,10 @@ metodo = "moran"
 bloco = "B-003"
 condicao = "C-19"
 
+[servico]
+status = "lacuna"
+fonte = "Curva, vazão mínima, NPSHr e filosofia duty/standby ausentes no acervo"
+
 [entradas]
 q_oil = { regra = "vazao_fase", corrente = "C-19", fase = "liquido" }
 rho_oil = { regra = "densidade_fase", corrente = "C-19", fase = "liquido" }

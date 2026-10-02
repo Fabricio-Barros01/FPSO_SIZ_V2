@@ -18,6 +18,7 @@ from types import SimpleNamespace
 
 from fpso_siz.balanco.dados import premissas
 from fpso_siz.balanco.modelo import resolver_todos
+from fpso_siz.balanco.integracao_energetica import resolver as resolver_integracao
 from fpso_siz.core import registro
 from fpso_siz.core.casos import case_set_from_config
 from fpso_siz.core.contrato import infeasible_envelope
@@ -69,7 +70,8 @@ class ResultadoTAG:
 class Contexto:
     """Dados compartilhados por todos os TAGs de uma execução ou sessão."""
 
-    def __init__(self, dados, prem=None, alteracoes=None, balanco=None, propostas=None):
+    def __init__(self, dados, prem=None, alteracoes=None, balanco=None, propostas=None,
+                 rating_p001=None):
         self.dados = dados
         # valores propostos para as lacunas (pfd/propostas.py); vazio = nenhum arquivo carregado
         self.propostas = propostas if propostas is not None else NENHUMA
@@ -81,6 +83,9 @@ class Contexto:
         self.prem = prem
         self.alteracoes = {k: v for k, v in prem.items() if v != base[k]}
         self._resultados = balanco
+        self.rating_p001 = rating_p001
+        self.diagnostico_integracao = None
+        self._integrado = False
         self._balanco = None
         self._versoes = None
         self.cache = {}
@@ -92,6 +97,10 @@ class Contexto:
             if self.dados is None:
                 raise ValueError("carregue um arquivo de casos (JSON do BOT) antes do balanço")
             self._resultados = resolver_todos(self.dados, self.prem)
+        if self.rating_p001 is not None and not self._integrado:
+            self._resultados, self.diagnostico_integracao = resolver_integracao(
+                self._resultados, self.prem, self.rating_p001)
+            self._integrado = True
         return self._resultados
 
     @property

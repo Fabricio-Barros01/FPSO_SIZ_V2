@@ -44,6 +44,7 @@ arquivo do BOT + premissas
 |---|---|---|
 | Integração produtiva P-001 | (este) | `balanço → entradas → busca discreta → geometria fixa → rating → P-002/P-003 → saídas`, com configuração fonteada, seleção Pareto e fixture determinística; JSON/CSV/MC/gate leem o mesmo resultado — `docs/validacao/43`, ADR 0005 |
 | DESIGN × RATING e multiplicidade | (este) | rating térmico limitado por Pinch, contrato genérico de unidades físicas, bombas em paralelo, busca discreta/Pareto e reauditoria atual do P-001 — `docs/validacao/43`, ADR 0005 |
+| Acoplamento do rating | (este) | geometria Saari fixa → UA(Q)/F(Q), laço explícito para C-07/C-23/P-002/P-003 e filosofia de unidades nos descritores; seleção instalada segue lacuna de projeto — `docs/validacao/43` |
 | Otimização das pressões | (este) | subproblema P_D1 × P_D2: TVP no estado, objetivos e restrições no TOML, grade-oráculo, NSGA-II, frente reproduzida na resolução da grade — `docs/validacao/42` |
 | Mapa de pressão e viscosidade | `d9c565d` | Rs do trem → Beggs & Robinson (nota 40); mapa determinístico P_D1 × P_D2, conclusão C (nota 41) |
 | Trem produtivo | (este) | recombinação da Nota 4 + flash no gás de SG-001/V-001/V-002 nos 12 casos avaliáveis; Standing só nos 4 com lift — `docs/validacao/39` |
