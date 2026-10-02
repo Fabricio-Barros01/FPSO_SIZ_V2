@@ -100,7 +100,7 @@ def buscar_layouts(configuracoes_admissiveis, geometrias, casos, design, avaliar
         for especificacao in geometrias:
             geometria = design(configuracao, especificacao, casos)
             resultados = tuple(avaliar(configuracao, geometria, caso) for caso in casos)
-            if resultados and all(r.admissivel for r in resultados):
+            if resultados and all(r.admissivel and getattr(r, "avaliavel", True) for r in resultados):
                 aceitos.append(CandidatoLayout(
                     configuracao, geometria, resultados, geometria.area_unitaria,
                     sum(r.utilidade_quente for r in resultados),

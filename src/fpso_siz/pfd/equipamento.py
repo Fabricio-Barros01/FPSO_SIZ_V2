@@ -331,7 +331,8 @@ def avaliar_p001(estados, entradas):
 
         rr = rating.rating(c_rating, lambda q, tc, th: coeficientes(q, tc, th)[0],
                            lambda q, tc, th: coeficientes(q, tc, th)[1])
-        _, _, derivados = coeficientes(rr.q_real, rr.t_fria_out, rr.t_quente_out)
+        derivados = (coeficientes(rr.q_real, rr.t_fria_out, rr.t_quente_out)[2]
+                     if rr.avaliavel else {})
         integrado = rating.integrar(c_rating, rr, estado.T["C-08"], estado.T["C-24"])
         resultado = CasoOperacaoP001(
             estado.num, caso_tag.nome, w_para_kw(rr.q_rec_max), w_para_kw(rr.q_real),
@@ -346,6 +347,7 @@ def avaliar_p001(estados, entradas):
              "perda_carga_casco_Pa": math.nan})
         caso_inativo = alvo == 0
         return SimpleNamespace(admissivel=rr.convergiu and (caso_inativo or derivados.get("admissivel_fisica", False)),
+                               avaliavel=rr.avaliavel,
                                recuperacao=rr.q_real, utilidade_quente=integrado.utilidade_quente_residual,
                                utilidade_fria=integrado.utilidade_fria_residual, resultado=resultado)
 
