@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pytest
 
+from fpso_siz.balanco.modelo import resolver_todos
 from fpso_siz.cli import main
 from fpso_siz.output.latex.tag import memorial as saida_mc
 from fpso_siz.output.pfd import estrutura_tag
@@ -194,6 +195,37 @@ def test_trocador_integrado_mostra_perfil_e_resistencias(planta_propostas):
     s = mc.documento(planta_propostas.contexto, rt)["calculo"]["series"]
     assert rt.status == "dimensionado" and len(s["perfil_tq"]) == 2 and s["resistencias"]
     assert rt.operacao is not None
+
+
+def test_rating_alimenta_utilidades_sem_reusar_balanco_ideal(planta_propostas):
+    """P-002/P-003 são preparados do segundo passe, inclusive quando Q_real cai."""
+    planta = planta_propostas
+    p001 = planta.tag("P-001")
+    p002 = planta.tag("P-002")
+    p003 = planta.tag("P-003")
+    ideal = {r.num: r for r in resolver_todos(planta.dados, planta.prem)}
+    entradas = {tag.tag.tag: {c.num: c for c in tag.entradas.casos} for tag in (p002, p003)}
+    houve_reducao = False
+    for estado in planta.balanco:
+        op = p001.operacao.caso(estado.num)
+        anterior = ideal[estado.num]
+        if op.Q_real < op.Q_Pinch:
+            houve_reducao = True
+            assert estado.duties["Q_H"] > anterior.duties["Q_H"]
+            assert estado.duties["Q_C"] != anterior.duties["Q_C"]
+        quente = entradas["P-002"][estado.num]
+        fria = entradas["P-003"][estado.num]
+        assert quente.valores["t_casco_in"].valor == estado.T["C-07"]
+        assert fria.valores["t_casco_in"].valor == estado.T["C-23"]
+        if quente.ativo:
+            delta = quente.insumos["t_agua_in"].valor - quente.insumos["t_agua_out"].valor
+            assert quente.valores["m_tubo"].valor * quente.valores["cp_tubo"].valor * delta == pytest.approx(
+                estado.duties["Q_H"] * 1000)
+        if fria.ativo:
+            delta = fria.insumos["t_agua_out"].valor - fria.insumos["t_agua_in"].valor
+            assert fria.valores["m_tubo"].valor * fria.valores["cp_tubo"].valor * delta == pytest.approx(
+                estado.duties["Q_C"] * 1000)
+    assert houve_reducao
 
 
 def test_json_e_mc_separam_as_propostas(planta_propostas, tmp_path):

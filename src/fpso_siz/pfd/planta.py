@@ -6,9 +6,11 @@ entre casos. TAG com lacuna não é dimensionado: fica "aguardando entrada", com
 que falta; os demais seguem. Cada TAG usa o modo salvo nos ajustes (manual ou automático);
 sem estado salvo, o automático.
 """
+import math
 from dataclasses import dataclass, field, replace
 
 from fpso_siz.balanco.balancos import topologia
+from fpso_siz.balanco.modelo import aplicar_rating_termico
 from fpso_siz.pfd import equipamento
 from fpso_siz.pfd.ajustes import Ajustes, ler
 # reexportados: a planta e o TAG isolado falam dos mesmos estados
@@ -80,11 +82,22 @@ def dimensionar(dados=None, prem=None, ajustes=None, balanco=None, contexto=None
         if entradas_p001.pronto:
             operacao = equipamento.avaliar_p001(ctx.balanco, entradas_p001)
             atualizados = []
+            casos_operacao = []
             for r in ctx.balanco:
                 op = operacao.caso(r.num)
-                temperaturas = dict(r.T, **{"C-07": op.t_fria_out, "C-23": op.t_quente_out})
-                cargas = dict(r.duties, Q_pre=op.Q_real, Q_H=op.q_p002, Q_C=op.q_p003)
-                atualizados.append(replace(r, T=temperaturas, duties=cargas))
+                atualizado = aplicar_rating_termico(r, op.Q_real, ctx.prem)
+                # A operação e o resolvedor usam a mesma equação. Esta conferência impede
+                # que o objeto publicado pelo P-001 divirja do estado que alimenta P-002/003.
+                publicados = (op.t_fria_out, op.t_quente_out, op.q_p002, op.q_p003)
+                resolvidos = (atualizado.T["C-07"], atualizado.T["C-23"],
+                              atualizado.duties["Q_H"], atualizado.duties["Q_C"])
+                if not all(math.isclose(a, b) for a, b in zip(resolvidos, publicados)):
+                    raise ValueError(f"P-001: segunda etapa térmica divergiu no caso {r.num}")
+                atualizados.append(atualizado)
+                casos_operacao.append(replace(op, t_fria_out=atualizado.T["C-07"],
+                    t_quente_out=atualizado.T["C-23"], q_p002=atualizado.duties["Q_H"],
+                    q_p003=atualizado.duties["Q_C"]))
+            operacao = replace(operacao, casos=tuple(casos_operacao))
             ctx._resultados = ctx._balanco = atualizados
             ctx.cache.clear()
     resultados = [equipamento.executar(ctx, e) for e in estados]

@@ -36,9 +36,14 @@ limitado pelo método e número fixo de tubos por passe), chama a busca discreta
 rating para os 16 `EstadoProcesso`. O resultado guarda `Q_Pinch`, `Q_real`, ambas as
 temperaturas de saída, cargas residuais de P-002/P-003 e diagnóstico numérico de cada caso.
 
-`pfd/planta.py` substitui no estado produtivo `Q_pre`, `Q_H`, `Q_C`, `T_C07` e `T_C23`
-antes de preparar P-002 e P-003. O JSON, o CSV de operação, o memorial por TAG e o gate de
-auditoria recebem esse mesmo objeto; não há API de operação paralela. O teste
+`balanco/modelo.aplicar_rating_termico` executa um segundo passe sobre cada caso: substitui
+`Q_pre` pelo `Q_real`, recalcula `T_C07`, `T_C23`, os pisos/tetos `T_C08` e `T_C24`, as
+temperaturas de saída de armazenamento, `Q_H` e `Q_C`, e sobrescreve no `CalcTrace` exatamente
+as cinco equações afetadas. Só então `pfd/planta.py` prepara P-002 e P-003. O JSON, o CSV de
+operação, o memorial por TAG e o gate de auditoria recebem esse mesmo objeto; não há API de
+operação paralela. Testes fecham P-001/P-002/P-003 e a fronteira global em cada caso, e verificam
+que reduzir a recuperação aumenta `Q_H`, altera `Q_C` e chega às entradas dos dois equipamentos.
+O teste
 `tests/arquitetura/test_p001_integrado.py` instrumenta o PFD normal e falha se a busca, o
 rating ou a propagação deixarem de ser alcançados.
 
