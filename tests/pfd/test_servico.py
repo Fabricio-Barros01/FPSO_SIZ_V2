@@ -2,8 +2,8 @@
 balanço é resolvido uma vez por contexto; o manual não consulta balanço nem ChEDL; cache
 por estado."""
 import math
-
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -16,11 +16,22 @@ from fpso_siz.pfd import equipamento as servico
 from fpso_siz.pfd import manual, planta
 from fpso_siz.termo import servico as termo
 from fpso_siz.pfd.tags import tag, tags
+from fpso_siz.sizing.servico import buscar_layouts
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
 
 
 CASOS = FIXTURES / "python_ref" / "design_cases_bot.json"
+
+
+def test_busca_pfd_rejeita_caso_nao_avaliavel_mesmo_marcado_admissivel():
+    geometria = SimpleNamespace(area_unitaria=1.0)
+    resultado = SimpleNamespace(admissivel=True, avaliavel=False, recuperacao=math.nan,
+                                utilidade_quente=0.0, utilidade_fria=0.0)
+    layouts = buscar_layouts((object(),), (object(),), (object(),),
+                             lambda configuracao, especificacao, casos: geometria,
+                             lambda configuracao, geometria, caso: resultado)
+    assert layouts == ()
 
 
 @pytest.fixture
