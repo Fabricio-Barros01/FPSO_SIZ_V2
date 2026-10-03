@@ -19,7 +19,8 @@ def _arquivos(pasta):
 @pytest.fixture(scope="module")
 def lote(tmp_path_factory):
     pasta = tmp_path_factory.mktemp("lote")
-    assert main(["pfd", "--casos", str(CASOS), "--saida", str(pasta), "--mc", "--data", DATA]) == 1
+    # 11 TAGs concluídos; as restrições do P-001 ficam no JSON e na planta.csv (nota 45)
+    assert main(["pfd", "--casos", str(CASOS), "--saida", str(pasta), "--mc", "--data", DATA]) == 0
     return pasta
 
 

@@ -125,8 +125,10 @@ def test_p001_todos_os_casos_calculam_e_o_que_governa_e_area(planta_propostas):
     """No P-001 a lacuna metodológica fechou: os dez casos ativos calculam. O que impede é a área
     — comprimento de tubo muito acima do limite —, e com 2 passes o domínio do fator F vem antes."""
     ctx = planta_propostas.contexto
-    dois_passes = planta_propostas.tag("P-001")
-    assert dois_passes.status == servico.INVIAVEL and "fator de correção F" in dois_passes.resultado.message
+    # estudo DESIGN sobre o alvo preliminar (o TAG da planta apresenta a geometria do rating, nota 45)
+    e = servico.estado_inicial("P-001")
+    dois_passes = servico.dimensionar(servico.preparar(ctx, e), e).resultado
+    assert not dois_passes.feasible and "fator de correção F" in dois_passes.message
     c = candidato(ctx, "P-001", {"passes_tubo": 1.0})
     assert not c.viavel and {crit for crit, _ in c.bloqueios} == {"comprimento"}
     op = operacao(c)

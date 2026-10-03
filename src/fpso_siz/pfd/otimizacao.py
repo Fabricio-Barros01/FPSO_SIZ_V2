@@ -13,10 +13,12 @@ Nada aqui nomeia variável, objetivo, TAG, corrente ou grandeza: tudo vem do TOM
 de cada limite declarada. Inviabilidade continua sendo estado — ela vira **violação** (g > 0),
 nunca exceção; lacuna e caso inativo continuam sendo dado, e não violação de projeto.
 
-**Pré-condição do 0003 (nenhum alarme aberto) ainda NÃO está satisfeita**: P-002 e P-003
-fecharam com a película do lado tubo nos três regimes (`docs/validacao/24-pelicula-baixo-reynolds.md`);
-**só o P-001 segue inviável**. Enquanto ele estiver aberto toda rodada é estudo, e quem gera
-relatório tem de dizer isso.
+O P-001 integrado (ADR 0005, notas 45/46) não tem envelope DESIGN: o resultado dele é a
+geometria instalada avaliada por rating (`ResultadoTAG.operacao`). Por isso nada aqui lê
+`rt.resultado` direto: as áreas vêm de `equipamento.areas_troca` e os derivados de
+`equipamento.derivado` — a mesma regra do JSON, do terminal e do memorial. O ponto separa
+**violação** de requisito obrigatório (g > 0), **decisão de projeto pendente**, **verificação
+incompleta** e **limitação aceita**: só o ponto sem nenhuma das três primeiras é `viavel`.
 
 O **subproblema de pressão** (`pressao`, docs/validacao/42) usa a mesma cadeia: P_D1 e P_D2 são
 premissas do balanço; os objetivos (perda de óleo estabilizado, carga de vapor da VRU) e a
@@ -28,13 +30,15 @@ como UMA unidade, então o objetivo que soma um derivado extensivo dele soma N v
 unitário — a multiplicidade sai da própria decodificação, sem o código citar TAG nenhum.
 """
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
+from fpso_siz.balanco.dados import premissas
 from fpso_siz.core.configuracao import carregar
 from fpso_siz.pfd import equipamento as servico
 from fpso_siz.pfd import propostas as mod_propostas
 from fpso_siz.pfd.ajustes import Ajustes
 from fpso_siz.pfd.planta import dimensionar
+from fpso_siz.pfd.tags import tag
 
 
 def cfg():
@@ -92,6 +96,13 @@ class Avaliacao:
     estados: dict            # id do TAG → status
     convergiu: bool
     sem_dado: frozenset = frozenset()   # TAGs que aguardam entrada ou restrições sem grandeza (lacuna)
+    # TAG → critérios. `violados`: requisito obrigatório não atendido de um TAG dimensionado (já
+    # contado em `restricoes`); `pendencias`: decisão de projeto não tomada; `incompletas`:
+    # verificação sem conclusão; `limitacoes`: premissa aceita que limita o resultado (informativo)
+    violados: dict = field(default_factory=dict)
+    pendencias: dict = field(default_factory=dict)
+    incompletas: dict = field(default_factory=dict)
+    limitacoes: dict = field(default_factory=dict)
 
     @property
     def avaliavel(self):
@@ -101,18 +112,42 @@ class Avaliacao:
         return self.convergiu and not self.sem_dado
 
     @property
-    def viavel(self):
+    def admissivel(self):
+        """Avaliável e sem violação de requisito obrigatório — o que o algoritmo enxerga. Pode
+        ainda depender de decisão pendente ou de verificação incompleta."""
         return self.avaliavel and all(g <= 0 for g in self.restricoes.values())
 
     @property
+    def viavel(self):
+        """Admissível, sem decisão pendente e com as verificações concluídas: o único ponto que
+        pode ser apresentado como atendendo aos critérios."""
+        return self.admissivel and not self.pendencias and not self.incompletas
+
+    @property
     def situacao(self):
-        """Classificação do PONTO, distinta do status de cada TAG (que está em `estados`):
-        `nao_convergiu`, `nao_avaliavel` (falta dado), `inviavel` ou `viavel`."""
+        """Classificação do PONTO, distinta do status de cada TAG (que está em `estados`), na
+        ordem de precedência: `nao_convergiu`, `nao_avaliavel` (falta dado), `inviavel`,
+        `decisao_pendente`, `verificacao_incompleta` ou `viavel`."""
         if not self.convergiu:
             return "nao_convergiu"
         if self.sem_dado:
             return "nao_avaliavel"
-        return "viavel" if self.viavel else "inviavel"
+        if not self.admissivel:
+            return "inviavel"
+        if self.pendencias:
+            return "decisao_pendente"
+        return "verificacao_incompleta" if self.incompletas else "viavel"
+
+    def motivos(self):
+        """[{tipo, id, criterios}] do que impede o ponto de ser `viavel`, na precedência da
+        situação — dado estruturado; quem escreve a frase é a saída."""
+        out = [] if self.convergiu else [{"tipo": "nao_convergiu", "id": "", "criterios": []}]
+        out += [{"tipo": "sem_dado", "id": i, "criterios": []} for i in sorted(self.sem_dado)]
+        out += [{"tipo": "violacao", "id": i, "criterios": list(self.violados.get(i, [])) or [self.estados.get(i, "")]}
+                for i, g in self.restricoes.items() if g > 0]
+        out += [{"tipo": "decisao_pendente", "id": i, "criterios": list(c)} for i, c in self.pendencias.items()]
+        out += [{"tipo": "verificacao_incompleta", "id": i, "criterios": list(c)} for i, c in self.incompletas.items()]
+        return out
 
     @property
     def violacao_total(self):
@@ -149,7 +184,9 @@ def _violacao(rt, neutros):
     if rt.status in neutros:
         return 0.0
     if rt.status == servico.DIMENSIONADO:
-        return 0.0
+        # dimensionado com requisito obrigatório não atendido (o P-001 instalado classifica os
+        # dele): um por critério violado. Decisão pendente não é violação (`Avaliacao.pendencias`)
+        return float(len(rt.restricoes))
     r = rt.resultado
     if r is None:
         return 1.0
@@ -207,19 +244,37 @@ def _restricao_variavel(r, valores):
     return 0.0 if menor < maior else 1 + (menor - maior) / maior
 
 
+def _estados(planta, o):
+    """Estados de que o objetivo lê: o balanço preliminar (padrão) ou, com `etapa =
+    "apos_rating"`, o estado operacional depois do rating do P-001 — o das utilidades que P-002 e
+    P-003 de fato recebem. Declarado no TOML para que o preliminar não seja lido por omissão."""
+    etapa = o.get("etapa", "preliminar")
+    if etapa == "apos_rating":
+        return planta.balanco_operacional
+    if etapa != "preliminar":
+        raise ValueError(f"objetivo {o['id']!r}: etapa desconhecida {etapa!r}")
+    return planta.balanco
+
+
 def _objetivo(o, planta, mult=None):
     mult = mult or {}
     if o["tipo"] == "soma_derivado":
+        return sum(int(mult.get(ident, 1)) * servico.derivado(planta.tag(ident), o["derivado"])
+                   for ident in o["tags"])
+    if o["tipo"] == "soma_area_troca":
+        # `base`: "instalada_m2" (indicador de investimento: inclui a reserva) ou "em_operacao_m2"
+        # (a área que troca calor). A multiplicidade própria do TAG já está nas áreas; replicar
+        # por `fator_vazao` um TAG que já a tem contaria as unidades duas vezes.
         total = 0.0
         for ident in o["tags"]:
-            rt = planta.tag(ident)
-            if rt.status != servico.DIMENSIONADO:
+            a = servico.areas_troca(planta.tag(ident))
+            if a is None:
                 return math.nan
-            d, d2 = rt.resultado.derivados, rt.resultado.derivados_v2
-            valor = d2.get(o["derivado_v2"]) if "derivado_v2" in o else None
-            if valor is None:
-                valor = d.get(o["derivado"], math.nan)
-            total += int(mult.get(ident, 1)) * float(valor)
+            n = int(mult.get(ident, 1))
+            if n > 1 and a["origem"] != "envelope_design":
+                raise ValueError(f"objetivo {o['id']!r}: {ident} já tem multiplicidade própria; "
+                                 "replicá-lo por fator_vazao contaria as unidades duas vezes")
+            total += n * float(a[o["base"]])
         return total
     if o["tipo"] == "razao_componente":
         casos = _casos(planta.balanco, o.get("casos"))
@@ -231,7 +286,7 @@ def _objetivo(o, planta, mult=None):
     if o["tipo"] == "carga_balanco":
         campo = o.get("campo", "duties")
         cargas = [sum(float(getattr(r, campo)[c]) for c in o["cargas"])
-                  for r in _casos(planta.balanco, o.get("casos"))]
+                  for r in _casos(_estados(planta, o), o.get("casos"))]
         if o["agregacao"] != "maximo_entre_casos":
             raise ValueError(f"objetivo {o['id']!r}: agregação desconhecida {o['agregacao']!r}")
         return max(cargas) if cargas else math.nan
@@ -287,6 +342,9 @@ def avaliar(dados, x, propostas=None, sub=None):
     planta = dimensionar(contexto=ctx, ajustes=Ajustes(tags=ajustes) if ajustes else None, somente=somente)
     estados = {ident: planta.tag(ident).status for ident in tags}
     restricoes = {ident: _violacao(planta.tag(ident), list(r["estados_neutros"])) for ident in tags}
+    classes = {nome: {ident: list(getattr(planta.tag(ident), nome)) for ident in tags
+                      if getattr(planta.tag(ident), nome)}
+               for nome in ("restricoes", "decisoes_pendentes", "verificacoes_incompletas", "limitacoes_aceitas")}
     restricoes.update(topo)
     sem_dado = {ident for ident in tags if estados[ident] in set(r["estados_sem_dado"])}
     for rb in restricoes_balanco(sub):
@@ -297,7 +355,9 @@ def avaliar(dados, x, propostas=None, sub=None):
             restricoes[rb["id"]] = 0.0
             sem_dado.add(rb["id"])
     objs = {o["id"]: _objetivo(o, planta, multiplicidade(trens)) for o in objetivos(sub)}
-    return Avaliacao(tuple(x), objs, restricoes, estados, True, frozenset(sem_dado))
+    return Avaliacao(tuple(x), objs, restricoes, estados, True, frozenset(sem_dado),
+                     classes["restricoes"], classes["decisoes_pendentes"],
+                     classes["verificacoes_incompletas"], classes["limitacoes_aceitas"])
 
 
 # ------------------------------------------------------------------ validação (critério 2 do 0003)
@@ -323,6 +383,74 @@ def grade(sub, passos=None):
 def varredura(dados, sub, passos=None, propostas=None):
     """[Avaliacao] de toda a grade do subproblema — a referência exaustiva da validação."""
     return [avaliar(dados, x, propostas, sub) for x in grade(sub, passos)]
+
+
+def ponto_referencia(dados, sub=None):
+    """O vetor de decisão da configuração atual: premissa no valor de base, um trem, e a
+    recomendação com fonte de cada entrada de TAG (o que o `pfd` dimensiona hoje)."""
+    base = premissas(dados)
+    x = []
+    for v in variaveis(sub):
+        if v["destino"] == "premissa":
+            x.append(float(base[v["chave"]]))
+        elif v["destino"] == "fator_vazao":
+            x.append(1.0)
+        else:
+            rec = tag(v["tag"]).recomendadas.get(v["chave"])
+            x.append(float(rec["valor"]) if rec else float(v["min"]))
+    return tuple(x)
+
+
+@dataclass(frozen=True)
+class Comparacao:
+    """Avaliação finita e rastreável de candidatos: o domínio inteiro declarado (a referência
+    primeiro), as avaliações feitas na ordem do domínio até o limite, e o que ficou de fora.
+    Comparar é só dominância nos objetivos declarados — sem peso, sem somar unidades diferentes."""
+    sub: str
+    dominio: tuple            # pontos x, a referência primeiro
+    avaliacoes: tuple         # Avaliacao, na ordem do domínio (no máximo `limite`)
+    limite: int
+
+    @property
+    def referencia(self):
+        return self.avaliacoes[0] if self.avaliacoes else None
+
+    @property
+    def limite_atingido(self):
+        return len(self.avaliacoes) < len(self.dominio)
+
+    @property
+    def nao_avaliados(self):
+        return self.dominio[len(self.avaliacoes):]
+
+    def com_situacao(self, *situacoes):
+        return [a for a in self.avaliacoes if a.situacao in situacoes]
+
+    def frente(self):
+        """Candidatos ADMISSÍVEIS (sem violação) não dominados nos objetivos do subproblema.
+        Admissível com decisão pendente ou verificação incompleta entra condicionado — a
+        situação de cada um continua dizendo por que não está aprovado."""
+        ids = [o["id"] for o in objetivos(self.sub)]
+        adm = [a for a in self.avaliacoes if a.admissivel]
+        objs = nao_dominados([a.objetivos for a in adm], ids)
+        return [a for a in adm if a.objetivos in objs]
+
+
+def comparar(dados, sub, limite=None, propostas=None, avaliar_pontos=None):
+    """Avalia o domínio declarado do subproblema (`grade`), com a configuração de referência
+    primeiro, até `limite` avaliações (padrão: `[subproblema.comparacao] max_avaliacoes`). Termina
+    normalmente se nenhum candidato atender: a classificação de cada um é o resultado. Atingido o
+    limite, devolve o parcial com os pontos que ficaram sem avaliar. `avaliar_pontos(pontos)` troca
+    a avaliação sequencial por outra equivalente (ex.: `_otim.avaliar_pontos`, em processos)."""
+    limite = int(subproblema(sub)["comparacao"]["max_avaliacoes"] if limite is None else limite)
+    if limite < 1:
+        raise ValueError("a comparação exige ao menos uma avaliação (a da referência)")
+    ref = ponto_referencia(dados, sub)
+    dominio = (ref, *(x for x in grade(sub) if x != ref))
+    pontos = list(dominio[:limite])
+    avaliacoes = (avaliar_pontos(pontos) if avaliar_pontos is not None
+                  else [avaliar(dados, x, propostas, sub) for x in pontos])
+    return Comparacao(sub, dominio, tuple(avaliacoes), limite)
 
 
 def domina(a, b, ids, tol=0.0):

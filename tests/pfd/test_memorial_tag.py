@@ -288,6 +288,10 @@ def test_mc_de_todos_os_metodos(planta_ajustada, planta_propostas):
                planta_propostas.tag("P-002"), planta_propostas.tag("P-003")]:
         ctx = (planta_propostas if rt.tag.tag in ("P-002", "P-003") else planta_ajustada).contexto
         d = mc.documento(ctx, rt)
+        if rt.operacao is not None:   # P-001 integrado: o MC apresenta a geometria do rating
+            assert d["calculo"] is None and d["operacao_integrada"] == rt.operacao.estrutura()
+            saida_mc.gerar(ctx, rt, DATA, GIT)
+            continue
         c = d["calculo"]
         assert c["viavel"] and c["rastro"] and c["resultados"]
         if c["selecao"]:
@@ -305,7 +309,8 @@ def test_mc_compila(planta_ajustada, planta_propostas, tmp_path, ident):
 
 
 # ------------------------------------------------------------------ F10x.1 — gráficos de trocador e bomba
-@pytest.mark.parametrize("ident", ["P-001", "P-002", "P-003"])
+# o P-001 automático não tem envelope DESIGN: o MC dele é o da geometria instalada (nota 45)
+@pytest.mark.parametrize("ident", ["P-002", "P-003"])
 def test_trocador_perfil_tq_e_parcelas_de_u(planta_ajustada, planta_propostas, ident):
     """O perfil T × Q liga as temperaturas terminais do caso governante e as parcelas de 1/U
     somam exatamente o 1/U do dimensionamento (P-001 pelas entradas sintéticas, onde dimensiona;

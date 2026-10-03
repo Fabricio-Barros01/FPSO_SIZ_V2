@@ -6,8 +6,10 @@ config/pfd/otimizacao.toml. Determinístico (semente fixa) e LENTO: cada indiví
 e os TAGs da planta (cerca de 3 s no problema completo).
 
 **A pré-condição do documento 0003 — nenhum alarme aberto — ainda NÃO está satisfeita**: o
-P-002 e o P-003 fecharam (docs/validacao/24-pelicula-baixo-reynolds.md), mas o P-001 segue
-inviável. Toda rodada é ESTUDO, e nenhum ponto da frente é recomendação de projeto.
+P-002 e o P-003 fecharam (docs/validacao/24-pelicula-baixo-reynolds.md); o P-001 é a geometria
+instalada por rating, com o comprimento do tubo como decisão pendente (docs/validacao/46, 47).
+Toda rodada é ESTUDO, e nenhum ponto da frente é recomendação de projeto. A comparação finita de
+configurações é `tools/comparar_configuracoes.py`.
 
     uv run python tools/otimizar.py [--sub sg_001] [--populacao N] [--geracoes N] [--semente N]
                                     [--varredura] [--saida docs/validacao/23-otimizacao.md]
@@ -28,11 +30,10 @@ from collections import Counter
 from pathlib import Path
 
 from fpso_siz import _otim
-from fpso_siz.balanco.dados import carregar_casos, premissas
+from fpso_siz.balanco.dados import carregar_casos
 from fpso_siz.pfd import equipamento as servico
 from fpso_siz.pfd import otimizacao as ot
 from fpso_siz.pfd import propostas as mod_propostas
-from fpso_siz.pfd.tags import tag
 
 RAIZ = Path(__file__).resolve().parent.parent
 CASOS = RAIZ / "tests" / "fixtures" / "python_ref" / "design_cases_bot.json"
@@ -45,19 +46,8 @@ def f(x, casas=1):
 
 
 def ponto_do_projeto(dados, sub):
-    """O vetor de decisão do projeto atual: premissa no valor de base, um trem, e a recomendação
-    com fonte de cada entrada de TAG (o que o `pfd` já dimensiona hoje)."""
-    base = premissas(dados)
-    x = []
-    for v in ot.variaveis(sub):
-        if v["destino"] == "premissa":
-            x.append(float(base[v["chave"]]))
-        elif v["destino"] == "fator_vazao":
-            x.append(1.0)
-        else:
-            rec = tag(v["tag"]).recomendadas.get(v["chave"])
-            x.append(float(rec["valor"]) if rec else float(v["min"]))
-    return tuple(x)
+    """O vetor de decisão do projeto atual (a mesma regra da comparação: `ot.ponto_referencia`)."""
+    return ot.ponto_referencia(dados, sub)
 
 
 def tabela_declaracao(sub):
@@ -67,15 +57,18 @@ def tabela_declaracao(sub):
                    f"{v['fonte']} |")
     out += ["", "| Objetivo | Unidade | Como é somado | Fonte |", "|---|---|---|---|"]
     for o in ot.objetivos(sub):
-        como = (f"soma de `{o.get('derivado_v2', o.get('derivado'))}` em {', '.join(o['tags'])}"
-                if o["tipo"] == "soma_derivado" else f"{' + '.join(o['cargas'])} ({o['agregacao']})")
+        como = (f"soma de `{o['derivado']}` em {', '.join(o['tags'])}" if o["tipo"] == "soma_derivado" else
+                f"soma da área `{o['base']}` em {', '.join(o['tags'])}" if o["tipo"] == "soma_area_troca" else
+                f"{' + '.join(o['cargas'])} ({o['agregacao']}, {o.get('etapa', 'preliminar')})")
         out.append(f"| {o['rotulo']} (`{o['id']}`) | {o['unidade']} | {como} | {o['fonte']} |")
     return out
 
 
 # Os quatro desfechos possíveis de um PONTO, distintos do status de cada TAG. "não avaliável"
 # não é um jeito educado de dizer inviável: é falta de dado, e não pode virar viabilidade.
-SITUACAO = {"viavel": "viável", "inviavel": "inviável",
+SITUACAO = {"viavel": "viável", "verificacao_incompleta": "admissível, com verificação incompleta (não aprovado)",
+            "decisao_pendente": "admissível, com decisão de projeto pendente (não aprovado)",
+            "inviavel": "inviável",
             "nao_avaliavel": "não avaliável (lacuna de entrada ou grandeza sem solução)",
             "nao_convergiu": "balanço não convergiu"}
 
@@ -212,10 +205,11 @@ def gerar(dados, populacao, geracoes, semente, destino_dados, rodadas=None, proc
            "## Aviso de pré-condição", "",
            "O documento `docs/decisoes/0003-otimizacao-pymoo.md` exige **nenhum alarme aberto** antes da primeira "
            "rodada. Os alarmes do **P-002 e do P-003 fecharam** quando a película do lado tubo passou a ter os "
-           "três regimes (`docs/validacao/24-pelicula-baixo-reynolds.md`); **só o P-001 segue inviável**, por "
-           "saturação da troca em baixa vazão (`docs/validacao/14-alarmes.md`). O usuário autorizou a "
-           "implementação da F15 com a pré-condição ainda aberta, em 2026-09-26; enquanto o P-001 estiver assim "
-           "**toda rodada aqui é estudo, e nenhum ponto da frente é recomendação de projeto.**", "",
+           "três regimes (`docs/validacao/24-pelicula-baixo-reynolds.md`). O **P-001** deixou de ser DESIGN "
+           "inviável: é a geometria instalada avaliada por rating (ADR 0005), com recuperação parcial aceita e "
+           "o comprimento do tubo como **decisão pendente** (`docs/validacao/46`); por isso nenhum ponto que o "
+           "contém sai como viável (`decisao_pendente`). **Toda rodada aqui é estudo, e nenhum ponto da frente "
+           "é recomendação de projeto** (`docs/validacao/47`).", "",
            "Um TAG replicado (`fator_vazao`) é dimensionado como UMA unidade, com a vazão dividida pelo número "
            "de unidades; os objetivos que somam um derivado extensivo dele somam o valor unitário **vezes o "
            "número de unidades**.", ""]

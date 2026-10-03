@@ -22,6 +22,9 @@ class Tag:
     recomendadas: dict = field(default_factory=dict)  # chave → {valor, fonte, perguntar}
     insumos: dict = field(default_factory=dict)       # entradas do TAG que não são do método
     inativo_se: dict = field(default_factory=dict)
+    # grandezas do TAG que o método não recebe, calculadas pelas mesmas regras das entradas e
+    # usadas só por avaliações fora do método (ex.: ρ do casco no rating do P-001)
+    auxiliares: dict = field(default_factory=dict)
 
     def resolver(self):
         """(equipamento, método) registrados."""
@@ -36,7 +39,7 @@ def _tag(nome_arquivo, pasta=PASTA):
         raise ValueError(f"{nome_arquivo}: faltam os campos {faltam}")
     return Tag(d["tag"], d["nome"], d["equipamento"], d["metodo"], d["bloco"], d.get("condicao", ""),
                dict(d.get("entradas", {})), dict(d.get("recomendadas", {})), dict(d.get("insumos", {})),
-               dict(d.get("inativo_se", {})))
+               dict(d.get("inativo_se", {})), dict(d.get("auxiliares", {})))
 
 
 VARIANTES = "pfd/variantes"

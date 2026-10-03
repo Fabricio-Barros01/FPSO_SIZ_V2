@@ -137,6 +137,7 @@ class CasoTAG:
     rastro: Rastro
     avisos: list
     insumos: dict = field(default_factory=dict)
+    auxiliares: dict = field(default_factory=dict)   # chave → Valor (Tag.auxiliares), fora do método
 
 
 @dataclass
@@ -728,6 +729,9 @@ def conferir_tag(tag, specs):
         if desconhecidas:
             raise ValueError(f"{tag.tag}: [{grupo}] cita entradas que o método não tem: {desconhecidas}")
     fases = cfg()["fases"]
+    for k, regra in tag.auxiliares.items():
+        if k in specs or regra.get("regra") not in REGRAS:
+            raise ValueError(f"{tag.tag}: auxiliar {k!r} repete uma entrada do método ou cita regra desconhecida")
     for k, regra in tag.entradas.items():
         if regra.get("regra") not in REGRAS:
             raise ValueError(f"{tag.tag}: regra desconhecida {regra.get('regra')!r} para {k}")
@@ -799,8 +803,29 @@ def montar(tag, balanco, dados, prem, ajustes=None, estado=None, propostas=None)
         if ativo:
             _avisos_de_faixa(ctx, valores, specs)
         nome = cfg()["nome_caso"].format(num=r.num, nome=r.caso.get("name", r.fluid))
-        casos.append(CasoTAG(r.num, nome, ativo, motivo, valores, ctx.rastro, ctx.avisos if ativo else [], ctx.insumos))
+        casos.append(CasoTAG(r.num, nome, ativo, motivo, valores, ctx.rastro, ctx.avisos if ativo else [], ctx.insumos,
+                             _auxiliares(ctx, tag)))
     return EntradasTAG(tag, eq, m, specs, casos, _lacunas(tag, m, specs, casos))
+
+
+def _auxiliares(ctx, tag):
+    """Grandezas auxiliares do TAG (fora do método), pelas mesmas regras e com a mesma
+    proveniência das entradas. Falha de cálculo vira lacuna com motivo, nunca número suposto;
+    ela não bloqueia o TAG, só a avaliação que a consome."""
+    out = {}
+    for k, regra in tag.auxiliares.items():
+        args = {a: v for a, v in regra.items() if a not in ("regra", "rotulo", "unidade", "uso")}
+        try:
+            v = REGRAS[regra["regra"]](ctx, k, **args)
+        except (_Pendente, ArithmeticError) as erro:
+            v = Valor(math.nan, LACUNA, f"não foi possível calcular: {erro}", pendente=(k,))
+        if not v.lacuna and not math.isfinite(v.valor):
+            v = Valor(math.nan, LACUNA, v.fonte + "; resultado não finito", pendente=(k,))
+        prop = proveniencia.da_regra(regra["regra"])
+        v = replace(v, propriedade=prop) if prop and not v.propriedade and not v.lacuna else v
+        ctx.rastro.trace(BLOCO, rotulo_origem(v.origem), k, v.fonte, v.valor, regra.get("unidade", ""))
+        out[k] = v
+    return out
 
 
 def montar_manual(tag, casos, estado, pfd=True, propostas=None):

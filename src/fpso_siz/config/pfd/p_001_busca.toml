@@ -44,3 +44,43 @@ fonte = "ET/BOT § 2.7.1.11 — equipamento reserva instalado"
 objetivos = ["recuperacao", "area_instalada", "utilidades"]
 desempate = ["utilidades", "area_instalada", "instaladas", "duty", "tubos_por_passe", "comprimento_m", "diametro_externo_mm", "passes_tubo", "layout_tubos_graus", "razao_passo", "corte_chicana", "espacamento_chicana"]
 fonte = "decisão de modelagem: frente não dominada recuperação × área instalada × utilidades; ordem lexicográfica explícita para reprodutibilidade"
+
+# Classificação da geometria instalada depois do rating (docs/validacao/45). Nada aqui é limite
+# novo: os limites são os parâmetros do método já presentes nas entradas do TAG (v_min, v_max,
+# l_tubo_max, d_casco_max) e a regra P-45 (banda_caso_projeto). Estes textos só explicam por que
+# um valor falta ou por que um critério não se aplica.
+[avaliacao]
+fonte = "P-45 (velocidade no tubo: teto em todos os casos com vazão, banda inteira no caso de projeto, piso no turndown como alerta — escopo hidráulico, independente da carga térmica); limites geométricos do método saari_lmtd; perda de carga sem limite vigente no acervo"
+
+[avaliacao.motivos]
+teto_nulo = "teto Pinch nulo: a aproximação disponível entre as entradas, T(C-22) − T(C-06) = {aprox:.2f} K, é menor que a aproximação mínima ΔT_app = {dt_app:g} K (P-32); Q_rec_max = 0 e Q_real = 0 por construção do balanço preliminar, não por limitação da geometria instalada. As temperaturas de saída são as de entrada (T(C-07) = T(C-06), T(C-23) = T(C-22)). O balanço não modela bypass nem isolamento: as correntes atravessam o equipamento e a hidráulica é avaliada"
+convergencia_teto_nulo = "sem iteração: o intervalo de busca do rating, [0, Q_rec_max], é nulo"
+sem_vazao = "sem vazão nos dois lados do P-001 neste caso: a hidráulica não se aplica"
+nao_avaliavel = "rating não avaliável neste caso: {mensagem}"
+sem_diagnostico = "o rating não devolveu o diagnóstico hidráulico deste caso"
+sem_criterio_dp = "sem limite de perda de carga vigente para o P-001 (BOT e acervo não fixam): valor só informativo, sem critério de aceitação"
+sem_criterio_v_casco = "sem critério de velocidade no casco vigente (a P-45 é do lado tubo): valor só informativo"
+dp_regime = "não avaliada: Re = {re:.0f} no regime '{regime}', sem correlação de fator de atrito declarada para ele (Hagen-Poiseuille até Re = {re_lam:.0f}; Colebrook-White a partir de Re = {re_turb:.0f})"
+dp_casco_indicativa = "— estimativa indicativa (Darcy-Weisbach sobre L/d_o com o Re de Bell-Delaware e ρ da corrente do casco, C-22); o acervo não tem correlação de perda de carga no casco aplicável a esta geometria (nota 43)"
+rho_casco_ausente = "ρ da corrente do casco indisponível ({fonte})"
+pelicula_fora = "correlação da película do lado tubo fora da validade: {motivo}"
+pelicula_sem_carga = "sem carga térmica no caso: a película não determina nenhum resultado (a validade dela é critério térmico)"
+
+# Conclusão do resumo hidráulico: o atendimento dos critérios EFETIVAMENTE avaliados e, em
+# separado, a completude da verificação (grandeza ausente, sem critério vigente ou só estimada).
+[avaliacao.conclusoes]
+nao_aplicavel = "Hidráulica não aplicável (sem vazão)."
+[avaliacao.conclusoes.atendimento]
+atende = "Critérios avaliados atendidos"
+alerta = "Critérios avaliados atendidos, com alerta de turndown (P-45)"
+nao_atende = "Critério hidráulico vigente não atendido"
+nao_avaliado = "Nenhum critério hidráulico vigente avaliado"
+[avaliacao.conclusoes.completude]
+completa = "verificação hidráulica completa"
+incompleta = "verificação hidráulica incompleta"
+
+# Premissa efetiva de comprimento (docs/validacao/46): o mesmo texto na avaliação e no memorial.
+[avaliacao.comprimento]
+consistente = "O domínio da busca ({dmin:g}–{dmax:g} m) respeita o l_tubo_max = {limite:g} m."
+limite_aplicado = "l_tubo_max = {limite:g} m é limite do projeto (origem «{origem}», {revisao}); a busca descarta tubos acima dele dentro do domínio de {dmin:g}–{dmax:g} m."
+divergente = "Divergência em aberto: o domínio da busca vai até {dmax:g} m (nota 43, alternativas de {dmin:g}–{dmax:g} m consideradas pelo usuário), mas o l_tubo_max = {limite:g} m do TAG é DEFAULT DO MÉTODO (Branan p. 38, tubo de estoque; origem «{origem}», revisão {revisao}), não um limite confirmado do projeto. Decisão necessária: (a) confirmar {limite:g} m como limite do projeto — a busca passa a descartar tubos maiores e a geometria selecionada muda; ou (b) informar no TAG o comprimento máximo admitido para o projeto, com a justificativa de fornecimento. Até lá o comprimento instalado não é aprovado nem reprovado."

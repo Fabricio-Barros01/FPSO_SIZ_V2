@@ -31,9 +31,10 @@ pelas restrições simultâneas, não pelo rótulo histórico do caso 5.
 
 ## Integração no caminho produtivo
 
-O serviço `pfd/equipamento.py` materializa uma única geometria do P-001 (comprimento físico
-limitado pelo método e número fixo de tubos por passe), chama a busca discreta e executa o
-rating para os 16 `EstadoProcesso`. O resultado guarda `Q_Pinch`, `Q_real`, ambas as
+O serviço `pfd/equipamento.py` materializa uma única geometria do P-001 (comprimento e número
+de tubos por passe do domínio de busca), chama a busca discreta e executa o rating para os 16
+`EstadoProcesso`. Até a nota 45 o P-001 ainda passava por um DESIGN paralelo sobre o estado
+pós-rating; isso foi removido. O resultado guarda `Q_Pinch`, `Q_real`, ambas as
 temperaturas de saída, cargas residuais de P-002/P-003 e diagnóstico numérico de cada caso.
 
 `balanco/modelo.aplicar_rating_termico` executa um segundo passe sobre cada caso: substitui
@@ -58,9 +59,10 @@ standby); em ambas a reserva instalada da ET permanece fisicamente separada do d
 Cada ponto materializa **uma** geometria antes de avaliar os 16 casos. Em cada iteração do
 rating são reconstruídas as restrições do método para as temperaturas de saída correntes;
 da mesma física de `trocador.py`, `pelicula.py` e `bell_delaware.py` saem Reynolds, filmes,
-U, F, LMTD, diâmetro de casco e velocidade. Candidato que não converge ou viola a validade
-das correlações, velocidade, comprimento ou diâmetro em qualquer caso obrigatório é
-descartado. Perda de carga ainda aparece como `NaN`: o acervo tem Darcy–Weisbach para tubos,
+U, F, LMTD, diâmetro de casco e velocidade. Candidato que não converge, não é avaliável ou não tem `U` finito em algum caso ativo é
+descartado. **Correção (nota 45):** velocidade, validade da película, comprimento e diâmetro
+NÃO são filtros da busca; são classificados na geometria escolhida (`avaliacao`), e o limite
+`l_tubo_max` = 6 m do método não restringe o domínio de 6–9 m. Perda de carga ainda aparece como `NaN`: o acervo tem Darcy–Weisbach para tubos,
 mas não tem uma correlação de perda no casco; inventar a segunda parcela contrariaria a regra
 das fontes. Portanto ela é diagnóstico explícito, não uma restrição silenciosamente suposta.
 

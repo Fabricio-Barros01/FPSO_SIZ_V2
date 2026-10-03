@@ -2,10 +2,11 @@
 #
 # ESTADO DA PRÉ-CONDIÇÃO: o documento 0003 exige "nenhum alarme aberto" antes da primeira
 # rodada. Os alarmes do P-002 e do P-003 FECHARAM com a película do lado tubo nos três regimes
-# (docs/validacao/24-pelicula-baixo-reynolds.md); SÓ O P-001 SEGUE INVIÁVEL, por saturação da
-# troca em baixa vazão. O usuário autorizou a implementação em 2026-09-26 com a pré-condição
-# ainda aberta; enquanto o P-001 estiver assim toda rodada é ESTUDO, e o relatório carrega esse
-# aviso. Nenhum ponto da frente é recomendação de projeto.
+# (docs/validacao/24-pelicula-baixo-reynolds.md). O P-001 deixou de ser DESIGN inviável: é a
+# geometria instalada avaliada por rating (ADR 0005, notas 45/46), com recuperação parcial aceita
+# e o comprimento do tubo como DECISÃO PENDENTE (nota 46). Enquanto ela estiver aberta nenhum
+# ponto que contenha o P-001 sai como `viavel` (sai `decisao_pendente`), e nenhum ponto da frente
+# é recomendação de projeto (docs/validacao/47).
 #
 # Tudo o que a otimização pode mexer está declarado aqui, com LIMITE DE ORIGEM DECLARADA (a
 # tabela do 0003). O código não nomeia variável nem objetivo: itera estas listas. Valor com
@@ -92,8 +93,9 @@ natureza_max = "dominio_estudo"
 fonte = "domínio de estudo da Nota 41; o piso físico de P_D2 (sucção do 1º estágio da VRU) não tem fonte, e 110 kPa é só o extremo explorado; o teto efetivo vem da restrição de TVP, não de bound"
 
 # ---------------------------------------------------------------------------- objetivos
-# tipo: "soma_derivado" (soma um derivado dos TAGs listados) | "carga_balanco" (soma cargas do
-# balanço no caso de projeto do critério declarado)
+# tipo: "soma_derivado" (soma um derivado dos TAGs listados) | "soma_area_troca" | "carga_balanco"
+# (soma cargas do balanço no caso de projeto do critério declarado; `etapa` = "preliminar" (padrão)
+# ou "apos_rating")
 # sentido: "minimizar" (o único usado; declarado para não ficar implícito)
 
 [[objetivo]]
@@ -113,19 +115,23 @@ unidade = "kW"
 tipo = "carga_balanco"
 cargas = ["Q_H", "Q_D"]
 agregacao = "maximo_entre_casos"
+# depois do rating do P-001: a parcela não recuperada pela geometria instalada vai ao P-002 (nota 45)
+etapa = "apos_rating"
 sentido = "minimizar"
-fonte = "utilidade de aquecimento do módulo (BOT 3.4): P-002 (Q_H) e DWH-001 (Q_D); o dimensionamento da utilidade responde ao caso de maior carga"
+fonte = "utilidade de aquecimento do módulo (BOT 3.4): P-002 (Q_H) e DWH-001 (Q_D), no estado operacional depois do rating do P-001; o dimensionamento da utilidade responde ao caso de maior carga. Os 16 casos são cenários alternativos: o máximo é o caso que dimensiona, não consumo simultâneo nem energia anual (não há frequências declaradas)"
 
+# soma_area_troca: soma `base` das áreas de `equipamento.areas_troca` (a mesma regra do JSON e
+# do memorial). "instalada_m2" inclui a reserva (indicador de investimento); "em_operacao_m2" é a
+# área que troca calor (avaliação térmica). Não é custo: não há preço nem correlação de custo.
 [[objetivo]]
 id = "area_trocadores"
-rotulo = "área total de troca"
+rotulo = "área instalada de troca (indicador de investimento, não custo)"
 unidade = "m²"
-tipo = "soma_derivado"
-derivado = "area"
-derivado_v2 = "area_total"
+tipo = "soma_area_troca"
+base = "instalada_m2"
 tags = ["P-001", "P-002", "P-003"]
 sentido = "minimizar"
-fonte = "área de troca é o proxy de custo dos trocadores (0003); com cascos divididos vale a área total (derivados_v2)"
+fonte = "área de troca como indicador do investimento dos trocadores (0003). Instalada: o P-001 conta as unidades em operação e a reserva (ADR 0005, nota 45); P-002 e P-003, os cascos em série × paralelo do método (sem reserva modelada). Não é custo calculado"
 
 # Objetivos do SUBPROBLEMA DE PRESSÃO (docs/validacao/42). Sem preço, custo ou peso.
 # razao_componente: Σ_casos m(componente, corrente) / Σ_casos m(componente, referencia), das
@@ -231,6 +237,18 @@ fonte = "critério de validação 2 do 0003 (docs/decisoes/0003-otimizacao-pymoo
 # Passo da grade da varredura exaustiva com que a frente é conferida. É critério NUMÉRICO da
 # validação (resolução da conferência), não premissa física; variável inteira anda de 1 em 1.
 grade_passo = { eta_F = 0.02 }
+
+[[subproblema]]
+id = "configuracao"
+rotulo = "configuração de equipamentos: trens do SG-001 × passes do P-002 × passes do P-003"
+variaveis = ["trens_sg", "passes_p002", "passes_p003"]
+objetivos = ["volume_vasos", "area_trocadores", "carga_aquecimento"]
+tags = ["SG-001", "V-001", "V-002", "TO-001", "TO-002", "P-001", "P-002", "P-003", "B-001", "B-002", "B-003"]
+fonte = "comparação de candidatos de configuração para avaliação posterior no HYSYS (docs/validacao/47): domínio discreto e finito (3 × 2 × 2 = 12 pontos, as faixas declaradas de cada variável), premissas do balanço na base (η_F fica fora: é premissa de processo, não configuração), a planta inteira pelo mesmo serviço por TAG. O P-001 sai da busca discreta própria (p_001_busca.toml) e é o mesmo em todos os candidatos"
+[subproblema.comparacao]
+# Limite de avaliações (cada uma é a planta inteira, ~10–30 s). Atingido o limite, a comparação
+# devolve o parcial e lista os pontos não avaliados. Critério de execução, não premissa física.
+max_avaliacoes = 12
 
 [[subproblema]]
 id = "pressao"

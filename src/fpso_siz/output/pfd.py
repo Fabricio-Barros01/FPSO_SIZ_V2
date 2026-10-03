@@ -18,7 +18,8 @@ from fpso_siz.pfd.ajustes import canonico_estado
 from fpso_siz.pfd.equipamento import blocos_sem_dimensionamento, fontes_propriedades, limitacoes, rotulo_origem
 
 ESQUEMA = 2
-COLUNAS = ("tag", "equipamento", "x", "eixo_x", "y", "unidade_y", "caso_governante", "status")
+COLUNAS = ("tag", "equipamento", "x", "eixo_x", "y", "unidade_y", "caso_governante", "status", "restricoes",
+           "decisoes_pendentes", "hidraulica", "etapa_balanco")
 SUFIXO_VARREDURA = "_varredura.csv"
 
 
@@ -66,7 +67,11 @@ def estrutura_tag(ctx, rt):
         "casos": [{"num": c.num, "nome": c.nome, "ativo": c.ativo, "motivo": c.motivo,
                    "valores": {k: asdict(v) for k, v in c.valores.items()},
                    "insumos": {k: asdict(v) for k, v in c.insumos.items()},
+                   "auxiliares": {k: asdict(v) for k, v in c.auxiliares.items()},
                    "rastro": [asdict(x) for x in c.rastro], "avisos": c.avisos} for c in e.casos],
+        "etapa_balanco": rt.etapa_balanco or None,
+        "restricoes": rt.restricoes,
+        "decisoes_pendentes": rt.decisoes_pendentes,
         "envelope": envelope,
         "operacao_integrada": rt.operacao.estrutura() if rt.operacao is not None else None,
     })
@@ -85,20 +90,56 @@ def gravar_tag(ctx, rt, pasta):
     arquivos = [arq_json, arq_csv]
     if rt.operacao is not None:
         caminho_operacao = pasta / f"{ident}_operacao.csv"
-        campos = ("num", "nome", "Q_Pinch", "Q_real", "t_fria_out", "t_quente_out", "q_p002", "q_p003")
-        escrever_csv([{"id": k} for k in campos],
-                     [{k: getattr(c, k) for k in campos} for c in rt.operacao.casos], caminho_operacao)
+        linhas_op = linhas_operacao(rt.operacao)
+        escrever_csv([{"id": k} for k in COLUNAS_OPERACAO], linhas_op, caminho_operacao)
         arquivos.append(caminho_operacao)
     return arquivos
+
+
+# Uma linha por caso: o balanço preliminar (teto Pinch) ao lado do estado depois do rating.
+# Hidráulica em três colunas: atendimento dos critérios avaliados, completude da verificação e as
+# grandezas que a deixam incompleta (ausentes, sem critério vigente ou só estimadas).
+COLUNAS_OPERACAO = ("num", "nome", "papel", "convergencia", "termico",
+                    "hidraulica_atendimento", "hidraulica_completude", "hidraulica_lacunas",
+                    "Q_preliminar_kW", "Q_apos_rating_kW",
+                    "T_C07_preliminar_C", "T_C07_apos_rating_C", "T_C23_preliminar_C", "T_C23_apos_rating_C",
+                    "Q_P002_preliminar_kW", "Q_P002_apos_rating_kW", "Q_P003_preliminar_kW", "Q_P003_apos_rating_kW",
+                    "vazao_tubo_kg_s", "vazao_casco_kg_s", "rho_tubo_kg_m3", "rho_casco_kg_m3",
+                    "v_tubo_m_s", "v_casco_m_s", "dp_tubo_Pa", "dp_casco_indicativa_Pa")
+
+
+def linhas_operacao(operacao):
+    out = []
+    for c in operacao.casos:
+        pre, d = c.preliminar, c.diagnosticos
+        out.append(dict(zip(COLUNAS_OPERACAO, (
+            c.num, c.nome, c.papel, c.convergencia.get("estado"), c.termico.get("status"),
+            c.hidraulico.get("atendimento"), c.hidraulico.get("completude"),
+            "; ".join(lac["criterio"] for lac in c.hidraulico.get("lacunas", [])),
+            c.Q_Pinch, c.Q_real, pre.get("T_C07"), c.t_fria_out,
+            pre.get("T_C23"), c.t_quente_out, pre.get("Q_H_kW"), c.q_p002, pre.get("Q_C_kW"), c.q_p003,
+            d.get("vazao_tubo_kg_s"), d.get("vazao_casco_kg_s"), d.get("rho_tubo_kg_m3"), d.get("rho_casco_kg_m3"),
+            d.get("velocidade_tubo_m_s"), d.get("velocidade_casco_m_s"), d.get("perda_carga_tubo_Pa"),
+            d.get("perda_carga_casco_indicativa_Pa")))))
+    return _limpar(out)
 
 
 def linhas(resultados):
     out = []
     for t in resultados:
-        r, m = t.resultado, t.entradas.metodo
-        out.append(dict(zip(COLUNAS, (t.tag.tag, t.tag.equipamento,
-            r.x if r else None, m.sweep_columns()[0].label,
-            r.y if r else None, m.requirement_spec()[1], r.driver_case if r else "", t.status))))
+        r, m, op = t.resultado, t.entradas.metodo, t.operacao
+        if op is not None and op.geometria is not None:
+            # a geometria instalada (a mesma do rating): tubos por passe e comprimento do tubo
+            x, y = op.geometria.tubos_por_passe, op.geometria.comprimento_tubo
+            governante = next((c.nome for c in op.casos if c.num == op.caso_projeto), "")
+        else:
+            x, y, governante = (r.x, r.y, r.driver_case) if r else (None, None, "")
+        hidraulica = (op.avaliacao()["atendimento_hidraulico"]["conclusao"]
+                      if op is not None and op.geometria is not None else "")
+        out.append(dict(zip(COLUNAS, (t.tag.tag, t.tag.equipamento, x, m.sweep_columns()[0].label, y,
+                                      m.requirement_spec()[1], governante, t.status,
+                                      "; ".join(t.restricoes), "; ".join(t.decisoes_pendentes), hidraulica,
+                                      t.etapa_balanco))))
     return _limpar(out)
 
 

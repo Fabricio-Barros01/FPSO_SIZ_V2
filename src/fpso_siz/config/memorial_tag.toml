@@ -68,13 +68,55 @@ estado_inativo = "inativo em todos os casos"
 remissao_balanco = "MC-SEN-SEP-COO-001,"
 modo_automatico = "automático (balanço preliminar e propriedades)"
 modo_manual = "manual (entradas do usuário e defaults com fonte)"
+modo_automatico_operacional = "automático (estado operacional após o rating do P-001 e propriedades)"
+# Abertura da metodologia quando o método não declara a forma com substituição numérica: depende
+# do estado do TAG (antes, todo TAG sem forma substituída aparecia como "aguardando entrada").
+metodologia_dimensionado = "Equações do método, avaliadas pelo motor em cada caso ativo. O método não declara a forma com substituição numérica: os valores avaliados estão no passo a passo do caso governante (seção 6) e nas tabelas por caso."
+metodologia_inviavel = "Equações do método, avaliadas pelo motor até o ponto em que o envelope se mostrou inviável; o diagnóstico numérico está nas seções seguintes."
+metodologia_inativo = "Equações do método (nenhuma foi avaliada: o TAG está inativo em todos os casos)."
 preliminar = "Resultado preliminar: há recomendações ou defaults com fonte ainda não confirmados pelo usuário (seção 10)."
+criterios_p001 = "velocidade no tubo pela P-45 (teto em todos os casos com vazão, inclusive sem carga térmica; piso no caso de projeto; abaixo do piso no turndown, alerta); validade da película do lado tubo nos casos com carga térmica; comprimento do tubo pela premissa efetiva (seção 8) e diâmetro do casco pelo limite do método; perda de carga e velocidade no casco sem critério vigente (informativas). O atendimento resume só os critérios avaliados; a completude diz se alguma grandeza da verificação ficou ausente, sem critério ou só estimada."
+etapa_preliminar = "balanço preliminar (resolvedor; teto Pinch no P-001)"
+"etapa_apos_rating_P-001" = "estado operacional: balanço refeito com a recuperação que a geometria instalada do P-001 realiza (rating)"
 
 # ------------------------------------------------------------------ conteúdo por TAG
 # Função do equipamento no processo e hipóteses próprias do TAG (além das do método). Texto
 # descritivo apoiado na topologia (topologia_db.toml), nas premissas do balanço e no BOT já
 # citados no código; nenhum número novo. As correntes de entrada e saída, com T e P de cada
 # caso, saem da topologia e do balanço no próprio MC.
+# ------------------------------------------------------------------ P-001 integrado (rating)
+# O P-001 da planta NÃO é dimensionado (sizing) pelo envelope do método: a geometria é fixada pela
+# busca discreta e o cálculo executado é o RATING dela em cada caso (ADR 0005, notas 43, 45, 46).
+[rating_p001]
+objetivo = "Verificar, por rating, o desempenho da geometria instalada do pré-aquecedor (selecionada por busca discreta) em cada caso do balanço: a carga que ela realiza, as temperaturas de saída, as cargas que restam a P-002 e P-003 e os critérios hidráulicos e geométricos vigentes."
+escopo = "Rating térmico de geometria fixa (não é dimensionamento: a área não é calculada para uma carga imposta). Inclui velocidades e perdas de carga como verificação hidráulica; não inclui projeto mecânico (TEMA) nem vibração."
+introducao = "Cálculo efetivamente executado: \\textbf{rating} (verificação de geometria fixa). No \\emph{sizing} (dimensionamento), a carga é dada e o método calcula a área e o comprimento exigidos; no \\emph{rating}, a geometria é dada (seção 6) e o cálculo determina a carga que ela realiza, resolvendo por bisseção, em cada caso, a igualdade entre a carga das temperaturas e a carga que a área em operação transfere. As correlações do método (película do tubo, Bell--Delaware no casco, coeficiente global) são avaliadas na geometria instalada a cada iteração."
+metodologia = [
+    { titulo = "Temperaturas de saída em função da carga", fonte = "balanço de energia de cada lado (ADR 0005)", latex = 'T_{C07}=T_{C06}+\frac{\dot Q}{C_c},\qquad T_{C23}=T_{C22}-\frac{\dot Q}{C_h}' },
+    { titulo = "Carga transferida pela geometria instalada", fonte = "Saari Eq.~4.4 com a área fixa; $U$ pela Eq.~5.7a com $h_i$ (Branan pp.~40--41) e $h_o$ (Bell--Delaware) na geometria", latex = '\dot Q_{rating}=U(\dot Q)\,n_{op}A_{un}\,F(\dot Q)\,\Delta T_{lm}(\dot Q)' },
+    { titulo = "Carga realizada", fonte = "rating limitado pelo teto Pinch e pelo não cruzamento (sizing/rating.py)", latex = '\dot Q_{real}=\min\left(\dot Q_{pre},\,\dot Q_{rating}\right),\qquad 0\le\dot Q\le\min\left(\dot Q_{pre},\,(T_{C22}-T_{C06}-\delta)\min(C_c,C_h)\right)' },
+    { titulo = "Cargas que restam às utilidades", fonte = "segunda etapa térmica do balanço (balanco/modelo.aplicar\\_rating\\_termico)", latex = '\dot Q_{P002}=C_c\,(T_{C08}-T_{C07}),\qquad \dot Q_{P003}=C_h\,(T_{C23}-T_{C24})' },
+    { titulo = "Velocidade no tubo e no casco (por unidade em operação)", fonte = "continuidade; $\\rho$ de cada lado pela sua corrente (C-06 no tubo, C-22 no casco)", latex = 'v_t=\frac{\dot m_t/n_{op}}{\rho_t\,N_{tp}\,\pi d_i^2/4},\qquad v_s=\frac{\dot m_s/n_{op}}{\rho_s\,S_m}' },
+    { titulo = "Perda de carga distribuída", fonte = "Darcy--Weisbach (Hagen--Poiseuille no laminar, Colebrook--White no turbulento); no casco, só estimativa indicativa", latex = '\Delta p=f\,\frac{L}{d}\,\frac{\rho v^2}{2}' },
+]
+
+# ------------------------------------------------------------------ continuidade preliminar → rating
+# Grandezas que o rating do P-001 altera (balanco/modelo.CORRENTES_RATING/CARGAS_RATING). O MC do
+# P-001 mostra todas; o de um TAG dependente, as que as regras dele citam (`sempre` = a causa).
+[continuidade]
+documento_preliminar = "MC-SEN-SEP-COO-001"
+grandezas_por_tabela = 2
+grandeza = [
+    { id = "Q_pre", tipo = "carga", rotulo = "$\\dot Q$ P-001", unidade = "kW", sempre = true },
+    { id = "C-07", tipo = "temperatura", rotulo = "$T$ C-07", unidade = "°C" },
+    { id = "C-23", tipo = "temperatura", rotulo = "$T$ C-23", unidade = "°C" },
+    { id = "Q_H", tipo = "carga", rotulo = "$\\dot Q$ P-002", unidade = "kW", recebe_nao_recuperado = true },
+    { id = "Q_C", tipo = "carga", rotulo = "$\\dot Q$ P-003", unidade = "kW", recebe_nao_recuperado = true },
+]
+p001 = "O balanço preliminar << doc >> (resolvedor, arquivo de casos \\texttt{<< arquivo >>}) antecede esta memória e permanece como registro da etapa inicial. Nele, a recuperação do P-001 foi estimada pelo teto calculado com a aproximação mínima de @P:dT_app@ (P-32), $\\dot Q_{pre}=\\min(C_c,C_h)\\,(T_{C22}-T_{C06}-\\Delta T_{app})$: um limite termodinâmico, não a carga de uma geometria. O rating da geometria selecionada (seção 6) determinou a recuperação que o modelo calcula para ela, $\\dot Q_{real}\\le\\dot Q_{pre}$; a parcela não recuperada, $\\dot Q_{pre}-\\dot Q_{real}$, passa às utilidades de P-002 e P-003, que são preparados e dimensionados neste estado pós-rating. Recuperação parcial, isoladamente, não é descumprimento de requisito: o teto Pinch não é carga exigida (ADR 0005)."
+dependente = "Este TAG é preparado do \\textbf{estado operacional} (balanço refeito depois do rating do P-001, << mc_p001 >>), e não diretamente do balanço preliminar << doc >>, que o antecede e permanece como registro da etapa inicial. O preliminar supunha o P-001 recuperando o teto Pinch; a geometria instalada do P-001 recupera menos, e a parcela não recuperada, $\\dot Q_{pre}-\\dot Q_{real}$, chega a este equipamento. Temperaturas das correntes (seção 1), propriedades e vazões (seção 4) e cargas desta memória são todas do estado operacional."
+residuo = "Resíduo = variação da carga da utilidade $-$ parcela não recuperada no P-001: zero indica que toda a parcela não recuperada passou a este serviço; diferente de zero, que o piso/teto de temperatura da corrente de saída (T\\textsubscript{trat}, T\\textsubscript{store}) absorveu parte dela."
+
 [tags."SG-001"]
 funcao = "Separador trifásico de água livre (FWKO), primeiro equipamento da unidade: recebe a mistura do fluido de poço com o reciclo de água (C-03, do M-01) e separa o gás (C-04, ao Safety K.O. Drum), a água livre (C-05, saída da unidade) e o óleo, que segue como emulsão ao pré-aquecedor (C-06)."
 hipoteses = [
@@ -85,12 +127,13 @@ hipoteses = [
 funcao = "Pré-aquecedor óleo/óleo: recupera o calor do óleo tratado quente (C-22, recalque da B-001, lado casco) para aquecer a emulsão que sai do FWKO (C-06 → C-07, lado tubo), antes do aquecedor P-002; o óleo tratado segue ao resfriador (C-23)."
 hipoteses = [
     "Troca só de calor sensível entre correntes de processo, com a aproximação mínima de @P:dT_app@ da P-32 no balanço.",
-    "Casos sem carga de pré-aquecimento no balanço (10 e 12--16) ficam inativos neste TAG.",
-    "Lacuna metodológica (decisão do usuário): o óleo no tubo escoa em regime laminar ou de transição, fora de Dittus-Boelter, e não há correlação laminar com fonte no acervo; nenhuma correlação sem referência rastreável é usada. Quando houver fonte, ela entra como ramo próprio do método.",
-    "Velocidade no tubo pela P-45: o teto vale em todos os casos; a banda inteira, no caso de projeto (maior vazão volumétrica no tubo); abaixo do piso no turndown há alerta de operabilidade/incrustação, não reprovação; a faixa de Dittus-Boelter é exigida em cada caso.",
+    "Casos com teto Pinch nulo no balanço (10 e 12--16: a aproximação disponível entre as entradas é menor que a mínima da P-32) ficam inativos no cálculo térmico, com recuperação zero por construção; como o balanço não modela bypass nem isolamento, as correntes atravessam o P-001 nesses casos e a hidráulica deles é verificada.",
+    "Película do lado tubo nos três regimes (Branan, cap. 2, pp. 40-41: Hausen no laminar, interpolação na transição, Dittus-Boelter no turbulento), por recomendação do TAG; a validade da correlação é verificada em cada caso ativo.",
+    "Velocidade no tubo pela P-45: o teto vale em todos os casos ativos; a banda inteira, no caso de projeto (maior vazão volumétrica no tubo); abaixo do piso no turndown há alerta de operabilidade/incrustação, não reprovação.",
+    "Geometria instalada única (busca discreta e rating, notas 43 a 45): o equipamento não é redimensionado caso a caso; o que a geometria não recupera do teto Pinch passa às utilidades de P-002 e P-003. As entradas da seção 4 são as do balanço preliminar (alvo do rating); as correntes da seção 1 são as do estado operacional.",
 ]
 [tags."P-002"]
-funcao = "Aquecedor de óleo: leva a emulsão pré-aquecida (C-07, lado casco) à temperatura mínima de tratamento (C-08, @P:T_trat@, F-05/BOT 2.7.1.4) com água quente de utilidade nos tubos; a carga é a $\\dot Q_{\\mbox{P-002}}$ do balanço."
+funcao = "Aquecedor de óleo: leva a emulsão pré-aquecida (C-07, lado casco) à temperatura mínima de tratamento (C-08, @P:T_trat@, F-05/BOT 2.7.1.4) com água quente de utilidade nos tubos; a carga é a $\\dot Q_{\\mbox{P-002}}$ do estado operacional (balanço refeito depois do rating do P-001; ver a seção de continuidade)."
 hipoteses = [
     "Meio de aquecimento: água pura como líquido saturado na temperatura média da utilidade, com o suprimento limitado pelo BOT 2.7.1.4 (limite declarado no TAG).",
     "Casos em que o óleo já chega à temperatura de tratamento (10 e 12--16) não têm carga e ficam inativos.",
@@ -147,7 +190,7 @@ hipoteses = [
     "Turndown: a razão entre a maior e a menor vazão da linha é grande; a vazão mínima contínua da bomba (dado do fabricante) não está no acervo, e a operação dos casos de menor vazão pode exigir bombas em paralelo ou recirculação de mínimo fluxo (não modelado).",
 ]
 [tags."P-003"]
-funcao = "Resfriador de óleo: resfria o óleo tratado que sai do pré-aquecedor (C-23, lado casco) à temperatura de armazenamento de @P:T_store@ (C-24, F-08/BOT 2.7.1.10) com água de resfriamento nos tubos; a carga é a $\\dot Q_C$ do balanço."
+funcao = "Resfriador de óleo: resfria o óleo tratado que sai do pré-aquecedor (C-23, lado casco) à temperatura de armazenamento de @P:T_store@ (C-24, F-08/BOT 2.7.1.10) com água de resfriamento nos tubos; a carga é a $\\dot Q_C$ do estado operacional (balanço refeito depois do rating do P-001; ver a seção de continuidade)."
 hipoteses = [
     "Meio de resfriamento: água pura como líquido saturado na temperatura média da utilidade; pressão do circuito não informada.",
     "Topologia P-46 (premissa de projeto deste TAG): o óleo no casco, a água de resfriamento nos tubos.",

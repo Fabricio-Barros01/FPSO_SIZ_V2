@@ -30,7 +30,9 @@ arquivo do BOT + premissas
 - **Planta produtiva (16 casos, propostas do pacote):** os 11 TAGs dimensionados. O P-001
   materializa um feixe físico único, executa rating off-design nos 16 casos e dispara a segunda
   etapa térmica do resolvedor: temperaturas, cargas e `CalcTrace` são refeitos com `Q_real`
-  antes de preparar e dimensionar P-002/P-003. Gate aprovado.
+  antes de preparar e dimensionar P-002/P-003. A geometria do rating é o resultado do TAG (sem
+  DESIGN paralelo), o TAG isolado lê o mesmo estado operacional, e a restrição aberta do P-001
+  (tubo de 9 m > `l_tubo_max` de 6 m) aparece em todas as saídas — nota 45. Segunda auditoria (nota 46): hidráulica avaliada também nos casos sem carga (as correntes atravessam o equipamento), resumo hidráulico separa atendimento × completude, ρ do casco pela C-22, MC do rating com continuidade preliminar → pós-rating em P-001/P-002/P-003, e o comprimento passa a **decisão pendente** (6 m é default do método, não confirmado). Gate: consistência aprovada; atendimento de engenharia reportado à parte.
 - **Otimização das pressões de separação (nota 42):** P_D1 × P_D2 → mesmo resolvedor → trem →
   SG-001/V-001/V-002 → perda de óleo estabilizado e carga de vapor da VRU, com TVP ≤ 70 kPa como
   restrição contínua (12 casos avaliáveis). Frente do NSGA-II conferida contra grade-oráculo de
@@ -42,6 +44,9 @@ arquivo do BOT + premissas
 
 | etapa | commit | resumo |
 |---|---|---|
+| Otimização no contrato do P-001 e pacote HYSYS | (este) | avaliador lê áreas por regra única (instalada como indicador, em operação no térmico), utilidade pós-rating, violação × decisão pendente × verificação incompleta, comparação finita de configurações (`tools/comparar_configuracoes.py`), pacote `pfd --hysys`; origem das falhas antigas em `c3ad341` — `docs/validacao/47` |
+| P-001: segunda auditoria | (este) | hidráulica com Q = 0 e vazão; atendimento × completude; ρ do casco pela corrente C-22; metodologia de rating e continuidade preliminar → pós-rating nos MC; premissa única de comprimento; gate separa consistência de engenharia — `docs/validacao/46` |
+| P-001: geometria única | (este) | DESIGN paralelo removido; estado operacional no serviço por TAG; etapa preliminar × pós-rating exportada; diagnósticos (diâmetro em mm, perdas de carga com motivo, P-45 e limites geométricos classificados) — `docs/validacao/45` |
 | Integração produtiva P-001 | (este) | `balanço → entradas → busca discreta → geometria fixa → rating → P-002/P-003 → saídas`, com configuração fonteada, seleção Pareto e fixture determinística; JSON/CSV/MC/gate leem o mesmo resultado — `docs/validacao/43`, ADR 0005 |
 | DESIGN × RATING e multiplicidade | (este) | rating térmico limitado por Pinch, contrato genérico de unidades físicas, bombas em paralelo, busca discreta/Pareto e reauditoria atual do P-001 — `docs/validacao/43`, ADR 0005 |
 | Otimização das pressões | (este) | subproblema P_D1 × P_D2: TVP no estado, objetivos e restrições no TOML, grade-oráculo, NSGA-II, frente reproduzida na resolução da grade — `docs/validacao/42` |
@@ -57,9 +62,11 @@ arquivo do BOT + premissas
 ## Pendências físicas reais
 
 1. **P-001 integrado por rating** — o alvo ideal com aproximação de 10 K (P-32) exigia
-   redimensionamento por caso. A planta agora instala o tubo físico de 6 m declarado, calcula a
-   recuperação parcial off-design e transfere a parcela não recuperada às utilidades de P-002 e
-   P-003. Permanecem pendentes a confirmação das propostas de propriedades e a decisão mecânica
+   redimensionamento por caso. A planta instala a geometria da busca (400 tubos/passe, 9 m,
+   2 + 1 unidades), calcula a recuperação parcial off-design e transfere a parcela não
+   recuperada às utilidades de P-002 e P-003. **Decisão pendente (nota 46):** o tubo de 9 m excede o
+   `l_tubo_max` de 6 m, que é default do método e não foi confirmado como limite do projeto; confirmar 6 m (a busca descarta 7,5–9 m e a geometria muda) ou informar o máximo admitido; a busca não aplica velocidade nem limites
+   geométricos como filtro. Permanecem pendentes a confirmação das propostas de propriedades e a decisão mecânica
    final do feixe. Diagnóstico histórico: `docs/validacao/36-p001-diagnostico.md`.
 2. ~~O trem não reconcilia com o BOT~~ — **resolvida** pela recombinação da Nota 4 (nota 38,
    aprovada) e pelo trem produtivo (nota 39). Decisão pendente dela: aceitar ou não a propagação
@@ -79,7 +86,7 @@ arquivo do BOT + premissas
    diagnóstico do alarme do P-001; o subproblema de pressão (nota 42) é a otimização que o TCC
    defende.
 
-Pendências de engenharia de software (não físicas): o leitor do formato de ajustes da F10b
+Pendências de engenharia de software (não físicas): `sizing/bombas_paralelo` sem consumidor desde `c3ad341` (multiplicidade de bombas da ADR 0005 desligada da planta) e três testes de `test_pelicula_planta.py` com regimes do balanço preliminar (nota 47, origem `c3ad341`); o leitor do formato de ajustes da F10b
 (`pfd/ajustes.estado_legado`) ainda existe — a fixture de teste `ajustes_sinteticos.toml` usa
 esse formato; R3/R4 do P-003 (mudam o que o MC mostra).
 

@@ -190,11 +190,12 @@ def test_propostas_levam_os_tratadores_ao_dimensionamento(planta_propostas):
         assert mc.documento(planta_propostas.contexto, rt)["calculo"]["series"]["diagrama"]
 
 
-def test_trocador_integrado_mostra_perfil_e_resistencias(planta_propostas):
+def test_trocador_integrado_mostra_a_geometria_do_rating(planta_propostas):
+    """O MC do P-001 integrado apresenta a geometria instalada e o rating, não um DESIGN paralelo."""
     rt = planta_propostas.tag("P-001")
-    s = mc.documento(planta_propostas.contexto, rt)["calculo"]["series"]
-    assert rt.status == "dimensionado" and len(s["perfil_tq"]) == 2 and s["resistencias"]
-    assert rt.operacao is not None
+    doc = mc.documento(planta_propostas.contexto, rt)
+    assert rt.status == "dimensionado" and rt.operacao is not None and rt.resultado is None
+    assert doc["calculo"] is None and doc["operacao_integrada"] == rt.operacao.estrutura()
 
 
 def test_rating_alimenta_utilidades_sem_reusar_balanco_ideal(planta_propostas):
@@ -206,7 +207,7 @@ def test_rating_alimenta_utilidades_sem_reusar_balanco_ideal(planta_propostas):
     ideal = {r.num: r for r in resolver_todos(planta.dados, planta.prem)}
     entradas = {tag.tag.tag: {c.num: c for c in tag.entradas.casos} for tag in (p002, p003)}
     houve_reducao = False
-    for estado in planta.balanco:
+    for estado in planta.balanco_operacional:
         op = p001.operacao.caso(estado.num)
         anterior = ideal[estado.num]
         if op.Q_real < op.Q_Pinch:
@@ -247,7 +248,8 @@ def test_sem_propostas_nada_muda(planta_base):
 
 # ------------------------------------------------------------------ CLI e modo interativo
 def test_cli_pfd_com_propostas(tmp_path):
-    assert main(["pfd", "--casos", str(CASOS), "--propostas", str(ARQ), "--saida", str(tmp_path)]) == 1
+    # 11 TAGs concluídos; as restrições do P-001 ficam no JSON e na planta.csv (nota 45)
+    assert main(["pfd", "--casos", str(CASOS), "--propostas", str(ARQ), "--saida", str(tmp_path)]) == 0
     j = json.loads((tmp_path / "TO-001.json").read_text(encoding="utf-8"))
     assert j["status"] == "dimensionado" and j["lacunas"] == []
 
@@ -285,7 +287,8 @@ def test_padrao_do_pacote_e_o_arquivo_versionado():
 
 
 def test_cli_carrega_as_propostas_por_padrao(tmp_path, capsys):
-    assert main(["pfd", "--casos", str(CASOS), "--saida", str(tmp_path / "a")]) == 1
+    # 11 TAGs concluídos; as restrições do P-001 ficam no JSON e na planta.csv (nota 45)
+    assert main(["pfd", "--casos", str(CASOS), "--saida", str(tmp_path / "a")]) == 0
     j = json.loads((tmp_path / "a" / "TO-001.json").read_text(encoding="utf-8"))
     assert j["status"] == "dimensionado" and j["proveniencia"]["propostas"]["arquivo"] == mod.ARQUIVO_PADRAO
     assert main(["pfd", "--casos", str(CASOS), "--sem-propostas", "--saida", str(tmp_path / "b")]) == 1

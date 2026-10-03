@@ -27,6 +27,7 @@ ao fim de cada fase), 2 se a própria auditoria não conseguiu rodar.
     uv run python tools/auditar_saida_pfd.py [--casos ARQ] [--saida saida/_auditoria_fase]
 """
 import argparse
+import csv
 import json
 import math
 import re
@@ -288,21 +289,14 @@ def auditar_tag(ctx, rt, pasta):
 
     envelope = nucleo_json.get("envelope")
     if rt.operacao is not None:
-        esperado = rt.operacao.estrutura()
-        if nucleo_json.get("operacao_integrada") != esperado or mc_json.get("operacao_integrada") != esperado:
-            achados.append(achado("ERRO_OUTPUT", "operacao_integrada", None,
-                                  "rating integrado do P-001 diverge entre resultado, JSON e memorial"))
-        for caso in rt.operacao.casos:
-            balan = next(r for r in ctx.balanco if r.num == caso.num)
-            if not all(igual(a, b) for a, b in ((caso.Q_real, balan.duties["Q_pre"]),
-                                                (caso.q_p002, balan.duties["Q_H"]),
-                                                (caso.q_p003, balan.duties["Q_C"]),
-                                                (caso.t_fria_out, balan.T["C-07"]),
-                                                (caso.t_quente_out, balan.T["C-23"]))):
-                achados.append(achado("ERRO_OUTPUT", f"operacao_integrada.caso[{caso.num}]", None,
-                                      "cargas ou temperaturas não foram propagadas ao balanço produtivo"))
+        achados += _conferir_operacao(ctx, rt, nucleo_json, mc_json, pasta)
+    elif rt.etapa_balanco and rt.etapa_balanco != ctx.etapa_do_tag(rt.tag):
+        achados.append(achado("ERRO_OUTPUT", "etapa_balanco", rt.etapa_balanco,
+                              "o TAG foi preparado de uma etapa do balanço diferente da do estado operacional"))
+    achados += _conferir_continuidade(ctx, rt, mc_json)
+    achados += _conferir_metodologia(rt, doc, pasta)
     cartao = _cartao(m, r)
-    if status == servico.DIMENSIONADO:
+    if status == servico.DIMENSIONADO and rt.operacao is None:
         achados += _conferir_dimensionado(rt, cartao)
     elif status == servico.INVIAVEL:
         achados += _conferir_inviavel(rt, doc)
@@ -318,17 +312,159 @@ def auditar_tag(ctx, rt, pasta):
     if envelope is not None:
         achados += _conferir_niveis(rt, cartao, envelope, mc_json)
 
+    planta = next((li for li in saida_pfd.linhas([rt])), {})
     principais = {f.label: f.value for f in cartao.values() if f.highlight}
+    if rt.operacao is not None and rt.operacao.geometria is not None:
+        # a geometria instalada (a do rating) é o resultado principal do P-001 integrado
+        principais = {"tubos por passe (instalado)": planta.get("x"), "comprimento do tubo (instalado)": planta.get("y")}
     linha = dict(tag=tag, equipamento=rt.tag.equipamento, metodo=m.method_id, status=status,
-                 viavel=bool(r.feasible) if r is not None else None,
-                 caso_governante=(r.driver_case if r is not None else "") or "",
-                 principais=principais, x=None if r is None else r.x, y=None if r is None else r.y,
+                 viavel=bool(r.feasible) if r is not None else (status == servico.DIMENSIONADO),
+                 caso_governante=planta.get("caso_governante") or "",
+                 principais=principais, x=planta.get("x"), y=planta.get("y"), restricoes=list(rt.restricoes),
+                 decisoes_pendentes=list(rt.decisoes_pendentes),
                  ausentes=sorted({a["caminho"] for a in achados
                                   if a["caminho"].startswith(("calculo.", "cartao["))}),
                  lacunas=lacunas, avisos=[t for t, _ in rt.entradas.avisos()],
                  mc_consistente=not any(a["erro"] for a in achados),
                  niveis=niveis_do_metodo(m, r))
     return linha, [dict(a, tag=tag) for a in achados]
+
+
+def _conferir_operacao(ctx, rt, nucleo_json, mc_json, pasta):
+    """P-001 integrado: uma geometria só (sem envelope DESIGN paralelo), a mesma estrutura no
+    resultado, no JSON e no MC, o CSV de operação igual ao resultado, o estado operacional igual
+    ao que P-002/P-003 leem, e toda ausência com motivo e status de não avaliada."""
+    achados = []
+    op = rt.operacao
+    esperado = op.estrutura()
+    if nucleo_json.get("operacao_integrada") != esperado or mc_json.get("operacao_integrada") != esperado:
+        achados.append(achado("ERRO_OUTPUT", "operacao_integrada", None,
+                              "rating integrado do P-001 diverge entre resultado, JSON e memorial"))
+    if nucleo_json.get("envelope") is not None or rt.resultado is not None:
+        achados.append(achado("ERRO_OUTPUT", "envelope", None,
+                              "o P-001 integrado não pode apresentar um envelope DESIGN paralelo à geometria do rating"))
+    csv_op = Path(pasta) / f"{rt.tag.tag}_operacao.csv"
+    with csv_op.open(encoding="utf-8", newline="") as f:
+        lidas = list(csv.DictReader(f))
+    for li, ref in zip(lidas, saida_pfd.linhas_operacao(op)):
+        for k, v in ref.items():
+            if isinstance(v, float) and not igual(float(li[k]), v):
+                achados.append(achado("ERRO_OUTPUT", f"operacao_csv[{ref['num']}].{k}", (li[k], v),
+                                      "o CSV de operação não reproduz o resultado"))
+    if op.geometria is None:
+        return achados
+    g = op.geometria
+    for nome, v in (("tubos_por_passe", g.tubos_por_passe), ("comprimento_tubo", g.comprimento_tubo),
+                    ("area_unitaria", g.area_unitaria)):
+        if not math.isfinite(v) or v <= 0:
+            achados.append(achado("ERRO_NUMERICO", f"geometria.{nome}", v, "dimensão instalada não positiva"))
+    operacional = {r.num: r for r in ctx.balanco_operacional()}
+    for caso in op.casos:
+        balan = operacional[caso.num]
+        if not all(igual(a, b) for a, b in ((caso.Q_real, balan.duties["Q_pre"]),
+                                            (caso.q_p002, balan.duties["Q_H"]),
+                                            (caso.q_p003, balan.duties["Q_C"]),
+                                            (caso.t_fria_out, balan.T["C-07"]),
+                                            (caso.t_quente_out, balan.T["C-23"]))):
+            achados.append(achado("ERRO_OUTPUT", f"operacao_integrada.caso[{caso.num}]", None,
+                                  "cargas ou temperaturas não foram propagadas ao balanço produtivo"))
+        for crit in caso.hidraulico.get("criterios", []):
+            if crit["valor"] is None or (isinstance(crit["valor"], float) and not math.isfinite(crit["valor"])):
+                if crit["status"] not in (servico.NAO_AVALIADO, servico.NAO_APLICAVEL) or not crit["motivo"]:
+                    achados.append(achado("ERRO_OUTPUT", f"operacao.caso[{caso.num}].{crit['criterio']}", None,
+                                          "valor ausente sem status de não avaliado e sem motivo"))
+                else:
+                    achados.append(achado("NAO_APLICAVEL", f"operacao.caso[{caso.num}].{crit['criterio']}", None,
+                                          crit["motivo"]))
+        achados += _conferir_hidraulica(rt, caso)
+    achados += _conferir_premissa_comprimento(op)
+    return achados
+
+
+def _conferir_metodologia(rt, doc, pasta):
+    """Só TAG aguardando entrada pode dizer que nenhuma equação foi avaliada (template comum)."""
+    if rt.status == servico.AGUARDANDO:
+        return []
+    tex = _mc_arquivo(pasta, doc).with_suffix(".tex").read_text(encoding="utf-8")
+    secao = tex.split("\\section{Metodologia}")[1].split("\\section")[0]
+    if saida_mc.cfg()["textos"]["aguardando"] in secao:
+        return [achado("ERRO_OUTPUT", "memorial.metodologia", rt.status,
+                       "o MC apresenta a metodologia como de TAG aguardando entrada, e o TAG não está")]
+    return []
+
+
+def _conferir_hidraulica(rt, caso):
+    """Atividade térmica ≠ passagem de vazão; atendimento ≠ completude; ausência ≠ aprovação."""
+    achados, h, d = [], caso.hidraulico, caso.diagnosticos
+    onde = f"operacao.caso[{caso.num}].hidraulico"
+    com_vazao = (d.get("vazao_tubo_kg_s") or 0) > 0 or (d.get("vazao_casco_kg_s") or 0) > 0
+    if com_vazao and h.get("atendimento") == servico.NAO_APLICAVEL:
+        achados.append(achado("ERRO_OUTPUT", onde, caso.termico.get("status"),
+                              "caso com vazão classificado como hidraulicamente não aplicável"))
+    criterios = h.get("criterios", [])
+    lacunas = [c for c in criterios if c["obrigatorio"] and (c["status"] in (servico.NAO_AVALIADO, servico.SEM_CRITERIO)
+                                                           or c["natureza"] == servico.ESTIMATIVA_INDICATIVA)]
+    if h.get("atendimento") != servico.NAO_APLICAVEL:
+        if lacunas and h.get("completude") != servico.INCOMPLETA:
+            achados.append(achado("ERRO_OUTPUT", onde, h.get("completude"),
+                                  "há grandeza ausente, sem critério ou estimada, e a verificação se diz completa"))
+        if h.get("atendimento") == servico.ATENDE and any(c["status"] == servico.NAO_ATENDE and c["com_limite"]
+                                                          for c in criterios):
+            achados.append(achado("ERRO_OUTPUT", onde, h.get("atendimento"),
+                                  "resumo 'atende' com critério vigente não atendido"))
+        if any(c["status"] == servico.ATENDE and not c["com_limite"] for c in criterios):
+            achados.append(achado("ERRO_OUTPUT", onde, None, "grandeza sem limite vigente classificada como atendida"))
+    rho = rt.entradas.caso(caso.num).auxiliares["rho_casco"].valor
+    if not igual(d.get("rho_casco_kg_m3"), rho if math.isfinite(rho) else None):
+        achados.append(achado("ERRO_OUTPUT", f"operacao.caso[{caso.num}].rho_casco", d.get("rho_casco_kg_m3"),
+                              "ρ do casco do rating difere da ρ da corrente do casco"))
+    return achados
+
+
+def _conferir_premissa_comprimento(op):
+    """A premissa de comprimento é UMA: a busca, a classificação e o memorial a leem igual."""
+    achados, pc = [], op.premissa_comprimento
+    if op.geometria is None:
+        return achados
+    crit = next(r for r in op.restricoes_geometricas if r["criterio"] == "comprimento_tubo")
+    if not igual(crit["limite"], pc["limite_m"]):
+        achados.append(achado("ERRO_OUTPUT", "premissa_comprimento", (crit["limite"], pc["limite_m"]),
+                              "a classificação usou um limite de comprimento diferente da premissa efetiva"))
+    if pc["aplicado_na_busca"] and op.geometria.comprimento_tubo > pc["limite_m"]:
+        achados.append(achado("ERRO_OUTPUT", "premissa_comprimento", op.geometria.comprimento_tubo,
+                              "limite do projeto aplicado na busca, e a geometria selecionada o excede"))
+    if pc["estado"] == "divergente" and crit["status"] in (servico.ATENDE, servico.NAO_ATENDE):
+        achados.append(achado("ERRO_OUTPUT", "premissa_comprimento", crit["status"],
+                              "premissa indefinida (default do método × domínio da busca) tratada como aprovada/reprovada"))
+    return achados
+
+
+def _conferir_continuidade(ctx, rt, mc_json):
+    """Os MC do P-001 e dos TAGs dependentes rastreiam preliminar → pós-rating com os estados de
+    fato usados: a seção existe, e cada antes/depois é o do estado preliminar/operacional."""
+    achados = []
+    dependente = servico.depende_do_rating(rt.tag) and rt.etapa_balanco == servico.ETAPA_RATING
+    if rt.operacao is None and not dependente:
+        return achados
+    if rt.operacao is not None and rt.operacao.geometria is None:
+        return achados
+    ct = mc_json.get("continuidade")
+    if not ct:
+        return [achado("ERRO_OUTPUT", "continuidade", None,
+                       "MC sem a rastreabilidade balanço preliminar → rating do P-001")]
+    preliminar = {r.num: r for r in ctx.balanco}
+    operacional = {r.num: r for r in ctx.balanco_operacional()}
+    for li in ct["linhas"]:
+        pre, pos = preliminar[li["num"]], operacional[li["num"]]
+        for g, v in zip(ct["grandezas"], li["valores"]):
+            fonte = (lambda e: e.T[g["id"]]) if g["tipo"] == "temperatura" else (lambda e: e.duties[g["id"]])
+            if not (igual(v["pre"], fonte(pre)) and igual(v["pos"], fonte(pos))):
+                achados.append(achado("ERRO_OUTPUT", f"continuidade[{li['num']}].{g['id']}", (v["pre"], v["pos"]),
+                                      "o MC não reproduz o preliminar e o pós-rating dos estados usados"))
+    if not ct["fechamento"]["atende"]:
+        achados.append(achado("ERRO_NUMERICO", "continuidade.fechamento", ct["fechamento"],
+                              "o estado operacional não fecha massa/energia na tolerância do balanço"))
+    return achados
 
 
 def _conferir_dimensionado(rt, cartao):
@@ -495,9 +631,34 @@ def auditar_planta(ctx, planta, pasta, casos=""):
     contagem = {c: sum(1 for a in achados if a["categoria"] == c) for c in CATEGORIAS}
     ident = identidade(ctx, planta, casos)
     erros = [a for a in achados if a["erro"]]
+    aprovada = not erros and ident["completa"]
+    # `aprovada` é a CONSISTÊNCIA das saídas (decide o código de saída). O atendimento de engenharia
+    # é outra pergunta — restrições, decisões pendentes, verificação incompleta — e só se informa.
     return dict(identidade=ident, casos=ident["casos"]["arquivo"], sha256=ctx.dados.sha256, tags=linhas,
-                achados=achados, contagem=contagem, erros=erros,
-                aprovada=not erros and ident["completa"])
+                achados=achados, contagem=contagem, erros=erros, aprovada=aprovada,
+                consistencia_saidas={"aprovada": aprovada, "erros": len(erros)},
+                atendimento_engenharia=engenharia(planta))
+
+
+def engenharia(planta):
+    """Atendimento de engenharia por TAG, separado da consistência das saídas: um TAG pode ter
+    saídas consistentes e, ao mesmo tempo, restrição não atendida ou verificação incompleta."""
+    out = []
+    for rt in planta.tags:
+        li = {"tag": rt.tag.tag, "status": rt.status, "restricoes": list(rt.restricoes),
+              "decisoes_pendentes": list(rt.decisoes_pendentes)}
+        if rt.operacao is not None and rt.operacao.geometria is not None:
+            av = rt.operacao.avaliacao()
+            hid = av["atendimento_hidraulico"]
+            li.update(situacao=av["situacao"], termico=av["atendimento_termico"]["status"],
+                      hidraulica_atendimento=hid["atendimento"], hidraulica_completude=hid["completude"],
+                      hidraulica_conclusao=hid["conclusao"],
+                      premissa_comprimento=av["premissa_comprimento"].get("explicacao", ""))
+        else:
+            # o status do envelope do método (viabilidade nos critérios dele), não uma aprovação adicional
+            li.update(situacao=rt.status)
+        out.append(li)
+    return out
 
 
 def auditar(casos, pasta, propostas=True):
@@ -545,14 +706,18 @@ def _identidade_md(ident):
 
 def resumo_md(rel):
     aprovada = "APROVADA" if rel["aprovada"] else "REPROVADA"
-    out = [f"# Auditoria de saída do PFD — {aprovada}", "",
-           "Gerado por `tools/auditar_saida_pfd.py`; todos os números vêm do fluxo real.", "",
+    out = [f"# Auditoria de saída do PFD — consistência das saídas {aprovada}", "",
+           "Gerado por `tools/auditar_saida_pfd.py`; todos os números vêm do fluxo real. O resultado acima "
+           "(e o código de saída) diz se resultado, JSON, CSV e memoriais são consistentes e justificam toda "
+           "ausência. Ele **não** é aprovação de engenharia: o atendimento a critérios está na seção própria.", "",
            *_identidade_md(rel["identidade"]),
            "| TAG | estado | viável | caso governante | principais | ausências | lacunas | avisos | MC |",
            "|---|---|---|:--:|---|--:|--:|--:|:--:|"]
     for t in rel["tags"]:
         princ = "; ".join(f"{k} = {_num(v)}" for k, v in t["principais"].items()) or "—"
-        out.append(f"| {t['tag']} | {t['status']} | {'sim' if t['viavel'] else 'não'} | "
+        estado = t["status"] + (f" — restrições: {', '.join(t['restricoes'])}" if t.get("restricoes") else "")
+        estado += f" — decisão pendente: {', '.join(t['decisoes_pendentes'])}" if t.get("decisoes_pendentes") else ""
+        out.append(f"| {t['tag']} | {estado} | {'sim' if t['viavel'] else 'não'} | "
                    f"{t['caso_governante'] or '—'} | {princ} | {len(t['ausentes'])} | {len(t['lacunas'])} | "
                    f"{len(t['avisos'])} | {'ok' if t['mc_consistente'] else 'ERRO'} |")
     out += ["", "## Classificação das ausências", "",
@@ -566,6 +731,14 @@ def resumo_md(rel):
         out += ["| TAG | categoria | caminho | valor | por quê |", "|---|---|---|---|---|"]
         out += [f"| {a['tag']} | {a['categoria']} | `{a['caminho']}` | {a['detalhe']} | {a['justificativa']} |"
                 for a in rel["erros"]]
+    out += ["", "## Atendimento de engenharia (informativo; não decide o código de saída)", "",
+            "| TAG | situação | restrições não atendidas | decisões pendentes | hidráulica |", "|---|---|---|---|---|"]
+    for e in rel.get("atendimento_engenharia", []):
+        out.append(f"| {e['tag']} | {e['situacao']} | {', '.join(e['restricoes']) or '—'} | "
+                   f"{', '.join(e['decisoes_pendentes']) or '—'} | {e.get('hidraulica_conclusao') or '—'} |")
+    for e in rel.get("atendimento_engenharia", []):
+        if e.get("premissa_comprimento"):
+            out += ["", f"**{e['tag']} — premissa de comprimento:** {e['premissa_comprimento']}"]
     out += ["", "## Resultados de cada método", "",
             "| método | principal | obrigatório de memorial | diagnóstico/opcional |", "|---|---|--:|--:|"]
     for t in rel["tags"]:

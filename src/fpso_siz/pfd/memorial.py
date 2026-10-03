@@ -14,13 +14,19 @@ TAG aguardando entrada, inativo ou inviável também tem MC: as seções de cál
 import math
 import re
 
-from fpso_siz.balanco.balancos import topologia
+from dataclasses import asdict
+
+from fpso_siz.balanco.balancos import balanco_global, balancos_por_bloco, topologia
+from fpso_siz.balanco.estado import ETAPA_RATING
+from fpso_siz.balanco.indicadores import criterios as criterios_balanco
 from fpso_siz.balanco.dados import descritores_premissas
 from fpso_siz.core.configuracao import carregar
 from fpso_siz.core import memoria
 from fpso_siz.core.unidades import CONVERSOES_CAMPO, w_para_kw
 from fpso_siz.pfd.entradas import rotulo_origem
-from fpso_siz.pfd.equipamento import AGUARDANDO, DIMENSIONADO, INATIVO, INVIAVEL, limitacoes
+from fpso_siz.pfd.ajustes import MANUAL
+from fpso_siz.pfd.equipamento import (AGUARDANDO, DIMENSIONADO, INATIVO, INVIAVEL, TAG_RATING, limitacoes,
+                                      referencias_rating)
 
 CODIGO_PREMISSA = re.compile(r"\b[PF]-\d{2}\b")
 SELECAO = "selecao"
@@ -70,6 +76,8 @@ def identificacao(ctx, rt):
                 metodo=m.label, metodo_id=m.method_id, referencia=getattr(m, "method_reference", lambda: "")(),
                 sequencia=seq, numero=num, revisao=cfg()["revisao"], status=rt.status, modo=e.modo,
                 preliminar=e.preliminar, usa_balanco=usa_balanco, fwko_exigidos=exigidos, avulso=e.avulso,
+                etapa_balanco=rt.etapa_balanco, restricoes=list(rt.restricoes),
+                decisoes_pendentes=list(rt.decisoes_pendentes),
                 propostas=dict(arquivo=ctx.propostas.arquivo, sha256=ctx.propostas.sha256) if ctx.propostas else None)
 
 
@@ -85,7 +93,11 @@ def correntes(ctx, rt):
         return []
     info = {c["id"]: c for c in topo["correntes"]}
     ativos = {c.num for c in e.casos if c.ativo}
-    balanco = ctx.resultados_balanco if (e.modo != "manual" and ctx.balanco_resolvido) else []
+    balanco = []
+    if e.modo != "manual" and ctx.balanco_resolvido:
+        # documento final: o estado operacional (pós-rating do P-001) — o P-001 mostra as saídas
+        # realizadas; as entradas do rating (preliminares) estão na seção 4, identificadas
+        balanco = ctx.balanco_operacional() if rt.operacao is not None else ctx.balanco_do_tag(t)
     out = []
     for papel, ids in (("entrada", bloco["entradas"]), ("saída", bloco["saidas"])):
         for cid in ids:
@@ -105,14 +117,15 @@ def entradas(rt):
     casos ativos com o mesmo valor, origem e fonte."""
     e = rt.entradas
     ativos = [c for c in e.casos if c.ativo]
-    chaves = list(e.specs) + [k for c in ativos for k in c.insumos if k not in e.specs]
+    chaves = (list(e.specs) + [k for c in ativos for k in c.insumos if k not in e.specs]
+              + [k for c in ativos for k in c.auxiliares])
     out = []
     for k in dict.fromkeys(chaves):
         s = e.specs.get(k)
-        ins = e.tag.insumos.get(k, {})
+        ins = e.tag.insumos.get(k) or e.tag.auxiliares.get(k, {})
         grupos = {}
         for c in ativos:
-            v = c.valores.get(k) or c.insumos.get(k)
+            v = c.valores.get(k) or c.insumos.get(k) or c.auxiliares.get(k)
             if v is None:
                 continue
             chave = (repr(v.numero), v.origem, v.fonte, v.revisao)
@@ -386,6 +399,48 @@ def _feixe_mais_proximo(rt):
             "v2": v2}
 
 
+def continuidade(ctx, rt):
+    """Rastreabilidade balanço preliminar → rating do P-001 → este MC: as grandezas que o rating
+    alterou, antes e depois, caso a caso, a parcela não recuperada pelo P-001 e o fechamento de
+    massa e energia do estado operacional. None se o TAG não usa (nem produz) esse estado."""
+    e = rt.entradas
+    if e.avulso or e.modo == MANUAL or not ctx.balanco_resolvido:
+        return None
+    if rt.operacao is None and rt.etapa_balanco != ETAPA_RATING:
+        return None
+    _, op, operacional = ctx.integracao_p001()
+    if op is None or op.geometria is None:
+        return None
+    c = cfg()["continuidade"]
+    refs = None if rt.tag.tag == TAG_RATING else referencias_rating(rt.tag)
+    grandezas = [g for g in c["grandeza"] if refs is None or g.get("sempre") or g["id"] in refs]
+    def valor(estado, g):
+        return estado["T"][g["id"]] if g["tipo"] == "temperatura" else estado["duties"][g["id"]]
+    lim = criterios_balanco()["fechamento_max"]
+    linhas, fechamento = [], dict(tolerancia=lim, em_max=0.0, eE_max=0.0, caso_em=None, caso_eE=None)
+    for r in operacional:
+        antes, depois = r.antes_do_rating, {"T": r.T, "duties": r.duties}
+        nao_recuperado = antes["duties"]["Q_pre"] - r.duties["Q_pre"]
+        vals = []
+        for g in grandezas:
+            pre, pos = valor(antes, g), valor(depois, g)
+            vals.append(dict(pre=pre, pos=pos, delta=pos - pre,
+                             residuo=(pos - pre - nao_recuperado) if g.get("recebe_nao_recuperado") else None))
+        linhas.append(dict(num=r.num, nome=op.caso(r.num).nome, valores=vals, nao_recuperado=nao_recuperado))
+        for b in (balanco_global(r), *balancos_por_bloco(r).values()):
+            for k, caso in (("em", "caso_em"), ("eE", "caso_eE")):
+                if b[k] > fechamento[f"{k}_max"]:
+                    fechamento[f"{k}_max"], fechamento[caso] = b[k], r.num
+    fechamento["atende"] = fechamento["em_max"] <= lim and fechamento["eE_max"] <= lim
+    ref = op.caso_projeto
+    return dict(documento_preliminar=c["documento_preliminar"], mc_p001=numero(TAG_RATING)[1],
+                arquivo_casos=ctx.dados.origem, sha256=ctx.dados.sha256, proprio=refs is None,
+                grandezas=[dict(dict(sempre=False, recebe_nao_recuperado=False), **g) for g in grandezas], linhas=linhas, caso_referencia=ref,
+                referencia=next(li for li in linhas if li["num"] == ref) if ref else None,
+                geometria=asdict(op.geometria), areas=dict(op.areas), fechamento=fechamento,
+                por_tabela=int(c["grandezas_por_tabela"]))
+
+
 def pendencias(rt):
     e = rt.entradas
     sem_fonte = [dict(chave=k, casos=v) for k, v in _sem_fonte(e).items()]
@@ -430,7 +485,8 @@ def documento(ctx, rt):
     doc = dict(identificacao=ident, alarme=alarme(rt), conteudo=conteudo_metodo(m), conteudo_tag=cfg().get("tags", {}).get(rt.tag.tag, {}),
                correntes=correntes(ctx, rt), casos=casos(rt), entradas=entradas(rt),
                lacunas=lacunas(rt), premissas=premissas(ctx, rt, ident), pendencias=pendencias(rt),
-               operacao_integrada=rt.operacao.estrutura() if rt.operacao is not None else None, calculo=None)
+               operacao_integrada=rt.operacao.estrutura() if rt.operacao is not None else None,
+               continuidade=continuidade(ctx, rt), calculo=None)
     r = rt.resultado
     if r is None:
         return doc

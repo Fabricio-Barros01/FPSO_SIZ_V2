@@ -133,6 +133,8 @@ uv run fpso-siz dimensionar --tag V-001 --casos design_cases_bot.json --auto-bal
 uv run fpso-siz pfd --casos design_cases_bot.json [--ajustes ajustes_pfd.toml] [--saida saida/pfd]
     # propostas (config/pfd/pendencias_propostas.toml) por padrão; --sem-propostas deixa as lacunas abertas
 uv run fpso-siz pfd --casos design_cases_bot.json --saida saida/pfd --mc [--pdf]   # MC de cada TAG (F11)
+uv run fpso-siz pfd --casos design_cases_bot.json --saida saida/pfd --hysys   # pacote de dados para o HYSYS (nota 47)
+uv run python tools/comparar_configuracoes.py [--limite N] [--processos N]   # comparação finita de configurações + pacote
 uv run fpso-siz dimensionar --tag V-001 --casos design_cases_bot.json --auto-balanco --saida saida/tag --mc [--pdf]
 uv run fpso-siz memorial --casos todos [--pdf]      # MC_Caso01…16 (layout SENAI)
 uv run fpso-siz dimensionar --exemplo pinch_kemp             # Análise Pinch (F8), exemplo do livro

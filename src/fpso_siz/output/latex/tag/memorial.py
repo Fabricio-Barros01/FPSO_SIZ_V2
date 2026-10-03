@@ -230,7 +230,16 @@ def contexto(ctx, rt, data=None, git=None):
     dados_ctx = ctx.dados if not ident["avulso"] else None
     tag_texto = dict(funcao=com_premissas(ct.get("funcao", ""), ctx.prem, dados_ctx) if ctx.prem else ct.get("funcao", ""),
                      hipoteses=[com_premissas(h, ctx.prem, dados_ctx) if ctx.prem else h for h in ct.get("hipoteses", [])])
-    tpl = dict(doc=doc, tag_texto=tag_texto, meta=meta, ident=ident, status=status, textos=c["textos"], regra=c["regra_algarismos"],
+    ct_doc = doc.get("continuidade")
+    continuidade_texto = ""
+    if ct_doc:
+        modelo = c["continuidade"]["p001" if ct_doc["proprio"] else "dependente"]
+        for marca, valor in (("<< doc >>", ct_doc["documento_preliminar"]), ("<< mc_p001 >>", ct_doc["mc_p001"] or ""),
+                             ("<< arquivo >>", formatacao.tx(ct_doc["arquivo_casos"]))):
+            modelo = modelo.replace(marca, valor)
+        continuidade_texto = com_premissas(modelo, ctx.prem, dados_ctx) if ctx.prem else modelo
+    tpl = dict(doc=doc, tag_texto=tag_texto, rating_p001=c["rating_p001"], continuidade_texto=continuidade_texto,
+               continuidade_residuo=c["continuidade"]["residuo"], meta=meta, ident=ident, status=status, textos=c["textos"], regra=c["regra_algarismos"],
                prem=_premissas(doc, ctx.prem), metodologia=_metodologia(doc, constantes),
                eqs=_equacoes(calc, exatos) if calc else [], commit=commit, sujo=sujo, versao=__version__,
                entradas=tabelas_entrada(doc), dados=ctx.dados if not ident["avulso"] else None, versoes=ctx.versoes, valor_entrada=_valor_entrada,

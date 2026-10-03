@@ -37,17 +37,13 @@ def dados():
 
 
 def x_do_projeto(dados, sub=None):
+    return ot.ponto_referencia(dados, sub)
+
+
+def test_o_ponto_de_referencia_e_o_projeto_atual(dados):
     base = premissas(dados)
-    x = []
-    for v in ot.variaveis(sub):
-        if v["destino"] == "premissa":
-            x.append(float(base[v["chave"]]))
-        elif v["destino"] == "fator_vazao":
-            x.append(1.0)
-        else:
-            rec = tag(v["tag"]).recomendadas.get(v["chave"])
-            x.append(float(rec["valor"]) if rec else float(v["min"]))
-    return tuple(x)
+    assert ot.ponto_referencia(dados) == (
+        float(base["eta_F"]), 1.0, *(float(tag(t).recomendadas["passes_tubo"]["valor"]) for t in ("P-002", "P-003")))
 
 
 def test_toda_variavel_tem_limite_com_origem_declarada():
@@ -84,9 +80,24 @@ def test_criterio_1_o_avaliador_reproduz_o_ponto_do_projeto_atual(dados):
     assert a.convergiu
     for ident, estado in a.estados.items():
         assert planta.tag(ident).status == estado, ident
-    # só o P-001 ainda viola: P-002 e P-003 fecharam quando a película do lado tubo passou a ter os
-    # três regimes (docs/validacao/24-pelicula-baixo-reynolds.md)
-    assert not a.viavel and {t for t, g in a.restricoes.items() if g > 0} == {"P-001"}
+    # Nenhum TAG viola requisito obrigatório: o P-001 é a geometria instalada (ADR 0005), não um
+    # DESIGN inviável. Mas o ponto NÃO é aprovado: o comprimento do tubo é decisão pendente
+    # (nota 46) e a hidráulica do P-001 está incompleta (perdas de carga sem critério vigente).
+    assert all(g == 0 for g in a.restricoes.values()) and a.admissivel and not a.viavel
+    assert a.situacao == "decisao_pendente"
+    assert a.pendencias == {"P-001": ["comprimento_tubo"]}
+    assert set(a.incompletas) == {"P-001"} and a.incompletas["P-001"]
+    assert "recuperacao_parcial" in a.limitacoes["P-001"]
+    assert [m["tipo"] for m in a.motivos()] == ["decisao_pendente", "verificacao_incompleta"]
+    # objetivos pelas regras centrais: área INSTALADA (o P-001 com a reserva) e utilidade no
+    # estado operacional depois do rating — não no preliminar
+    areas = {t: servico.areas_troca(planta.tag(t)) for t in ("P-001", "P-002", "P-003")}
+    assert areas["P-001"]["instalada_m2"] == planta.tag("P-001").operacao.areas["instalada_m2"]
+    assert a.objetivos["area_trocadores"] == sum(x["instalada_m2"] for x in areas.values())
+    def q(estados):
+        return max(r.duties["Q_H"] + r.duties["Q_D"] for r in estados)
+    assert a.objetivos["carga_aquecimento"] == q(planta.balanco_operacional)
+    assert a.objetivos["carga_aquecimento"] > q(planta.balanco)
 
 
 def test_a_decodificacao_respeita_destino_e_tipo(dados):
@@ -164,13 +175,73 @@ def test_o_algoritmo_recebe_o_dado_ausente_como_restricao_a_mais():
     assert g2 == [0.0, 0.0, 1.0] and max(g2) > 0
 
 
-def test_a_violacao_soma_so_os_tags_que_violam(dados):
-    """A métrica de violação é a distância ao admissível: quem está dimensionado não entra, e o
-    total é a soma do que violou. Com os alarmes dos trocadores fechados, sobra o P-001."""
-    a = ot.avaliar(dados, x_do_projeto(dados))
-    assert a.restricoes["P-002"] == 0.0 and a.restricoes["P-003"] == 0.0
-    assert a.restricoes["P-001"] > 0
-    assert a.violacao_total == sum(g for g in a.restricoes.values() if g > 0)
+def test_a_violacao_soma_so_os_tags_que_violam():
+    """A métrica de violação é a distância ao admissível: dimensionado sem restrição não entra;
+    dimensionado com requisito obrigatório não atendido conta um por critério (o P-001 instalado
+    classifica os dele); decisão pendente não é violação; e o total é a soma do que violou."""
+    from types import SimpleNamespace
+    neutros = ot.cfg()["restricoes"]["estados_neutros"]
+    assert ot._violacao(SimpleNamespace(status="dimensionado", restricoes=[]), neutros) == 0.0
+    assert ot._violacao(SimpleNamespace(status="dimensionado", restricoes=["comprimento_tubo", "velocidade_tubo"]),
+                        neutros) == 2.0
+    assert ot._violacao(SimpleNamespace(status="inviavel", resultado=None), neutros) == 1.0
+    a = ot.Avaliacao((), {}, {"A": 0.0, "B": 2.0, "C": 0.5}, {"A": "dimensionado", "B": "dimensionado",
+                                                            "C": "inviavel"}, True,
+                     violados={"B": ["comprimento_tubo", "velocidade_tubo"]})
+    assert a.violacao_total == 2.5 and a.situacao == "inviavel"
+    assert [(m["id"], m["criterios"]) for m in a.motivos()] == [("B", ["comprimento_tubo", "velocidade_tubo"]),
+                                                                 ("C", ["inviavel"])]
+
+
+def test_pendencia_e_verificacao_incompleta_nao_sao_aprovacao():
+    """Sem violação, o ponto é admissível; mas decisão pendente ou verificação incompleta
+    impedem o `viavel` — e a precedência é a pendência."""
+    def av(pend=None, inc=None):
+        return ot.Avaliacao((), {}, {"A": 0.0}, {"A": "dimensionado"}, True, pendencias=pend or {},
+                            incompletas=inc or {})
+    assert av().situacao == "viavel" and av().viavel
+    assert av(inc={"A": ["perda_carga_tubo"]}).situacao == "verificacao_incompleta"
+    pendente = av({"A": ["comprimento_tubo"]}, {"A": ["perda_carga_tubo"]})
+    assert pendente.situacao == "decisao_pendente" and pendente.admissivel and not pendente.viavel
+
+
+def test_areas_e_multiplicidade_coincidem_com_o_dimensionamento(planta_propostas):
+    """Uma regra de área: a otimização lê o que o JSON e o memorial leem. Por unidade × unidades
+    em operação = em operação (a que entra no U·A do rating); por unidade × instaladas = instalada
+    (com a reserva, que não troca calor). Replicar um TAG que já tem multiplicidade é recusado."""
+    from fpso_siz.pfd import equipamento as servico
+    rt = planta_propostas.tag("P-001")
+    a, g = servico.areas_troca(rt), rt.operacao.geometria
+    assert {k: a[k] for k in rt.operacao.areas} == rt.operacao.areas and a["origem"] == "geometria_instalada"
+    assert a["por_unidade_m2"] == g.area_unitaria and g.instaladas == g.duty + g.standby
+    assert a["em_operacao_m2"] == pytest.approx(g.duty * g.area_unitaria, rel=1e-12)
+    assert a["instalada_m2"] == pytest.approx(g.instaladas * g.area_unitaria, rel=1e-12)
+    assert (a["unidades_em_operacao"], a["unidades_reserva"]) == (g.duty, g.standby)
+    for c in rt.operacao.casos:   # avaliação térmica pela área em serviço
+        d = c.diagnosticos
+        if d.get("U_W_m2K") and d.get("UA_W_K"):
+            assert d["UA_W_K"] / d["U_W_m2K"] == pytest.approx(a["em_operacao_m2"], rel=1e-9), c.num
+    for ident in ("P-002", "P-003"):
+        r = planta_propostas.tag(ident).resultado
+        b = servico.areas_troca(planta_propostas.tag(ident))
+        assert b["em_operacao_m2"] == b["instalada_m2"] == r.derivados_v2.get("area_total", r.derivados["area"])
+        assert b["unidades_reserva"] == 0 and b["origem"] == "envelope_design"
+    assert servico.areas_troca(planta_propostas.tag("V-001")) is None
+    o = next(o for o in ot.objetivos() if o["id"] == "area_trocadores")
+    assert o["base"] == "instalada_m2"
+    with pytest.raises(ValueError, match="duas vezes"):
+        ot._objetivo(o, planta_propostas, {"P-001": 2})
+
+
+def test_p002_e_p003_continuam_no_estado_pos_rating(planta_propostas):
+    from fpso_siz.balanco.estado import ETAPA_RATING
+    for ident in ("P-002", "P-003"):
+        assert planta_propostas.tag(ident).etapa_balanco == ETAPA_RATING
+    op = planta_propostas.tag("P-001").operacao
+    estados = {r.num: r for r in planta_propostas.balanco_operacional}
+    assert len(op.casos) == len(estados) == 16
+    for c in op.casos:
+        assert (c.q_p002, c.q_p003) == (estados[c.num].duties["Q_H"], estados[c.num].duties["Q_C"])
 
 
 @pytest.mark.otim
@@ -204,14 +275,18 @@ def test_criterio_4_a_otimizacao_nao_altera_o_dimensionamento_padrao(dados):
     """Isolamento: avaliar pontos fora do projeto não muda o resultado padrão de nenhum TAG."""
     from fpso_siz.pfd import equipamento as servico
     ctx = servico.Contexto(dados, propostas=mod_propostas.padrao())
-    antes = {rt.tag.tag: (rt.status, rt.resultado.x if rt.resultado else None)
-             for rt in dimensionar(contexto=ctx).tags}
+
+    def foto(planta):
+        return {rt.tag.tag: (rt.status, rt.resultado.x if rt.resultado else None, servico.areas_troca(rt),
+                             rt.operacao.estrutura() if rt.operacao is not None else None,
+                             rt.etapa_balanco) for rt in planta.tags}
+    antes = foto(dimensionar(contexto=ctx))
     ot.avaliar(dados, (0.9, 3.0, 1.0, 2.0))
-    depois = {rt.tag.tag: (rt.status, rt.resultado.x if rt.resultado else None)
-              for rt in dimensionar(contexto=ctx).tags}
-    for ident, (estado, x) in antes.items():
-        e2, x2 = depois[ident]
+    depois = foto(dimensionar(contexto=ctx))
+    for ident, (estado, x, areas, op, etapa) in antes.items():
+        e2, x2, areas2, op2, etapa2 = depois[ident]
         assert estado == e2 and (x == x2 or (x != x and x2 != x2)), ident
+        assert (areas, op, etapa) == (areas2, op2, etapa2), ident
 
 
 def test_dominancia_e_nao_dominados_sao_minimizacao_estrita():
@@ -232,3 +307,25 @@ def test_a_grade_da_varredura_cobre_os_limites_e_as_inteiras(dados):
     assert etas[0] == 0.80 and abs(etas[-1] - 0.90) <= 1e-12
     assert trens == [1.0, 2.0, 3.0]
     assert len(g) == len(etas) * len(trens)
+
+
+def test_comparacao_finita_rastreavel_e_parcial(dados):
+    """Comparação de configurações: domínio explícito (a referência primeiro), limite de
+    avaliações, cada candidato classificado com os motivos, e resultado parcial utilizável quando
+    o limite corta o domínio. Duas avaliações bastam para o comportamento (cada uma é a planta)."""
+    from fpso_siz import _otim
+    sub = "configuracao"
+    assert len(ot.grade(sub)) == 12
+    c = ot.comparar(dados, sub, limite=2, avaliar_pontos=lambda pts: _otim.avaliar_pontos(
+        dados, pts, sub=sub, processos=PROCESSOS))
+    assert c.dominio[0] == ot.ponto_referencia(dados, sub) and len(set(c.dominio)) == 12
+    assert len(c.avaliacoes) == 2 and c.limite_atingido and len(c.nao_avaliados) == 10
+    assert [a.x for a in c.avaliacoes] == list(c.dominio[:2])
+    for a in c.avaliacoes:
+        assert a.situacao in ("inviavel", "decisao_pendente", "verificacao_incompleta", "viavel",
+                              "nao_avaliavel", "nao_convergiu")
+        assert a.viavel or a.motivos()
+    assert c.referencia.situacao == "decisao_pendente" and not c.com_situacao("viavel")
+    assert all(a.admissivel for a in c.frente())
+    with pytest.raises(ValueError, match="ao menos uma"):
+        ot.comparar(dados, sub, limite=0)

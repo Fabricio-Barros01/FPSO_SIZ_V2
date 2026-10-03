@@ -40,6 +40,9 @@ class Evidencia:
 
 
 def evidencia(rt):
+    if rt.operacao is not None:
+        # P-001 integrado sem geometria admissível: não há envelope, a evidência é a da busca
+        return Evidencia(rt.operacao.mensagem, (), ())
     r = rt.resultado
     viaveis = tuple((n, pc.x) for n, pc in zip(r.case_names, r.per_case) if pc.feasible)
     inviaveis = tuple((n, pc.message) for n, pc in zip(r.case_names, r.per_case) if not pc.feasible)

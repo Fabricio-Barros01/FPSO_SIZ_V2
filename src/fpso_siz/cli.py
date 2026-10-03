@@ -165,6 +165,7 @@ def _dimensionar_equipamento(a):
                                propostas=_propostas(a))
         estado = _estado_do_tag(a, t, aj)
         _verificar_contexto(aj, ctx, [estado])
+        servico.configurar_dependencias(ctx, aj)
     else:
         if a.ajustes is None:
             raise ValueError("--avulso exige --ajustes (o arquivo onde o avulso foi salvo)")
@@ -250,6 +251,9 @@ def cmd_pfd(a):
     erros = []
     if a.saida:
         gravados = pfd.gravar(planta, a.saida)
+        if a.hysys:
+            from fpso_siz.output import hysys
+            gravados += hysys.gravar(planta, Path(a.saida) / "hysys")
         if a.mc:
             arqs, erros = memorial_tag.exportar_lote(ctx, planta.tags, a.saida, a.data, pdf=a.pdf)
             gravados += arqs
@@ -345,6 +349,9 @@ def main(argv=None):
     f.add_argument("--premissa", action="append", default=[], metavar="NOME=VALOR")
     _opcoes_mc(f)
     _opcao_propostas(f)
+    f.add_argument("--hysys", action="store_true",
+                   help="com --saida: grava o pacote de dados para montar o modelo no HYSYS em <saida>/hysys/ "
+                        "(sem importação automática; ver docs/validacao/47)")
     f.add_argument("--ascii", action="store_true", help="texto só em ASCII (setas, bordas, acentos)")
     f.set_defaults(func=cmd_pfd)
 

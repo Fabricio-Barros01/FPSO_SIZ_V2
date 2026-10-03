@@ -3,7 +3,10 @@ import dataclasses
 
 from fpso_siz.balanco.balancos import balanco_bloco, balanco_global, balancos_por_bloco, topologia
 from fpso_siz.balanco.dados import premissas
-from fpso_siz.balanco.modelo import COMP, aplicar_rating_termico, corrente
+import pytest
+
+from fpso_siz.balanco.estado import ETAPA_PRELIMINAR, ETAPA_RATING
+from fpso_siz.balanco.modelo import CARGAS_RATING, COMP, CORRENTES_RATING, aplicar_rating_termico, corrente
 
 
 def test_topologia_16_blocos_26_correntes():
@@ -42,6 +45,23 @@ def test_segunda_etapa_termica_fecha_energia_em_cada_caso(resultados, dados):
         assert realizado.trace.passo("carga_preaquecedor", "P-001").valor == realizado.duties["Q_pre"]
         assert realizado.trace.passo("carga_aquecedor", "P-002").valor == realizado.duties["Q_H"]
         assert realizado.trace.passo("carga_resfriador", "P-003").valor == realizado.duties["Q_C"]
+
+
+def test_segunda_etapa_preserva_o_preliminar_e_so_muda_o_declarado(resultados, dados):
+    """O estado pós-rating identifica a etapa, guarda o preliminar que substituiu e não toca em
+    massa, pressão nem nas temperaturas fora de CORRENTES_RATING; refazer sobre ele é recusado."""
+    prem = premissas(dados)
+    for original in resultados:
+        assert original.etapa == ETAPA_PRELIMINAR and original.antes_do_rating == {}
+        realizado = aplicar_rating_termico(original, original.duties["Q_pre"] / 2, prem)
+        assert realizado.etapa == ETAPA_RATING
+        assert realizado.antes_do_rating == {"T": {k: original.T[k] for k in CORRENTES_RATING},
+                                        "duties": {k: original.duties[k] for k in CARGAS_RATING}}
+        assert realizado.streams == original.streams and realizado.P == original.P
+        assert {k for k in original.T if original.T[k] != realizado.T[k]} <= set(CORRENTES_RATING)
+        assert {k for k in original.duties if original.duties[k] != realizado.duties[k]} <= set(CARGAS_RATING)
+        with pytest.raises(ValueError):
+            aplicar_rating_termico(realizado, 0.0, prem)
 
 
 def test_bloco_sem_vazao_nao_divide_por_zero(resultados):

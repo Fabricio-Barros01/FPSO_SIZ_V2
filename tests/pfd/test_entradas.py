@@ -88,7 +88,8 @@ def test_todas_entradas_tem_fonte_e_rastro(planta_base, planta_ajustada):
 def test_11_envelopes(planta_ajustada, planta_propostas):
     """Os 11 TAGs dimensionam: com as entradas sintéticas (o P-002 e o P-003 esperam as
     temperaturas da utilidade, que só as propostas dão) e na planta produtiva (onde o P-001 é o
-    alarme aberto, por área)."""
+    alarme aberto, por área). No P-001 automático o resultado é a geometria instalada do rating,
+    sem envelope DESIGN (nota 45)."""
     for t in planta_ajustada.tags:
         esperado = "aguardando_entrada" if t.tag.tag in ("P-002", "P-003") else "dimensionado"
         assert t.status == esperado, t.tag.tag
@@ -97,6 +98,10 @@ def test_11_envelopes(planta_ajustada, planta_propostas):
     for p in (planta_ajustada, planta_propostas):
         for t in p.tags:
             if t.status != "dimensionado":
+                continue
+            if t.operacao is not None:
+                g = t.operacao.geometria
+                assert t.resultado is None and g.tubos_por_passe > 0 and g.comprimento_tubo > 0
                 continue
             assert t.resultado.driver_case in t.resultado.case_names
             assert t.resultado.x > 0 and t.resultado.y > 0
@@ -121,7 +126,7 @@ def test_precedencia_e_dependencias(planta_base):
 def test_balanco_energia_utilidades_e_pv(planta_propostas):
     """P-46: a utilidade vai nos tubos; a vazão dela fecha a carga do balanço."""
     for nome, carga, sinal in (("P-002", "Q_H", 1), ("P-003", "Q_C", -1)):
-        for c, r in zip(planta_propostas.tag(nome).entradas.casos, planta_propostas.balanco):
+        for c, r in zip(planta_propostas.tag(nome).entradas.casos, planta_propostas.balanco_operacional):
             if not c.ativo:
                 continue
             vs = c.valores

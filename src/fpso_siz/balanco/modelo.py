@@ -27,7 +27,7 @@ from dataclasses import replace
 
 from fpso_siz.balanco import trem as trem_mod
 from fpso_siz.balanco.dados import constantes, pocos, premissas
-from fpso_siz.balanco.estado import COMP, K_DIA, EstadoProcesso
+from fpso_siz.balanco.estado import COMP, ETAPA_PRELIMINAR, ETAPA_RATING, K_DIA, EstadoProcesso
 from fpso_siz.balanco.propriedades import (gas_props, poco_do_fluido, split_eficiencia, split_water,
                                            standing_rs)
 from fpso_siz.core.configuracao import carregar
@@ -37,6 +37,10 @@ from fpso_siz.termo import proveniencia
 from fpso_siz.termo.servico import mu_interp
 
 LIQUIDOS = ("O", "W", "D")
+# O que o segundo passe térmico (rating do P-001) pode mudar; massas, pressões e o trem não mudam.
+# Um TAG cujas entradas citam uma destas correntes ou cargas depende do rating do P-001.
+CORRENTES_RATING = ("C-07", "C-08", "C-23", "C-24", "C-25", "C-26")
+CARGAS_RATING = ("Q_pre", "Q_H", "Q_C")
 
 
 def corrente(**vazoes):
@@ -338,6 +342,8 @@ def aplicar_rating_termico(estado, q_real, prem):
     ``CalcTrace`` também é copiado e sobrescrito, para que estado e rastro continuem sendo uma
     única representação do mesmo cálculo.
     """
+    if estado.etapa != ETAPA_PRELIMINAR:
+        raise ValueError("o rating do P-001 parte do estado preliminar, nunca de um estado já ajustado")
     if not math.isfinite(q_real) or q_real < 0 or q_real > estado.duties["Q_pre"]:
         raise ValueError("Q_real deve estar entre zero e o teto Pinch do caso")
 
@@ -363,10 +369,12 @@ def aplicar_rating_termico(estado, q_real, prem):
     trace.reg("carga_aquecedor", "P-002", qh, T07=t07, T08=t08, C=cc, etapa="rating")
     trace.reg("carga_resfriador", "P-003", qc, T23=t23, T24=t24, C=ch, etapa="rating")
 
-    temperaturas = dict(estado.T, **{"C-07": t07, "C-08": t08, "C-23": t23,
-                                    "C-24": t24, "C-25": t24, "C-26": t24})
-    cargas = dict(estado.duties, Q_pre=q_real, Q_H=qh, Q_C=qc)
-    return replace(estado, T=temperaturas, duties=cargas, trace=trace)
+    novas_t = {"C-07": t07, "C-08": t08, "C-23": t23, "C-24": t24, "C-25": t24, "C-26": t24}
+    novas_q = {"Q_pre": q_real, "Q_H": qh, "Q_C": qc}
+    antes = {"T": {k: estado.T[k] for k in CORRENTES_RATING},
+             "duties": {k: estado.duties[k] for k in CARGAS_RATING}}
+    return replace(estado, T=dict(estado.T, **novas_t), duties=dict(estado.duties, **novas_q), trace=trace,
+                   etapa=ETAPA_RATING, antes_do_rating=antes)
 
 
 def _condicoes_mudaram(tr, TF, TD1, TD2):

@@ -1,0 +1,53 @@
+# Pacote de dados para montar ou atualizar o modelo no Aspen HYSYS (docs/validacao/47).
+#
+# O pacote só CONSOLIDA o que o balanço, o serviço por TAG e a comparação de configurações já
+# calcularam — nenhuma grandeza nova, nenhuma equivalência entre modelos. Não há integração
+# automática com o HYSYS (nem escopo nem interface definidos): os arquivos são para montagem
+# manual ou por script do usuário, e a compatibilidade de importação NÃO foi verificada.
+fonte = "docs/validacao/47; estruturas existentes: balanco/exportacao.py, pfd/equipamento.py, pfd/otimizacao.py"
+esquema = 1
+
+avisos = [
+    "O pré-dimensionamento não garante convergência nem atendimento no HYSYS: o resultado lá depende da caracterização dos fluidos, do pacote termodinâmico, das especificações e da representação escolhida para cada equipamento.",
+    "As vazões estão na base de pseudo-fases do balanço preliminar (O óleo, W água produzida, D água de diluição, G gás — config/saida_correntes.toml); a composição molar só existe nos casos avaliáveis pelo trem (Nota 4). Nenhuma conversão para componentes do HYSYS foi feita.",
+    "A representação do equipamento no HYSYS (por exemplo, trocador por especificação de carga/temperatura ou por rating de geometria) determina quais parâmetros deste pacote são usados. Nenhuma importação automática de geometria foi implementada ou verificada.",
+    "Os 16 casos são cenários alternativos de operação: cargas e potências não se somam entre casos (não há frequências nem durações declaradas).",
+]
+
+# Dados que faltam para representar o processo no HYSYS. Cada item diz o que falta e onde a
+# lacuna está documentada; o pacote não preenche nenhum deles.
+[[faltante]]
+id = "composicao_gas_lift"
+descricao = "Composição do gás de lift: ausente na fonte (o BOT §2.3.3 só dá especificação). Os casos com gás de lift não têm composição de caso nem trem; só vazões por pseudo-fase."
+casos = "nao_avaliaveis"
+referencia = "SPRINTS.md, pendência 3; docs/validacao/39"
+
+[[faltante]]
+id = "entalpia_cp_pseudo"
+descricao = "h e cp dos pseudo-componentes (cortes SCN C6–C19 e frações plus): sem Cp de gás ideal com fonte. A caracterização disponível é MW (do BOT) e as correlações de Riazi; o pacote informa só o que está no arquivo de casos (MW e ρ das frações plus)."
+referencia = "CLAUDE.md, invariante 5; docs/validacao/30"
+
+[[faltante]]
+id = "rho_liquido_eos_k_liquido"
+descricao = "ρ da fase líquida pela EOS (sem translação de volume) e k da fase líquida de hidrocarboneto: devolvidos pelo backend, não validados — não podem ser tomados como dado de projeto para o HYSYS."
+referencia = "config/termo/proveniencia.toml; SPRINTS.md, pendência 5"
+
+[[faltante]]
+id = "comprimento_tubo_p001"
+descricao = "Comprimento máximo admitido para o tubo do P-001: decisão de projeto pendente (6 m é default do método; a geometria instalada usa 9 m)."
+referencia = "docs/validacao/46, decisão necessária"
+
+[[faltante]]
+id = "limites_perda_carga"
+descricao = "Limites de perda de carga dos trocadores: o BOT e o acervo não fixam; a perda de carga do casco do P-001 é estimativa indicativa e, na transição (2300 < Re < 4000), não há fator de atrito declarado."
+referencia = "docs/validacao/45, 46"
+
+[[faltante]]
+id = "pressoes_degaseificadores"
+descricao = "Pressões de V-001 e V-002 (P_D1, P_D2): sem fonte no BOT; usadas como premissas (P-19) e domínio de estudo."
+referencia = "SPRINTS.md, pendência 7; docs/validacao/42"
+
+[[faltante]]
+id = "pacote_termodinamico"
+descricao = "Pacote termodinâmico e kij do HYSYS: escolha do usuário. O software usa Peng-Robinson com kij = 0 para pares com pseudo-componente (premissa declarada); não há equivalência verificada com o pacote do HYSYS."
+referencia = "config/termo/caracterizacao_scn.toml [premissa.kij]"

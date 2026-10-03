@@ -4,6 +4,7 @@ entradas com Origem e resultado. Composição só; os dados vêm do serviço por
 descritores (ParameterSpec, ResultField, Lacuna, Revisao), nunca nomeia parâmetro, TAG ou
 corrente."""
 from fpso_siz.balanco.balancos import topologia
+from fpso_siz.balanco.estado import ETAPA_PRELIMINAR
 from fpso_siz.output.terminal import esquema
 from fpso_siz.output.terminal.estilo import TRAVESSAO, largura, num, sig, tabela
 from fpso_siz.output.terminal.relatorio import cfg, quebrar, resumo_dimensionamento, titulo
@@ -104,17 +105,65 @@ def marcadores(resultados, estilo, caso=None):
 
 
 def _resultado_curto(r):
+    op = r.operacao
+    if op is not None and op.geometria is not None:
+        g = op.geometria
+        texto = f"{num(g.tubos_por_passe, 0)} tubos/passe × {num(g.comprimento_tubo, 2)} m; {g.duty}+{g.standby}"
+        texto += f" · restrições: {', '.join(r.restricoes)}" if r.restricoes else ""
+        return texto + (f" · decisão pendente: {', '.join(r.decisoes_pendentes)}" if r.decisoes_pendentes else "")
     if r.resultado is None or not r.resultado.feasible:
         return TRAVESSAO
     campos = [f for f in r.entradas.metodo.result_fields(r.resultado) if f.highlight]
     return "; ".join(f"{f.label}: {num(f.value, f.digits)} {f.unit}" for f in campos) or TRAVESSAO
 
 
+def _governante(r):
+    op = r.operacao
+    if op is not None and op.geometria is not None:
+        return next((c.nome for c in op.casos if c.num == op.caso_projeto), TRAVESSAO)
+    return r.resultado.driver_case if r.resultado is not None and r.resultado.feasible else TRAVESSAO
+
+
+def bloco_operacao(rt, estilo, colunas):
+    """Geometria instalada e classificação do rating (o resultado do TAG quando há operação)."""
+    op, tx = rt.operacao, textos()
+    if op.geometria is None:
+        return [estilo.erro(x) for x in quebrar(estilo.t(tx["operacao_sem_geometria"].format(mensagem=op.mensagem)),
+                                                 colunas)]
+    g, av, a = op.geometria, op.avaliacao(), op.areas
+    out = quebrar(estilo.t(tx["operacao_geometria"].format(
+        tubos=num(g.tubos_por_passe, 0), passes=g.passes_tubo, l=num(g.comprimento_tubo, 2),
+        d=num(op.geometria_derivada["diametro_casco_mm"], 0), instaladas=g.instaladas, duty=g.duty,
+        standby=g.standby)), colunas)
+    out += quebrar(estilo.t(tx["operacao_areas"].format(unidade=num(a["por_unidade_m2"], 1),
+                                                        operacao=num(a["em_operacao_m2"], 1),
+                                                        instalada=num(a["instalada_m2"], 1))), colunas)
+    hid = av["atendimento_hidraulico"]
+    out += quebrar(estilo.t(tx["operacao_situacao"].format(
+        situacao=av["situacao"], conv=av["convergencia_numerica"]["status"],
+        termico=av["atendimento_termico"]["status"])), colunas)
+    out += quebrar(estilo.t(tx["operacao_hidraulica"].format(conclusao=hid["conclusao"])), colunas)
+    if hid["lacunas"]:
+        out += quebrar(estilo.t(tx["operacao_lacunas"].format(
+            lista="; ".join(f"{k}: casos {faixa_casos(v)}" for k, v in hid["lacunas"].items()))), colunas)
+    if av["restricoes"]:
+        out += [estilo.aviso(x) for x in quebrar(estilo.t(tx["operacao_restricoes"].format(
+            lista=", ".join(av["restricoes"]))), colunas)]
+    if av["decisoes_pendentes"]:
+        out += [estilo.aviso(x) for x in quebrar(estilo.t(tx["operacao_decisoes"].format(
+            lista=", ".join(av["decisoes_pendentes"]),
+            explicacao=av["premissa_comprimento"].get("explicacao", ""))), colunas)]
+    alertas = hid["alertas"]
+    if alertas:
+        out += quebrar(estilo.t(tx["operacao_alertas"].format(
+            lista="; ".join(f"{k}: casos {faixa_casos(v)}" for k, v in alertas.items()))), colunas)
+    return out
+
+
 def tabela_tags(resultados, estilo, colunas):
     linhas = [{"tag": r.tag.tag, "estado": estado_colorido(r.status, estilo),
                "ativos": str(sum(c.ativo for c in r.entradas.casos)), "resultado": _resultado_curto(r),
-               "governante": r.resultado.driver_case if r.resultado is not None and r.resultado.feasible
-               else TRAVESSAO} for r in resultados]
+               "governante": _governante(r)} for r in resultados]
     return tabela_ajustada(cfg()["colunas_planta"], linhas, estilo, colunas, "tag")
 
 
@@ -294,6 +343,11 @@ def bloco_resultado(rt, estilo, colunas):
         out += [""] + quebrar(estilo.t(tx["casos_inativos"].format(lista=lista)), colunas)
     if rt.status == INATIVO:
         return out + [""] + quebrar(estilo.t(tx["inativo_todo"]), colunas)
+    if rt.etapa_balanco and rt.etapa_balanco != ETAPA_PRELIMINAR:
+        out += quebrar(estilo.t(tx["etapa_balanco"].format(etapa=rt.etapa_balanco)), colunas)
+    if rt.operacao is not None:
+        return out + [""] + bloco_operacao(rt, estilo, colunas) + \
+            [estilo.fraco(x) for x in quebrar(estilo.t(tx["memorial_disponivel"]), colunas)]
     if r is None:
         return out + [""] + [estilo.aviso(x) for x in quebrar(estilo.t(tx["pendente_sem_resultado"]), colunas)]
     out += [estilo.t(x) for x in resumo_dimensionamento(e.equipamento, e.metodo, r, estilo, colunas)]

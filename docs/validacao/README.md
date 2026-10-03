@@ -30,6 +30,11 @@ Cada documento é o registro de uma etapa. A arquitetura vigente está em [`../a
 - [40-viscosidade-rs-flash.md](40-viscosidade-rs-flash.md) — 40 — μ do óleo vivo com o Rs do trem: limitação de aplicabilidade e sensibilidade (SG-001, TO-001)
 - [41-mapa-pressao.md](41-mapa-pressao.md) — 41 — Mapa P_D1 × P_D2 → flash → dimensionamento → TVP; sensibilidade; conclusão C
 - [42-otimizacao-pressao.md](42-otimizacao-pressao.md) — 42 — Otimização das pressões de separação (P_D1 × P_D2): grade-oráculo, NSGA-II, frente na fronteira da TVP
+- [43-design-rating-multiplicidade.md](43-design-rating-multiplicidade.md) — 43 — DESIGN × RATING, multiplicidade e busca discreta do P-001
+- [44-rating-geometria-fixa.md](44-rating-geometria-fixa.md) — 44 — Rating termo-hidráulico de geometria fixa
+- [45-p001-geometria-unica.md](45-p001-geometria-unica.md) — 45 — P-001: uma geometria só, estado operacional no TAG isolado e na planta, classificação das restrições
+- [46-p001-segunda-auditoria.md](46-p001-segunda-auditoria.md) — 46 — P-001: hidráulica com Q = 0 e vazão, atendimento × completude, ρ do casco pela C-22, MC do rating e continuidade preliminar → pós-rating, premissa única de comprimento (decisão pendente)
+- [47-comparacao-configuracoes-hysys.md](47-comparacao-configuracoes-hysys.md) — 47 — Otimização no contrato atual do P-001 (área instalada × em operação, utilidade pós-rating), comparação finita de configurações e pacote de dados para o HYSYS
 - [39-trem-produtivo.md](39-trem-produtivo.md) — 39 — Trem produtivo: recombinação da Nota 4 e flash nos casos avaliáveis; Standing × flash; propagação; TVP recalculada
 - [37-faixas-pressao-degaseificadores.md](37-faixas-pressao-degaseificadores.md) — 37 — Faixas de P_D1 e P_D2: TVP do BOT como teto de P_D2; o que falta
 - [38-recombinacao-nota4.md](38-recombinacao-nota4.md) — 38 — Recombinação da Nota 4: condição padrão × FWKO; recomendada a do FWKO

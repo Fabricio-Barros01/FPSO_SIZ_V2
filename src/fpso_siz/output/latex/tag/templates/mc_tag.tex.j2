@@ -30,7 +30,16 @@ Documento & << meta['numero'] >> (<< meta['numero_nota']|tx >>)\\
 TAG & << ident['tag'] >> --- << ident['nome']|tx >>\\
 Equipamento / método & << ident['equipamento']|tx >> / << ident['metodo']|tx >>\\
 Estado & \textbf{<< textos['estado_' ~ ident['status']] >>}\\
-Preenchimento & << textos['modo_' ~ ident['modo']] >>\\
+<% if ident['etapa_balanco'] %>
+Etapa do balanço & << textos['etapa_' ~ ident['etapa_balanco']]|tx >>\\
+<% endif %>
+<% if ident['restricoes'] %>
+Restrições não atendidas & \textbf{<< ident['restricoes']|join(', ')|tx >>} (seção 8)\\
+<% endif %>
+<% if ident['decisoes_pendentes'] %>
+Decisões de projeto pendentes & \textbf{<< ident['decisoes_pendentes']|join(', ')|tx >>} (seção 8)\\
+<% endif %>
+Preenchimento & <% if ident['etapa_balanco'] == 'apos_rating_P-001' %><< textos['modo_automatico_operacional'] >><% else %><< textos['modo_' ~ ident['modo']] >><% endif %>\\
 Regra do FWKO no balanço & <% if ident['usa_balanco'] %><< textos['regra_eficiencia'] >><% else %><< textos['regra_manual'] >><% endif %>\\
 <% if dados %>
 Arquivo de casos & \texttt{<< dados.origem|tx >>}\\
@@ -53,11 +62,54 @@ Data de geração & << meta['data'] >>\\ \bottomrule\end{tabular}\normalsize
 <% endif %>
 \tableofcontents\clearpage
 
+<# ------------------------------------------------------------ continuidade preliminar → rating #>
+<% macro continuidade(ct, texto, residuo) %>
+<< texto >>
+
+<% set g = ct.geometria %>
+Geometria e multiplicidade do P-001 usadas no rating: << g.tubos_por_passe|sigt >> tubos por passe $\times$ << g.passes_tubo >> passe(s), tubo de << g.diametro_externo_mm|sigt >> mm e << g.comprimento_tubo|sigt >> m, arranjo << g.layout_tubos_graus >>°; << g.instaladas >> unidades instaladas = << g.duty >> em operação + << g.standby >> reserva (a reserva não troca calor); área << ct.areas.por_unidade_m2|sigt >> m² por unidade, << ct.areas.em_operacao_m2|sigt >> m² em operação, << ct.areas.instalada_m2|sigt >> m² instalada.
+<% if ct.referencia %>
+
+\textbf{Caso de referência (caso de projeto da P-45, << ct.referencia.nome|tx >>), preliminar $\to$ pós-rating:}
+<% for gr in ct.grandezas %><% set v = ct.referencia.valores[loop.index0] %><< gr.rotulo >>: << v.pre|sigt >> $\to$ << v.pos|sigt >> << gr.unidade|unid >> ($\Delta$ = << v.delta|sigt >>)<% if not loop.last %>; <% else %>.<% endif %><% endfor %> Parcela não recuperada no P-001: << ct.referencia.nao_recuperado|sigt >> kW.
+<% endif %>
+
+<% for i in range(0, ct.grandezas|length, ct.por_tabela) %>
+<% set gs = ct.grandezas[i:i + ct.por_tabela] %>
+{\scriptsize\begin{longtable}{L{3.4cm}<% for gr in gs %>rrr<% endfor %>}\toprule
+Caso<% for gr in gs %> & \multicolumn{3}{c}{<< gr.rotulo >> (<< gr.unidade|unid >>)}<% endfor %>\\
+<% for gr in gs %> & prelim. & pós-rating & $\Delta$<% endfor %>\\\midrule\endhead
+<% for li in ct.linhas %>
+<< li.nome|tx >><% for v in li.valores[i:i + ct.por_tabela] %> & << v.pre|sigt >> & << v.pos|sigt >> & << v.delta|sigt >><% endfor %>\\
+<% endfor %>
+\bottomrule\end{longtable}}
+<% endfor %>
+<% set recebem = ct.grandezas|selectattr('recebe_nao_recuperado')|list %>
+<% if recebem %>
+{\scriptsize\begin{longtable}{L{3.4cm}r<% for gr in recebem %>r<% endfor %>}\toprule
+Caso & \makecell[r]{Não recuperado\\no P-001 (kW)}<% for gr in recebem %> & \makecell[r]{Resíduo de\\<< gr.rotulo >> (kW)}<% endfor %>\\\midrule\endhead
+<% for li in ct.linhas %>
+<< li.nome|tx >> & << li.nao_recuperado|sigt >><% for v in li.valores %><% if v.residuo is not none %> & << v.residuo|sigt >><% endif %><% endfor %>\\
+<% endfor %>
+\bottomrule\end{longtable}}
+{\footnotesize << residuo >>\par}
+<% endif %>
+<% set f = ct.fechamento %>
+
+Fechamento do estado operacional (<< ct.linhas|length >> casos; fronteira do módulo e cada bloco): $\varepsilon_m=|\dot m_{in}-\dot m_{out}|/\dot m_{in}$ máximo de << f.em_max|sigt >><% if f.caso_em %> (caso << f.caso_em >>)<% endif %> e $\varepsilon_E=|E_{in}-E_{out}|/|E_{in}|$ máximo de << f.eE_max|sigt >><% if f.caso_eE %> (caso << f.caso_eE >>)<% endif %>, adimensionais (massas em kg/s; energias em kW); critério de aceitação $\le$ << f.tolerancia|sigt >>: \textbf{<% if f.atende %>atende<% else %>não atende<% endif %>}.
+<% endmacro %>
+
 <# ------------------------------------------------------------ 1 #>
 \section{Objetivo e escopo}
+<% if doc.operacao_integrada %>
+<< rating_p001.objetivo >>
+
+<< rating_p001.escopo >>
+<% else %>
 << doc.conteudo.objetivo >>
 
 << doc.conteudo.escopo >>
+<% endif %>
 
 \subsection{Função do << ident['tag'] >> no processo}
 <% if tag_texto.funcao %>
@@ -168,9 +220,34 @@ Entrada & Unidade & Faixa aceita & Origem esperada & Casos\\\midrule\endhead
 \bottomrule\end{longtable}}
 <% endif %>
 
+<% if doc.continuidade and not doc.continuidade.proprio %>
+\subsection{Cargas recebidas após o rating do P-001}
+<< continuidade(doc.continuidade, continuidade_texto, continuidade_residuo) >>
+<% endif %>
+
 <# ------------------------------------------------------------ 5 #>
 \section{Metodologia}
-<% if eqs %>
+<% if doc.operacao_integrada %>
+<< rating_p001.introducao >>
+
+<% for m in rating_p001.metodologia %>
+\subsection{<< m.titulo >>}
+Fonte: << m.fonte >>.
+\begin{equation}
+<< m.latex >>
+\end{equation}
+<% endfor %>
+<% if metodologia %>
+\subsection{Correlações do método avaliadas na geometria instalada}
+O rating reavalia, a cada iteração e na geometria fixa, as equações do método << ident['metodo']|tx >> abaixo; a área não é incógnita (ela é dado da seção 6).
+<% for m in metodologia %>
+\paragraph{<< m.titulo >>} Fonte: << m.fonte >>.
+\begin{equation}
+<< m.latex >>
+\end{equation}
+<% endfor %>
+<% endif %>
+<% elif eqs %>
 Equações na forma métrica publicada (a que o programa avalia), com a forma de campo original e a constante de campo convertida pelas funções exatas de \texttt{core/unidades.py}.
 
 <% for e in eqs %>
@@ -188,7 +265,12 @@ A constante de campo << e.conversao.campo|mbn >>, convertida, vale $<< e.conv_te
 
 <% endfor %>
 <% elif metodologia %>
+<# a frase depende do ESTADO do TAG, não da falta de forma substituída: vários métodos não a declaram #>
+<% if ident['status'] in ('dimensionado', 'inviavel', 'inativo') %>
+<< textos['metodologia_' ~ ident['status']] >>
+<% else %>
 Equações do método (nenhuma foi avaliada: o TAG está << textos['aguardando'] >>).
+<% endif %>
 
 <% for m in metodologia %>
 \subsection{<< m.titulo >>}
@@ -199,6 +281,126 @@ Fonte: << m.fonte >>.
 <% endfor %>
 <% endif %>
 
+<# ------------------------------------------------------------ 6–9 (geometria instalada) #>
+<% set op = doc.operacao_integrada %>
+<% if op %>
+<% set av = op.avaliacao %>
+<% set g = op.geometria %>
+\section{Geometria instalada e rating}
+<% if g %>
+A geometria abaixo é a \textbf{única} definição do equipamento: a busca discreta a avalia por rating nos casos do balanço preliminar e é ela que aparece no JSON, no CSV e nesta memória. Nenhum dimensionamento posterior a substitui. Caso de projeto (P-45, maior vazão volumétrica no tubo): \textbf{<% for c in op.casos %><% if c.num == op.caso_projeto %><< c.nome|tx >><% endif %><% endfor %>}.
+
+\begin{longtable}{L{8cm}rl}\toprule
+Grandeza & Valor & Unidade\\\midrule\endhead
+Tubos por passe & << g.tubos_por_passe|sigt >> & \\
+Passes no tubo & << g.passes_tubo >> & \\
+Tubos no total & << op.geometria_derivada.tubos_total|sigt >> & \\
+Comprimento do tubo instalado & << g.comprimento_tubo|sigt >> & m\\
+Diâmetro externo do tubo & << g.diametro_externo_mm|sigt >> & mm\\
+Arranjo dos tubos & << g.layout_tubos_graus >> & °\\
+Razão de passo & << g.razao_passo|sigt >> & \\
+Corte da chicana & << g.corte_chicana|sigt >> & \\
+Espaçamento da chicana / casco & << g.espacamento_chicana|sigt >> & \\
+Diâmetro do feixe & << op.geometria_derivada.diametro_feixe_mm|sigt >> & mm\\
+Diâmetro do casco & << op.geometria_derivada.diametro_casco_mm|sigt >> & mm\\
+Unidades instaladas / em operação / reserva & << g.instaladas >> / << g.duty >> / << g.standby >> & \\
+Área de troca por unidade & << op.areas.por_unidade_m2|sigt >> & m²\\
+Área em operação (unidades em serviço) & << op.areas.em_operacao_m2|sigt >> & m²\\
+Área total instalada (inclui a reserva) & << op.areas.instalada_m2|sigt >> & m²\\
+\bottomrule\end{longtable}
+{\footnotesize A reserva não participa da troca térmica: o rating usa a área em operação e divide as vazões entre as unidades em serviço.\par}
+<% else %>
+\textbf{Sem geometria:} << op.mensagem|tx >>
+<% endif %>
+
+\section{Demais casos: balanço preliminar e estado pós-rating}
+<% if doc.continuidade %>
+<< continuidade(doc.continuidade, continuidade_texto, continuidade_residuo) >>
+<% endif %>
+
+\subsection{Diagnóstico termo-hidráulico na geometria instalada}
+Por unidade em operação. Papel hidráulico pela P-45 (vazão volumétrica no tubo), independente da carga térmica: casos sem carga continuam com vazão e têm a hidráulica verificada.
+
+{\scriptsize\begin{longtable}{L{3.2cm}L{1.5cm}L{1.7cm}L{1.4cm}L{1.6cm}L{1.6cm}}\toprule
+Caso & Papel & Convergência & Térmico & \makecell[l]{Hidráulica:\\atendimento} & \makecell[l]{Hidráulica:\\completude}\\\midrule\endhead
+<% for c in op.casos %>
+<< c.nome|tx >> & << c.papel|tx >> & << c.convergencia.estado|tx >> & << c.termico.status|tx >> & << c.hidraulico.atendimento|tx >> & << c.hidraulico.completude|tx >>\\
+<% endfor %>
+\bottomrule\end{longtable}}
+<% set nulos = op.casos|selectattr('termico.status', 'equalto', 'teto_nulo')|list %>
+<% if nulos %>
+
+\paragraph{Casos com teto Pinch nulo.} Recuperação zero por construção do balanço preliminar, não por limitação da geometria: a aproximação disponível entre as entradas, $T_{C22}-T_{C06}$, é menor que a mínima da P-32, logo $\dot Q_{rec,max}=0$ e o rating não tem o que iterar (convergência \texttt{intervalo\_nulo}); as saídas são as entradas. A hidráulica desses casos é verificada (as correntes atravessam o equipamento).
+<% for c in nulos %><< c.nome|tx >>: << c.termico.aproximacao_disponivel_K|sigt >> K $<$ << c.termico.aproximacao_minima_K|sigt >> K<% if not loop.last %>; <% else %>.<% endif %><% endfor %>
+
+<% endif %>
+
+{\scriptsize\begin{longtable}{L{3.2cm}rrrrrrr}\toprule
+Caso & \makecell[r]{$v_t$\\(m/s)} & \makecell[r]{$v_s$\\(m/s)} & \makecell[r]{$\rho_s$\\(kg/m³)} & \makecell[r]{Re\\tubo} & \makecell[r]{$U$\\(W/m²K)} & \makecell[r]{$\Delta p_{t}$\\(Pa)} & \makecell[r]{$\Delta p_{s}$ indic.\\(Pa)}\\\midrule\endhead
+<% for c in op.casos %><% set d = c.diagnosticos %>
+<< c.nome|tx >> & << d.velocidade_tubo_m_s|sigt >> & << d.velocidade_casco_m_s|sigt >> & << d.rho_casco_kg_m3|sigt >> & << d.Re_tubo|sigt >> & << d.U_W_m2K|sigt >> & << d.perda_carga_tubo_Pa|sigt >> & << d.perda_carga_casco_indicativa_Pa|sigt >>\\
+<% endfor %>
+\bottomrule\end{longtable}}
+{\footnotesize $\rho_s$: massa específica da corrente do casco (C-22), pela mesma regra da do tubo (C-06). $\Delta p_t$: Darcy--Weisbach com a correlação de atrito do regime (aplicável ao tubo). $\Delta p_s$: \textbf{estimativa indicativa}, sem correlação de casco aplicável no acervo; não é verificação. ``--'' = não avaliado (motivo na seção 8).\par}
+
+\section{Verificação de critérios}
+Convergência numérica, atendimento térmico e atendimento hidráulico são classificados em separado; condição não avaliada não conta como atendida, e valor sem critério não conta como aprovado. Critérios: << textos['criterios_p001']|tx >>
+
+<% set pc = av.premissa_comprimento %>
+\paragraph{Premissa de comprimento do tubo.} Limite efetivo \texttt{l\_tubo\_max} = << pc.limite_m|sigt >> m (<% if pc.natureza == 'limite_do_projeto' %>limite do projeto<% else %>default do método, não confirmado<% endif %>; fonte: << pc.fonte|tx >>); domínio da busca << pc.dominio_busca_m[0]|sigt >>--<< pc.dominio_busca_m[1]|sigt >> m; aplicado como filtro na busca: <% if pc.aplicado_na_busca %>sim<% else %>não<% endif %>. << pc.explicacao|tx >>
+
+\begin{longtable}{L{3.8cm}L{2.6cm}rrL{2.2cm}}\toprule
+Critério & Escopo & Valor & Limite & Resultado\\\midrule\endhead
+<% for r in av.restricoes_geometricas %>
+<< r.criterio|tx >> & << r.escopo|tx >> & << r.valor|sigt >> << r.unidade|unid >> & << r.limite|sigt >> << r.unidade|unid >> & << r.status|tx >>\\
+<% endfor %>
+<% set hid = av.atendimento_hidraulico %>
+<% for nome, casos in hid.nao_atende.items() %>
+<< nome|tx >> & casos << casos|ids >> & & & nao\_atende\\
+<% endfor %>
+<% for nome, casos in hid.alertas.items() %>
+<< nome|tx >> & casos << casos|ids >> & & & alerta\\
+<% endfor %>
+\bottomrule\end{longtable}
+
+\paragraph{Completude da verificação hidráulica.} << hid.conclusao|tx >>
+<% if hid.lacunas %>
+Grandezas que deixam a verificação incompleta (ausentes, sem critério de aceitação vigente ou apenas estimadas):
+\begin{itemize}
+<% for nome, casos in hid.lacunas.items() %>
+\item \texttt{<< nome|tx >>}: casos << casos|ids >>.
+<% endfor %>
+\end{itemize}
+<% endif %>
+<% if hid.informativos %>
+Valores informativos, sem critério de aceitação: <% for nome, casos in hid.informativos.items() %>\texttt{<< nome|tx >>} (casos << casos|ids >>)<% if not loop.last %>; <% else %>.<% endif %><% endfor %>
+
+<% endif %>
+
+\paragraph{Valores ausentes e motivo.}
+\begin{itemize}
+<% for c in op.casos %><% for k in c.hidraulico.criterios %><% if k.valor is none and k.status != 'nao_aplicavel' %>
+\item << c.nome|tx >>, \texttt{<< k.criterio|tx >>}: << k.motivo|tx >>
+<% endif %><% endfor %><% if c.hidraulico.get('motivo') %>
+\item << c.nome|tx >>: << c.hidraulico.get('motivo')|tx >>
+<% endif %><% endfor %>
+\end{itemize}
+
+\section{Resultados finais e folha de dados}
+\begin{longtable}{L{6cm}L{9cm}}\toprule
+Classificação & Resultado\\\midrule\endhead
+Situação da geometria instalada & \textbf{<< av.situacao|tx >>}\\
+Restrições não atendidas & <% if av.restricoes %><< av.restricoes|join(', ')|tx >><% else %>nenhuma<% endif %>\\
+Decisões de projeto pendentes & <% if av.decisoes_pendentes %><< av.decisoes_pendentes|join(', ')|tx >> (premissa de comprimento, seção 8)<% else %>nenhuma<% endif %>\\
+Convergência numérica & << av.convergencia_numerica.status|tx >><% if av.convergencia_numerica.casos_nao_convergidos %> (não convergidos: << av.convergencia_numerica.casos_nao_convergidos|ids >>)<% endif %>\\
+Atendimento térmico (teto Pinch) & << av.atendimento_termico.status|tx >><% if av.atendimento_termico.casos_parciais %> (recuperação parcial nos casos << av.atendimento_termico.casos_parciais|ids >>; teto Pinch nulo: << av.atendimento_termico.casos_teto_nulo|ids >>)<% endif %>\\
+Hidráulica: atendimento dos critérios avaliados & << hid.atendimento|tx >>\\
+Hidráulica: completude da verificação & << hid.completude|tx >>\\
+Conclusão hidráulica & << hid.conclusao|tx >>\\
+Etapa do balanço das correntes & << textos['etapa_' ~ op.etapas.estado_operacional]|tx >>\\
+Etapa das entradas do rating & << textos['etapa_' ~ op.etapas.entradas_do_rating]|tx >>\\
+\bottomrule\end{longtable}
+<% else %>
 <# ------------------------------------------------------------ 6 #>
 <% set calc = doc.calculo %>
 \section{Passo a passo do caso governante}
@@ -457,6 +659,8 @@ Caso & Papel & $q$ (kW) & $v$ (m/s) & Re & Dittus-Boelter & $h_i$ (W/m²K) & $h_
 <% endif %>
 <% else %>
 \aguarda.
+<% endif %>
+
 <% endif %>
 
 <# ------------------------------------------------------------ 10 #>

@@ -16,6 +16,8 @@ from fpso_siz.core.unidades import SEGUNDOS_POR_DIA
 
 COMP = ("O", "W", "D", "G")
 K_DIA = 1 / SEGUNDOS_POR_DIA  # (m³/d → m³/s)
+ETAPA_PRELIMINAR = "preliminar"
+ETAPA_RATING = "apos_rating_P-001"
 
 
 @dataclass(frozen=True)
@@ -54,6 +56,11 @@ class EstadoProcesso:
     trem: object = None                             # balanco/trem.TremSeparacao (produtivo ou não avaliável)
     gas_padrao: dict = field(default_factory=dict)  # Sm³/d do componente G por corrente (casos avaliáveis)
     T_tvp_C: float = math.nan                       # T em que a TVP do óleo tratado é lida (trem.toml [tvp])
+    # Etapa do cálculo térmico que este estado representa: ETAPA_PRELIMINAR (o resolvedor, com o
+    # teto Pinch no P-001) ou ETAPA_RATING (depois do rating da geometria instalada do P-001).
+    # `antes_do_rating` guarda, no estado pós-rating, as temperaturas e cargas que o rating substituiu.
+    etapa: str = ETAPA_PRELIMINAR
+    antes_do_rating: dict = field(default_factory=dict)
 
     @property
     def avaliavel(self):

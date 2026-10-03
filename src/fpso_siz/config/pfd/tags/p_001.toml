@@ -21,6 +21,18 @@ cp_casco = { regra = "cp_corrente", corrente = "C-22" }
 t_casco_in = { regra = "temperatura", corrente = "C-22" }
 mu_casco = { regra = "viscosidade_fase", corrente = "C-22", fase = "liquido", continua = "oleo", t = ["C-22", "C-23"] }
 
+# Fora do método (saari_lmtd não recebe ρ do casco): o rating da geometria instalada usa a ρ da
+# corrente que de fato escoa no casco (óleo tratado, C-22) na velocidade e na perda de carga do
+# casco. Mesma regra e mesma proveniência da ρ do lado tubo (nota 46).
+[auxiliares.rho_casco]
+regra = "densidade_fase"
+corrente = "C-22"
+fase = "liquido"
+t = ["C-22", "C-23"]
+rotulo = "Massa específica do lado casco (óleo tratado, C-22)"
+unidade = "kg/m³"
+uso = "rating do P-001: velocidade e perda de carga indicativa do casco"
+
 [inativo_se]
 carga_nula = "Q_pre"
 

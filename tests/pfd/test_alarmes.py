@@ -26,12 +26,22 @@ def test_variantes_tem_origem_e_existem():
                 assert inv.variante(nome)["origem"].strip()
 
 
+def _design_p001(planta):
+    """Estudo DESIGN do P-001 sobre o alvo preliminar (teto Pinch, P-32). Desde a integração por
+    rating (ADR 0005, notas 45/46) ele não é o resultado do TAG — o resultado é a geometria
+    instalada —, mas segue sendo o diagnóstico de por que a recuperação é parcial."""
+    from fpso_siz.pfd import equipamento as servico
+    rt = planta.tag("P-001")
+    assert rt.resultado is None and rt.operacao is not None   # contrato atual: sem DESIGN paralelo
+    return servico.dimensionar(servico.preparar(planta.contexto, rt.estado), rt.estado)
+
+
 def test_p001_um_passe_troca_o_dominio_de_f_pela_area(planta_propostas):
     """Cadeia de hipóteses do P-001, com a física completa: com 2 passes o impedimento é o domínio
     do fator F; com 1 passe ele desaparece e o que resta é ÁREA — o comprimento de tubo exigido,
     não mais a correlação do lado tubo, que agora existe nos três regimes."""
-    rt = planta_propostas.tag("P-001")
-    assert "fator de correção F" in rt.resultado.message
+    rt = _design_p001(planta_propostas)
+    assert rt.status == "inviavel" and "fator de correção F" in rt.resultado.message
     r = inv.executar_variante(planta_propostas.contexto, "P-001", inv.variante("passes_1"), rt.estado).resultado
     assert not r.feasible and "Dittus-Boelter" not in r.message
     # Com Standing o bloqueio era o comprimento ("tubo mais longo"). Com o trem produtivo
@@ -86,10 +96,27 @@ def test_p001_emulsao_no_casco_segue_sem_correlacao(planta_propostas):
     assert "Dittus-Boelter" in inv.executar_variante(ctx, "P-001", v).resultado.message
 
 
+def test_p001_instalado_nao_e_alarme_de_inviabilidade(planta_propostas):
+    """O P-001 integrado tem geometria instalada: não é TAG inviável e o MC não diz "nenhum
+    equipamento atende". O que o DESIGN não alcança aparece como recuperação parcial (limitação
+    aceita, ADR 0005), e o comprimento como decisão pendente — não some."""
+    rt = planta_propostas.tag("P-001")
+    assert rt.status == "dimensionado" and rt not in [t for t, _, _ in inv.alarmes(planta_propostas)]
+    assert mc.documento(planta_propostas.contexto, rt)["alarme"] is None
+    assert "recuperacao_parcial" in rt.limitacoes_aceitas and rt.decisoes_pendentes == ["comprimento_tubo"]
+    assert _design_p001(planta_propostas).status == "inviavel"
+
+
 def test_alarme_no_memorial_e_registro_sem_execucao(planta_propostas):
     """O MC do TAG inviável traz o alarme como está registrado; as variantes aparecem com rótulo
-    e origem, e NENHUM resultado de variante — o memorial não recalcula engenharia."""
-    d = mc.documento(planta_propostas.contexto, planta_propostas.tag("P-001"))
+    e origem, e NENHUM resultado de variante — o memorial não recalcula engenharia. O P-001
+    integrado só é inviável quando a busca não acha geometria (`OperacaoP001.geometria = None`)."""
+    from dataclasses import replace
+    rt = planta_propostas.tag("P-001")
+    sem_geometria = replace(rt, operacao=replace(rt.operacao, geometria=None, mensagem="sem geometria"))
+    assert sem_geometria.status == "inviavel"
+    assert inv.evidencia(sem_geometria).mensagem == "sem geometria"
+    d = mc.documento(planta_propostas.contexto, sem_geometria)
     a = d["alarme"]
     assert a["registrado"] and a["estado"] == "aberta"
     variantes = [v for h in a["hipoteses"] for v in h["variantes"]]

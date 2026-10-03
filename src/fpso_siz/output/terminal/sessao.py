@@ -595,6 +595,7 @@ class Sessao:
 
     # ------------------------------------------------------------------ tela do equipamento
     def _executar(self, estado):
+        servico.configurar_dependencias(self.ctx, self.ajustes)
         return servico.executar(self.ctx, estado)
 
     def _indisponiveis(self, estado, rt):
